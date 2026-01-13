@@ -66,6 +66,7 @@
                 </select>
             </div>
             <button class="tools-btn" onclick="toggleToolsSidebar()">工具</button>
+            <button class="first-principles-btn" id="firstPrinciplesBtn" onclick="toggleFirstPrinciplesMode()">第一性原理</button>
             <!-- 用户头像按钮 -->
             <div class="user-avatar-wrapper" id="userAvatarWrapper">
                 <button class="user-avatar-btn" id="userAvatarBtn" onclick="toggleUserMenu()">
@@ -82,8 +83,8 @@
         <!-- 对话内容区 -->
         <div class="chat-container" id="chatContainer">
             <div class="chat-welcome" id="chatWelcome">
-                <h1>AI 助手</h1>
-                <p>选择模型开始对话，支持图片识别与日常聊天</p>
+                <h1 id="welcomeTitle">AI 助手</h1>
+                <p id="welcomeDesc">选择模型开始对话，支持图片识别与日常聊天</p>
             </div>
             <div class="chat-messages" id="chatMessages"></div>
         </div>

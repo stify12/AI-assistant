@@ -1788,3 +1788,477 @@ body {
     opacity: 0.6;
     cursor: not-allowed;
 }
+
+
+/* ========== 第一性原理分析模式 ========== */
+.first-principles-btn {
+    padding: 8px 14px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: all 0.15s ease;
+}
+
+.first-principles-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--text-muted);
+}
+
+.first-principles-btn.active {
+    background: var(--text-primary);
+    color: var(--bg-main);
+    border-color: transparent;
+}
+
+/* 第一性原理模式下的欢迎界面 */
+.chat-welcome.first-principles-mode {
+    padding: 80px 24px 40px;
+}
+
+.chat-welcome.first-principles-mode h1 {
+    font-size: 28px;
+    margin-bottom: 16px;
+}
+
+.chat-welcome.first-principles-mode p {
+    font-size: 15px;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.8;
+    color: var(--text-secondary);
+}
+
+/* 第一性原理模式下输入框居中 */
+.input-area.first-principles-centered {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100% - 260px);
+    max-width: 768px;
+    padding: 24px;
+    margin-left: 130px;
+    z-index: 10;
+}
+
+.history-sidebar.collapsed ~ .main-wrapper .input-area.first-principles-centered {
+    width: 100%;
+    margin-left: 0;
+}
+
+.input-area.first-principles-centered .input-box {
+    box-shadow: var(--shadow-md);
+}
+
+/* 第一性原理模式下隐藏部分元素 */
+.first-principles-mode-active .reasoning-selector,
+.first-principles-mode-active .parallel-input-wrapper,
+.first-principles-mode-active .attach-btn {
+    display: none !important;
+}
+
+/* 第一性原理模式标识 */
+.fp-mode-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: var(--bg-active);
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-left: 12px;
+}
+
+.fp-mode-indicator::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--accent-color);
+    border-radius: 50%;
+}
+
+/* 第一性原理分析 - 模块化输出样式 */
+.fp-stage {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--bg-active);
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.fp-section {
+    margin: 16px 0;
+    padding: 16px;
+    background: var(--bg-input);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--border-color);
+}
+
+.fp-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.fp-question-box {
+    margin: 16px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--bg-input) 0%, var(--bg-hover) 100%);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.fp-question-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent-color);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+.fp-question-text {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.6;
+    margin-bottom: 16px;
+}
+
+.fp-inline-input {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.fp-inline-input input {
+    flex: 1;
+    padding: 12px 16px;
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.fp-inline-input input:focus {
+    border-color: var(--text-muted);
+}
+
+.fp-inline-input input::placeholder {
+    color: var(--text-muted);
+}
+
+.fp-inline-input button {
+    padding: 12px 20px;
+    background: var(--text-primary);
+    color: var(--bg-main);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+    white-space: nowrap;
+}
+
+.fp-inline-input button:hover {
+    opacity: 0.85;
+}
+
+.fp-inline-input button:disabled {
+    background: var(--bg-active);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.fp-hint {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 8px;
+}
+
+/* 最终结论样式 */
+.fp-conclusion {
+    margin: 20px 0;
+    padding: 20px;
+    background: var(--bg-input);
+    border-radius: var(--radius-md);
+    border: 2px solid var(--accent-color);
+}
+
+.fp-conclusion-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-color);
+    margin-bottom: 12px;
+}
+
+.fp-principles-list {
+    margin: 12px 0;
+    padding-left: 20px;
+}
+
+.fp-principles-list li {
+    margin: 8px 0;
+    color: var(--text-primary);
+}
+
+.fp-path {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.fp-path-step {
+    padding: 4px 10px;
+    background: var(--bg-active);
+    border-radius: var(--radius-sm);
+}
+
+.fp-path-arrow {
+    color: var(--text-muted);
+}
+
+
+/* ========== 第一性原理 - 多问题输入框 ========== */
+.fp-question-group-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-color);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 16px 0 8px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, rgba(29, 29, 31, 0.05) 0%, rgba(29, 29, 31, 0.1) 100%);
+    border-radius: var(--radius-sm);
+    display: inline-block;
+}
+
+.fp-inline-input-group {
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.fp-input-header {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.fp-multi-input {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    resize: vertical;
+    min-height: 80px;
+    outline: none;
+    transition: border-color 0.15s ease;
+    font-family: inherit;
+}
+
+.fp-multi-input:focus {
+    border-color: var(--text-muted);
+}
+
+.fp-multi-input::placeholder {
+    color: var(--text-muted);
+}
+
+.fp-input-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.fp-input-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.fp-input-footer button {
+    padding: 10px 20px;
+    background: var(--text-primary);
+    color: var(--bg-main);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.fp-input-footer button:hover {
+    opacity: 0.85;
+}
+
+.fp-input-footer button:disabled {
+    background: var(--bg-active);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+/* ========== Token 统计显示 ========== */
+.fp-token-stats {
+    margin-left: auto;
+    padding: 4px 10px;
+    background: var(--bg-active);
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'Söhne Mono', 'Monaco', 'Consolas', monospace;
+}
+
+.fp-token-stats .token-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* 分析完成阶段样式 */
+.fp-stage-complete {
+    background: var(--accent-color);
+    color: #fff;
+}
+
+
+/* ========== 第一性原理 - 深度推理块 ========== */
+.fp-reasoning-block {
+    margin-bottom: 16px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.fp-reasoning-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, var(--bg-sidebar) 0%, var(--bg-hover) 100%);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease;
+}
+
+.fp-reasoning-header:hover {
+    background: var(--bg-hover);
+}
+
+.fp-reasoning-icon {
+    font-size: 14px;
+    animation: spin 2s linear infinite;
+}
+
+.fp-reasoning-block.collapsed .fp-reasoning-icon {
+    animation: none;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.fp-reasoning-toggle {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 2px 8px;
+    background: var(--bg-active);
+    border-radius: var(--radius-sm);
+}
+
+.fp-reasoning-content {
+    padding: 14px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text-muted);
+    white-space: pre-wrap;
+    max-height: 400px;
+    overflow-y: auto;
+    font-family: 'Söhne Mono', 'Monaco', 'Consolas', monospace;
+    background: var(--bg-main);
+}
+
+.fp-reasoning-block.collapsed .fp-reasoning-content {
+    display: none;
+}
+
+.fp-main-content {
+    margin-top: 0;
+}
+
+/* Token统计中的推理token */
+.token-reasoning {
+    color: var(--text-muted);
+    font-size: 10px;
+}
+
+
+/* ========== 原始数据按钮和显示 ========== */
+.fp-raw-btn {
+    margin-left: 8px;
+    padding: 2px 8px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: 'Söhne Mono', 'Monaco', 'Consolas', monospace;
+    transition: all 0.15s ease;
+}
+
+.fp-raw-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-secondary);
+    border-color: var(--text-muted);
+}
+
+.fp-raw-data {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: 'Söhne Mono', 'Monaco', 'Consolas', monospace;
+}
