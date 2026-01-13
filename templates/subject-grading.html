@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 学科批改评估</title>
+    <link rel="stylesheet" href="/static/css/common.css">
+    <link rel="stylesheet" href="/static/css/subject-grading.css">
+    <link rel="stylesheet" href="/static/css/subject-grading-modules.css">
+    <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="logo">AI 学科批改评估</div>
+        <div style="display:flex;gap:12px;align-items:center;">
+            <a href="/batch-evaluation" class="back-btn">批量评估</a>
+            <a href="/dataset-manage" class="back-btn">数据集管理</a>
+            <button class="back-btn" onclick="showSettingsModal()">设置</button>
+            <button class="back-btn" onclick="refreshData()">刷新数据</button>
+            <button class="back-btn" onclick="goBack()">返回</button>
+        </div>
+    </nav>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">处理中...</div>
+    </div>
+
+    <!-- 主容器 - 左右布局 -->
+    <div class="main-layout">
+        <!-- 左侧面板 - 数据选择 -->
+        <div class="left-panel">
+            <!-- 学科标签页导航 -->
+            <div class="tabs">
+                <div class="tab active" onclick="switchSubject(0)">英语</div>
+                <div class="tab" onclick="switchSubject(1)">语文</div>
+                <div class="tab" onclick="switchSubject(2)">数学</div>
+                <div class="tab" onclick="switchSubject(3)">物理</div>
+                <div class="tab" onclick="switchSubject(-1)">历史记录</div>
+            </div>
+
+            <!-- 数据列表区域 -->
+            <div class="section" id="dataListSection">
+                <div class="section-title">批改数据列表</div>
+                
+                <div class="data-list-container">
+                    <div class="data-list-header">
+                        <span id="dataCount">共 0 条记录</span>
+                        <div class="header-actions">
+                            <button class="batch-mode-btn" id="batchModeBtn" onclick="BatchEvaluation.toggle()">
+                                <span>批量评估</span>
+                            </button>
+                            <select id="timeRangeFilter" onchange="loadHomeworkData()">
+                                <option value="0.167">最近10分钟</option>
+                                <option value="0.5">最近30分钟</option>
+                                <option value="1">最近1小时</option>
+                                <option value="12">最近12小时</option>
+                                <option value="72">最近3天</option>
+                                <option value="168">最近7天</option>
+                            </select>
+                            <button class="btn btn-small" onclick="refreshData()">刷新</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 批量操作栏 -->
+                    <div class="batch-action-bar" id="batchActionBar">
+                        <input type="checkbox" class="batch-checkbox" onclick="BatchEvaluation.toggleAll()">
+                        <span id="batchSelectedCount">已选 0 条</span>
+                        <button class="btn btn-small btn-primary" id="batchEvaluateBtn" onclick="BatchEvaluation.evaluate()" disabled>
+                            开始批量评估
+                        </button>
+                    </div>
+                    
+                    <!-- 作业任务选择 -->
+                    <div class="task-filter-section">
+                        <div class="task-filter-header">
+                            <span class="task-filter-label">按作业任务筛选</span>
+                            <button class="btn btn-small btn-secondary" onclick="loadHomeworkTasks()">刷新任务</button>
+                        </div>
+                        <div class="task-list" id="taskList">
+                            <div class="task-item active" data-task-id="" onclick="selectTask(this, '')">
+                                <span class="task-name">全部作业</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="data-list" id="dataList">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">--</div>
+                            <div class="empty-state-text">暂无批改数据</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 选中数据详情 -->
+            <div class="section" id="selectedDataSection" style="display:none;">
+                <div class="section-title">选中数据详情</div>
+                <div class="selected-data-info" id="selectedDataInfo"></div>
+                <!-- 大图预览区域 -->
+                <div class="large-image-preview" id="largeImagePreview" style="display:none;">
+                    <div class="large-image-header">
+                        <span>作业图片</span>
+                        <button class="close-btn" onclick="closeLargeImage()">收起</button>
+                    </div>
+                    <div class="large-image-wrap">
+                        <img id="largeImage" src="" alt="作业大图">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 历史记录内容区域 -->
+            <div class="history-content" id="historyContent" style="display:none;">
+                <div class="section">
+                    <div class="section-title">历史评估记录</div>
+                    <div class="section-desc">查看和管理历史评估数据</div>
+                    
+                    <div class="history-filters">
+                        <select id="historySubjectFilter" onchange="filterHistory()">
+                            <option value="">全部学科</option>
+                            <option value="0">英语</option>
+                            <option value="1">语文</option>
+                            <option value="2">数学</option>
+                            <option value="3">物理</option>
+                        </select>
+                        <button class="btn btn-small" onclick="loadHistory()">刷新</button>
+                        <button class="btn btn-small btn-secondary" onclick="clearHistory()">清空</button>
+                    </div>
+                    
+                    <div class="history-list" id="historyList">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">--</div>
+                            <div class="empty-state-text">暂无历史记录</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧面板 - 评估操作和结果 -->
+        <div class="right-panel" id="rightPanel">
+            <!-- AI批改结果表格 -->
+            <div class="section" id="aiResultSection" style="display:none;">
+                <div class="section-header">
+                    <div class="section-title">AI批改结果</div>
+                    <div class="filter-btns">
+                        <button class="filter-btn active" data-filter="all" onclick="filterQuestionType('all')">全部</button>
+                        <button class="filter-btn" data-filter="choice" onclick="filterQuestionType('choice')">选择题</button>
+                        <button class="filter-btn" data-filter="non-choice" onclick="filterQuestionType('non-choice')">非选择题</button>
+                    </div>
+                </div>
+                <div class="ai-result-table-wrap" id="aiResultTableWrap">
+                    <div class="empty-hint">暂无数据</div>
+                </div>
+            </div>
+
+            <!-- 基准效果设置区域 -->
+            <div class="section" id="baseEffectSection" style="display:none;">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">基准效果设置</div>
+                        <div class="section-desc">自动识别作业图片或手动编辑基准效果</div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-secondary btn-small" onclick="showAllBaselines()" id="viewAllBtn">
+                            <span>查看全部</span>
+                        </button>
+                        <button class="btn btn-primary" onclick="autoRecognizeFromDB()" id="autoRecognizeBtn">
+                            <span>自动识别</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="upload-row" style="display:none;">
+                    <div class="upload-area" id="uploadArea" onclick="document.getElementById('imageInput').click()">
+                        <p>点击或拖拽上传作业图片</p>
+                        <input type="file" id="imageInput" accept="image/*" hidden>
+                    </div>
+                    <div class="upload-preview-box" id="previewBox" style="display:none;">
+                        <img id="imagePreview" class="upload-preview-img" onclick="showImageModal(this.src)" title="点击放大">
+                        <div class="upload-preview-actions">
+                            <button class="preview-action-btn" onclick="recognizeImage()">识别答案</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 基准效果编辑器 -->
+                <div class="base-effect-editor" id="baseEffectEditor">
+                    <div class="editor-header">
+                        <span>基准效果 JSON</span>
+                        <div class="editor-actions">
+                            <button class="btn btn-small" onclick="addQuestion()">+ 添加题目</button>
+                            <button class="btn btn-small btn-secondary" onclick="clearBaseEffect()">清空</button>
+                        </div>
+                    </div>
+                    <div class="question-cards" id="questionCards">
+                        <!-- 题目卡片将动态生成 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 评估操作区域 -->
+            <div class="section" id="evaluateSection" style="display:none;">
+                <div class="section-title">评估操作</div>
+                <div class="section-desc">本地计算或调用AI大模型进行智能比对</div>
+                
+                <div class="evaluate-actions">
+                    <button class="btn btn-secondary" onclick="startEvaluation()" id="evaluateBtn">
+                        <span>本地评估</span>
+                    </button>
+                    <button class="btn btn-primary" onclick="startAIEvaluation()" id="aiEvaluateBtn">
+                        <span>一键AI评估</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="saveEvaluation()" id="saveBtn" disabled>
+                        保存记录
+                    </button>
+                </div>
+            </div>
+
+            <!-- 评估结果区域 -->
+            <div class="section" id="resultSection" style="display:none;">
+                <div class="section-title">评估结果</div>
+                
+                <!-- 数据摘要 -->
+                <div class="summary-card" id="summaryCard" style="display:none;">
+                    <div class="summary-icon">📊</div>
+                    <div class="summary-content" id="summaryContent"></div>
+                </div>
+                
+                <!-- 关键发现 -->
+                <div class="insights-container" id="insightsContainer" style="display:none;"></div>
+                
+                <!-- 统计卡片（优化版） -->
+                <div id="statsGridOptimized"></div>
+                
+                <!-- 详细分析视图 -->
+                <div class="section" id="detailedAnalysisSection" style="display:none;">
+                    <div class="section-header">
+                        <div class="section-title">逐题详细分析</div>
+                        <button class="btn btn-small" onclick="toggleDetailedAnalysis()">收起</button>
+                    </div>
+                    <div id="detailedAnalysisContainer"></div>
+                </div>
+                
+                <!-- 统计卡片（旧版备用） -->
+                <div class="stats-grid" id="statsGrid" style="display:none;"></div>
+                
+                <!-- 错误题目表格 -->
+                <div class="error-table-container" id="errorTableContainer" style="display:none;">
+                    <div class="table-title">
+                        错误题目详情
+                        <div class="table-controls">
+                            <select id="errorTypeFilter" onchange="filterErrorTable()">
+                                <option value="">全部错误类型</option>
+                            </select>
+                            <input type="text" id="errorSearchInput" placeholder="搜索题号..." onkeyup="filterErrorTable()">
+                        </div>
+                    </div>
+                    <table class="data-table" id="errorTable">
+                        <thead>
+                            <tr>
+                                <th onclick="sortErrorTable('index')" style="cursor:pointer;">题号 ▼</th>
+                                <th>基准效果</th>
+                                <th>AI批改结果</th>
+                                <th onclick="sortErrorTable('type')" style="cursor:pointer;">错误类型 ▼</th>
+                                <th>说明</th>
+                            </tr>
+                        </thead>
+                        <tbody id="errorTableBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- 可视化图表 -->
+                <div class="charts-container" id="chartsContainer">
+                    <div class="chart-grid">
+                        <div class="chart-box">
+                            <div class="chart-title">错误类型分布</div>
+                            <canvas id="errorPieChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <div class="chart-title">能力维度雷达图</div>
+                            <canvas id="radarChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-grid">
+                        <div class="chart-box">
+                            <div class="chart-title">错误严重程度分布</div>
+                            <canvas id="severityBarChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <div class="chart-title">题型准确率对比</div>
+                            <canvas id="questionBarChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-grid">
+                        <div class="chart-box">
+                            <div class="chart-title">偏差程度分布</div>
+                            <div id="heatmapContainer"></div>
+                        </div>
+                        <div class="chart-box">
+                            <div class="chart-title">准确率历史趋势</div>
+                            <canvas id="historyTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DeepSeek分析报告 -->
+                <button class="btn btn-secondary" id="generateReportBtn" onclick="generateAnalysisReport()" style="display:none;margin-bottom:16px;">
+                    <span>生成DeepSeek分析报告</span>
+                </button>
+                <div class="analysis-report" id="analysisReport" style="display:none;">
+                    <div class="report-title">DeepSeek分析报告</div>
+                    <div class="report-content" id="reportContent"></div>
+                </div>
+            </div>
+
+            <!-- 空状态提示 -->
+            <div class="empty-right-panel" id="emptyRightPanel">
+                <div class="empty-state">
+                    <div class="empty-state-icon">--</div>
+                    <div class="empty-state-text">请从左侧选择批改数据</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片放大弹窗 -->
+    <div class="image-modal" id="imageModal" onclick="hideImageModal()">
+        <img id="modalImg" src="">
+    </div>
+
+    <!-- 查看全部基准效果弹窗 -->
+    <div class="baseline-modal" id="baselineModal" onclick="hideBaselineModal(event)">
+        <div class="baseline-modal-content" onclick="event.stopPropagation()">
+            <div class="baseline-modal-header">
+                <h3>全部基准效果</h3>
+                <button class="close-btn" onclick="hideBaselineModal()">×</button>
+            </div>
+            <div class="baseline-modal-body" id="baselineModalBody">
+                <div class="loading-text">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置弹窗 -->
+    <div class="settings-modal" id="settingsModal" onclick="hideSettingsModal(event)">
+        <div class="settings-modal-content" onclick="event.stopPropagation()">
+            <div class="settings-modal-header">
+                <h3>提示词设置</h3>
+                <button class="close-btn" onclick="hideSettingsModal()">x</button>
+            </div>
+            <div class="settings-modal-body" id="settingsModalBody">
+                <!-- 提示词标签页 -->
+                <div class="prompt-tabs" id="promptTabs">
+                    <button class="prompt-tab active" data-key="recognize" onclick="switchPromptTab('recognize')">通用识别</button>
+                    <button class="prompt-tab" data-key="recognize_english" onclick="switchPromptTab('recognize_english')">英语</button>
+                    <button class="prompt-tab" data-key="recognize_chinese" onclick="switchPromptTab('recognize_chinese')">语文</button>
+                    <button class="prompt-tab" data-key="recognize_math" onclick="switchPromptTab('recognize_math')">数学</button>
+                    <button class="prompt-tab" data-key="recognize_physics" onclick="switchPromptTab('recognize_physics')">物理</button>
+                    <button class="prompt-tab" data-key="evaluate" onclick="switchPromptTab('evaluate')">评估</button>
+                    <button class="prompt-tab" data-key="compare_answer" onclick="switchPromptTab('compare_answer')">答案比对</button>
+                </div>
+                <!-- 提示词编辑区 -->
+                <div class="prompt-edit-area">
+                    <textarea id="promptTextarea" rows="16" placeholder="输入提示词内容"></textarea>
+                </div>
+                <!-- 评估选项 -->
+                <div class="eval-options" style="margin-top: 16px; padding: 12px; background: #f5f5f5; border-radius: 8px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="useAiCompareCheckbox" onchange="saveEvalOptions()">
+                        <span>启用AI模型比对（使用大模型逐题解析比对，更准确但较慢）</span>
+                    </label>
+                </div>
+                <!-- 操作按钮 -->
+                <div class="settings-actions">
+                    <button class="btn btn-secondary" onclick="resetPrompt()">恢复默认</button>
+                    <button class="btn btn-primary" onclick="saveAllPrompts()">保存设置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量评估结果弹窗 -->
+    <div id="batchResultModal" onclick="BatchEvaluation.hideResultModal(event)">
+        <div class="batch-result-content" onclick="event.stopPropagation()">
+            <div class="batch-result-header">
+                <h3>批量评估结果</h3>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn btn-small" onclick="BatchEvaluation.exportResults()">导出结果</button>
+                    <button class="close-btn" onclick="BatchEvaluation.hideResultModal()">×</button>
+                </div>
+            </div>
+            <div class="batch-result-body" id="batchResultBody">
+                <div class="loading-text">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript 模块化加载 -->
+    <script src="/static/js/subject-grading-utils.js"></script>
+    <script src="/static/js/subject-grading-batch.js"></script>
+    <script src="/static/js/subject-grading-detail.js"></script>
+    <script src="/static/js/subject-grading-stats.js"></script>
+    <script src="/static/js/subject-grading-enhancements.js"></script>
+    <script src="/static/js/subject-grading.js"></script>
+</body>
+</html>

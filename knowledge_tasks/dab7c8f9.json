@@ -1,0 +1,21 @@
+{
+  "task_id": "dab7c8f9",
+  "created_at": "2026-01-06T16:30:24.011825",
+  "status": "pending",
+  "config": {
+    "multimodal_model": "doubao-1-5-vision-pro-32k-250115",
+    "text_model": "deepseek-v3.2",
+    "similarity_threshold": 0.85,
+    "questions_per_point": 1
+  },
+  "images": [
+    {
+      "id": "1ada783e",
+      "filename": "微信图片_20260106151913_3863_22.jpg",
+      "path": "knowledge_uploads\\dab7c8f9\\e755f462_20260106151913_3863_22.jpg"
+    }
+  ],
+  "parsed_questions": [],
+  "dedupe_results": [],
+  "similar_questions": []
+}

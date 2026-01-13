@@ -1,0 +1,31 @@
+{
+  "task_id": "fbe7d362",
+  "created_at": "2026-01-06T14:00:18.607556",
+  "status": "parsed",
+  "config": {
+    "multimodal_model": "doubao-1-5-vision-pro-32k-250115",
+    "text_model": "deepseek-v3.2",
+    "similarity_threshold": 0.85,
+    "questions_per_point": 1
+  },
+  "images": [
+    {
+      "id": "3b4e98b1",
+      "filename": "1.jpg",
+      "path": "knowledge_uploads\\fbe7d362\\f08b30ec_1.jpg"
+    }
+  ],
+  "parsed_questions": [
+    {
+      "id": "9ae20ed6",
+      "image_source": "1.jpg",
+      "content": "解析失败: 模型调用失败: HTTPSConnectionPool(host='ark.cn-beijing.volces.com', port=443): Read timed out. (read timeout=60)",
+      "subject": "",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": []
+    }
+  ],
+  "dedupe_results": [],
+  "similar_questions": []
+}

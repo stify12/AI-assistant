@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批量评估</title>
+    <link rel="stylesheet" href="/static/css/common.css">
+    <link rel="stylesheet" href="/static/css/batch-evaluation.css">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="logo">批量评估</div>
+        <div style="display:flex;gap:12px;align-items:center;">
+            <button class="back-btn" onclick="goBack()">返回</button>
+        </div>
+    </nav>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">处理中...</div>
+    </div>
+
+    <!-- Tab切换 -->
+    <div class="tab-container">
+        <div class="tabs">
+            <div class="tab active" data-tab="tasks">任务管理</div>
+        </div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="main-layout">
+        <!-- 任务管理视图 -->
+        <div class="view-container" id="tasksView">
+            <!-- 左侧面板 - 任务列表 -->
+            <div class="left-panel">
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">评估任务</div>
+                        <button class="btn btn-primary" onclick="showCreateTaskModal()">新建任务</button>
+                    </div>
+                    <div class="task-list" id="taskList">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">--</div>
+                            <div class="empty-state-text">暂无评估任务</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧面板 - 任务详情 -->
+            <div class="right-panel">
+                <div class="empty-right-panel" id="emptyTaskDetail">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">--</div>
+                        <div class="empty-state-text">请从左侧选择任务</div>
+                    </div>
+                </div>
+                <div class="task-detail" id="taskDetail" style="display:none;">
+                    <div class="section">
+                        <div class="section-header">
+                            <div>
+                                <div class="section-title" id="taskDetailTitle">任务详情</div>
+                                <div class="section-desc" id="taskDetailMeta"></div>
+                            </div>
+                            <div class="task-actions">
+                                <button class="btn btn-secondary" id="startEvalBtn" onclick="startBatchEvaluation()">本地评估</button>
+                                <button class="btn btn-primary" id="batchAiEvalBtn" onclick="batchAiEvaluation()">一键AI评估</button>
+                                <button class="btn btn-secondary" id="exportBtn" onclick="exportExcel()" disabled>导出Excel</button>
+                                <button class="btn btn-secondary" id="aiReportBtn" onclick="generateAIReport()" disabled>AI分析</button>
+                                <button class="btn btn-danger" onclick="deleteCurrentTask()">删除任务</button>
+                            </div>
+                        </div>
+                        
+                        <!-- 评估进度 -->
+                        <div class="progress-container" id="progressContainer" style="display:none;">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <div class="progress-text" id="progressText">0/0</div>
+                        </div>
+
+                        <!-- 总体报告 -->
+                        <div class="overall-report" id="overallReport" style="display:none;">
+                            <div class="report-title">总体报告</div>
+                            <div class="stats-grid" id="overallStats"></div>
+                            <div class="stats-detail" id="statsDetail"></div>
+                        </div>
+
+                        <!-- 作业列表 -->
+                        <div class="homework-list-container">
+                            <div class="list-header">作业任务列表</div>
+                            <div class="homework-list" id="homeworkList"></div>
+                        </div>
+
+                        <!-- AI分析报告 -->
+                        <div class="ai-report" id="aiReport" style="display:none;">
+                            <div class="report-title">AI分析报告</div>
+                            <div class="report-content" id="aiReportContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据集管理视图已移至学科评估页面 -->
+    </div>
+
+    <!-- 新建任务弹窗 -->
+    <div class="modal" id="createTaskModal" onclick="hideModal('createTaskModal', event)">
+        <div class="modal-content modal-large" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>新建评估任务</h3>
+                <button class="close-btn" onclick="hideModal('createTaskModal')">x</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>任务名称</label>
+                    <input type="text" id="taskNameInput" placeholder="输入任务名称">
+                </div>
+                <div class="filter-row">
+                    <div class="form-group">
+                        <label>学科</label>
+                        <select id="hwSubjectFilter" onchange="loadHomeworkForTask()">
+                            <option value="">全部学科</option>
+                            <option value="0">英语</option>
+                            <option value="1">语文</option>
+                            <option value="2">数学</option>
+                            <option value="3">物理</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>时间范围</label>
+                        <select id="hwTimeFilter" onchange="loadHomeworkForTask()">
+                            <option value="1">最近1小时</option>
+                            <option value="3">最近3小时</option>
+                            <option value="6">最近6小时</option>
+                            <option value="12">最近12小时</option>
+                            <option value="24" selected>最近24小时</option>
+                            <option value="72">最近3天</option>
+                            <option value="168">最近7天</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="selection-info">
+                    <span>已选择 <strong id="selectedCount">0</strong> 个作业</span>
+                    <button class="btn btn-small" onclick="selectAllHomework()">全选</button>
+                    <button class="btn btn-small btn-secondary" onclick="clearHomeworkSelection()">清空</button>
+                </div>
+                <div class="homework-select-list" id="homeworkSelectList">
+                    <div class="empty-state">
+                        <div class="empty-state-text">加载中...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('createTaskModal')">取消</button>
+                <button class="btn btn-primary" onclick="createTask()">创建任务</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加数据集弹窗 -->
+    <div class="modal" id="addDatasetModal" onclick="hideModal('addDatasetModal', event)">
+        <div class="modal-content modal-large" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>添加数据集</h3>
+                <button class="close-btn" onclick="hideModal('addDatasetModal')">x</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>选择页码</label>
+                    <div class="page-select-list" id="pageSelectList"></div>
+                </div>
+                <div class="form-group">
+                    <label>基准效果配置</label>
+                    <div class="base-effect-config" id="baseEffectConfig">
+                        <div class="empty-state">
+                            <div class="empty-state-text">请先选择页码</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('addDatasetModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveDataset()">保存数据集</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 评估详情抽屉 -->
+    <div class="drawer" id="evalDetailDrawer">
+        <div class="drawer-content">
+            <div class="drawer-header">
+                <h3 id="evalDetailTitle">评估详情</h3>
+                <button class="close-btn" onclick="hideDrawer()">x</button>
+            </div>
+            <div class="drawer-body" id="evalDetailBody">
+                <!-- 评估详情内容 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/batch-evaluation.js"></script>
+</body>
+</html>

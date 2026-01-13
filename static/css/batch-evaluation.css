@@ -1,0 +1,1723 @@
+/* 批量评估页面样式 - 黑白简洁风格 */
+
+/* 覆盖common.css的深色背景 */
+body {
+    background: #f5f5f7;
+}
+
+/* Tab容器 */
+.tab-container {
+    padding: 0 24px;
+    background: #fff;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.tab-container .tabs {
+    display: flex;
+    gap: 0;
+}
+
+.tab-container .tab {
+    padding: 12px 24px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    color: #86868b;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.tab-container .tab:hover {
+    color: #1d1d1f;
+}
+
+.tab-container .tab.active {
+    color: #1d1d1f;
+    border-bottom-color: #1d1d1f;
+    font-weight: 500;
+}
+
+/* 主布局 */
+.main-layout {
+    display: flex;
+    min-height: calc(100vh - 120px);
+    background: #f5f5f7;
+}
+
+.view-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+/* 左右面板 */
+.left-panel {
+    width: 320px;
+    min-width: 280px;
+    background: #fff;
+    border-right: 1px solid #e5e5e5;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.right-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+/* Section样式 */
+.section {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.section-desc {
+    font-size: 12px;
+    color: #86868b;
+    margin-top: 4px;
+}
+
+/* 按钮样式 */
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #1d1d1f;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #424245;
+}
+
+.btn-secondary {
+    background: #f5f5f7;
+    color: #1d1d1f;
+    border: 1px solid #d2d2d7;
+}
+
+.btn-secondary:hover {
+    background: #e5e5e5;
+}
+
+.btn-danger {
+    background: #fff;
+    color: #d73a49;
+    border: 1px solid #d73a49;
+}
+
+.btn-danger:hover {
+    background: #ffeef0;
+}
+
+.btn-small {
+    padding: 4px 12px;
+    font-size: 12px;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 任务列表 */
+.task-list, .book-list, .dataset-list, .homework-list, .page-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.task-item, .book-item, .dataset-item, .homework-item {
+    padding: 12px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.task-item:hover, .book-item:hover, .dataset-item:hover, .homework-item:hover {
+    border-color: #1d1d1f;
+}
+
+.task-item.selected, .book-item.selected {
+    border-color: #1d1d1f;
+    background: #f5f5f7;
+}
+
+.task-item-title, .book-item-title, .dataset-item-title, .homework-item-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1d1d1f;
+    margin-bottom: 4px;
+}
+
+.task-item-meta, .book-item-meta, .dataset-item-meta, .homework-item-meta {
+    font-size: 12px;
+    color: #86868b;
+}
+
+.task-item-status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    margin-left: 8px;
+}
+
+.status-pending {
+    background: #f5f5f7;
+    color: #86868b;
+}
+
+.status-running {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.status-completed {
+    background: #e3f9e5;
+    color: #1e7e34;
+}
+
+.status-failed {
+    background: #ffeef0;
+    color: #d73a49;
+}
+
+/* 空状态 */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #86868b;
+}
+
+.empty-state-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.empty-state-text {
+    font-size: 14px;
+}
+
+.empty-right-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    background: #fff;
+    border-radius: 12px;
+}
+
+/* 进度条 */
+.progress-container {
+    margin-bottom: 16px;
+}
+
+.progress-bar {
+    height: 8px;
+    background: #e5e5e5;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #1d1d1f;
+    width: 0%;
+    transition: width 0.3s;
+}
+
+.progress-text {
+    font-size: 12px;
+    color: #86868b;
+    margin-top: 4px;
+    text-align: right;
+}
+
+/* 统计卡片 */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.stat-card {
+    background: #f5f5f7;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1d1d1f;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #86868b;
+    margin-top: 4px;
+}
+
+.stat-card.highlight {
+    background: #1d1d1f;
+}
+
+.stat-card.highlight .stat-value,
+.stat-card.highlight .stat-label {
+    color: #fff;
+}
+
+/* 列表头 */
+.list-header {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1d1d1f;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+/* 作业项准确率 */
+.homework-item-accuracy {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.accuracy-high {
+    color: #1e7e34;
+}
+
+.accuracy-medium {
+    color: #e65100;
+}
+
+.accuracy-low {
+    color: #d73a49;
+}
+
+/* 任务操作按钮组 */
+.task-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* 弹窗样式 */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: #fff;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-large {
+    max-width: 800px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.modal-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin: 0;
+}
+
+.modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #86868b;
+    padding: 4px 8px;
+}
+
+.close-btn:hover {
+    color: #1d1d1f;
+}
+
+/* 表单样式 */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1d1d1f;
+    margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d2d2d7;
+    border-radius: 8px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #1d1d1f;
+}
+
+.filter-row {
+    display: flex;
+    gap: 16px;
+}
+
+.filter-row .form-group {
+    flex: 1;
+}
+
+/* 选择信息 */
+.selection-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #f5f5f7;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.selection-info span {
+    flex: 1;
+    font-size: 14px;
+    color: #1d1d1f;
+}
+
+/* 作业选择列表 */
+.homework-select-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+}
+
+.homework-select-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid #e5e5e5;
+    cursor: pointer;
+}
+
+.homework-select-item:last-child {
+    border-bottom: none;
+}
+
+.homework-select-item:hover {
+    background: #f5f5f7;
+}
+
+.homework-select-item.selected {
+    background: #e3f9e5;
+}
+
+.homework-select-item input[type="checkbox"] {
+    margin-right: 12px;
+    width: 18px;
+    height: 18px;
+}
+
+.homework-select-info {
+    flex: 1;
+}
+
+.homework-select-title {
+    font-size: 14px;
+    color: #1d1d1f;
+}
+
+.homework-select-meta {
+    font-size: 12px;
+    color: #86868b;
+    margin-top: 2px;
+}
+
+/* 页码选择 */
+.page-select-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 12px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+}
+
+.page-select-item {
+    padding: 8px 16px;
+    border: 1px solid #d2d2d7;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.page-select-item:hover {
+    border-color: #1d1d1f;
+}
+
+.page-select-item.selected {
+    background: #1d1d1f;
+    color: #fff;
+    border-color: #1d1d1f;
+}
+
+/* 基准效果配置 */
+.base-effect-config {
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 16px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.page-effect-section {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.page-effect-section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.page-effect-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.page-effect-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1d1d1f;
+}
+
+/* 抽屉样式 */
+.drawer {
+    display: none;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 600px;
+    height: 100%;
+    background: #fff;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    transform: translateX(100%);
+    transition: transform 0.3s;
+}
+
+.drawer.show {
+    display: block;
+    transform: translateX(0);
+}
+
+.drawer-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.drawer-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin: 0;
+}
+
+.drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+/* 抽屉遮罩 */
+.drawer-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 999;
+}
+
+.drawer-overlay.show {
+    display: block;
+}
+
+/* 报告样式 */
+.overall-report, .ai-report {
+    margin-bottom: 16px;
+    padding: 16px;
+    background: #f5f5f7;
+    border-radius: 8px;
+}
+
+.report-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin-bottom: 12px;
+}
+
+.report-content {
+    font-size: 14px;
+    color: #424245;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+/* 统计详情 */
+.stats-detail {
+    margin-top: 16px;
+}
+
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.stats-table th,
+.stats-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e5e5e5;
+    font-size: 13px;
+}
+
+.stats-table th {
+    background: #f5f5f7;
+    font-weight: 500;
+    color: #86868b;
+}
+
+.stats-table td {
+    color: #1d1d1f;
+}
+
+/* 学科分组 */
+.subject-group {
+    margin-bottom: 16px;
+}
+
+.subject-group-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #86868b;
+    padding: 8px 0;
+    border-bottom: 1px solid #e5e5e5;
+    margin-bottom: 8px;
+}
+
+/* 加载遮罩 */
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.loading-overlay.show {
+    display: flex;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e5e5e5;
+    border-top-color: #1d1d1f;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-text {
+    margin-top: 16px;
+    font-size: 14px;
+    color: #86868b;
+}
+
+/* 匹配状态标签 */
+.match-status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    margin-left: 8px;
+}
+
+.match-status.matched {
+    background: #e3f9e5;
+    color: #1e7e34;
+}
+
+.match-status.unmatched {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+/* 数据集项操作 */
+.dataset-item-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+/* 页码项 */
+.page-item {
+    display: inline-block;
+    padding: 6px 12px;
+    margin: 4px;
+    background: #f5f5f7;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #1d1d1f;
+}
+
+.page-item.has-dataset {
+    background: #e3f9e5;
+    color: #1e7e34;
+}
+
+
+/* 新增样式 - 错误类型分布 */
+.error-dist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.error-dist-item {
+    padding: 12px;
+    background: #f5f5f7;
+    border-radius: 8px;
+}
+
+.error-dist-type {
+    font-size: 12px;
+    color: #86868b;
+    margin-bottom: 4px;
+}
+
+.error-dist-count {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+/* 效果单元格 */
+.effect-cell {
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.effect-cell .label {
+    color: #86868b;
+    margin-right: 4px;
+}
+
+.text-success {
+    color: #1e7e34;
+}
+
+.text-error {
+    color: #d73a49;
+}
+
+/* 标签样式 - 黑白配色 */
+.tag {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.tag-info {
+    background: #f5f5f7;
+    color: #1d1d1f;
+    border: 1px solid #e5e5e5;
+}
+
+.tag-error {
+    background: #1d1d1f;
+    color: #fff;
+}
+
+.tag-warning {
+    background: #86868b;
+    color: #fff;
+}
+
+.tag-success {
+    background: #fff;
+    color: #1d1d1f;
+    border: 1px solid #1d1d1f;
+}
+
+.tag-default {
+    background: #f5f5f7;
+    color: #86868b;
+}
+
+.tag-purple {
+    background: #424245;
+    color: #fff;
+}
+
+/* 说明单元格 */
+.explanation-cell {
+    font-size: 12px;
+    color: #86868b;
+    max-width: 200px;
+}
+
+/* 统计卡片扩展 */
+.stat-card.warning {
+    background: #fff3e0;
+}
+
+.stat-card.warning .stat-value {
+    color: #e65100;
+}
+
+.stat-card.success {
+    background: #e3f9e5;
+}
+
+.stat-card.success .stat-value {
+    color: #1e7e34;
+}
+
+.stat-card.error {
+    background: #ffeef0;
+}
+
+.stat-card.error .stat-value {
+    color: #d73a49;
+}
+
+/* 抽屉宽度调整 */
+.drawer {
+    width: 700px;
+}
+
+/* 表格响应式 */
+.stats-table {
+    display: block;
+    overflow-x: auto;
+}
+
+.stats-table th,
+.stats-table td {
+    white-space: nowrap;
+}
+
+.stats-table td:last-child {
+    white-space: normal;
+}
+
+
+/* ========== 详细错误展示样式 - 黑白配色 ========== */
+
+/* 严重程度徽章 */
+.severity-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.severity-high {
+    background: #1d1d1f;
+    color: #fff;
+}
+
+.severity-medium {
+    background: #86868b;
+    color: #fff;
+}
+
+.severity-low {
+    background: #e5e5e5;
+    color: #1d1d1f;
+}
+
+/* 分析徽章 */
+.analysis-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.analysis-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.badge-success {
+    background: #e3f9e5;
+    color: #1e7e34;
+}
+
+.badge-error {
+    background: #ffeef0;
+    color: #d73a49;
+}
+
+.badge-warning {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+/* 建议文本 */
+.suggestion-text {
+    font-size: 11px;
+    color: #1565c0;
+    background: #e3f2fd;
+    padding: 6px 8px;
+    border-radius: 4px;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+/* 标签扩展 */
+.tag-orange {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+/* 效果单元格优化 */
+.effect-cell {
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.effect-cell .label {
+    color: #86868b;
+    font-size: 11px;
+}
+
+
+/* ========== AI评估按钮和弹窗样式 ========== */
+
+/* 作业项布局调整 */
+.homework-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.homework-item-content {
+    flex: 1;
+    cursor: pointer;
+}
+
+.homework-item-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: 12px;
+}
+
+/* AI评估按钮 */
+.btn-ai {
+    background: #1d1d1f;
+    color: #fff;
+    border: none;
+    font-size: 12px;
+    padding: 6px 12px;
+    white-space: nowrap;
+}
+
+.btn-ai:hover {
+    background: #424245;
+}
+
+/* AI评估弹窗信息区 */
+.ai-eval-info {
+    background: #f5f5f7;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.ai-eval-info .info-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.ai-eval-info .info-row:last-child {
+    margin-bottom: 0;
+}
+
+.ai-eval-info .info-label {
+    font-size: 13px;
+    color: #86868b;
+    width: 100px;
+}
+
+.ai-eval-info .info-value {
+    font-size: 14px;
+    color: #1d1d1f;
+    font-weight: 500;
+}
+
+/* AI评估选项 */
+.ai-eval-options {
+    margin-bottom: 16px;
+}
+
+.eval-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #f5f5f7;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.eval-option:hover {
+    background: #e5e5e5;
+}
+
+.eval-option input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+
+.eval-option span {
+    font-size: 14px;
+    color: #1d1d1f;
+}
+
+/* AI评估操作按钮 */
+.ai-eval-actions {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.ai-eval-actions .btn-primary {
+    padding: 12px 32px;
+    font-size: 15px;
+    background: #1d1d1f;
+}
+
+.ai-eval-actions .btn-primary:hover {
+    background: #424245;
+}
+
+/* AI评估结果区 */
+.ai-eval-result {
+    border-top: 1px solid #e5e5e5;
+    padding-top: 20px;
+}
+
+.ai-eval-result .result-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin-bottom: 16px;
+}
+
+/* 错误列表 - 黑白配色 */
+.error-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.error-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: #f5f5f7;
+    border-radius: 8px;
+    border-left: 3px solid #1d1d1f;
+}
+
+.error-index {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d1d1f;
+    min-width: 50px;
+}
+
+.error-detail {
+    flex: 1;
+    font-size: 13px;
+    color: #424245;
+}
+
+.error-detail .label {
+    color: #86868b;
+}
+
+.more-errors {
+    text-align: center;
+    padding: 12px;
+    color: #86868b;
+    font-size: 13px;
+}
+
+.success-message {
+    text-align: center;
+    padding: 24px;
+    background: #f5f5f7;
+    border-radius: 8px;
+    color: #1d1d1f;
+    font-size: 16px;
+    font-weight: 500;
+    border: 1px solid #e5e5e5;
+}
+
+
+/* ========== 批量评估进度条 ========== */
+.batch-eval-progress {
+    background: #f5f5f7;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.batch-eval-progress .progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.batch-eval-progress .progress-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1d1d1f;
+}
+
+.batch-eval-progress .progress-stats {
+    font-size: 14px;
+    color: #86868b;
+}
+
+.batch-eval-progress .progress-bar-wrap {
+    height: 8px;
+    background: #e5e5e5;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.batch-eval-progress .progress-bar-fill {
+    height: 100%;
+    background: #1d1d1f;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.batch-eval-progress .progress-detail {
+    font-size: 12px;
+    color: #86868b;
+    margin-top: 8px;
+    text-align: right;
+}
+
+
+/* ========== 错误题目卡片式展示 - 黑白配色 ========== */
+.error-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.error-card {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.error-card-header {
+    background: #1d1d1f;
+    padding: 10px 16px;
+}
+
+.error-card-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.error-index {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.error-card-body {
+    padding: 16px;
+    background: #fff;
+}
+
+/* 对比表格容器 */
+.compare-table-wrap {
+    overflow-x: auto;
+    margin-bottom: 12px;
+}
+
+/* 详细对比表格 - 黑白风格 */
+.compare-detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.compare-detail-table th,
+.compare-detail-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border: 1px solid #e5e5e5;
+}
+
+.compare-detail-table th {
+    background: #f5f5f7;
+    font-weight: 500;
+    color: #86868b;
+    font-size: 12px;
+}
+
+.compare-detail-table .field-col {
+    width: 80px;
+    background: #f5f5f7;
+}
+
+.compare-detail-table .base-col {
+    width: 35%;
+    background: #fafafa;
+}
+
+.compare-detail-table .ai-col {
+    width: 35%;
+    background: #f5f5f7;
+}
+
+.compare-detail-table .match-col {
+    width: 60px;
+    text-align: center;
+    background: #fff;
+}
+
+.compare-detail-table .field-name {
+    font-weight: 500;
+    color: #86868b;
+    background: #f5f5f7;
+}
+
+.compare-detail-table .base-value {
+    color: #1d1d1f;
+    background: #fafafa;
+}
+
+.compare-detail-table .ai-value {
+    color: #1d1d1f;
+    background: #f5f5f7;
+}
+
+.compare-detail-table .user-answer {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.compare-detail-table .highlight-row td {
+    border-top: 1px solid #1d1d1f;
+    border-bottom: 1px solid #1d1d1f;
+}
+
+.compare-detail-table .match-status {
+    text-align: center;
+}
+
+.match-yes {
+    color: #1d1d1f;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.match-no {
+    color: #1d1d1f;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: line-through;
+}
+
+/* 错误说明 - 黑白风格 */
+.error-explanation {
+    background: #f5f5f7;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    border-left: 3px solid #1d1d1f;
+}
+
+.explanation-label {
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.explanation-text {
+    color: #424245;
+}
+
+
+/* ========== 完整数据对比表格 ========== */
+.data-tables-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.data-table-section {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.data-table-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #f5f5f7;
+    border-bottom: 1px solid #e5e5e5;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1d1d1f;
+}
+
+.title-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.title-icon.base-icon {
+    background: #1e7e34;
+}
+
+.title-icon.ai-icon {
+    background: #1565c0;
+}
+
+.btn-copy {
+    margin-left: auto;
+    background: #fff;
+    border: 1px solid #d2d2d7;
+    color: #86868b;
+    font-size: 11px;
+    padding: 4px 8px;
+}
+
+.btn-copy:hover {
+    background: #f5f5f7;
+    color: #1d1d1f;
+}
+
+.data-table-wrap {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.full-data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.full-data-table th,
+.full-data-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.full-data-table th {
+    background: #f9f9f9;
+    font-weight: 500;
+    color: #86868b;
+    font-size: 12px;
+    position: sticky;
+    top: 0;
+}
+
+.full-data-table .index-cell {
+    width: 60px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.full-data-table .answer-cell {
+    color: #1d1d1f;
+    word-break: break-all;
+}
+
+.full-data-table .correct-cell {
+    width: 60px;
+    text-align: center;
+}
+
+.json-data {
+    display: none;
+}
+
+/* 响应式：小屏幕时垂直排列 */
+@media (max-width: 900px) {
+    .data-tables-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* ========== 题目类型分类统计样式 ========== */
+.type-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.type-stats-section {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.type-stats-title {
+    padding: 10px 12px;
+    background: #f5f5f7;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1d1d1f;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.type-stats-section .stats-table {
+    margin: 0;
+}
+
+.type-stats-section .stats-table th,
+.type-stats-section .stats-table td {
+    padding: 8px 12px;
+    font-size: 12px;
+}
+
+/* 响应式：小屏幕时垂直排列 */
+@media (max-width: 768px) {
+    .type-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* ========== 汇总卡片样式 ========== */
+.summary-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.summary-content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.summary-item:last-child {
+    border-bottom: none;
+}
+
+.summary-label {
+    font-size: 13px;
+    color: #86868b;
+}
+
+.summary-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.summary-value.success-text {
+    color: #1e7e34;
+}
+
+.summary-value.error-text {
+    color: #d73a49;
+}
+
+/* 汇总卡片 */
+.summary-card {
+    background: #f5f5f7;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+}
+
+.summary-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin-bottom: 8px;
+}
+
+.summary-desc {
+    font-size: 14px;
+    color: #86868b;
+}
+
+/* 准确率颜色 */
+.accuracy-high {
+    color: #1e7e34;
+    font-weight: 600;
+}
+
+.accuracy-medium {
+    color: #e65100;
+    font-weight: 600;
+}
+
+.accuracy-low {
+    color: #d73a49;
+    font-weight: 600;
+}
+
+/* 优化type-stats-grid在只有一列数据时的显示 */
+.type-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+/* 总体报告区域优化 */
+.overall-report {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    border: 1px solid #e5e5e5;
+}
+
+.report-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+/* 统计卡片网格优化 */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+/* 作业列表容器优化 */
+.homework-list-container {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.homework-list-container .list-header {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+/* ========== 题目类型分类统计样式 ========== */
+.type-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.type-stats-section {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.type-stats-title {
+    padding: 12px 16px;
+    background: #f5f5f7;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d1d1f;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.type-stats-section .stats-table {
+    margin: 0;
+    display: table;
+    width: 100%;
+}
+
+.type-stats-section .stats-table th,
+.type-stats-section .stats-table td {
+    padding: 12px 16px;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.type-stats-section .stats-table th {
+    background: #fafafa;
+    color: #86868b;
+    font-weight: 500;
+}
+
+.type-stats-section .stats-table td {
+    color: #1d1d1f;
+}
+
+.type-stats-section .stats-table tbody tr:hover {
+    background: #f9f9f9;
+}
+
+/* 响应式：小屏幕时垂直排列 */
+@media (max-width: 768px) {
+    .type-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}

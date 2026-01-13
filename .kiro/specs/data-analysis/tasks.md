@@ -1,0 +1,204 @@
+# Implementation Plan
+
+- [x] 1. 项目基础设施搭建
+  - [x] 1.1 创建数据分析模块目录结构和存储目录
+    - 创建 `analysis_tasks` 目录用于存储任务数据
+    - 创建 `analysis_files` 目录用于存储上传的文件
+    - _Requirements: 1.1, 1.2_
+  - [ ]* 1.2 Write property test for task ID uniqueness
+    - **Property 1: Task ID Uniqueness**
+    - **Validates: Requirements 1.2**
+
+- [x] 2. 任务管理 API 实现
+  - [x] 2.1 实现任务创建 API
+    - 在 app.py 中添加 `POST /api/analysis/tasks` 路由
+    - 生成唯一 task_id，存储任务元数据到 JSON 文件
+    - _Requirements: 1.1, 1.2_
+  - [x] 2.2 实现任务列表和详情 API
+    - 添加 `GET /api/analysis/tasks` 获取任务列表
+    - 添加 `GET /api/analysis/tasks/{task_id}` 获取任务详情
+    - _Requirements: 8.4_
+  - [x] 2.3 实现任务删除 API
+    - 添加 `DELETE /api/analysis/tasks/{task_id}` 删除任务及关联文件
+    - _Requirements: 1.1_
+  - [ ]* 2.4 Write property test for task list display completeness
+    - **Property 11: Task List Display Completeness**
+    - **Validates: Requirements 8.4**
+
+- [x] 3. 文件上传功能实现
+  - [x] 3.1 实现文件上传 API
+    - 添加 `POST /api/analysis/tasks/{task_id}/files` 路由
+    - 实现文件格式验证（仅 xlsx）和大小验证（≤10MB）
+    - 实现文件数量限制（≤10 个）
+    - _Requirements: 1.3, 1.4, 1.5_
+  - [x] 3.2 实现文件列表 API
+    - 添加 `GET /api/analysis/tasks/{task_id}/files` 获取文件列表
+    - _Requirements: 1.4_
+  - [ ]* 3.3 Write property test for file validation
+    - **Property 2: File Validation Consistency**
+    - **Validates: Requirements 1.3, 1.5**
+  - [ ]* 3.4 Write property test for file-task association
+    - **Property 3: File-Task Association Integrity**
+    - **Validates: Requirements 1.4**
+
+- [x] 4. Checkpoint - 确保所有测试通过
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 5. 工作流引擎实现
+  - [x] 5.1 实现工作流状态管理
+    - 创建工作流状态模型（current_step, steps, files_progress）
+    - 实现状态持久化到任务 JSON 文件
+    - _Requirements: 7.1, 7.2_
+  - [x] 5.2 实现工作流启动 API
+    - 添加 `POST /api/analysis/tasks/{task_id}/workflow/start` 路由
+    - 初始化工作流状态，开始第一步（数据解析）
+    - _Requirements: 2.1_
+  - [x] 5.3 实现工作流状态查询 API
+    - 添加 `GET /api/analysis/tasks/{task_id}/workflow/status` 路由
+    - 返回当前步骤、各步骤状态、文件进度
+    - _Requirements: 7.1, 7.2, 7.3_
+  - [x] 5.4 实现工作流重试 API
+    - 添加 `POST /api/analysis/tasks/{task_id}/workflow/retry` 路由
+    - 支持重试失败的步骤或文件
+    - _Requirements: 7.5_
+  - [ ]* 5.5 Write property test for workflow step progression
+    - **Property 6: Workflow Step Progression**
+    - **Validates: Requirements 2.5, 3.5, 4.5**
+  - [ ]* 5.6 Write property test for workflow progress state consistency
+    - **Property 10: Workflow Progress State Consistency**
+    - **Validates: Requirements 7.1, 7.2, 7.3**
+
+- [x] 6. LLM 数据解析步骤实现
+  - [x] 6.1 实现 Excel 文件读取功能
+    - 使用 openpyxl 读取 xlsx 文件
+    - 提取工作表数据为结构化格式
+    - _Requirements: 2.1_
+  - [x] 6.2 实现 LLM 数据解析服务
+    - 创建 LLM 调用函数，发送表格数据进行结构理解
+    - 解析 LLM 返回的列含义和数据摘要
+    - _Requirements: 2.2, 2.3_
+  - [x] 6.3 实现并发文件解析
+    - 使用 concurrent.futures 并发处理多个文件
+    - 每个文件解析完成后立即更新状态
+    - _Requirements: 2.2, 7.3_
+  - [ ]* 6.4 Write property test for concurrent processing completeness
+    - **Property 4: Concurrent Processing Completeness**
+    - **Validates: Requirements 2.2, 3.1**
+  - [ ]* 6.5 Write property test for structured output format (parsing)
+    - **Property 5: Structured Output Format**
+    - **Validates: Requirements 2.3**
+
+- [x] 7. LLM 内容分析步骤实现
+  - [x] 7.1 实现 LLM 内容分析服务
+    - 创建 LLM 调用函数，发送解析数据进行内容分析
+    - 提取关键发现、模式、统计数据
+    - _Requirements: 3.1, 3.2_
+  - [x] 7.2 实现并发文件分析
+    - 使用 concurrent.futures 并发分析多个文件
+    - 每个文件分析完成后立即更新状态和结果
+    - _Requirements: 3.1, 3.3, 7.3_
+
+- [x] 8. Checkpoint - 确保所有测试通过
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 9. LLM 报告模板生成步骤实现
+  - [x] 9.1 实现分析结果聚合
+    - 汇总所有文件的分析结果
+    - 准备发送给 LLM 的聚合数据
+    - _Requirements: 4.1_
+  - [x] 9.2 实现 LLM 模板生成服务
+    - 创建 LLM 调用函数，根据分析结果生成报告模板
+    - 解析返回的模板结构（sections, headings, placeholders）
+    - _Requirements: 4.2, 4.3_
+  - [ ]* 9.3 Write property test for template structure completeness
+    - **Property 7: Template Structure Completeness**
+    - **Validates: Requirements 4.2, 4.3**
+
+- [x] 10. LLM 报告编写步骤实现
+  - [x] 10.1 实现 LLM 报告编写服务
+    - 创建 LLM 调用函数，根据模板和分析结果编写完整报告
+    - 确保报告覆盖所有模板章节
+    - _Requirements: 5.1, 5.2_
+  - [x] 10.2 实现报告预览 API
+    - 添加 `GET /api/analysis/tasks/{task_id}/report` 路由
+    - 返回报告模板和内容
+    - _Requirements: 5.3, 5.4_
+  - [ ]* 10.3 Write property test for report content coverage
+    - **Property 8: Report Content Coverage**
+    - **Validates: Requirements 5.2, 5.4**
+
+- [x] 11. Word 文档导出实现
+  - [x] 11.1 实现 Word 文档生成
+    - 使用 python-docx 库生成 Word 文档
+    - 应用专业格式（标题、段落、表格）
+    - _Requirements: 6.1, 6.3_
+  - [x] 11.2 实现报告下载 API
+    - 添加 `GET /api/analysis/tasks/{task_id}/download` 路由
+    - 返回生成的 .docx 文件
+    - _Requirements: 6.2_
+  - [ ]* 11.3 Write property test for Word document format validity
+    - **Property 9: Word Document Format Validity**
+    - **Validates: Requirements 6.1, 6.3**
+
+- [x] 12. Checkpoint - 确保所有测试通过
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 13. 前端页面实现
+  - [x] 13.1 创建数据分析页面模板
+    - 创建 `templates/data-analysis.html`
+    - 实现页面布局：侧边栏任务列表、主区域工作流面板
+    - _Requirements: 8.3_
+  - [x] 13.2 实现任务创建和文件上传 UI
+    - 实现任务创建表单
+    - 实现多文件拖拽上传组件
+    - _Requirements: 1.1, 1.3_
+  - [x] 13.3 实现工作流步骤面板
+    - 实现步骤指示器组件
+    - 实现步骤状态显示（pending, running, completed, failed）
+    - _Requirements: 7.1_
+  - [x] 13.4 实现文件处理进度显示
+    - 实现每个文件的处理状态显示
+    - 实现实时进度更新
+    - _Requirements: 7.2, 7.3_
+  - [x] 13.5 实现结果展示组件
+    - 实现可展开/折叠的文件结果卡片
+    - 实现解析结果、分析结果、模板、报告的展示
+    - _Requirements: 2.4, 3.4, 4.4, 5.3_
+
+- [x] 14. 前端 JavaScript 实现
+  - [x] 14.1 创建数据分析页面 JS
+    - 创建 `static/js/data-analysis.js`
+    - 实现任务管理功能（创建、列表、删除）
+    - _Requirements: 1.1, 8.4_
+  - [x] 14.2 实现文件上传功能
+    - 实现多文件选择和上传
+    - 实现上传进度显示
+    - _Requirements: 1.3, 1.4_
+  - [x] 14.3 实现工作流控制功能
+    - 实现工作流启动
+    - 实现状态轮询和实时更新
+    - 实现步骤重试功能
+    - _Requirements: 7.1, 7.3, 7.5_
+  - [x] 14.4 实现报告下载功能
+    - 实现 Word 文档下载
+    - _Requirements: 6.2_
+
+- [x] 15. 前端样式实现
+  - [x] 15.1 创建数据分析页面 CSS
+    - 创建 `static/css/data-analysis.css`
+    - 实现页面布局样式
+    - 实现工作流面板样式
+    - 实现结果卡片样式
+    - _Requirements: 8.3_
+
+- [x] 16. 导航入口添加
+  - [x] 16.1 在主页添加数据分析入口
+    - 修改 `templates/index.html` 侧边栏
+    - 添加"数据分析"导航链接
+    - _Requirements: 8.1, 8.2_
+  - [x] 16.2 添加数据分析页面路由
+    - 在 app.py 中添加 `/data-analysis` 路由
+    - _Requirements: 8.2_
+
+- [x] 17. Final Checkpoint - 确保所有测试通过
+  - Ensure all tests pass, ask the user if questions arise.

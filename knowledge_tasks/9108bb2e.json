@@ -1,0 +1,56 @@
+{
+  "task_id": "9108bb2e",
+  "created_at": "2026-01-06T13:44:49.892972",
+  "status": "parsed",
+  "config": {
+    "multimodal_model": "doubao-1-5-vision-pro-32k-250115",
+    "text_model": "deepseek-v3.2",
+    "similarity_threshold": 0.85,
+    "questions_per_point": 1
+  },
+  "images": [
+    {
+      "id": "a959863d",
+      "filename": "1.jpg",
+      "path": "knowledge_uploads\\9108bb2e\\e42bd802_1.jpg"
+    }
+  ],
+  "parsed_questions": [
+    {
+      "id": "eb31e781",
+      "image_source": "1.jpg",
+      "content": "解析失败: Invalid \\escape: line 2 column 41 (char 42)",
+      "subject": "",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "81e822ac",
+          "primary": "JSON语法规范",
+          "secondary": "转义字符处理",
+          "analysis": "题目中出现的错误信息'Invalid \\escape'表明JSON解析器在处理字符串时遇到了非法转义序列。在JSON标准中，反斜杠（\\）是转义字符，其后必须跟随特定字符（如\\\"、\\\\、\\n、\\t等）。当遇到'\\e'这类未定义的转义序列时，解析器会报错。解题关键步骤：1. 检查字符串中所有反斜杠的使用；2. 确保转义序列符合JSON规范；3. 对于需要字面意义的反斜杠，应使用双反斜杠（\\\\）表示。"
+        },
+        {
+          "id": "88a0f7b1",
+          "primary": "数据结构解析",
+          "secondary": "字符位置定位",
+          "analysis": "错误提示'line 2 column 41 (char 42)'提供了精确定位信息：第2行第41列（总第42个字符）。解题思路：1. 理解行列计数从1开始，字符索引从0开始；2. 通过定位找到问题字符周围的上下文；3. 分析该位置字符的语法作用。关键步骤包括：计算字符偏移量、检查前后字符组合、验证转义序列完整性。"
+        },
+        {
+          "id": "74c38f37",
+          "primary": "数据格式验证",
+          "secondary": "语法完整性检查",
+          "analysis": "完整的JSON解析过程需要验证：1. 字符串引号是否成对出现；2. 特殊字符是否正确转义；3. 数据结构层次是否完整。解题时应采用系统化检查：从错误位置向前回溯查找未闭合的引号，向后检查转义序列的完整性，特别注意字符串边界内的所有字符都需要正确处理。"
+        },
+        {
+          "id": "09b4e095",
+          "primary": "编程语言交互",
+          "secondary": "错误信息解读",
+          "analysis": "不同编程语言的JSON库可能产生略有差异的错误信息，但核心原理相同。解题时需要：1. 理解'Invalid escape'是标准JSON错误类型；2. 掌握常见转义序列对照表；3. 使用验证工具辅助定位。关键步骤包括：将问题JSON片段放入验证工具、逐字符分析、比较标准语法规范。"
+        }
+      ]
+    }
+  ],
+  "dedupe_results": [],
+  "similar_questions": []
+}

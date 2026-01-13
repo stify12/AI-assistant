@@ -1,0 +1,121 @@
+{
+  "task_id": "964b2d1b",
+  "name": "批量评估-2026/1/9",
+  "status": "completed",
+  "homework_items": [
+    {
+      "homework_id": "2009518560046501889",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 85,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_85_HINUT.jpg",
+      "homework_result": "[\n\t{\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"1\",\n\t\t\"mainAnswer\":\"气态 液态  \",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"1. 液态 气态\\\\n2. 升高温度、压缩体积\"\n\t},\n\t{\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"2\",\n\t\t\"mainAnswer\":\"降低温度 压缩体积  \\n \",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"吸 放\"\n\t},\n\t{\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"3\",\n\t\t\"mainAnswer\":\"吸 放  \",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"\"\n\t},\n\t{\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"例1\",\n\t\t\"mainAnswer\":\"壶内 液化 汽化\",\n\t\t\"tempIndex\":3,\n\t\t\"userAnswer\":\"壶内 液化 汽化\"\n\t},\n\t{\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"例2\",\n\t\t\"mainAnswer\":\"变小 液化 降低温度\",\n\t\t\"tempIndex\":4,\n\t\t\"userAnswer\":\"变大 汽化 吸收\"\n\t},\n\t{\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"例3\",\n\t\t\"mainAnswer\":\"液化 外 内\",\n\t\t\"tempIndex\":5,\n\t\t\"userAnswer\":\"汽化 左 外\"\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.0,
+      "evaluation": {
+        "accuracy": 0.0,
+        "total_questions": 6,
+        "correct_count": 0,
+        "error_count": 6,
+        "errors": [
+          {
+            "index": "1",
+            "base_answer": "气态 液态",
+            "base_user": "液态 气态",
+            "hw_user": "1. 液态 气态\\n2. 升高温度、压缩体积",
+            "error_type": "答案不匹配"
+          },
+          {
+            "index": "2",
+            "base_answer": "降低温度 压缩体积",
+            "base_user": "升高温度 压缩体积",
+            "hw_user": "吸 放",
+            "error_type": "答案不匹配"
+          },
+          {
+            "index": "3",
+            "base_answer": "吸 放",
+            "base_user": "吸 放",
+            "hw_user": "",
+            "error_type": "答案不匹配"
+          },
+          {
+            "index": "4",
+            "base_answer": "壶内 液化 汽化",
+            "base_user": "壶内 液化 汽化",
+            "hw_user": "",
+            "error_type": "缺失题目"
+          },
+          {
+            "index": "5",
+            "base_answer": "变小 液化 降低温度",
+            "base_user": "变大 汽化 吸收",
+            "hw_user": "",
+            "error_type": "缺失题目"
+          },
+          {
+            "index": "6",
+            "base_answer": "液化 外 内",
+            "base_user": "汽化 左 外",
+            "hw_user": "",
+            "error_type": "缺失题目"
+          }
+        ]
+      }
+    },
+    {
+      "homework_id": "2009518590568452098",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 86,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_86_TIVAK.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"汽化 吸收 降低\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"例4\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"液化，吸收，降低\"\n\t},\n\t{\n\t\t\"answer\":\"小水珠 升高 放热\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"例5\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"水蒸气，升高，放热\"\n\t},\n\t{\n\t\t\"answer\":\"水蒸气 液化 小水珠\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"水蒸气，液化，小水珠\"\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.0,
+      "evaluation": {
+        "accuracy": 0.0,
+        "total_questions": 3,
+        "correct_count": 0,
+        "error_count": 3,
+        "errors": [
+          {
+            "index": "例4",
+            "base_answer": "汽化 吸收 降低",
+            "base_user": "液化 吸收 降低",
+            "hw_user": "液化，吸收，降低",
+            "error_type": "答案不匹配"
+          },
+          {
+            "index": "例5",
+            "base_answer": "小水珠 升高 放热",
+            "base_user": "水蒸气 升高 放热",
+            "hw_user": "水蒸气，升高，放热",
+            "error_type": "答案不匹配"
+          },
+          {
+            "index": "1",
+            "base_answer": "水蒸气 液化 小水滴",
+            "base_user": "水蒸气 液化 小水珠",
+            "hw_user": "水蒸气，液化，小水珠",
+            "error_type": "答案不匹配"
+          }
+        ]
+      }
+    }
+  ],
+  "overall_report": {
+    "overall_accuracy": 0.0,
+    "total_homework": 2,
+    "total_questions": 9,
+    "correct_questions": 0
+  },
+  "created_at": "2026-01-09T15:50:40.516816"
+}

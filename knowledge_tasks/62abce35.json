@@ -1,0 +1,166 @@
+{
+  "task_id": "62abce35",
+  "created_at": "2026-01-12T12:53:32.649615",
+  "status": "parsed",
+  "config": {
+    "multimodal_model": "doubao-1-5-vision-pro-32k-250115",
+    "text_model": "deepseek-v3.2",
+    "similarity_threshold": 0.85,
+    "questions_per_point": 1
+  },
+  "images": [
+    {
+      "id": "5ec3bc3e",
+      "filename": "8.jpg",
+      "path": "knowledge_uploads\\62abce35\\30313d00_8.jpg"
+    }
+  ],
+  "parsed_questions": [
+    {
+      "id": "or6f2jar",
+      "image_source": "8.jpg",
+      "content": "1. 若\\( x_1, x_2 \\)是一元二次方程\\( x^2 - 3x + 2 = 0 \\)的两个实数根，则\\( \frac{1}{x_1} + \frac{1}{x_2} \\)的值为（ ）\nA. \\( \frac{3}{2} \\) B. 2 C. \\( -\frac{3}{2} \\) D. -2",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "fmpakonc",
+          "primary": "一元二次方程根与系数",
+          "secondary": "考查韦达定理（Vieta's formulas）的应用，即对于一元二次方程 ax^2+bx+c=0 的两根 x1, x2，有 x1+x2=-b/a，x1*x2=c/a。本题要求利用韦达定理求两根倒数和 (1/x1+1/x2) 的值。",
+          "analysis": "1. 根据韦达定理，由方程 x^2-3x+2=0 得：x1+x2=3，x1*x2=2。\n2. 将所求式通分：1/x1+1/x2 = (x1+x2)/(x1*x2)。\n3. 代入已知值：原式 = 3/2。"
+        }
+      ]
+    },
+    {
+      "id": "xnzpa0e4",
+      "image_source": "8.jpg",
+      "content": "2. 若1和-2是关于x的一元二次方程\\( x^2 + mx + n = 0 \\)的两个根，则（ ）\nA. \\( m = 1, n = 2 \\) B. \\( m = 1, n = -2 \\) C. \\( m = -1, n = 2 \\) D. \\( m = -1, n = -2 \\)",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "wj3aefes",
+          "primary": "一元二次方程根与系数",
+          "secondary": "考查一元二次方程根与系数的关系（韦达定理）：若方程 ax²+bx+c=0 (a≠0) 的两根为 x₁, x₂，则 x₁+x₂=-b/a，x₁x₂=c/a。本题中 a=1，直接应用可得 m=-(x₁+x₂)，n=x₁x₂。",
+          "analysis": "解题步骤：1. 根据韦达定理，对于方程 x²+mx+n=0，两根之和为 -m，两根之积为 n。2. 已知两根为 1 和 -2，代入得：-m=1+(-2)=-1 ⇒ m=1；n=1×(-2)=-2。3. 对应选项为 B。"
+        }
+      ]
+    },
+    {
+      "id": "bo2py3qa",
+      "image_source": "8.jpg",
+      "content": "3. 已知关于x的方程\\( x^2 + bx + c = 0 \\)的两根为\\( \\sqrt{2} + 1 \\)和\\( \\sqrt{2} - 1 \\)，则\\( c = \\)____.",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "r7j8c79k",
+          "primary": "一元二次方程根与系数",
+          "secondary": "考查韦达定理（Vieta's formulas）的应用，即一元二次方程ax²+bx+c=0的两根x₁、x₂满足x₁+x₂=-b/a，x₁x₂=c/a。本题中已知两根，可直接利用两根之积求常数项c。",
+          "analysis": "1. 根据韦达定理，方程x²+bx+c=0的两根之积等于常数项c。\n2. 将已知两根(√2+1)和(√2-1)相乘：c = (√2+1)(√2-1)。\n3. 利用平方差公式计算：(√2)² - 1² = 2 - 1 = 1。\n4. 因此c = 1。"
+        }
+      ]
+    },
+    {
+      "id": "0hit643f",
+      "image_source": "8.jpg",
+      "content": "4. 若一元二次方程\\( 2x^2 - 4x - 1 = 0 \\)的两根为m，n，则\\( m + n - 2mn \\)的值为____.",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "xm8oq720",
+          "primary": "一元二次方程根与系数",
+          "secondary": "考查韦达定理（根与系数的关系）的应用，即对于一元二次方程ax²+bx+c=0的两根m、n，有m+n=-b/a，mn=c/a。题目要求利用这两个关系式求代数式m+n-2mn的值。",
+          "analysis": "1. 根据韦达定理，由方程2x²-4x-1=0得：m+n=-(-4)/2=2，mn=(-1)/2=-1/2。2. 将m+n和mn的值代入所求代数式：m+n-2mn = 2 - 2×(-1/2) = 2 - (-1) = 2+1 = 3。"
+        }
+      ]
+    },
+    {
+      "id": "4o7nc6fq",
+      "image_source": "8.jpg",
+      "content": "5. 已知关于x的一元二次方程\\( 8x^2 - (k - 1)x + k - 7 = 0 \\)的一个根是-1，求k的值和另一个根.",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "juhzno8x",
+          "primary": "一元二次方程根与系数",
+          "secondary": "考查已知一元二次方程的一个根，利用根的定义或韦达定理求参数及另一个根",
+          "analysis": "1. 将已知根x=-1代入原方程，得到关于k的方程：8*(-1)^2 - (k-1)*(-1) + k - 7 = 0；2. 化简方程：8 + (k-1) + k - 7 = 0；3. 解出k的值；4. 将k代回原方程，利用韦达定理x1*x2 = (k-7)/8，已知x1=-1，即可求出另一个根x2"
+        }
+      ]
+    },
+    {
+      "id": "2ogxq30z",
+      "image_source": "8.jpg",
+      "content": "6. 已知\\( x_1, x_2 \\)是关于x的一元二次方程\\( x^2 - 2kx + k - 1 = 0 \\)的两个不相等的实数根，且满足\\( x_1 + x_2 - x_1x_2 = 5 \\)，求k的值.",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "2tnd51hp",
+          "primary": "一元二次方程根与系数",
+          "secondary": "考查韦达定理（根与系数的关系）的应用，即对于一元二次方程ax²+bx+c=0的两根x₁、x₂，有x₁+x₂=-b/a，x₁x₂=c/a。题目中利用两根之和与两根之积的关系，结合已知条件构建关于参数k的方程。",
+          "analysis": "1. 根据韦达定理，由方程x²-2kx+k-1=0得：x₁+x₂=2k，x₁x₂=k-1。2. 将上述结果代入已知条件x₁+x₂-x₁x₂=5，得到方程：2k - (k-1) = 5。3. 解该方程：2k - k + 1 = 5 → k + 1 = 5 → k = 4。4. 注意需验证判别式Δ>0确保两根不相等：Δ=(-2k)²-4×1×(k-1)=4k²-4k+4，当k=4时，Δ=4×16-16+4=52>0，满足条件。"
+        }
+      ]
+    },
+    {
+      "id": "heroelh9",
+      "image_source": "8.jpg",
+      "content": "7. 若关于x的一元二次方程\\( x^2 + px + q = 0 \\)的两根同为负数，则p，q的正负情况分别为（ ）\nA. \\( p > 0, q > 0 \\) B. \\( p > 0, q < 0 \\) C. \\( p < 0, q > 0 \\) D. \\( p < 0, q < 0 \\)",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "ahlt1611",
+          "primary": "一元二次方程根的性质",
+          "secondary": "考查一元二次方程根与系数的关系（韦达定理）以及根的符号与系数正负的关系。具体涉及两根同为负数时，系数p和q的正负情况判断。",
+          "analysis": "设方程的两根为x1和x2，且x1<0，x2<0。根据韦达定理：x1+x2=-p，x1*x2=q。由于两根同为负数，所以x1+x2<0，即-p<0，因此p>0；同时x1*x2>0，即q>0。故p>0且q>0，答案为A。"
+        }
+      ]
+    },
+    {
+      "id": "u0ryf2r1",
+      "image_source": "8.jpg",
+      "content": "8. 已知关于x的一元二次方程\\( x^2 + (m + 4)x + m + 3 = 0 \\)。\n（1）求证：无论m取何值，方程总有实数根；\n（2）若\\( x_1, x_2 \\)是方程的两个根，且\\( x_1^2x_2 + x_1x_2^2 = 0 \\)，求m的值",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "zdt4yx1e",
+          "primary": "一元二次方程",
+          "secondary": "考查一元二次方程根的判别式（Δ）与韦达定理（根与系数的关系）的应用。第（1）问通过计算判别式证明方程恒有实数根；第（2）问利用韦达定理将已知条件转化为关于参数m的方程进行求解。",
+          "analysis": "（1）计算判别式Δ = (m+4)² - 4(m+3) = m²+4m+4 = (m+2)² ≥ 0，故方程总有实数根。（2）由韦达定理：x₁+x₂ = -(m+4)，x₁x₂ = m+3。将条件x₁²x₂ + x₁x₂² = 0因式分解为x₁x₂(x₁+x₂)=0，代入得(m+3)[-(m+4)]=0，解得m=-3或m=-4。"
+        }
+      ]
+    },
+    {
+      "id": "nfpv120r",
+      "image_source": "8.jpg",
+      "content": "9.（综合运用）已知\\( \\square ABCD \\)的两边AB，AD的长是关于x的方程\\( x^2 - mx + \frac{m}{2} - \frac{1}{4} = 0 \\)的两个实数根。\n（1）当m为何值时，四边形ABCD是菱形？求出这时菱形的边长；\n（2）若AB的长为2，那么\\( \\square ABCD \\)的周长是多少？",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "kr3bi5vo",
+          "primary": "一元二次方程与几何性",
+          "secondary": "考查一元二次方程根与系数的关系（韦达定理）与特殊平行四边形（菱形、平行四边形）的边长性质的综合应用。具体包括：利用方程有实数根的条件（判别式≥0）及菱形邻边相等的性质确定参数m和边长；利用平行四边形对边相等的性质求周长。",
+          "analysis": "（1）设AB=a，AD=b，则a,b为方程的两实根。菱形要求a=b，即方程有两相等实根，故判别式Δ=m²-4( m/2 - 1/4 )=0，解得m=1，代入方程得边长a=b=1/2。（2）若AB=2，则一根为2，代入方程得4-2m+ m/2 - 1/4=0，解得m=5/2，由韦达定理得AD= m - AB = 5/2 - 2 = 1/2，平行四边形周长=2(AB+AD)=5。"
+        }
+      ]
+    }
+  ],
+  "dedupe_results": [],
+  "similar_questions": []
+}

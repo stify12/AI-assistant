@@ -1,0 +1,97 @@
+{
+  "bing_search": {
+    "name": "bing_search",
+    "display_name": "必应搜索",
+    "description": "搜索互联网获取实时信息。适用于：查询新闻、天气、股票、最新事件、不确定的事实等。不要用于：基础知识问答、数学计算、日期星期计算等你已知的信息。",
+    "enabled": true,
+    "builtin": true,
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "搜索关键词"
+        },
+        "num_results": {
+          "type": "integer",
+          "description": "返回结果数量，默认5",
+          "default": 5
+        }
+      },
+      "required": [
+        "query"
+      ]
+    }
+  },
+  "fetch_webpage": {
+    "name": "fetch_webpage",
+    "display_name": "网页抓取",
+    "description": "获取搜索结果中某个网页的详细内容。需要先调用bing_search获取结果ID。",
+    "enabled": false,
+    "builtin": true,
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "result_id": {
+          "type": "string",
+          "description": "从bing_search返回的结果ID"
+        }
+      },
+      "required": [
+        "result_id"
+      ]
+    }
+  },
+  "get_trending": {
+    "name": "get_trending",
+    "display_name": "热点新闻",
+    "description": "获取各平台热点新闻和热搜榜单。支持来源：weibo(微博)、zhihu(知乎)、toutiao(头条)、douyin(抖音)、baidu(百度)、bilibili(B站)、douban(豆瓣)、36kr、sspai(少数派)、juejin(掘金)、infoq、smzdm(什么值得买)、ifanr(爱范儿)、thepaper(澎湃)、netease(网易)、tencent(腾讯)、weread(微信读书)、gcores(机核)。当用户询问热点、热搜、新闻时使用。",
+    "enabled": true,
+    "builtin": true,
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "热点来源，可选：weibo/zhihu/toutiao/douyin/baidu/bilibili/douban/36kr/sspai/juejin/infoq/smzdm/ifanr/thepaper/netease/tencent/weread/gcores，默认weibo",
+          "default": "weibo"
+        },
+        "limit": {
+          "type": "integer",
+          "description": "返回条数，默认10",
+          "default": 10
+        }
+      },
+      "required": []
+    }
+  },
+  "fetch_url": {
+    "name": "fetch_url",
+    "display_name": "网页抓取",
+    "description": "从指定URL抓取网页内容并转换为文本。可用于获取文章、新闻、文档等网页内容。",
+    "enabled": true,
+    "builtin": true,
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "要抓取的网页URL"
+        },
+        "max_length": {
+          "type": "integer",
+          "description": "返回的最大字符数，默认5000",
+          "default": 5000
+        },
+        "start_index": {
+          "type": "integer",
+          "description": "从此字符索引开始提取内容，默认0",
+          "default": 0
+        }
+      },
+      "required": [
+        "url"
+      ]
+    }
+  }
+}

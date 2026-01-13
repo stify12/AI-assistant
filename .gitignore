@@ -1,0 +1,39 @@
+# 敏感配置文件（绝对不要提交！）
+.env
+config.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 测试
+.pytest_cache/
+.hypothesis/
+htmlcov/
+.coverage
+
+# 数据目录（可选择性忽略）
+# datasets/
+# batch_tasks/
+# sessions/
+# exports/
+
+# 日志
+*.log
+logs/
+
+# 系统文件
+.DS_Store
+Thumbs.db

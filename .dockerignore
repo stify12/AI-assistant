@@ -1,0 +1,43 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.env
+.venv
+venv/
+ENV/
+
+# IDE
+.vscode
+.idea
+.kiro
+*.swp
+*.swo
+
+# 测试
+tests/
+.pytest_cache
+.hypothesis
+*.test.py
+test_*.py
+
+# 文档
+*.md
+!README.md
+
+# 临时文件
+*.log
+*.tmp
+.DS_Store
+
+# 本地数据（可选，如需保留数据则注释掉）
+# datasets/
+# batch_tasks/
+# sessions/
+# chat_sessions/

@@ -1,0 +1,269 @@
+{
+  "task_id": "28e00bca",
+  "created_at": "2026-01-12T13:32:42.165260",
+  "status": "parsed",
+  "config": {
+    "multimodal_model": "doubao-1-5-vision-pro-32k-250115",
+    "text_model": "deepseek-v3.2",
+    "similarity_threshold": 0.85,
+    "questions_per_point": 1
+  },
+  "images": [
+    {
+      "id": "ac49a1c9",
+      "filename": "92.jpg",
+      "path": "knowledge_uploads\\28e00bca\\0dd11ae3_92.jpg"
+    }
+  ],
+  "parsed_questions": [
+    {
+      "id": "go9xw508",
+      "image_source": "92.jpg",
+      "content": "A. 方程与一元一次方程：含有________的等式叫作方程. 一般地，如果方程中只含有______个未知数（元），且含有未知数的式子都是整式，未知数的次数都是______，这样的方程叫作一元一次方程.",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "2s1aru3m",
+          "primary": "方程与一元一次方程",
+          "secondary": "考查方程的定义（含有未知数的等式）和一元一次方程的定义（只含一个未知数，未知数次数为1，且为整式方程）",
+          "analysis": "1. 根据方程定义，第一空填'未知数'；2. 根据一元一次方程定义，第二空填'一'，第三空填'1'"
+        }
+      ]
+    },
+    {
+      "id": "68ng9qy9",
+      "image_source": "92.jpg",
+      "content": "1. 下列方程：① $5x + 3 = 3x + 7$；② $2x + 1 = 3$；③ $\frac{x}{3}+\frac{4}{x}=7$；④ $x=4$. 其中是一元一次方程的是__________.（填序号）",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "8irg450s",
+          "primary": "一元一次方程的定义",
+          "secondary": "考查一元一次方程的概念：只含有一个未知数，未知数的次数为1，且为整式方程。需要识别方程中未知数的个数、次数以及是否为整式。",
+          "analysis": "解题步骤：1. 检查每个方程是否只含一个未知数；2. 检查未知数的最高次数是否为1；3. 检查是否为整式方程（分母不含未知数）。关键公式：一元一次方程标准形式 ax+b=0 (a≠0)。分析：① 整理为 2x-4=0，符合；② 整理为 2x-2=0，符合；③ 分母含未知数，是分式方程，不符合；④ 整理为 x-4=0，符合。因此答案为①②④。"
+        }
+      ]
+    },
+    {
+      "id": "z1d6ecnn",
+      "image_source": "92.jpg",
+      "content": "B. 一般地，使方程左、右两边的值________的未知数的值，叫作方程的解. 求方程的______的过程，叫作解方程.",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "w0vuz0me",
+          "primary": "方程的基本概念",
+          "secondary": "考查方程的解与解方程的定义：方程的解是使方程左右两边相等的未知数的值；解方程是求方程解的过程。",
+          "analysis": "1. 理解方程解的定义：使方程左右两边相等的未知数的值。2. 理解解方程的定义：求方程解的过程。3. 根据定义填空：第一空填“相等”，第二空填“解”。"
+        }
+      ]
+    },
+    {
+      "id": "9d0hdqxy",
+      "image_source": "92.jpg",
+      "content": "2. 在方程① $\frac{1}{3}x = 1$；② $2x - 3 = 1$；③ $x + 1 = 2x - 1$ 中，解为$x=2$的方程有________.（填序号）",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "6yks692j",
+          "primary": "一元一次方程的解",
+          "secondary": "考查判断给定数值是否为特定一元一次方程的解，即代入数值验证等式是否成立",
+          "analysis": "将x=2分别代入三个方程：①(1/3)*2=2/3≠1，不成立；②2*2-3=1，成立；③2+1=3，2*2-1=3，成立。因此解为x=2的方程是②和③。"
+        }
+      ]
+    },
+    {
+      "id": "674gnhna",
+      "image_source": "92.jpg",
+      "content": "【例1】下列方程为一元一次方程的是（ ）\nA. $2x + 3 = 0$\nB. $2x + y = 3$\nC. $x^2 + x = 3$\nD. $x - \\frac{2}{x}=3$",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "vyu6jjyn",
+          "primary": "一元一次方程定义",
+          "secondary": "考查一元一次方程的概念：只含有一个未知数，未知数的次数为1，且为整式方程。选项A符合定义；B含有两个未知数；C未知数次数为2；D不是整式方程（分母含未知数）。",
+          "analysis": "解题步骤：1. 明确一元一次方程的三个条件：一个未知数、次数为1、整式方程；2. 逐一分析选项：A满足所有条件；B有两个未知数；C未知数最高次数为2；D分母含未知数，不是整式方程。关键公式：一元一次方程标准形式为ax+b=0（a≠0）。"
+        }
+      ]
+    },
+    {
+      "id": "pixhdjgg",
+      "image_source": "92.jpg",
+      "content": "3. 下列方程中，不是一元一次方程的是( )\nA. $2x - 3 = 6$\nB. $4x - 2 = x + 1$\nC. $x + 2 = 0$\nD. $3x + 2y = 1$",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "61jgt4w1",
+          "primary": "一元一次方程的定义",
+          "secondary": "考查一元一次方程的概念：只含有一个未知数，且未知数的最高次数为1的整式方程。选项D含有两个未知数，不符合定义。",
+          "analysis": "解题步骤：1. 回顾一元一次方程的定义（一个未知数，次数为1，整式）。2. 检查每个选项：A、B、C均只含一个未知数x且次数为1；D含有两个未知数x和y。3. 根据定义判断D不是一元一次方程。"
+        }
+      ]
+    },
+    {
+      "id": "044ti1v7",
+      "image_source": "92.jpg",
+      "content": "【例2】若$2x^{k+5}=3$是关于$x$的一元一次方程，则$k =$________.",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "v3v6o4ic",
+          "primary": "一元一次方程定义",
+          "secondary": "考查一元一次方程的概念，即方程中只含有一个未知数，且未知数的最高次数为1，系数不为0。本题通过方程形式判断参数k的值，确保方程满足一元一次方程的条件。",
+          "analysis": "解题步骤：1. 根据一元一次方程定义，方程中未知数x的指数必须为1，即k+5=1；2. 解方程k+5=1，得k=-4；3. 验证：当k=-4时，方程为2x=3，符合一元一次方程定义。关键公式：一元一次方程标准形式ax+b=0（a≠0）。"
+        }
+      ]
+    },
+    {
+      "id": "jrqne6u9",
+      "image_source": "92.jpg",
+      "content": "4. 已知$(m - 1)x^{|m|}-1 = 0$是关于$x$的一元一次方程，那么$m =$________.",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "btnec0lj",
+          "primary": "一元一次方程定义",
+          "secondary": "考查一元一次方程的定义：只含有一个未知数，未知数的次数为1，且系数不为0的整式方程。本题需根据方程形式确定未知数次数和系数条件。",
+          "analysis": "解题步骤：1. 根据方程是关于x的一元一次方程，得未知数x的次数|m|=1；2. 同时系数m-1≠0；3. 由|m|=1得m=±1，结合m-1≠0排除m=1，得m=-1。"
+        }
+      ]
+    },
+    {
+      "id": "5n5jxvvg",
+      "image_source": "92.jpg",
+      "content": "【例3】$x = -1$是方程$4x + 5 = 8x - 3$的解吗？",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "oj6nlorl",
+          "primary": "方程的解",
+          "secondary": "考查如何判断一个给定的数是否是某个一元一次方程的解，即验证将该数代入方程后，等式是否成立。",
+          "analysis": "解题步骤：1. 将给定的数x = -1代入原方程4x + 5 = 8x - 3的左右两边。2. 分别计算左边4*(-1)+5和右边8*(-1)-3的值。3. 比较左右两边的计算结果是否相等。若相等，则x = -1是方程的解；若不相等，则不是。关键公式：代入验证法。"
+        }
+      ]
+    },
+    {
+      "id": "8mrrmus7",
+      "image_source": "92.jpg",
+      "content": "5. $x = -1$是方程$x^2 - 3 = 2x$的解吗？",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "3e22px75",
+          "primary": "方程的解",
+          "secondary": "考查如何判断一个给定的数是否是某个一元二次方程的解。具体方法是：将该数代入方程，检验等式是否成立。",
+          "analysis": "解题步骤：1. 将x = -1代入原方程x² - 3 = 2x的左边和右边。2. 计算左边：(-1)² - 3 = 1 - 3 = -2。3. 计算右边：2 * (-1) = -2。4. 比较左右两边的值：-2 = -2，等式成立。因此，x = -1是该方程的解。"
+        }
+      ]
+    },
+    {
+      "id": "9f52z3a3",
+      "image_source": "92.jpg",
+      "content": "【例4】（RJ七上P113例1改编）根据条件，设出未知数，列方程：\n（1）某数的4倍比4小5：___________________________；\n（2）某校女生人数占全体学生数的52%，比男生多80人，这个学校有多少学生：____________________________________________________.",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "aczlefzc",
+          "primary": "一元一次方程",
+          "secondary": "根据实际问题中的数量关系列一元一次方程，包括直接描述的数量关系和百分比关系",
+          "analysis": "1. 设未知数（如设某数为x，设学校总人数为x）。2. 分析题意，将文字描述转化为代数表达式。对于(1)：'某数的4倍'即4x，'比4小5'即4x = 4 - 5。对于(2)：女生人数为52%x，男生人数为(1-52%)x = 48%x，'女生比男生多80人'即52%x - 48%x = 80。3. 列出方程。"
+        }
+      ]
+    },
+    {
+      "id": "6hou7gbw",
+      "image_source": "92.jpg",
+      "content": "6. 根据条件，设出未知数，列方程：\n（1）某数比它的2倍小3：___________________________；\n（2）甲铅笔每支1.4元，乙铅笔每支1.8元，每种铅笔各买了同样的数量，一共花了25.6元，两种铅笔各买了多少支：____________________________________________________.",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "plhqosjm",
+          "primary": "一元一次方程",
+          "secondary": "根据实际问题中的数量关系（如倍数关系、总价=单价×数量）设立未知数并建立一元一次方程",
+          "analysis": "1. 设未知数（如设某数为x，或设两种铅笔各买x支）；2. 根据题意找出等量关系（如“某数=它的2倍-3”、“甲铅笔总价+乙铅笔总价=25.6”）；3. 用代数式表示等量关系，列出方程（如(1) x=2x-3，(2) 1.4x+1.8x=25.6）；4. 解方程并作答。"
+        }
+      ]
+    }
+  ],
+  "dedupe_results": [
+    {
+      "original_point": "方程与一元一次方程",
+      "merged_point": "方程与一元一次方程",
+      "similarity_score": 1.0,
+      "is_merged": false
+    },
+    {
+      "original_point": "一元一次方程定义",
+      "merged_point": "一元一次方程的定义",
+      "similarity_score": 0.95,
+      "is_merged": true
+    },
+    {
+      "original_point": "一元一次方程的定义",
+      "merged_point": "一元一次方程的定义",
+      "similarity_score": 0.95,
+      "is_merged": true
+    },
+    {
+      "original_point": "一元一次方程定义",
+      "merged_point": "一元一次方程的定义",
+      "similarity_score": 0.95,
+      "is_merged": true
+    },
+    {
+      "original_point": "一元一次方程定义",
+      "merged_point": "一元一次方程的定义",
+      "similarity_score": 0.95,
+      "is_merged": true
+    },
+    {
+      "original_point": "方程的基本概念",
+      "merged_point": "方程的基本概念",
+      "similarity_score": 1.0,
+      "is_merged": false
+    },
+    {
+      "original_point": "方程的解",
+      "merged_point": "一元一次方程的解",
+      "similarity_score": 0.95,
+      "is_merged": true
+    },
+    {
+      "original_point": "方程的解",
+      "merged_point": "方程的解",
+      "similarity_score": 1.0,
+      "is_merged": false
+    },
+    {
+      "original_point": "一元一次方程",
+      "merged_point": "一元一次方程",
+      "similarity_score": 0.95,
+      "is_merged": true
+    }
+  ],
+  "similar_questions": []
+}

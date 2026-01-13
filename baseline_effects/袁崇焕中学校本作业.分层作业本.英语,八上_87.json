@@ -1,0 +1,149 @@
+{
+  "homework_name": "袁崇焕中学校本作业.分层作业本.英语,八上",
+  "page_num": 87,
+  "subject_id": 0,
+  "base_effect": [
+    {
+      "index": "1",
+      "answer": "action",
+      "userAnswer": "actino",
+      "correct": "no",
+      "tempIndex": 0
+    },
+    {
+      "index": "2",
+      "answer": "without",
+      "userAnswer": "without",
+      "correct": "yes",
+      "tempIndex": 1
+    },
+    {
+      "index": "3",
+      "answer": "imagining",
+      "userAnswer": "imaginining",
+      "correct": "no",
+      "tempIndex": 2
+    },
+    {
+      "index": "4",
+      "answer": "shot",
+      "userAnswer": "shot",
+      "correct": "yes",
+      "tempIndex": 3
+    },
+    {
+      "index": "5",
+      "answer": "wings",
+      "userAnswer": "wing",
+      "correct": "no",
+      "tempIndex": 4
+    },
+    {
+      "index": "6",
+      "answer": "humans",
+      "userAnswer": "human",
+      "correct": "no",
+      "tempIndex": 5
+    },
+    {
+      "index": "7",
+      "answer": "disappointed",
+      "userAnswer": "disappoint",
+      "correct": "no",
+      "tempIndex": 6
+    },
+    {
+      "index": "8",
+      "answer": "communicated",
+      "userAnswer": "communate",
+      "correct": "no",
+      "tempIndex": 7
+    },
+    {
+      "index": "9",
+      "answer": "tools",
+      "userAnswer": "tool",
+      "correct": "no",
+      "tempIndex": 8
+    },
+    {
+      "index": "10",
+      "answer": "popular",
+      "userAnswer": "populor",
+      "correct": "no",
+      "tempIndex": 9
+    },
+    {
+      "index": "11",
+      "answer": "In order to",
+      "userAnswer": "In order get",
+      "correct": "no",
+      "tempIndex": 10
+    },
+    {
+      "index": "12",
+      "answer": "plays an important role in",
+      "userAnswer": "plays an important role",
+      "correct": "no",
+      "tempIndex": 11
+    },
+    {
+      "index": "13",
+      "answer": "is connected to",
+      "userAnswer": "is connected to",
+      "correct": "yes",
+      "tempIndex": 12
+    },
+    {
+      "index": "14",
+      "answer": "for this reason",
+      "userAnswer": "for this reason",
+      "correct": "yes",
+      "tempIndex": 13
+    },
+    {
+      "index": "15",
+      "answer": "are home to",
+      "userAnswer": "are home to",
+      "correct": "yes",
+      "tempIndex": 14
+    },
+    {
+      "index": "16",
+      "answer": "C",
+      "userAnswer": "A",
+      "correct": "no",
+      "tempIndex": 15
+    },
+    {
+      "index": "17",
+      "answer": "C",
+      "userAnswer": "B",
+      "correct": "no",
+      "tempIndex": 16
+    },
+    {
+      "index": "18",
+      "answer": "A",
+      "userAnswer": "C",
+      "correct": "no",
+      "tempIndex": 17
+    },
+    {
+      "index": "19",
+      "answer": "B",
+      "userAnswer": "D",
+      "correct": "no",
+      "tempIndex": 18
+    },
+    {
+      "index": "20",
+      "answer": "C",
+      "userAnswer": "A",
+      "correct": "no",
+      "tempIndex": 19
+    }
+  ],
+  "created_at": "2026-01-08T16:11:36.448594",
+  "homework_id": "2009072934628433922"
+}

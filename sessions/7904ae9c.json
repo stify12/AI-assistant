@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "调用工具今天抖音热点"
+    },
+    {
+      "role": "assistant",
+      "content": "<|FunctionCallBegin|>[{\"name\":\"抖音热点查询\",\"parameters\":{\"date\":\"2024-05-28\"}}]<|FunctionCallEnd|>",
+      "model": "doubao-seed-1-6-251015"
+    }
+  ],
+  "created_at": "2025-12-24T17:57:03.307524",
+  "updated_at": "2025-12-24T17:57:41.155168",
+  "title": "调用工具今天抖音热点"
+}

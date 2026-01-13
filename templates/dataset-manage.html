@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据集管理</title>
+    <link rel="stylesheet" href="/static/css/common.css">
+    <link rel="stylesheet" href="/static/css/dataset-manage.css">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="logo">数据集管理</div>
+        <div style="display:flex;gap:12px;align-items:center;">
+            <button class="back-btn" onclick="goBack()">返回</button>
+        </div>
+    </nav>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">处理中...</div>
+    </div>
+
+    <!-- 主布局 -->
+    <div class="main-layout">
+        <!-- 左侧 - 图书列表 -->
+        <div class="left-panel">
+            <div class="panel-header">
+                <div class="panel-title">图书列表</div>
+            </div>
+            <div class="filter-section">
+                <select id="subjectFilter" onchange="filterBooks()">
+                    <option value="">全部学科</option>
+                    <option value="0">英语</option>
+                    <option value="1">语文</option>
+                    <option value="2">数学</option>
+                    <option value="3">物理</option>
+                    <option value="4">化学</option>
+                    <option value="5">生物</option>
+                    <option value="6">地理</option>
+                </select>
+                <input type="text" id="bookSearchInput" placeholder="搜索书名..." oninput="filterBooks()">
+            </div>
+            <div class="book-list" id="bookList">
+                <div class="empty-state">
+                    <div class="empty-state-text">加载中...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧 - 详情区域 -->
+        <div class="right-panel">
+            <!-- 空状态 -->
+            <div class="empty-right" id="emptyRight">
+                <div class="empty-state">
+                    <div class="empty-state-icon">--</div>
+                    <div class="empty-state-text">请从左侧选择图书</div>
+                </div>
+            </div>
+
+            <!-- 书本详情 -->
+            <div class="book-detail" id="bookDetail" style="display:none;">
+                <!-- 书本信息头 -->
+                <div class="detail-header">
+                    <div class="detail-info">
+                        <h2 id="bookTitle">书本名称</h2>
+                        <div class="detail-meta" id="bookMeta"></div>
+                    </div>
+                    <div class="detail-actions">
+                        <button class="btn btn-secondary" onclick="exportAllDatasets()">导出数据集</button>
+                        <button class="btn btn-secondary" onclick="showImportModal()">导入数据集</button>
+                        <button class="btn btn-primary" onclick="showAddDatasetPanel()">+ 添加数据集</button>
+                    </div>
+                </div>
+
+                <!-- 已有数据集列表 -->
+                <div class="section">
+                    <div class="section-title">已配置数据集</div>
+                    <div class="dataset-list" id="datasetList">
+                        <div class="empty-state"><div class="empty-state-text">暂无数据集</div></div>
+                    </div>
+                </div>
+
+                <!-- 页码概览 -->
+                <div class="section">
+                    <div class="section-title">页码概览</div>
+                    <div class="page-overview" id="pageOverview">
+                        <div class="empty-state"><div class="empty-state-text">暂无页码数据</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 添加数据集面板 -->
+            <div class="add-dataset-panel" id="addDatasetPanel" style="display:none;">
+                <div class="panel-header">
+                    <div class="panel-title">添加数据集</div>
+                    <button class="btn btn-secondary" onclick="hideAddDatasetPanel()">返回</button>
+                </div>
+
+                <!-- 步骤1: 选择页码 -->
+                <div class="step-section">
+                    <div class="step-header">
+                        <span class="step-num">1</span>
+                        <span class="step-title">选择页码</span>
+                        <div class="step-actions">
+                            <input type="text" id="pageRangeInput" placeholder="范围选择，如: 1-10, 15, 20-25" class="range-input">
+                            <button class="btn btn-small" onclick="applyPageRange()">应用</button>
+                            <button class="btn btn-small" onclick="selectAllPages()">全选</button>
+                            <button class="btn btn-small" onclick="clearPageSelection()">清空</button>
+                        </div>
+                    </div>
+                    <div class="page-select-info" id="pageSelectInfo">已选择 0 个页码</div>
+                    <div class="page-select-grid" id="pageSelectGrid"></div>
+                </div>
+
+                <!-- 步骤2: 选择作业图片进行识别 -->
+                <div class="step-section" id="step2Section" style="display:none;">
+                    <div class="step-header">
+                        <span class="step-num">2</span>
+                        <span class="step-title">选择作业图片</span>
+                        <div class="step-actions">
+                            <select id="timeRangeSelect" onchange="loadAvailableHomework()">
+                                <option value="1">最近1小时</option>
+                                <option value="6">最近6小时</option>
+                                <option value="24" selected>最近24小时</option>
+                                <option value="72">最近3天</option>
+                                <option value="168">最近7天</option>
+                            </select>
+                            <button class="btn btn-small" onclick="loadAvailableHomework()">刷新</button>
+                        </div>
+                    </div>
+                    <div class="homework-grid" id="homeworkGrid">
+                        <div class="empty-state"><div class="empty-state-text">请先选择页码</div></div>
+                    </div>
+                </div>
+
+                <!-- 步骤3: 确认基准效果 -->
+                <div class="step-section" id="step3Section" style="display:none;">
+                    <div class="step-header">
+                        <span class="step-num">3</span>
+                        <span class="step-title">确认基准效果</span>
+                        <button class="btn btn-primary" onclick="startRecognize()">开始识别</button>
+                    </div>
+                    <div class="recognize-result" id="recognizeResult">
+                        <div class="empty-state"><div class="empty-state-text">选择作业图片后点击"开始识别"</div></div>
+                    </div>
+                </div>
+
+                <!-- 保存按钮 -->
+                <div class="save-section" id="saveSection" style="display:none;">
+                    <button class="btn btn-primary btn-large" onclick="saveDataset()">保存数据集</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片预览弹窗 -->
+    <div class="image-modal" id="imageModal" onclick="hideImageModal()">
+        <img id="modalImage" src="">
+    </div>
+
+    <!-- 导入数据集弹窗 -->
+    <div class="import-modal" id="importModal" onclick="hideImportModal(event)">
+        <div class="import-modal-content" onclick="event.stopPropagation()">
+            <div class="import-modal-header">
+                <h3>导入数据集</h3>
+                <button class="close-btn" onclick="hideImportModal()">x</button>
+            </div>
+            <div class="import-modal-body">
+                <div class="form-group">
+                    <label>选择JSON文件</label>
+                    <input type="file" id="importFileInput" accept=".json" onchange="previewImportFile()">
+                </div>
+                <div class="import-preview" id="importPreview" style="display:none;">
+                    <div class="preview-title">预览</div>
+                    <div class="preview-content" id="importPreviewContent"></div>
+                </div>
+            </div>
+            <div class="import-modal-footer">
+                <button class="btn btn-secondary" onclick="hideImportModal()">取消</button>
+                <button class="btn btn-primary" onclick="confirmImport()" id="confirmImportBtn" disabled>确认导入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑数据集弹窗 -->
+    <div class="edit-modal" id="editModal" onclick="hideEditModal(event)">
+        <div class="edit-modal-content" onclick="event.stopPropagation()">
+            <div class="edit-modal-header">
+                <h3>编辑数据集</h3>
+                <button class="close-btn" onclick="hideEditModal()">x</button>
+            </div>
+            <div class="edit-modal-body">
+                <div class="edit-page-tabs" id="editPageTabs"></div>
+                <div class="edit-table-container" id="editTableContainer">
+                    <table class="edit-table" id="editTable">
+                        <thead>
+                            <tr>
+                                <th style="width:60px;">题号</th>
+                                <th>标准答案</th>
+                                <th>学生答案</th>
+                                <th style="width:80px;">是否正确</th>
+                                <th style="width:50px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="editTableBody"></tbody>
+                    </table>
+                    <div class="edit-table-actions">
+                        <button class="btn-add-row" onclick="addEditRow()">+ 添加题目</button>
+                    </div>
+                </div>
+            </div>
+            <div class="edit-modal-footer">
+                <button class="btn btn-secondary" onclick="hideEditModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveEditDataset()">保存修改</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/dataset-manage.js"></script>
+</body>
+</html>

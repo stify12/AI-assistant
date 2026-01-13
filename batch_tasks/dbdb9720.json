@@ -1,0 +1,266 @@
+{
+  "task_id": "dbdb9720",
+  "name": "批量评估-2026/1/9",
+  "status": "completed",
+  "homework_items": [
+    {
+      "homework_id": "2009518368991760386",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 79,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_79_8M89U.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"D\"\n\t},\n\t{\n\t\t\"answer\":\" 1   -30～50   不能  \",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"1；0~50；不能\"\n\t},\n\t{\n\t\t\"answer\":\"热胀冷缩   17   -16  \",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"冷热程度；36；-16\"\n\t},\n\t{\n\t\t\"answer\":\"0.1  38  乙  \",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":3,\n\t\t\"userAnswer\":\"0.1；37；乙\"\n\t},\n\t{\n\t\t\"answer\":\"36.6   =   不能  \",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":4,\n\t\t\"userAnswer\":\"36；>；不能\"\n\t},\n\t{\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":5,\n\t\t\"userAnswer\":\"D\"\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.16666666666666666,
+      "evaluation": {
+        "accuracy": 0.16666666666666666,
+        "precision": 0.5,
+        "recall": 0.2,
+        "f1_score": 0.28571428571428575,
+        "hallucination_rate": 0,
+        "total_questions": 6,
+        "correct_count": 1,
+        "error_count": 5,
+        "errors": [
+          {
+            "index": "2",
+            "base_effect": {
+              "answer": "C",
+              "userAnswer": "D",
+              "correct": ""
+            },
+            "ai_result": {
+              "answer": "C",
+              "userAnswer": "D",
+              "correct": "no"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=，AI=no"
+          },
+          {
+            "index": "3",
+            "base_effect": {
+              "answer": "1 -20~50 不能",
+              "userAnswer": "1 0~50 不能",
+              "correct": ""
+            },
+            "ai_result": {
+              "answer": "1   -30～50   不能",
+              "userAnswer": "1；0~50；不能",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"1 0~50 不能/\"，AI=\"1；0~50；不能/no\""
+          },
+          {
+            "index": "4",
+            "base_effect": {
+              "answer": "热胀冷缩 16 -14",
+              "userAnswer": "冷热程度 36 -16",
+              "correct": ""
+            },
+            "ai_result": {
+              "answer": "热胀冷缩   17   -16",
+              "userAnswer": "冷热程度；36；-16",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"冷热程度 36 -16/\"，AI=\"冷热程度；36；-16/no\""
+          },
+          {
+            "index": "5",
+            "base_effect": {
+              "answer": "0.1 37.8 乙",
+              "userAnswer": "0.1 37 乙",
+              "correct": ""
+            },
+            "ai_result": {
+              "answer": "0.1  38  乙",
+              "userAnswer": "0.1；37；乙",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"0.1 37 乙/\"，AI=\"0.1；37；乙/no\""
+          },
+          {
+            "index": "6",
+            "base_effect": {
+              "answer": "36.7 = 不能",
+              "userAnswer": "36 > 能",
+              "correct": ""
+            },
+            "ai_result": {
+              "answer": "36.6   =   不能",
+              "userAnswer": "36；>；不能",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"36 > 能/\"，AI=\"36；>；不能/no\""
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 4,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI幻觉": 0
+        }
+      }
+    },
+    {
+      "homework_id": "2009518404983083010",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 80,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_80_PABBA.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"5 摄氏度  \",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"任务一\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"5度\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"任务二\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"B\"\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.0,
+      "evaluation": {
+        "accuracy": 0.0,
+        "precision": 0,
+        "recall": 0,
+        "f1_score": 0,
+        "hallucination_rate": 0,
+        "total_questions": 2,
+        "correct_count": 0,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "1",
+            "base_effect": {
+              "answer": "5摄氏度",
+              "userAnswer": "5度",
+              "correct": ""
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": ""
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第1题"
+          },
+          {
+            "index": "2",
+            "base_effect": {
+              "answer": "B",
+              "userAnswer": "B",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": ""
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第2题"
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 2,
+          "AI幻觉": 0
+        }
+      }
+    },
+    {
+      "homework_id": "2009518439439290370",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 81,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_81_HK5ZK.jpg",
+      "homework_result": "[\n\t{\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"任务三\",\n\t\t\"mainAnswer\":\"空气流动速度加快，加快了水的蒸发，蒸发吸热，所以感觉凉快  \",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"空气流速加快\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"任务四\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"(1) 市中心   快 \\n<br>(2) 小  \\n(3) 市区温度升高，使有害气体、烟尘在市区上空累积，造成严重的大气污染（合理即可）  \\n(4) 汽化   吸热  \\n(5) 绿色出行（合理即可）\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"高分原创\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"(1)市中心 快 (2)大 (3)温度升高.造成大气污染 (4)汽化（汽） 吸热 (5)绿色出行\"\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.0,
+      "evaluation": {
+        "accuracy": 0.0,
+        "precision": 0,
+        "recall": 0,
+        "f1_score": 0,
+        "hallucination_rate": 0,
+        "total_questions": 3,
+        "correct_count": 0,
+        "error_count": 3,
+        "errors": [
+          {
+            "index": "1",
+            "base_effect": {
+              "answer": "空气流动加快，蒸发吸热",
+              "userAnswer": "空气流速加快",
+              "correct": ""
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": ""
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第1题"
+          },
+          {
+            "index": "2",
+            "base_effect": {
+              "answer": "C",
+              "userAnswer": "C",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": ""
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第2题"
+          },
+          {
+            "index": "3",
+            "base_effect": {
+              "answer": "市中心 快 小 加剧城市大气污染（合理即可） 汽化 吸热 植树造林（合理即可）",
+              "userAnswer": "市中心 快 大 温度升高，造成大气污染 汽化 吸热 红色出行",
+              "correct": ""
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": ""
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第3题"
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 3,
+          "AI幻觉": 0
+        }
+      }
+    }
+  ],
+  "overall_report": {
+    "overall_accuracy": 0.09090909090909091,
+    "total_homework": 3,
+    "total_questions": 11,
+    "correct_questions": 1
+  },
+  "created_at": "2026-01-09T16:22:20.809744"
+}

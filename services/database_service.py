@@ -1,0 +1,449 @@
+"""
+数据库服务模块
+提供 MySQL 数据库连接和查询功能
+支持两个数据库：
+- mysql: 原业务数据库(zpsmart)，用于获取作业数据
+- app_mysql: 应用数据库(aiuser)，用于存储平台数据
+"""
+import json
+from datetime import datetime
+from .config_service import ConfigService
+
+
+class DatabaseService:
+    """数据库服务类 - 原业务数据库"""
+    
+    @staticmethod
+    def get_connection():
+        """获取原业务数据库连接"""
+        import pymysql
+        
+        config = ConfigService.load_config()
+        mysql_config = config.get('mysql', {})
+        
+        return pymysql.connect(
+            host=mysql_config.get('host', '47.113.230.78'),
+            port=mysql_config.get('port', 3306),
+            user=mysql_config.get('user', 'zpsmart'),
+            password=mysql_config.get('password', 'rootyouerkj!'),
+            database=mysql_config.get('database', 'zpsmart'),
+            charset='utf8mb4',
+            cursorclass=pymysql.cursors.DictCursor
+        )
+    
+    @staticmethod
+    def execute_query(sql, params=None):
+        """执行查询并返回结果"""
+        conn = None
+        cursor = None
+        try:
+            conn = DatabaseService.get_connection()
+            cursor = conn.cursor()
+            cursor.execute(sql, params or ())
+            return cursor.fetchall()
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+    
+    @staticmethod
+    def execute_one(sql, params=None):
+        """执行查询并返回单条结果"""
+        conn = None
+        cursor = None
+        try:
+            conn = DatabaseService.get_connection()
+            cursor = conn.cursor()
+            cursor.execute(sql, params or ())
+            return cursor.fetchone()
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+    
+    @staticmethod
+    def execute_update(sql, params=None):
+        """执行更新操作"""
+        conn = None
+        cursor = None
+        try:
+            conn = DatabaseService.get_connection()
+            cursor = conn.cursor()
+            affected = cursor.execute(sql, params or ())
+            conn.commit()
+            return affected
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+
+
+class AppDatabaseService:
+    """应用数据库服务类 - 平台自有数据库"""
+    
+    @staticmethod
+    def get_connection():
+        """获取应用数据库连接"""
+        import pymysql
+        
+        config = ConfigService.load_config()
+        mysql_config = config.get('app_mysql', {})
+        
+        return pymysql.connect(
+            host=mysql_config.get('host', '47.82.64.147'),
+            port=mysql_config.get('port', 3306),
+            user=mysql_config.get('user', 'aiuser'),
+            password=mysql_config.get('password', '123456'),
+            database=mysql_config.get('database', 'aiuser'),
+            charset='utf8mb4',
+            cursorclass=pymysql.cursors.DictCursor
+        )
+    
+    @staticmethod
+    def execute_query(sql, params=None):
+        """执行查询并返回结果"""
+        conn = None
+        cursor = None
+        try:
+            conn = AppDatabaseService.get_connection()
+            cursor = conn.cursor()
+            cursor.execute(sql, params or ())
+            return cursor.fetchall()
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+    
+    @staticmethod
+    def execute_one(sql, params=None):
+        """执行查询并返回单条结果"""
+        conn = None
+        cursor = None
+        try:
+            conn = AppDatabaseService.get_connection()
+            cursor = conn.cursor()
+            cursor.execute(sql, params or ())
+            return cursor.fetchone()
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+    
+    @staticmethod
+    def execute_update(sql, params=None):
+        """执行更新操作，返回影响行数"""
+        conn = None
+        cursor = None
+        try:
+            conn = AppDatabaseService.get_connection()
+            cursor = conn.cursor()
+            affected = cursor.execute(sql, params or ())
+            conn.commit()
+            return affected
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+    
+    @staticmethod
+    def execute_insert(sql, params=None):
+        """执行插入操作，返回插入ID"""
+        conn = None
+        cursor = None
+        try:
+            conn = AppDatabaseService.get_connection()
+            cursor = conn.cursor()
+            cursor.execute(sql, params or ())
+            conn.commit()
+            return cursor.lastrowid
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+    
+    # ========== 数据集相关操作 ==========
+    
+    @staticmethod
+    def get_datasets(book_id=None):
+        """获取数据集列表"""
+        sql = "SELECT * FROM datasets WHERE 1=1"
+        params = []
+        if book_id:
+            sql += " AND book_id = %s"
+            params.append(book_id)
+        sql += " ORDER BY created_at DESC"
+        return AppDatabaseService.execute_query(sql, tuple(params) if params else None)
+    
+    @staticmethod
+    def get_dataset(dataset_id):
+        """获取单个数据集"""
+        sql = "SELECT * FROM datasets WHERE dataset_id = %s"
+        return AppDatabaseService.execute_one(sql, (dataset_id,))
+    
+    @staticmethod
+    def create_dataset(dataset_id, book_id, pages, book_name=None, subject_id=None, question_count=0):
+        """创建数据集"""
+        sql = """INSERT INTO datasets (dataset_id, book_id, book_name, subject_id, pages, question_count, created_at) 
+                 VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+        pages_json = json.dumps(pages) if isinstance(pages, list) else pages
+        return AppDatabaseService.execute_insert(sql, (
+            dataset_id, book_id, book_name, subject_id, pages_json, question_count, datetime.now()
+        ))
+    
+    @staticmethod
+    def update_dataset(dataset_id, **kwargs):
+        """更新数据集"""
+        if not kwargs:
+            return 0
+        set_parts = []
+        params = []
+        for key, value in kwargs.items():
+            if key == 'pages' and isinstance(value, list):
+                value = json.dumps(value)
+            set_parts.append(f"{key} = %s")
+            params.append(value)
+        params.append(dataset_id)
+        sql = f"UPDATE datasets SET {', '.join(set_parts)} WHERE dataset_id = %s"
+        return AppDatabaseService.execute_update(sql, tuple(params))
+    
+    @staticmethod
+    def delete_dataset(dataset_id):
+        """删除数据集及其基准效果"""
+        AppDatabaseService.execute_update("DELETE FROM baseline_effects WHERE dataset_id = %s", (dataset_id,))
+        return AppDatabaseService.execute_update("DELETE FROM datasets WHERE dataset_id = %s", (dataset_id,))
+    
+    # ========== 基准效果相关操作 ==========
+    
+    @staticmethod
+    def get_baseline_effects(dataset_id, page_num=None):
+        """获取基准效果列表"""
+        sql = "SELECT * FROM baseline_effects WHERE dataset_id = %s"
+        params = [dataset_id]
+        if page_num is not None:
+            sql += " AND page_num = %s"
+            params.append(page_num)
+        sql += " ORDER BY page_num, temp_index"
+        return AppDatabaseService.execute_query(sql, tuple(params))
+    
+    @staticmethod
+    def get_baseline_effects_by_page(dataset_id, page_num):
+        """获取指定页码的基准效果，返回格式化的列表"""
+        rows = AppDatabaseService.get_baseline_effects(dataset_id, page_num)
+        return [{
+            'index': row['question_index'],
+            'tempIndex': row['temp_index'],
+            'type': row['question_type'],
+            'answer': row['answer'],
+            'userAnswer': row['user_answer'],
+            'correct': row['is_correct']
+        } for row in rows]
+    
+    @staticmethod
+    def save_baseline_effects(dataset_id, page_num, effects):
+        """保存基准效果（先删除旧数据再插入）"""
+        AppDatabaseService.execute_update(
+            "DELETE FROM baseline_effects WHERE dataset_id = %s AND page_num = %s",
+            (dataset_id, page_num)
+        )
+        for effect in effects:
+            sql = """INSERT INTO baseline_effects 
+                     (dataset_id, page_num, question_index, temp_index, question_type, answer, user_answer, is_correct)
+                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
+            AppDatabaseService.execute_insert(sql, (
+                dataset_id, page_num,
+                effect.get('index', ''),
+                effect.get('tempIndex', 0),
+                effect.get('type', 'choice'),
+                effect.get('answer', ''),
+                effect.get('userAnswer', ''),
+                effect.get('correct', '')
+            ))
+    
+    # ========== 批量任务相关操作 ==========
+    
+    @staticmethod
+    def get_batch_tasks():
+        """获取批量任务列表"""
+        sql = "SELECT * FROM batch_tasks ORDER BY created_at DESC"
+        return AppDatabaseService.execute_query(sql)
+    
+    @staticmethod
+    def get_batch_task(task_id):
+        """获取单个批量任务"""
+        sql = "SELECT * FROM batch_tasks WHERE task_id = %s"
+        return AppDatabaseService.execute_one(sql, (task_id,))
+    
+    @staticmethod
+    def create_batch_task(task_id, name, homework_count=0):
+        """创建批量任务"""
+        sql = """INSERT INTO batch_tasks (task_id, name, status, homework_count, created_at) 
+                 VALUES (%s, %s, 'pending', %s, %s)"""
+        return AppDatabaseService.execute_insert(sql, (task_id, name, homework_count, datetime.now()))
+    
+    @staticmethod
+    def update_batch_task(task_id, **kwargs):
+        """更新批量任务"""
+        if not kwargs:
+            return 0
+        set_parts = []
+        params = []
+        for key, value in kwargs.items():
+            if key == 'error_distribution' and isinstance(value, dict):
+                value = json.dumps(value)
+            set_parts.append(f"{key} = %s")
+            params.append(value)
+        params.append(task_id)
+        sql = f"UPDATE batch_tasks SET {', '.join(set_parts)} WHERE task_id = %s"
+        return AppDatabaseService.execute_update(sql, tuple(params))
+    
+    @staticmethod
+    def delete_batch_task(task_id):
+        """删除批量任务及其作业项"""
+        # 先删除错误详情
+        items = AppDatabaseService.execute_query(
+            "SELECT id FROM batch_task_items WHERE task_id = %s", (task_id,)
+        )
+        for item in items:
+            AppDatabaseService.execute_update(
+                "DELETE FROM evaluation_errors WHERE task_item_id = %s", (item['id'],)
+            )
+        # 删除作业项
+        AppDatabaseService.execute_update("DELETE FROM batch_task_items WHERE task_id = %s", (task_id,))
+        # 删除任务
+        return AppDatabaseService.execute_update("DELETE FROM batch_tasks WHERE task_id = %s", (task_id,))
+    
+    # ========== 批量任务作业项相关操作 ==========
+    
+    @staticmethod
+    def get_batch_task_items(task_id):
+        """获取批量任务的作业项列表"""
+        sql = "SELECT * FROM batch_task_items WHERE task_id = %s ORDER BY id"
+        return AppDatabaseService.execute_query(sql, (task_id,))
+    
+    @staticmethod
+    def get_batch_task_item(task_id, homework_id):
+        """获取单个作业项"""
+        sql = "SELECT * FROM batch_task_items WHERE task_id = %s AND homework_id = %s"
+        return AppDatabaseService.execute_one(sql, (task_id, homework_id))
+    
+    @staticmethod
+    def create_batch_task_item(task_id, homework_id, **kwargs):
+        """创建批量任务作业项"""
+        fields = ['task_id', 'homework_id']
+        values = [task_id, homework_id]
+        placeholders = ['%s', '%s']
+        
+        for key, value in kwargs.items():
+            fields.append(key)
+            if key == 'evaluation_result' and isinstance(value, dict):
+                value = json.dumps(value)
+            values.append(value)
+            placeholders.append('%s')
+        
+        sql = f"INSERT INTO batch_task_items ({', '.join(fields)}) VALUES ({', '.join(placeholders)})"
+        return AppDatabaseService.execute_insert(sql, tuple(values))
+    
+    @staticmethod
+    def update_batch_task_item(item_id, **kwargs):
+        """更新批量任务作业项"""
+        if not kwargs:
+            return 0
+        set_parts = []
+        params = []
+        for key, value in kwargs.items():
+            if key == 'evaluation_result' and isinstance(value, dict):
+                value = json.dumps(value)
+            set_parts.append(f"{key} = %s")
+            params.append(value)
+        params.append(item_id)
+        sql = f"UPDATE batch_task_items SET {', '.join(set_parts)} WHERE id = %s"
+        return AppDatabaseService.execute_update(sql, tuple(params))
+    
+    # ========== 会话相关操作 ==========
+    
+    @staticmethod
+    def get_chat_sessions(session_type='chat'):
+        """获取会话列表"""
+        sql = "SELECT * FROM chat_sessions WHERE session_type = %s ORDER BY updated_at DESC"
+        return AppDatabaseService.execute_query(sql, (session_type,))
+    
+    @staticmethod
+    def get_chat_session(session_id):
+        """获取单个会话"""
+        sql = "SELECT * FROM chat_sessions WHERE session_id = %s"
+        return AppDatabaseService.execute_one(sql, (session_id,))
+    
+    @staticmethod
+    def save_chat_session(session_id, session_type='chat', title='新对话', messages=None):
+        """保存或更新会话"""
+        existing = AppDatabaseService.get_chat_session(session_id)
+        messages_json = json.dumps(messages or [], ensure_ascii=False)
+        
+        if existing:
+            sql = "UPDATE chat_sessions SET title = %s, messages = %s, updated_at = %s WHERE session_id = %s"
+            return AppDatabaseService.execute_update(sql, (title, messages_json, datetime.now(), session_id))
+        else:
+            sql = """INSERT INTO chat_sessions (session_id, session_type, title, messages, created_at, updated_at) 
+                     VALUES (%s, %s, %s, %s, %s, %s)"""
+            now = datetime.now()
+            return AppDatabaseService.execute_insert(sql, (session_id, session_type, title, messages_json, now, now))
+    
+    @staticmethod
+    def delete_chat_session(session_id):
+        """删除会话"""
+        return AppDatabaseService.execute_update("DELETE FROM chat_sessions WHERE session_id = %s", (session_id,))
+    
+    # ========== 系统配置相关操作 ==========
+    
+    @staticmethod
+    def get_config(config_key):
+        """获取配置项"""
+        sql = "SELECT config_value FROM sys_config WHERE config_key = %s"
+        row = AppDatabaseService.execute_one(sql, (config_key,))
+        if row:
+            try:
+                return json.loads(row['config_value'])
+            except:
+                return row['config_value']
+        return None
+    
+    @staticmethod
+    def set_config(config_key, config_value, description=None):
+        """设置配置项"""
+        value_json = json.dumps(config_value, ensure_ascii=False) if not isinstance(config_value, str) else config_value
+        existing = AppDatabaseService.execute_one(
+            "SELECT id FROM sys_config WHERE config_key = %s", (config_key,)
+        )
+        if existing:
+            sql = "UPDATE sys_config SET config_value = %s WHERE config_key = %s"
+            return AppDatabaseService.execute_update(sql, (value_json, config_key))
+        else:
+            sql = "INSERT INTO sys_config (config_key, config_value, description) VALUES (%s, %s, %s)"
+            return AppDatabaseService.execute_insert(sql, (config_key, value_json, description))
+    
+    # ========== 提示词模板相关操作 ==========
+    
+    @staticmethod
+    def get_prompt_templates(prompt_type=None):
+        """获取提示词模板列表"""
+        sql = "SELECT * FROM prompt_templates WHERE is_active = 1"
+        params = []
+        if prompt_type:
+            sql += " AND prompt_type = %s"
+            params.append(prompt_type)
+        sql += " ORDER BY is_default DESC, id"
+        return AppDatabaseService.execute_query(sql, tuple(params) if params else None)
+    
+    @staticmethod
+    def save_prompt_template(name, content, prompt_type='general', is_default=False):
+        """保存提示词模板"""
+        sql = """INSERT INTO prompt_templates (name, content, prompt_type, is_default) 
+                 VALUES (%s, %s, %s, %s)"""
+        return AppDatabaseService.execute_insert(sql, (name, content, prompt_type, 1 if is_default else 0))

@@ -1,0 +1,1229 @@
+/**
+ * 数据集管理页面 JavaScript
+ */
+
+// ========== 全局状态 ==========
+let bookList = {};
+let selectedBook = null;
+let datasetList = [];
+let selectedPages = new Set();
+let availableHomework = {};  // 按页码分组的可用作业
+let selectedHomework = {};   // 每个页码选中的作业
+let recognizeResults = {};   // 识别结果
+
+const SUBJECT_NAMES = {
+    0: '英语', 1: '语文', 2: '数学', 3: '物理', 4: '化学', 5: '生物', 6: '地理'
+};
+
+// ========== 初始化 ==========
+document.addEventListener('DOMContentLoaded', () => {
+    loadBooks();
+});
+
+// ========== 返回导航 ==========
+function goBack() {
+    if (window.history.length > 1) {
+        window.history.back();
+    } else {
+        window.location.href = '/subject-grading';
+    }
+}
+
+// ========== 工具函数 ==========
+function showLoading(text) {
+    document.getElementById('loadingText').textContent = text || '处理中...';
+    document.getElementById('loadingOverlay').classList.add('show');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('show');
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatTime(timeStr) {
+    if (!timeStr) return '-';
+    const date = new Date(timeStr);
+    return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+function showImageModal(src) {
+    event.stopPropagation();
+    document.getElementById('modalImage').src = src;
+    document.getElementById('imageModal').classList.add('show');
+}
+
+function hideImageModal() {
+    document.getElementById('imageModal').classList.remove('show');
+}
+
+// ========== 图书列表 ==========
+async function loadBooks() {
+    const container = document.getElementById('bookList');
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载中...</div></div>';
+    
+    try {
+        const res = await fetch('/api/batch/books');
+        const data = await res.json();
+        
+        if (data.success) {
+            bookList = data.data || {};
+            renderBooks();
+        } else {
+            container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载失败</div></div>';
+        }
+    } catch (e) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载失败: ' + e.message + '</div></div>';
+    }
+}
+
+function filterBooks() {
+    renderBooks();
+}
+
+function renderBooks() {
+    const container = document.getElementById('bookList');
+    const filterSubject = document.getElementById('subjectFilter').value;
+    const searchText = (document.getElementById('bookSearchInput').value || '').toLowerCase().trim();
+    
+    let html = '';
+    let hasBooks = false;
+    
+    for (const [subjectId, books] of Object.entries(bookList)) {
+        if (filterSubject && filterSubject !== subjectId) continue;
+        if (!books || books.length === 0) continue;
+        
+        // 过滤书名
+        const filteredBooks = books.filter(book => {
+            if (!searchText) return true;
+            return (book.book_name || '').toLowerCase().includes(searchText);
+        });
+        
+        if (filteredBooks.length === 0) continue;
+        
+        hasBooks = true;
+        html += `<div class="book-group">
+            <div class="book-group-title">${SUBJECT_NAMES[subjectId] || '未知学科'} (${filteredBooks.length})</div>
+            ${filteredBooks.map(book => `
+                <div class="book-item ${selectedBook?.book_id === book.book_id ? 'selected' : ''}" 
+                     onclick="selectBook('${book.book_id}', ${subjectId})">
+                    <div class="book-item-title" title="${escapeHtml(book.book_name)}">${escapeHtml(book.book_name)}</div>
+                    <div class="book-item-meta">${book.page_count || 0} 页</div>
+                </div>
+            `).join('')}
+        </div>`;
+    }
+    
+    if (!hasBooks) {
+        html = '<div class="empty-state"><div class="empty-state-text">暂无匹配的图书</div></div>';
+    }
+    
+    container.innerHTML = html;
+}
+
+// ========== 选择图书 ==========
+async function selectBook(bookId, subjectId) {
+    showLoading('加载书本详情...');
+    
+    try {
+        const books = bookList[subjectId] || [];
+        selectedBook = books.find(b => b.book_id === bookId);
+        
+        if (!selectedBook) {
+            alert('未找到书本信息');
+            hideLoading();
+            return;
+        }
+        
+        selectedBook.subject_id = subjectId;
+        
+        // 加载页码
+        const pagesRes = await fetch(`/api/batch/books/${bookId}/pages`);
+        const pagesData = await pagesRes.json();
+        
+        if (pagesData.success) {
+            selectedBook.pages = pagesData.data?.all_pages || [];
+        }
+        
+        // 加载数据集
+        const datasetsRes = await fetch(`/api/batch/datasets?book_id=${bookId}`);
+        const datasetsData = await datasetsRes.json();
+        
+        if (datasetsData.success) {
+            datasetList = datasetsData.data || [];
+        }
+        
+        renderBooks();
+        renderBookDetail();
+        
+        // 隐藏添加面板，显示详情
+        document.getElementById('addDatasetPanel').style.display = 'none';
+        document.getElementById('bookDetail').style.display = 'block';
+        document.getElementById('emptyRight').style.display = 'none';
+        
+    } catch (e) {
+        alert('加载失败: ' + e.message);
+    }
+    hideLoading();
+}
+
+function renderBookDetail() {
+    if (!selectedBook) return;
+    
+    document.getElementById('bookTitle').textContent = selectedBook.book_name;
+    document.getElementById('bookMeta').textContent = 
+        `${SUBJECT_NAMES[selectedBook.subject_id] || '未知学科'} | 共 ${selectedBook.pages?.length || 0} 页 | ${datasetList.length} 个数据集`;
+    
+    // 渲染数据集列表
+    const datasetContainer = document.getElementById('datasetList');
+    if (datasetList.length === 0) {
+        datasetContainer.innerHTML = '<div class="empty-state"><div class="empty-state-text">暂无数据集，点击右上角添加</div></div>';
+    } else {
+        datasetContainer.innerHTML = datasetList.map(ds => `
+            <div class="dataset-card">
+                <div class="dataset-info">
+                    <div class="dataset-title">页码: ${ds.pages?.join(', ') || '-'}</div>
+                    <div class="dataset-meta">${ds.question_count || 0} 题 | 创建于 ${formatTime(ds.created_at)}</div>
+                </div>
+                <div class="dataset-actions">
+                    <button class="btn btn-small btn-secondary" onclick="exportDataset('${ds.dataset_id}')">导出</button>
+                    <button class="btn btn-small btn-secondary" onclick="viewDataset('${ds.dataset_id}')">查看</button>
+                    <button class="btn btn-small btn-primary" onclick="editDataset('${ds.dataset_id}')">编辑</button>
+                    <button class="btn btn-small btn-danger" onclick="deleteDataset('${ds.dataset_id}')">删除</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    // 渲染页码概览
+    const pageContainer = document.getElementById('pageOverview');
+    const pagesWithDataset = new Set();
+    datasetList.forEach(ds => (ds.pages || []).forEach(p => pagesWithDataset.add(p)));
+    
+    if (!selectedBook.pages || selectedBook.pages.length === 0) {
+        pageContainer.innerHTML = '<div class="empty-state"><div class="empty-state-text">暂无页码数据</div></div>';
+    } else {
+        pageContainer.innerHTML = selectedBook.pages.map(page => 
+            `<span class="page-tag ${pagesWithDataset.has(page) ? 'has-dataset' : ''}">${page}</span>`
+        ).join('');
+    }
+}
+
+// ========== 添加数据集 ==========
+function showAddDatasetPanel() {
+    if (!selectedBook) {
+        alert('请先选择图书');
+        return;
+    }
+    
+    // 重置状态
+    selectedPages.clear();
+    availableHomework = {};
+    selectedHomework = {};
+    recognizeResults = {};
+    
+    // 渲染页码选择
+    const pagesWithDataset = new Set();
+    datasetList.forEach(ds => (ds.pages || []).forEach(p => pagesWithDataset.add(p)));
+    
+    const pageGrid = document.getElementById('pageSelectGrid');
+    pageGrid.innerHTML = (selectedBook.pages || []).map(page => 
+        `<div class="page-select-item ${pagesWithDataset.has(page) ? 'has-dataset' : ''}" 
+              data-page="${page}" onclick="togglePage(${page})">${page}</div>`
+    ).join('');
+    
+    // 隐藏后续步骤
+    document.getElementById('step2Section').style.display = 'none';
+    document.getElementById('step3Section').style.display = 'none';
+    document.getElementById('saveSection').style.display = 'none';
+    document.getElementById('homeworkGrid').innerHTML = '<div class="empty-state"><div class="empty-state-text">请先选择页码</div></div>';
+    document.getElementById('recognizeResult').innerHTML = '<div class="empty-state"><div class="empty-state-text">选择作业图片后点击"开始识别"</div></div>';
+    
+    // 显示添加面板
+    document.getElementById('bookDetail').style.display = 'none';
+    document.getElementById('addDatasetPanel').style.display = 'block';
+}
+
+function hideAddDatasetPanel() {
+    document.getElementById('addDatasetPanel').style.display = 'none';
+    document.getElementById('bookDetail').style.display = 'block';
+}
+
+function togglePage(page) {
+    if (selectedPages.has(page)) {
+        selectedPages.delete(page);
+    } else {
+        selectedPages.add(page);
+    }
+    
+    updatePageSelection();
+}
+
+function updatePageSelection() {
+    // 更新选中状态
+    document.querySelectorAll('.page-select-item').forEach(el => {
+        el.classList.toggle('selected', selectedPages.has(parseInt(el.dataset.page)));
+    });
+    
+    // 更新选中数量显示
+    document.getElementById('pageSelectInfo').textContent = `已选择 ${selectedPages.size} 个页码`;
+    
+    // 显示/隐藏步骤2
+    if (selectedPages.size > 0) {
+        document.getElementById('step2Section').style.display = 'block';
+        loadAvailableHomework();
+    } else {
+        document.getElementById('step2Section').style.display = 'none';
+        document.getElementById('step3Section').style.display = 'none';
+        document.getElementById('saveSection').style.display = 'none';
+    }
+}
+
+// 全选页码
+function selectAllPages() {
+    if (!selectedBook || !selectedBook.pages) return;
+    selectedBook.pages.forEach(page => selectedPages.add(page));
+    updatePageSelection();
+}
+
+// 清空页码选择
+function clearPageSelection() {
+    selectedPages.clear();
+    updatePageSelection();
+}
+
+// 应用范围选择
+function applyPageRange() {
+    const input = document.getElementById('pageRangeInput').value.trim();
+    if (!input) return;
+    
+    const availablePages = new Set(selectedBook?.pages || []);
+    const parts = input.split(',').map(s => s.trim());
+    
+    for (const part of parts) {
+        if (part.includes('-')) {
+            // 范围格式: 1-10
+            const [start, end] = part.split('-').map(s => parseInt(s.trim()));
+            if (!isNaN(start) && !isNaN(end)) {
+                for (let i = start; i <= end; i++) {
+                    if (availablePages.has(i)) {
+                        selectedPages.add(i);
+                    }
+                }
+            }
+        } else {
+            // 单个页码
+            const page = parseInt(part);
+            if (!isNaN(page) && availablePages.has(page)) {
+                selectedPages.add(page);
+            }
+        }
+    }
+    
+    updatePageSelection();
+    document.getElementById('pageRangeInput').value = '';
+}
+
+// ========== 加载可用作业 ==========
+async function loadAvailableHomework() {
+    if (selectedPages.size === 0) return;
+    
+    const hours = document.getElementById('timeRangeSelect').value;
+    const container = document.getElementById('homeworkGrid');
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载中...</div></div>';
+    
+    showLoading('加载可用作业图片...');
+    
+    try {
+        availableHomework = {};
+        const pages = Array.from(selectedPages).sort((a, b) => a - b);
+        
+        for (const page of pages) {
+            const res = await fetch(`/api/dataset/available-homework?book_id=${selectedBook.book_id}&page_num=${page}&hours=${hours}`);
+            const data = await res.json();
+            
+            if (data.success && data.data && data.data.length > 0) {
+                availableHomework[page] = data.data;
+            }
+        }
+        
+        renderHomeworkGrid();
+        
+    } catch (e) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载失败: ' + e.message + '</div></div>';
+    }
+    
+    hideLoading();
+}
+
+function renderHomeworkGrid() {
+    const container = document.getElementById('homeworkGrid');
+    const pages = Array.from(selectedPages).sort((a, b) => a - b);
+    
+    let html = '';
+    let hasHomework = false;
+    
+    for (const page of pages) {
+        const homeworkList = availableHomework[page] || [];
+        
+        if (homeworkList.length > 0) {
+            hasHomework = true;
+            html += `<div class="page-group">
+                <div class="page-group-title">第 ${page} 页 (${homeworkList.length} 个可用)</div>
+                <div class="homework-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;">
+                    ${homeworkList.map(hw => `
+                        <div class="homework-card ${selectedHomework[page]?.id === hw.id ? 'selected' : ''}" 
+                             onclick="selectHomework(${page}, '${hw.id}')">
+                            <img class="homework-image" 
+                                 src="${hw.pic_url || '/static/images/no-image.png'}" 
+                                 alt="作业图片"
+                                 onclick="showImageModal('${hw.pic_url}')">
+                            <div class="homework-info">
+                                <div class="homework-title" title="${escapeHtml(hw.student_name || hw.student_id)}">${escapeHtml(hw.student_name || hw.student_id || '未知学生')}</div>
+                                <div class="homework-meta">
+                                    作业ID: ${hw.id}<br>
+                                    时间: ${formatTime(hw.create_time)}<br>
+                                    题目数: ${hw.question_count || 0}
+                                </div>
+                                ${selectedHomework[page]?.id === hw.id ? '<span class="homework-select-badge">已选择</span>' : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        } else {
+            html += `<div class="page-group">
+                <div class="page-group-title">第 ${page} 页</div>
+                <div class="empty-state" style="padding:20px;"><div class="empty-state-text">该页码暂无可用作业图片</div></div>
+            </div>`;
+        }
+    }
+    
+    if (!hasHomework) {
+        html = '<div class="empty-state"><div class="empty-state-text">所选页码暂无可用作业图片，请调整时间范围或选择其他页码</div></div>';
+    }
+    
+    container.innerHTML = html;
+    
+    // 检查是否可以进入步骤3
+    updateStep3Visibility();
+}
+
+function selectHomework(page, homeworkId) {
+    const homeworkList = availableHomework[page] || [];
+    const hw = homeworkList.find(h => h.id == homeworkId);
+    
+    if (hw) {
+        if (selectedHomework[page]?.id === hw.id) {
+            // 取消选择
+            delete selectedHomework[page];
+        } else {
+            selectedHomework[page] = hw;
+        }
+        renderHomeworkGrid();
+    }
+}
+
+function updateStep3Visibility() {
+    const hasSelection = Object.keys(selectedHomework).length > 0;
+    document.getElementById('step3Section').style.display = hasSelection ? 'block' : 'none';
+    
+    if (hasSelection) {
+        renderRecognizePreview();
+    }
+}
+
+function renderRecognizePreview() {
+    const container = document.getElementById('recognizeResult');
+    const pages = Object.keys(selectedHomework).map(Number).sort((a, b) => a - b);
+    
+    if (pages.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">请先选择作业图片</div></div>';
+        return;
+    }
+    
+    container.innerHTML = pages.map(page => {
+        const hw = selectedHomework[page];
+        const result = recognizeResults[page];
+        
+        // 判断状态
+        let status, statusText;
+        if (result?.status === 'recognizing') {
+            status = 'recognizing';
+            statusText = '识别中...';
+        } else if (result?.success) {
+            status = 'success';
+            statusText = '识别成功';
+        } else if (result && !result.success) {
+            status = 'error';
+            statusText = '识别失败';
+        } else {
+            status = 'pending';
+            statusText = '待识别';
+        }
+        
+        let dataHtml = '';
+        if (result?.status === 'recognizing') {
+            // 识别中状态
+            dataHtml = `
+                <div class="recognizing-indicator">
+                    <div class="recognizing-spinner"></div>
+                    <span>正在识别中，请稍候...</span>
+                </div>
+            `;
+        } else if (result && result.success && result.data && result.data.length > 0) {
+            // 表格形式展示
+            dataHtml = `
+                <div class="view-toggle">
+                    <button class="view-toggle-btn active" onclick="toggleResultView(${page}, 'table')">表格视图</button>
+                    <button class="view-toggle-btn" onclick="toggleResultView(${page}, 'json')">JSON视图</button>
+                </div>
+                <div id="resultTable_${page}">
+                    ${renderResultTable(page, result.data)}
+                </div>
+                <div id="resultJson_${page}" style="display:none;">
+                    <textarea class="recognize-textarea" id="recognizeData_${page}" 
+                              onchange="updateRecognizeData(${page}, this.value)">${JSON.stringify(result.data, null, 2)}</textarea>
+                </div>
+                <div class="recognize-count">共 ${result.data.length} 题</div>
+            `;
+        } else {
+            dataHtml = `
+                <textarea class="recognize-textarea" id="recognizeData_${page}" 
+                          placeholder="点击"开始识别"自动识别，或手动输入JSON数组"
+                          onchange="updateRecognizeData(${page}, this.value)">${result?.data ? JSON.stringify(result.data, null, 2) : ''}</textarea>
+                ${result?.error ? `<div class="recognize-error">错误: ${escapeHtml(result.error)}</div>` : ''}
+            `;
+        }
+        
+        return `
+            <div class="recognize-item">
+                <div class="recognize-item-header">
+                    <span class="recognize-item-title">第 ${page} 页</span>
+                    <span class="recognize-status ${status}">${statusText}</span>
+                </div>
+                <div class="recognize-preview">
+                    <img class="recognize-image" src="${hw.pic_url || '/static/images/no-image.png'}" 
+                         onclick="showImageModal('${hw.pic_url}')">
+                    <div class="recognize-data">
+                        ${dataHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderResultTable(page, data) {
+    return `
+        <table class="recognize-table">
+            <thead>
+                <tr>
+                    <th style="width:60px;">题号</th>
+                    <th>学生答案</th>
+                    <th style="width:80px;">是否正确</th>
+                    <th style="width:100px;">题目类型</th>
+                    <th style="width:50px;">操作</th>
+                </tr>
+            </thead>
+            <tbody id="resultTableBody_${page}">
+                ${data.map((item, idx) => `
+                    <tr data-idx="${idx}">
+                        <td><input type="text" value="${escapeHtml(item.index || '')}" onchange="updateTableCell(${page}, ${idx}, 'index', this.value)"></td>
+                        <td><input type="text" value="${escapeHtml(item.userAnswer || '')}" onchange="updateTableCell(${page}, ${idx}, 'userAnswer', this.value)"></td>
+                        <td>
+                            <select onchange="updateTableCell(${page}, ${idx}, 'correct', this.value)">
+                                <option value="yes" ${item.correct === 'yes' ? 'selected' : ''}>正确</option>
+                                <option value="no" ${item.correct === 'no' || item.correct !== 'yes' ? 'selected' : ''}>错误</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select onchange="updateTableCell(${page}, ${idx}, 'type', this.value)">
+                                <option value="choice" ${item.type === 'choice' ? 'selected' : ''}>选择题</option>
+                                <option value="fill" ${item.type === 'fill' ? 'selected' : ''}>填空题</option>
+                                <option value="subjective" ${item.type === 'subjective' ? 'selected' : ''}>主观题</option>
+                            </select>
+                        </td>
+                        <td><button class="btn-delete-row" onclick="deleteTableRow(${page}, ${idx})">x</button></td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+        <div class="table-actions">
+            <button class="btn-add-row" onclick="addTableRow(${page})">+ 添加题目</button>
+        </div>
+    `;
+}
+
+function toggleResultView(page, view) {
+    const tableDiv = document.getElementById(`resultTable_${page}`);
+    const jsonDiv = document.getElementById(`resultJson_${page}`);
+    const buttons = tableDiv.parentElement.querySelectorAll('.view-toggle-btn');
+    
+    if (view === 'table') {
+        tableDiv.style.display = 'block';
+        jsonDiv.style.display = 'none';
+        buttons[0].classList.add('active');
+        buttons[1].classList.remove('active');
+    } else {
+        tableDiv.style.display = 'none';
+        jsonDiv.style.display = 'block';
+        buttons[0].classList.remove('active');
+        buttons[1].classList.add('active');
+        // 同步JSON
+        document.getElementById(`recognizeData_${page}`).value = JSON.stringify(recognizeResults[page].data, null, 2);
+    }
+}
+
+function updateTableCell(page, idx, field, value) {
+    if (recognizeResults[page] && recognizeResults[page].data && recognizeResults[page].data[idx]) {
+        recognizeResults[page].data[idx][field] = value;
+    }
+    checkCanSave();
+}
+
+function deleteTableRow(page, idx) {
+    if (recognizeResults[page] && recognizeResults[page].data) {
+        recognizeResults[page].data.splice(idx, 1);
+        renderRecognizePreview();
+        checkCanSave();
+    }
+}
+
+function addTableRow(page) {
+    if (recognizeResults[page] && recognizeResults[page].data) {
+        const lastItem = recognizeResults[page].data[recognizeResults[page].data.length - 1];
+        const newIndex = lastItem ? (parseInt(lastItem.index) + 1).toString() : '1';
+        recognizeResults[page].data.push({
+            index: newIndex,
+            userAnswer: '',
+            correct: 'yes',
+            type: 'choice'
+        });
+        renderRecognizePreview();
+        checkCanSave();
+    }
+}
+
+function updateRecognizeData(page, value) {
+    try {
+        const data = JSON.parse(value);
+        recognizeResults[page] = { success: true, data: data };
+    } catch (e) {
+        // 解析失败
+    }
+    checkCanSave();
+}
+
+// ========== 开始识别 ==========
+let isRecognizing = false;
+
+async function startRecognize() {
+    const pages = Object.keys(selectedHomework).map(Number).sort((a, b) => a - b);
+    
+    if (pages.length === 0) {
+        alert('请先选择作业图片');
+        return;
+    }
+    
+    if (isRecognizing) {
+        alert('正在识别中，请稍候...');
+        return;
+    }
+    
+    isRecognizing = true;
+    
+    // 初始化所有页码为"识别中"状态
+    for (const page of pages) {
+        recognizeResults[page] = { status: 'recognizing' };
+    }
+    renderRecognizePreview();
+    
+    // 并行发起所有识别请求
+    const recognizePromises = pages.map(page => recognizePage(page));
+    
+    // 等待所有识别完成
+    await Promise.all(recognizePromises);
+    
+    isRecognizing = false;
+    renderRecognizePreview();
+    checkCanSave();
+}
+
+// 单个页码识别
+async function recognizePage(page) {
+    const hw = selectedHomework[page];
+    
+    try {
+        const res = await fetch('/api/dataset/recognize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                homework_id: hw.id,
+                pic_path: hw.pic_path,
+                subject_id: selectedBook.subject_id
+            })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            recognizeResults[page] = {
+                success: true,
+                data: data.data || []
+            };
+        } else {
+            recognizeResults[page] = {
+                success: false,
+                error: data.error || '识别失败'
+            };
+        }
+    } catch (e) {
+        recognizeResults[page] = {
+            success: false,
+            error: e.message
+        };
+    }
+    
+    // 单个完成后立即更新UI
+    renderRecognizePreview();
+    checkCanSave();
+}
+
+function checkCanSave() {
+    const pages = Object.keys(selectedHomework).map(Number);
+    let canSave = pages.length > 0;
+    
+    for (const page of pages) {
+        const result = recognizeResults[page];
+        if (!result || !result.success || !result.data || result.data.length === 0) {
+            canSave = false;
+            break;
+        }
+    }
+    
+    document.getElementById('saveSection').style.display = canSave ? 'block' : 'none';
+}
+
+// ========== 保存数据集 ==========
+async function saveDataset() {
+    const pages = Object.keys(selectedHomework).map(Number).sort((a, b) => a - b);
+    
+    if (pages.length === 0) {
+        alert('请先选择作业图片并完成识别');
+        return;
+    }
+    
+    // 构建基准效果数据
+    const baseEffects = {};
+    for (const page of pages) {
+        const result = recognizeResults[page];
+        if (result && result.success && result.data) {
+            baseEffects[page] = result.data;
+        }
+    }
+    
+    if (Object.keys(baseEffects).length === 0) {
+        alert('没有有效的基准效果数据');
+        return;
+    }
+    
+    showLoading('保存数据集...');
+    
+    try {
+        // 为每个页码的基准效果添加题目类型信息
+        const enrichedBaseEffects = {};
+        for (const page of pages) {
+            const effects = baseEffects[page];
+            if (effects && effects.length > 0) {
+                try {
+                    const enrichRes = await fetch('/api/batch/datasets/enrich-base-effects', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            book_id: selectedBook.book_id,
+                            page_num: page,
+                            base_effects: effects
+                        })
+                    });
+                    const enrichData = await enrichRes.json();
+                    
+                    if (enrichData.success && enrichData.data) {
+                        enrichedBaseEffects[page] = enrichData.data;
+                    } else {
+                        // 如果添加题目类型失败，使用原始数据
+                        enrichedBaseEffects[page] = effects;
+                    }
+                } catch (e) {
+                    // 如果请求失败，使用原始数据
+                    enrichedBaseEffects[page] = effects;
+                }
+            }
+        }
+        
+        const res = await fetch('/api/batch/datasets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                book_id: selectedBook.book_id,
+                pages: pages,
+                base_effects: enrichedBaseEffects
+            })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            alert('数据集保存成功！');
+            // 重新加载数据集列表
+            const datasetsRes = await fetch(`/api/batch/datasets?book_id=${selectedBook.book_id}`);
+            const datasetsData = await datasetsRes.json();
+            if (datasetsData.success) {
+                datasetList = datasetsData.data || [];
+            }
+            hideAddDatasetPanel();
+            renderBookDetail();
+        } else {
+            alert('保存失败: ' + (data.error || '未知错误'));
+        }
+    } catch (e) {
+        alert('保存失败: ' + e.message);
+    }
+    
+    hideLoading();
+}
+
+// ========== 查看/删除数据集 ==========
+function viewDataset(datasetId) {
+    const ds = datasetList.find(d => d.dataset_id === datasetId);
+    if (ds) {
+        alert(`数据集详情:\n\n页码: ${ds.pages?.join(', ')}\n题目数: ${ds.question_count}\n创建时间: ${ds.created_at}\n\n基准效果:\n${JSON.stringify(ds.base_effects, null, 2)}`);
+    }
+}
+
+async function deleteDataset(datasetId) {
+    if (!confirm('确定要删除此数据集吗？')) return;
+    
+    showLoading('删除数据集...');
+    
+    try {
+        const res = await fetch(`/api/batch/datasets/${datasetId}`, { method: 'DELETE' });
+        const data = await res.json();
+        
+        if (data.success) {
+            // 重新加载
+            const datasetsRes = await fetch(`/api/batch/datasets?book_id=${selectedBook.book_id}`);
+            const datasetsData = await datasetsRes.json();
+            if (datasetsData.success) {
+                datasetList = datasetsData.data || [];
+            }
+            renderBookDetail();
+        } else {
+            alert('删除失败: ' + (data.error || '未知错误'));
+        }
+    } catch (e) {
+        alert('删除失败: ' + e.message);
+    }
+    
+    hideLoading();
+}
+
+
+// ========== 导入导出功能 ==========
+let importData = null;
+
+// 导出所有数据集
+async function exportAllDatasets() {
+    if (!selectedBook || datasetList.length === 0) {
+        alert('当前书本没有数据集可导出');
+        return;
+    }
+    
+    showLoading('准备导出数据...');
+    
+    try {
+        // 获取完整的数据集数据
+        const fullDatasets = [];
+        for (const ds of datasetList) {
+            const res = await fetch(`/api/batch/datasets/${ds.dataset_id}`);
+            const data = await res.json();
+            if (data.success) {
+                fullDatasets.push(data.data);
+            }
+        }
+        
+        const exportData = {
+            book_id: selectedBook.book_id,
+            book_name: selectedBook.book_name,
+            subject_id: selectedBook.subject_id,
+            export_time: new Date().toISOString(),
+            datasets: fullDatasets
+        };
+        
+        // 下载JSON文件
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `dataset_${selectedBook.book_name}_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        hideLoading();
+    } catch (e) {
+        hideLoading();
+        alert('导出失败: ' + e.message);
+    }
+}
+
+// 显示导入弹窗
+function showImportModal() {
+    importData = null;
+    document.getElementById('importFileInput').value = '';
+    document.getElementById('importPreview').style.display = 'none';
+    document.getElementById('confirmImportBtn').disabled = true;
+    document.getElementById('importModal').classList.add('show');
+}
+
+function hideImportModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    document.getElementById('importModal').classList.remove('show');
+}
+
+// 预览导入文件
+function previewImportFile() {
+    const fileInput = document.getElementById('importFileInput');
+    const file = fileInput.files[0];
+    
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            importData = JSON.parse(e.target.result);
+            
+            // 验证数据格式
+            if (!importData.datasets || !Array.isArray(importData.datasets)) {
+                throw new Error('无效的数据格式');
+            }
+            
+            // 显示预览
+            const previewContent = document.getElementById('importPreviewContent');
+            previewContent.innerHTML = `
+                <div class="preview-item"><strong>来源书本:</strong> ${escapeHtml(importData.book_name || '未知')}</div>
+                <div class="preview-item"><strong>导出时间:</strong> ${importData.export_time || '未知'}</div>
+                <div class="preview-item"><strong>数据集数量:</strong> ${importData.datasets.length} 个</div>
+                <div class="preview-item"><strong>包含页码:</strong> ${[...new Set(importData.datasets.flatMap(d => d.pages || []))].sort((a,b) => a-b).join(', ')}</div>
+            `;
+            
+            document.getElementById('importPreview').style.display = 'block';
+            document.getElementById('confirmImportBtn').disabled = false;
+            
+        } catch (err) {
+            alert('文件解析失败: ' + err.message);
+            importData = null;
+            document.getElementById('importPreview').style.display = 'none';
+            document.getElementById('confirmImportBtn').disabled = true;
+        }
+    };
+    reader.readAsText(file);
+}
+
+// 确认导入
+async function confirmImport() {
+    if (!importData || !importData.datasets || !selectedBook) {
+        alert('没有可导入的数据');
+        return;
+    }
+    
+    showLoading('正在导入数据集...');
+    
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (const ds of importData.datasets) {
+        try {
+            // 为每个页码的基准效果添加题目类型信息
+            const enrichedBaseEffects = {};
+            for (const [page, effects] of Object.entries(ds.base_effects || {})) {
+                if (effects && effects.length > 0) {
+                    try {
+                        const enrichRes = await fetch('/api/batch/datasets/enrich-base-effects', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                book_id: selectedBook.book_id,
+                                page_num: parseInt(page),
+                                base_effects: effects
+                            })
+                        });
+                        const enrichData = await enrichRes.json();
+                        
+                        if (enrichData.success && enrichData.data) {
+                            enrichedBaseEffects[page] = enrichData.data;
+                        } else {
+                            enrichedBaseEffects[page] = effects;
+                        }
+                    } catch (e) {
+                        enrichedBaseEffects[page] = effects;
+                    }
+                }
+            }
+            
+            const res = await fetch('/api/batch/datasets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    book_id: selectedBook.book_id,
+                    pages: ds.pages || [],
+                    base_effects: enrichedBaseEffects
+                })
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                successCount++;
+            } else {
+                failCount++;
+            }
+        } catch (e) {
+            failCount++;
+        }
+    }
+    
+    hideLoading();
+    hideImportModal();
+    
+    alert(`导入完成！成功: ${successCount} 个，失败: ${failCount} 个`);
+    
+    // 重新加载数据集列表
+    const datasetsRes = await fetch(`/api/batch/datasets?book_id=${selectedBook.book_id}`);
+    const datasetsData = await datasetsRes.json();
+    if (datasetsData.success) {
+        datasetList = datasetsData.data || [];
+    }
+    renderBookDetail();
+}
+
+// 导出单个数据集
+async function exportDataset(datasetId) {
+    showLoading('准备导出...');
+    
+    try {
+        const res = await fetch(`/api/batch/datasets/${datasetId}`);
+        const data = await res.json();
+        
+        if (data.success) {
+            const exportData = {
+                book_id: selectedBook.book_id,
+                book_name: selectedBook.book_name,
+                export_time: new Date().toISOString(),
+                datasets: [data.data]
+            };
+            
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `dataset_pages_${data.data.pages?.join('-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    } catch (e) {
+        alert('导出失败: ' + e.message);
+    }
+    
+    hideLoading();
+}
+
+
+// ========== 编辑数据集功能 ==========
+let editingDataset = null;
+let editingData = {};  // 按页码存储编辑中的数据
+let currentEditPage = null;
+
+// 打开编辑弹窗
+async function editDataset(datasetId) {
+    showLoading('加载数据集详情...');
+    
+    try {
+        const res = await fetch(`/api/batch/datasets/${datasetId}`);
+        const data = await res.json();
+        
+        if (!data.success) {
+            alert('加载失败: ' + (data.error || '未知错误'));
+            hideLoading();
+            return;
+        }
+        
+        editingDataset = data.data;
+        editingData = JSON.parse(JSON.stringify(editingDataset.base_effects || {}));
+        
+        // 渲染页码标签
+        renderEditPageTabs();
+        
+        // 选择第一个页码
+        const pages = Object.keys(editingData).map(Number).sort((a, b) => a - b);
+        if (pages.length > 0) {
+            selectEditPage(pages[0]);
+        } else {
+            document.getElementById('editTableBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">暂无数据</td></tr>';
+        }
+        
+        // 显示弹窗
+        document.getElementById('editModal').classList.add('show');
+        
+    } catch (e) {
+        alert('加载失败: ' + e.message);
+    }
+    
+    hideLoading();
+}
+
+// 隐藏编辑弹窗
+function hideEditModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    document.getElementById('editModal').classList.remove('show');
+    editingDataset = null;
+    editingData = {};
+    currentEditPage = null;
+}
+
+// 渲染页码标签
+function renderEditPageTabs() {
+    const container = document.getElementById('editPageTabs');
+    const pages = Object.keys(editingData).map(Number).sort((a, b) => a - b);
+    
+    container.innerHTML = pages.map(page => 
+        `<div class="edit-page-tab ${currentEditPage === page ? 'active' : ''}" 
+              onclick="selectEditPage(${page})">第 ${page} 页</div>`
+    ).join('');
+}
+
+// 选择编辑页码
+function selectEditPage(page) {
+    currentEditPage = page;
+    renderEditPageTabs();
+    renderEditTable();
+}
+
+// 渲染编辑表格
+function renderEditTable() {
+    const tbody = document.getElementById('editTableBody');
+    const data = editingData[currentEditPage] || [];
+    
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">暂无题目数据</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = data.map((item, idx) => {
+        // 统一使用 correct 字段 ("yes"/"no")
+        const isCorrect = item.correct === 'yes';
+        return `
+        <tr data-idx="${idx}">
+            <td><input type="text" class="edit-input" value="${escapeHtml(item.index || '')}" 
+                       onchange="updateEditCell(${idx}, 'index', this.value)"></td>
+            <td><input type="text" class="edit-input" value="${escapeHtml(item.answer || '')}" 
+                       onchange="updateEditCell(${idx}, 'answer', this.value)"></td>
+            <td><input type="text" class="edit-input" value="${escapeHtml(item.userAnswer || '')}" 
+                       onchange="updateEditCell(${idx}, 'userAnswer', this.value)"></td>
+            <td>
+                <select class="edit-select" onchange="updateEditCell(${idx}, 'correct', this.value)">
+                    <option value="yes" ${isCorrect ? 'selected' : ''}>正确</option>
+                    <option value="no" ${!isCorrect ? 'selected' : ''}>错误</option>
+                </select>
+            </td>
+            <td><button class="btn-delete-row" onclick="deleteEditRow(${idx})">×</button></td>
+        </tr>
+    `}).join('');
+}
+
+// 更新编辑单元格
+function updateEditCell(idx, field, value) {
+    if (editingData[currentEditPage] && editingData[currentEditPage][idx]) {
+        editingData[currentEditPage][idx][field] = value;
+    }
+}
+
+// 删除编辑行
+function deleteEditRow(idx) {
+    if (editingData[currentEditPage]) {
+        editingData[currentEditPage].splice(idx, 1);
+        renderEditTable();
+    }
+}
+
+// 添加编辑行
+function addEditRow() {
+    if (!currentEditPage) return;
+    
+    if (!editingData[currentEditPage]) {
+        editingData[currentEditPage] = [];
+    }
+    
+    const data = editingData[currentEditPage];
+    const lastItem = data[data.length - 1];
+    const newIndex = lastItem ? (parseInt(lastItem.index) + 1).toString() : '1';
+    
+    data.push({
+        index: newIndex,
+        answer: '',
+        userAnswer: '',
+        correct: 'yes',
+        type: 'choice'
+    });
+    
+    renderEditTable();
+    
+    // 滚动到底部
+    const container = document.getElementById('editTableContainer');
+    container.scrollTop = container.scrollHeight;
+}
+
+// 保存编辑的数据集
+async function saveEditDataset() {
+    if (!editingDataset) {
+        alert('没有正在编辑的数据集');
+        return;
+    }
+    
+    showLoading('保存修改...');
+    
+    try {
+        const res = await fetch(`/api/batch/datasets/${editingDataset.dataset_id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                base_effects: editingData
+            })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            alert('保存成功！');
+            hideEditModal();
+            
+            // 重新加载数据集列表
+            const datasetsRes = await fetch(`/api/batch/datasets?book_id=${selectedBook.book_id}`);
+            const datasetsData = await datasetsRes.json();
+            if (datasetsData.success) {
+                datasetList = datasetsData.data || [];
+            }
+            renderBookDetail();
+        } else {
+            alert('保存失败: ' + (data.error || '未知错误'));
+        }
+    } catch (e) {
+        alert('保存失败: ' + e.message);
+    }
+    
+    hideLoading();
+}

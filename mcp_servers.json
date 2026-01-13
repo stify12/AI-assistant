@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "趋势中心": {
+      "command": "npx",
+      "args": [
+        "{",
+        "\"mcpServers\": {",
+        "\"trends-hub\": {",
+        "\"command\": \"npx\",",
+        "\"args\": [",
+        "\"-y\",",
+        "\"mcp-trends-hub@1.6.0\"",
+        "]",
+        "}",
+        "}",
+        "}"
+      ],
+      "env": {},
+      "enabled": true
+    }
+  }
+}

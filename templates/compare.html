@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 输出对比分析</title>
+    <link rel="stylesheet" href="/static/css/common.css">
+    <link rel="stylesheet" href="/static/css/compare.css">
+    <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="logo">AI 输出对比分析</div>
+        <div style="display:flex;gap:12px;align-items:center;">
+            <button class="back-btn" onclick="showEvalConfigPanel()" style="background:#f5f5f7;color:#1d1d1f;border:none;">评估配置</button>
+            <button class="back-btn" onclick="goBack()">返回</button>
+        </div>
+    </nav>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">处理中...</div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 标签页导航 -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab(0)">单图测试</div>
+            <div class="tab" onclick="switchTab(1)">批量对比</div>
+            <div class="tab" onclick="switchTab(2)">一致性测试</div>
+            <div class="tab" onclick="switchTab(3)">多模型对比</div>
+            <div class="tab" onclick="switchTab(4)">历史记录</div>
+            <div class="tab" onclick="switchTab(5)">模型推荐</div>
+        </div>
+
+        <!-- Tab 0: 单图测试 -->
+        <div class="tab-content active" id="tab0">
+            <div class="section">
+                <div class="section-title">单图并行测试</div>
+                <div class="section-desc">上传一张图片，设置重复次数，并行发送请求测试模型输出的一致性、准确率、耗时和Token消耗</div>
+                
+                <div class="upload-row">
+                    <div class="upload-area" id="uploadArea0" onclick="document.getElementById('singleImg').click()">
+                        <p>点击或拖拽上传图片</p>
+                        <input type="file" id="singleImg" accept="image/*" hidden>
+                    </div>
+                    <div class="upload-preview-box" id="previewBox0" style="display:none;">
+                        <img id="preview0" class="upload-preview-img" onclick="showImageModal(this.src)" title="点击放大">
+                        <div class="upload-preview-actions">
+                            <button class="preview-action-btn" onclick="showImageModal(document.getElementById('preview0').src)">放大</button>
+                            <button class="preview-action-btn" onclick="togglePreviewPanel(document.getElementById('preview0').src)">固定</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group" style="flex:2;">
+                        <label>提示词 
+                            <button class="optimize-btn" onclick="optimizePrompt('singlePrompt')" title="AI优化提示词">优化</button>
+                            <button class="optimize-btn" onclick="saveCurrentPrompt('singlePrompt')" title="保存提示词">保存</button>
+                        </label>
+                        <textarea id="singlePrompt" rows="5">请识别图片中每道题的手写答案，输出JSON格式</textarea>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group" style="flex:2;">
+                        <label>基准答案（可选，用于计算准确率）</label>
+                        <textarea id="singleBaseAnswer" rows="2" placeholder='示例：[{"index":"1","answer":"A"},{"index":"2","answer":"B"}]'></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>选择模型</label>
+                        <select id="singleModel">
+                            <option value="doubao-1-5-vision-pro-32k-250115">Vision Pro 1.5</option>
+                            <option value="doubao-seed-1-6-vision-250815">Seed Vision 1.6</option>
+                            <option value="doubao-seed-1-6-251015">Seed 1.6</option>
+                            <option value="doubao-seed-1-6-thinking-250715">Seed Thinking</option>
+                            <option value="qwen-vl-plus">Qwen VL</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>重复次数</label>
+                        <input type="number" id="repeatCount" value="5" min="1" max="20">
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:flex-end;">
+                        <button class="btn" onclick="runSingleTest()">
+                            <span>开始测试</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="singleResult"></div>
+        </div>
+
+        <!-- Tab 1: 批量对比 -->
+        <div class="tab-content" id="tab1">
+            <div class="section">
+                <div class="section-title">批量结果对比</div>
+                <div class="section-desc">上传 Excel 文件（AI批改结果），可选粘贴基准答案进行AI评估</div>
+                
+                <div class="upload-area" id="uploadAreaExcel" onclick="document.getElementById('excelFile').click()">
+                    <p id="excelFileName">点击上传 Excel 文件 (.xlsx)</p>
+                    <input type="file" id="excelFile" accept=".xlsx,.xls" hidden>
+                </div>
+                
+                <div style="background:#f5f5f7;padding:16px 20px;border-radius:12px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                    <p style="font-size:13px;color:#86868b;margin:0;">
+                        <strong style="color:#1d1d1f;">格式要求：</strong>第一列为模型名称，第二列为批次名称，第三列为JSON数组
+                    </p>
+                    <button class="btn btn-secondary btn-small" onclick="downloadTemplate()">下载模板</button>
+                </div>
+                
+                <div id="excelPreview"></div>
+                
+                <div class="form-row" style="margin-bottom:16px;">
+                    <div class="form-group" style="flex:2;">
+                        <label>基准答案（可选，用于AI评估，支持JSON格式）</label>
+                        <textarea id="baseAnswerText" rows="4" placeholder='粘贴JSON格式基准答案，如：[{"index":"1","answer":"A"},{"index":"2","answer":"B"}]'></textarea>
+                    </div>
+                </div>
+                
+                <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
+                    <button class="btn" onclick="runExcelCompare()" id="excelBtn" disabled>开始对比分析</button>
+                    <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;padding:8px 16px;background:#f5f5f7;border-radius:10px;">
+                        <input type="checkbox" id="useSemanticEval" style="width:16px;height:16px;accent-color:#1d1d1f;">
+                        <span>语义评估模式（DeepSeek）</span>
+                    </label>
+                    <button class="btn btn-secondary" onclick="runAIEvalWithBaseAnswer()" id="aiEvalBtn" style="background:#1d6f8c;">🤖 AI评估</button>
+                    <button class="btn btn-secondary" onclick="generateJointReport()" id="jointReportBtn" disabled>生成联合报告</button>
+                </div>
+                <div id="evalModeStatus" style="font-size:12px;color:#86868b;margin-top:12px;"></div>
+            </div>
+            <div id="batchResult"></div>
+        </div>
+
+        <!-- Tab 2: 一致性测试 -->
+        <div class="tab-content" id="tab2">
+            <div class="section">
+                <div class="section-title">输出一致性测试</div>
+                <div class="section-desc">对同一图片并行调用模型多次，测试输出的稳定性和一致性（已优化为并行执行，速度更快）</div>
+                
+                <div class="upload-row">
+                    <div class="upload-area" id="uploadArea2" onclick="document.getElementById('consistImg').click()">
+                        <p>点击或拖拽上传图片</p>
+                        <input type="file" id="consistImg" accept="image/*" hidden>
+                    </div>
+                    <div class="upload-preview-box" id="previewBox2" style="display:none;">
+                        <img id="preview2" class="upload-preview-img" onclick="showImageModal(this.src)" title="点击放大">
+                        <div class="upload-preview-actions">
+                            <button class="preview-action-btn" onclick="showImageModal(document.getElementById('preview2').src)">放大</button>
+                            <button class="preview-action-btn" onclick="togglePreviewPanel(document.getElementById('preview2').src)">固定</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group" style="flex:2;">
+                        <label>提示词 
+                            <button class="optimize-btn" onclick="optimizePrompt('consistPrompt')" title="AI优化提示词">优化</button>
+                            <button class="optimize-btn" onclick="saveCurrentPrompt('consistPrompt')" title="保存提示词">保存</button>
+                        </label>
+                        <textarea id="consistPrompt" rows="5">请识别图片中的手写答案</textarea>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>选择模型</label>
+                        <select id="consistModel">
+                            <option value="doubao-1-5-vision-pro-32k-250115">Vision Pro 1.5</option>
+                            <option value="doubao-seed-1-6-vision-250815">Seed Vision 1.6</option>
+                            <option value="doubao-seed-1-6-251015">Seed 1.6</option>
+                            <option value="doubao-seed-1-6-thinking-250715">Seed Thinking</option>
+                            <option value="qwen-vl-plus">Qwen VL</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>重复次数</label>
+                        <input type="number" id="consistRepeat" value="10" min="3" max="30">
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:flex-end;">
+                        <button class="btn" onclick="runConsistencyTest()">开始测试</button>
+                    </div>
+                </div>
+            </div>
+            <div id="consistResult"></div>
+        </div>
+
+        <!-- Tab 3: 多模型对比 -->
+        <div class="tab-content" id="tab3">
+            <div class="section">
+                <div class="section-title">多模型并行对比</div>
+                <div class="section-desc">同一图片同时发送到多个模型，对比不同模型的输出结果差异</div>
+                
+                <div class="upload-row">
+                    <div class="upload-area" id="uploadArea3" onclick="document.getElementById('multiModelImg').click()">
+                        <p>点击或拖拽上传图片</p>
+                        <input type="file" id="multiModelImg" accept="image/*" hidden>
+                    </div>
+                    <div class="upload-preview-box" id="previewBox3" style="display:none;">
+                        <img id="preview3" class="upload-preview-img" onclick="showImageModal(this.src)" title="点击放大">
+                        <div class="upload-preview-actions">
+                            <button class="preview-action-btn" onclick="showImageModal(document.getElementById('preview3').src)">放大</button>
+                            <button class="preview-action-btn" onclick="togglePreviewPanel(document.getElementById('preview3').src)">固定</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group" style="flex:2;">
+                        <label>提示词 
+                            <button class="optimize-btn" onclick="optimizePrompt('multiModelPrompt')" title="AI优化提示词">优化</button>
+                            <button class="optimize-btn" onclick="saveCurrentPrompt('multiModelPrompt')" title="保存提示词">保存</button>
+                        </label>
+                        <textarea id="multiModelPrompt" rows="5">请识别图片中每道题的手写答案，输出JSON格式</textarea>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group" style="flex:2;">
+                        <label>基准答案（可选）</label>
+                        <textarea id="multiModelBaseAnswer" rows="2" placeholder='示例：[{"index":"1","answer":"A"}]'></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>选择对比模型</label>
+                    <div class="checkbox-row">
+                        <label><input type="checkbox" value="doubao-1-5-vision-pro-32k-250115" checked> Vision Pro 1.5</label>
+                        <label><input type="checkbox" value="doubao-seed-1-6-vision-250815" checked> Seed Vision 1.6</label>
+                        <label><input type="checkbox" value="doubao-seed-1-6-251015"> Seed 1.6</label>
+                        <label><input type="checkbox" value="doubao-seed-1-6-thinking-250715"> Seed Thinking</label>
+                        <label><input type="checkbox" value="qwen-vl-plus"> Qwen VL</label>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>每模型重复次数</label>
+                        <input type="number" id="multiModelRepeat" value="3" min="1" max="10">
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:flex-end;">
+                        <button class="btn" onclick="runMultiModelCompare()">开始对比</button>
+                    </div>
+                </div>
+            </div>
+            <div id="multiModelResult"></div>
+        </div>
+
+        <!-- Tab 4: 历史记录 -->
+        <div class="tab-content" id="tab4">
+            <div class="section">
+                <div class="section-title">历史测试记录</div>
+                <div class="section-desc">查看和管理历史测试数据，支持导出和删除</div>
+                <div style="display:flex;gap:12px;margin-bottom:24px;">
+                    <button class="btn" onclick="refreshHistory()">刷新列表</button>
+                    <button class="btn" style="background:#d73a49;" onclick="clearAllHistory()">清空全部</button>
+                </div>
+                <div id="historyList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">—</div>
+                        <div class="empty-state-text">暂无历史记录</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: 模型推荐 -->
+        <div class="tab-content" id="tab5">
+            <div class="section">
+                <div class="section-title">智能模型推荐</div>
+                <div class="section-desc">基于历史测试数据，结合AI智能分析，为您推荐最适合的模型</div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>优化目标</label>
+                        <select id="recommendScenario" onchange="updateRecommendation()">
+                            <option value="balanced">均衡模式 - 综合考虑各项指标</option>
+                            <option value="accuracy">准确性优先 - 追求最高准确率</option>
+                            <option value="speed">速度优先 - 追求最快响应</option>
+                            <option value="cost">成本优先 - 追求最低成本</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>学科场景（可选）</label>
+                        <select id="recommendSubject">
+                            <option value="">通用场景</option>
+                            <option value="math">数学 - 计算题/公式识别</option>
+                            <option value="chinese">语文 - 作文/阅读理解</option>
+                            <option value="english">英语 - 单词/语法</option>
+                            <option value="physics">物理 - 图表/公式</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:flex-end;gap:8px;">
+                        <button class="btn" onclick="updateRecommendation()">刷新推荐</button>
+                        <button class="btn btn-secondary" onclick="runAIAnalysis()" id="aiAnalysisBtn">AI深度分析</button>
+                    </div>
+                </div>
+                
+                <!-- 历史数据统计概览 -->
+                <div id="historyStatsOverview" style="margin-bottom:24px;"></div>
+                
+                <!-- 推荐结果 -->
+                <div id="recommendResult"></div>
+                
+                <!-- 可视化图表区域 -->
+                <div class="chart-grid" id="recommendCharts" style="display:none;">
+                    <div class="chart-box">
+                        <div class="chart-title">模型能力雷达图</div>
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <div class="chart-title">综合评分对比</div>
+                        <canvas id="scoreBarChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-grid" id="recommendCharts2" style="display:none;">
+                    <div class="chart-box">
+                        <div class="chart-title">平均响应时间</div>
+                        <canvas id="timeChart"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <div class="chart-title">历史测试次数</div>
+                        <canvas id="testCountChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- AI分析结果 -->
+                <div id="aiAnalysisResult" style="display:none;"></div>
+            </div>
+            
+            <!-- 历史数据管理 -->
+            <div class="section">
+                <div class="section-title">历史测试数据管理</div>
+                <div class="section-desc">管理模型统计数据，支持手动录入测试结果</div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>选择模型</label>
+                        <select id="manualModel">
+                            <option value="doubao-1-5-vision-pro-32k-250115">Vision Pro 1.5</option>
+                            <option value="doubao-seed-1-6-vision-250815">Seed Vision 1.6</option>
+                            <option value="doubao-seed-1-6-251015">Seed 1.6</option>
+                            <option value="doubao-seed-1-6-thinking-250715">Seed Thinking</option>
+                            <option value="qwen-vl-plus">Qwen VL</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>准确率 (%)</label>
+                        <input type="number" id="manualAccuracy" min="0" max="100" placeholder="0-100">
+                    </div>
+                    <div class="form-group">
+                        <label>耗时 (秒)</label>
+                        <input type="number" id="manualTime" min="0" step="0.1" placeholder="响应时间">
+                    </div>
+                    <div class="form-group">
+                        <label>一致性 (%)</label>
+                        <input type="number" id="manualConsistency" min="0" max="100" placeholder="0-100">
+                    </div>
+                </div>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                    <button class="btn" onclick="submitManualStats()">提交数据</button>
+                    <button class="btn btn-secondary" onclick="resetModelStats()">重置所有统计</button>
+                    <button class="btn btn-secondary" onclick="exportModelStats()">导出统计数据</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI 分析总结 -->
+        <div class="summary-box" id="aiSummary" style="display:none;">
+            <h4>智能分析总结</h4>
+            <div class="summary-content" id="summaryContent">分析中...</div>
+        </div>
+
+        <!-- 联合评估报告弹窗 -->
+        <div class="modal" id="jointReportModal" style="display:none;">
+            <div class="modal-content" style="max-width:900px;">
+                <div class="modal-header">
+                    <h3>联合评估报告</h3>
+                    <button class="modal-close" onclick="closeJointReport()">×</button>
+                </div>
+                <div id="jointReportContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右侧图片预览面板 -->
+    <div class="image-preview-panel" id="imagePreviewPanel">
+        <div class="preview-panel-header">
+            <span>图片预览</span>
+            <button class="preview-panel-close" onclick="togglePreviewPanel()">×</button>
+        </div>
+        <div class="preview-panel-body">
+            <img id="previewPanelImg" src="" alt="预览图片" onclick="showImageModal(this.src)" title="点击放大">
+        </div>
+    </div>
+
+    <!-- 图片放大弹窗 -->
+    <div class="image-modal" id="imageModal" onclick="hideImageModal()">
+        <img id="modalImg" src="">
+    </div>
+
+    <!-- JavaScript -->
+    <script src="/static/js/compare.js"></script>
+</body>
+</html>

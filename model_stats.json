@@ -1,0 +1,24 @@
+{
+  "doubao-seed-1-6-vision-250815": {
+    "total_tests": 3,
+    "success_count": 3,
+    "accuracy_sum": 0,
+    "accuracy_count": 0,
+    "time_sum": 135.71,
+    "time_count": 3,
+    "consistency_sum": 120,
+    "consistency_count": 3,
+    "last_updated": "2025-12-16T14:49:55.803999"
+  },
+  "doubao-seed-1-6-251015": {
+    "total_tests": 1,
+    "success_count": 1,
+    "accuracy_sum": 0,
+    "accuracy_count": 0,
+    "time_sum": 76.4,
+    "time_count": 1,
+    "consistency_sum": 20,
+    "consistency_count": 1,
+    "last_updated": "2026-01-07T17:23:05.739601"
+  }
+}

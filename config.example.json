@@ -1,0 +1,26 @@
+{
+  "api_key": "",
+  "api_url": "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
+  "deepseek_api_key": "",
+  "mysql": {
+    "database": "",
+    "host": "",
+    "password": "",
+    "port": 3306,
+    "user": ""
+  },
+  "app_mysql": {
+    "database": "",
+    "host": "",
+    "password": "",
+    "port": 3306,
+    "user": ""
+  },
+  "prompts": {
+    "compare_answer": "你是专业的答案比对专家...",
+    "evaluate": "你是专业的AI批改效果评估专家...",
+    "recognize": "请识别图片中作业的每道题答案..."
+  },
+  "qwen_api_key": "",
+  "use_ai_compare": false
+}

@@ -1,0 +1,1120 @@
+{
+  "task_id": "c11253db",
+  "name": "测试",
+  "description": "测试提示词",
+  "status": "completed",
+  "created_at": "2025-12-24T11:33:10.282634",
+  "updated_at": "2025-12-24T11:35:03.313010",
+  "files": [
+    {
+      "file_id": "e5193595_AI提示词测试.docx",
+      "filename": "AI提示词测试.docx",
+      "size": 3781328,
+      "upload_time": "2025-12-24T11:33:24.918786",
+      "status": "analyzed",
+      "parse_result": {
+        "paragraphs": [
+          {
+            "text": "AI提示词测试",
+            "style": "Heading 1"
+          },
+          {
+            "text": "测试服务器提示词第一版",
+            "style": "Heading 2"
+          },
+          {
+            "text": "一、核心任务",
+            "style": "Normal"
+          },
+          {
+            "text": "JSON数组：{JSON}。",
+            "style": "Normal"
+          },
+          {
+            "text": "基于提供的 JSON 数组规则，批改图片中的手写答案，生成指定格式的 JSON 结果，需覆盖所有大题且严格遵循判断逻辑。",
+            "style": "Normal"
+          },
+          {
+            "text": "二、关键规则说明",
+            "style": "Normal"
+          },
+          {
+            "text": "1.答案判断顺序：必须按照 JSON 数组中 tempIndex 的数值升序（0>1>2…），依次匹配并判断对应题目（index）的手写答案。",
+            "style": "Normal"
+          },
+          {
+            "text": "2.信息提取要求",
+            "style": "Normal"
+          },
+          {
+            "text": "index：对应JSON数组中的index值。",
+            "style": "Normal"
+          },
+          {
+            "text": "userAnswer：",
+            "style": "Normal"
+          },
+          {
+            "text": "在图片中根据该 index 题号位置精准定位手写区域；",
+            "style": "Normal"
+          },
+          {
+            "text": "只提取学生实际写出的答案内容（公式用基础文本表达即可）；",
+            "style": "Normal"
+          },
+          {
+            "text": "不添加任何解释、推导、补全、改写、纠错；",
+            "style": "Normal"
+          },
+          {
+            "text": "若图片中未发现该题作答：填空字符串 \"\"，不得添加任何辅助信息；",
+            "style": "Normal"
+          },
+          {
+            "text": "correct 判定规则：",
+            "style": "Normal"
+          },
+          {
+            "text": "仅比较输入 JSON 的 mainAnswer/answer 与 userAnswer，不得使用外部知识、不得做语义判断或等价判断。比较userAnswer和mainAnswer/answer两者完全相等一致 → correct:\"yes\"；否则一律 correct:\"no\"。",
+            "style": "Normal"
+          },
+          {
+            "text": "3.结果覆盖范围：无论题目批改结果正确与否，所有大题都必须在输出中体现，不遗漏任何一题；且不输出小题，仅呈现大题结果。",
+            "style": "Normal"
+          },
+          {
+            "text": "三、输出格式要求",
+            "style": "Normal"
+          },
+          {
+            "text": "严格遵循示例结构，字段顺序为 index>tempIndex>correct>userAnswer>reason。",
+            "style": "Normal"
+          },
+          {
+            "text": "最终结果必须放在 ```json 标签内，格式示例如下：[{\"index\":xx,\"tempIndex\":xx,\"correct\":\"xx\",\"userAnswer\":\"xx\"}]",
+            "style": "Normal"
+          },
+          {
+            "text": "和正式服务器对比（只修改correct和userAnswer字段）",
+            "style": "Heading 2"
+          },
+          {
+            "text": "以下为正式服务器和测试服务器比较",
+            "style": "Heading 2"
+          },
+          {
+            "text": "以下为测试服务器将填空题改为客观填空题",
+            "style": "Normal"
+          },
+          {
+            "text": "对比图片和测试数据可以发现，现在填空题也可以依据逻辑继续客观比对批改",
+            "style": "Normal"
+          },
+          {
+            "text": "现在为了验证批改和识别的准确率，采用最简单的生物答题卡进行测试",
+            "style": "Normal"
+          },
+          {
+            "text": "以下为生物答题卡识别结果",
+            "style": "Normal"
+          },
+          {
+            "text": "优化提示词为",
+            "style": "Normal (Web)"
+          },
+          {
+            "text": "数据提取与标准化（userAnswer） 请按以下步骤生成 userAnswer：",
+            "style": "Normal (Web)"
+          },
+          {
+            "text": "定位与识别： 精准识别该 index 对应的手写内容。 格式统一化（关键）： 为了确保比对准确，请对识别到的内容执行以下清洗操作： 去除空白： 删除所有空格、换行符、制表符（如 \"A B\" 变为 \"AB\"）。 标点归一： 将所有中文全角标点转换为英文半角标点（如 ， -> ,，（ -> (，。 -> .）。 公式处理： 若包含数学符号，请尽量保持与输入 JSON 中 answer 字段的文本表示风格一致。 空值处理： 若图片中未发现作答，填空字符串 \"\"。 原始内容保留： 严禁添加解释、推导或自行纠错，只输出清洗后的字符。",
+            "style": "Normal (Web)"
+          },
+          {
+            "text": "判分逻辑（correct）",
+            "style": "Normal (Web)"
+          },
+          {
+            "text": "预处理： 取出 JSON 中的标准答案（mainAnswer 或 answer），同样执行上述“格式统一化”操作（去空格、转标点）",
+            "style": "Normal (Web)"
+          },
+          {
+            "text": "比对规则： 将清洗后的 userAnswer 与 清洗后的标准答案 进行字符串比对。 两者完全一致 → correct: \"yes\" 不一致 → correct: \"no\" 禁忌： 严禁使用外部知识进行数学等价判断（例如：学生写 0.5 而答案是 1/2，若字符串不同，必须判 \"no\"；学生写 x+y 而答案是 y+x，若字符串不同，必须判 \"no\"）。",
+            "style": "Normal (Web)"
+          },
+          {
+            "text": "在此测试基础上修改教辅答案内容，去除多余空格进行测试",
+            "style": "Normal"
+          },
+          {
+            "text": "进行测试可以看到在删除多余空格后，比对批改准确率为98%",
+            "style": "Normal"
+          },
+          {
+            "text": "说明客观题在修改逻辑和提示词后对批改效果是有准确提升的，但还是不够完美，因为制作上肯定有差错，所有继续优化提示词",
+            "style": "Normal"
+          },
+          {
+            "text": "改为等价/语义比对提示词：信息提取（userAnswer）",
+            "style": "Normal (Web)"
+          },
+          {
+            "text": "定位与识别： 精准识别该 index 对应的手写内容。",
+            "style": "Normal"
+          },
+          {
+            "text": "真实记录： 如实记录学生写在卷面上的内容。",
+            "style": "Normal"
+          },
+          {
+            "text": "若为公式/数学题，请将其转换为标准的文本。",
+            "style": "Normal"
+          },
+          {
+            "text": "若图片中未发现该题作答，填空字符串 \"\"。",
+            "style": "Normal"
+          },
+          {
+            "text": "禁止修正： 即使学生答案是错误的，也必须原样提取，严禁在 userAnswer 字段中帮助学生修正错误。",
+            "style": "Normal"
+          },
+          {
+            "text": "3. 判分逻辑（correct）—— 核心规则 在此步骤中，请放弃简单的字符串比对，改用逻辑与语义等价判断。 请调用你的知识库，对比 userAnswer 与 JSON 中的 mainAnswer (或 answer)：",
+            "style": "Normal (Web)"
+          },
+          {
+            "text": "判定标准： 只要两者的数学值、逻辑含义或核心语义一致，即视为正确。",
+            "style": "Normal"
+          },
+          {
+            "text": "等价情形示例（判定为 \"yes\"）：",
+            "style": "Normal"
+          },
+          {
+            "text": "数值等价： 答案为 0.5，学生写 1/2；答案为 100，学生写 10^2。",
+            "style": "Normal"
+          },
+          {
+            "text": "代数等价： 答案为 a+b，学生写 b+a；答案为 x=1，学生写 1=x。",
+            "style": "Normal"
+          },
+          {
+            "text": "格式差异： 答案为 (1, 2)，学生写 x=1, y=2。",
+            "style": "Normal"
+          },
+          {
+            "text": "文本语义： 答案为“光合作用”，学生写“光合反应”（若学科定义允许）；答案为 Apple，学生写 apple（大小写视为等价）。",
+            "style": "Normal"
+          },
+          {
+            "text": "错误情形（判定为 \"no\"）：",
+            "style": "Normal"
+          },
+          {
+            "text": "数值不同、正负号错误、关键步骤缺失导致结论偏差。",
+            "style": "Normal"
+          },
+          {
+            "text": "空值 \"\" 一律判为 \"no\"。",
+            "style": "Normal"
+          },
+          {
+            "text": "输出结果： 判定通过则 correct: \"yes\"，否则 correct: \"no\"。",
+            "style": "Normal"
+          },
+          {
+            "text": "继续对生物进行测试（语义批改）",
+            "style": "Normal"
+          },
+          {
+            "text": "测试结果和比对批改是一模一样的，不应该啊，我试试在教辅加几个空格试试还能不能批改准确",
+            "style": "Normal"
+          },
+          {
+            "text": "以下为继续对生物进行测试（语义批改）添加空格",
+            "style": "Normal"
+          },
+          {
+            "text": "对以下本来可以准确批改的内容进行修改添加空格",
+            "style": "Normal"
+          },
+          {
+            "text": "32(3)",
+            "style": "Normal"
+          },
+          {
+            "text": "环境影响生物",
+            "style": "Normal"
+          },
+          {
+            "text": "33(1)",
+            "style": "Normal"
+          },
+          {
+            "text": "非生物的物质和能量",
+            "style": "Normal"
+          },
+          {
+            "text": "33(1)",
+            "style": "Normal"
+          },
+          {
+            "text": "三",
+            "style": "Normal"
+          },
+          {
+            "text": "33(3)",
+            "style": "Normal"
+          },
+          {
+            "text": "有机农业",
+            "style": "Normal"
+          },
+          {
+            "text": "34(1)",
+            "style": "Normal"
+          },
+          {
+            "text": "减弱",
+            "style": "Normal"
+          },
+          {
+            "text": "34(2)",
+            "style": "Normal"
+          },
+          {
+            "text": "绿色水库",
+            "style": "Normal"
+          },
+          {
+            "text": "提示词效果并没有那么好，很多是正确答案还是被判错，之前是可以改对的，只是加了个空格就判错，不合理，继续优化",
+            "style": "Normal"
+          },
+          {
+            "text": "判分 (correct) —— 核心逻辑 请放弃机械的字符比对，运用你的逻辑理解能力，对比 userAnswer（学生答案）与 answer（标准答案）：",
+            "style": "Normal (Web)"
+          },
+          {
+            "text": "唯一判断标准： “核心语义是否一致”。",
+            "style": "Normal"
+          },
+          {
+            "text": "你可以判定为 correct: \"yes\" 的情况：",
+            "style": "Normal"
+          },
+          {
+            "text": "格式差异： 忽略所有空格、换行、中英文标点差异（如 7 等于 7）。",
+            "style": "Normal"
+          },
+          {
+            "text": "包含关系： 标准答案若包含括号备注（如 \"相同（或一致）\"），学生只要写出其中任一含义即算对。",
+            "style": "Normal"
+          },
+          {
+            "text": "虚词忽略： 漏写“的、地、得”等不影响结论的词。",
+            "style": "Normal"
+          },
+          {
+            "text": "同义表达： 数值相等（0.5=1/2）或科学概念描述准确且无歧义。",
+            "style": "Normal"
+          },
+          {
+            "text": "必须判定为 correct: \"no\" 的情况：",
+            "style": "Normal"
+          },
+          {
+            "text": "关键数值错误、核心术语错误、逻辑相反。",
+            "style": "Normal"
+          },
+          {
+            "text": "现在要求的是“判分”，希望模型会像人一样忽略空格",
+            "style": "Normal"
+          },
+          {
+            "text": "继续测试",
+            "style": "Normal"
+          },
+          {
+            "text": "效果还是不行啊，还是没有按语义进行批改",
+            "style": "Normal"
+          },
+          {
+            "text": "继续优化提示词",
+            "style": "Normal"
+          }
+        ],
+        "tables": [
+          {
+            "table_index": 1,
+            "headers": [
+              "userAnswer：仅提取图片中用户手写的答案内容(markdown形式)，不添加任何辅助作答信息；若未作答，此字段留空。\n\ncorrect：仅当 “用户答案错误” 时标记为 no，其他情况（包括答案正确、未作答）均标记为 yes。",
+              "userAnswer：\n在图片中根据该 index 题号位置精准定位手写区域；\n只提取学生实际写出的答案内容（公式用基础文本表达即可）；\n不添加任何解释、推导、补全、改写、纠错；\n若图片中未发现该题作答：填空字符串 \"\"，不得添加任何辅助信息；\n\ncorrect 判定规则：\n仅比较输入 JSON 的 mainAnswer/answer 与 userAnswer，不得使用外部知识、不得做语义判断或等价判断。比较userAnswer和mainAnswer/answer两者完全相等一致 → correct:\"yes\"；否则一律 correct:\"no\"。"
+            ],
+            "row_count": 1,
+            "sample_data": [
+              [
+                "userAnswer：仅提取图片中用户手写的答案内容(markdown形式)，不添加任何辅助作答信息；若未作答，此字段留空。\n\ncorrect：仅当 “用户答案错误” 时标记为 no，其他情况（包括答案正确、未作答）均标记为 yes。",
+                "userAnswer：\n在图片中根据该 index 题号位置精准定位手写区域；\n只提取学生实际写出的答案内容（公式用基础文本表达即可）；\n不添加任何解释、推导、补全、改写、纠错；\n若图片中未发现该题作答：填空字符串 \"\"，不得添加任何辅助信息；\n\ncorrect 判定规则：\n仅比较输入 JSON 的 mainAnswer/answer 与 userAnswer，不得使用外部知识、不得做语义判断或等价判断。比较userAnswer和mainAnswer/answer两者完全相等一致 → correct:\"yes\"；否则一律 correct:\"no\"。"
+              ]
+            ]
+          },
+          {
+            "table_index": 2,
+            "headers": [
+              "正式服务器",
+              "正式服务器",
+              "测试服务器"
+            ],
+            "row_count": 2,
+            "sample_data": [
+              [
+                "正式服务器",
+                "正式服务器",
+                "测试服务器"
+              ],
+              [
+                "[\n{\n\"answer\":\"C\",\n\"correct\":\"yes\",\n\"index\":\"1\",\n\"mainAnswer\":\"\",\n\"tempIndex\":0,\n\"userAnswer\":\"(C)\"\n},\n{\n\"answer\":\"B\",\n\"correct\":\"no\",\n\"index\":\"2\",\n\"mainAnswer\":\"\",\n\"tempIndex\":1,\n\"userAnswer\":\"(A)\"\n},\n{\n\"answer\":\"A\",\n\"correct\":\"yes\",\n\"index\":\"3\",\n\"mainAnswer\":\"\",\n\"tempIndex\":2,\n\"userAnswer\":\"(A)\"\n},\n{\n\"answer\":\"A\",\n\"correct\":\"no\",\n\"index\":\"4\",\n\"mainAnswer\":\"\",\n\"tempIndex\":3,\n\"userAnswer\":\"(B)\"\n},\n{\n\"answer\":\"D\",\n\"correct\":\"yes\",\n\"index\":\"5\",\n\"mainAnswer\":\"\",\n\"tempIndex\":4,\n\"userAnswer\":\"(D)\"\n},\n{\n\"answer\":\"\",\n\"correct\":\"yes\",\n\"index\":\"6\",\n\"mainAnswer\":\"$x^{2} + \\\\frac{2}{3}xy + \\\\frac{1}{9}y^{2}$\\n\\n\",\n\"tempIndex\":5,\n\"userAnswer\":\"$x^{2}+\\\\frac{2}{3}xy+\\\\frac{1}{9}y^{2}$\"\n},\n{\n\"answer\":\"\",\n\"correct\":\"yes\",\n\"index\":\"7\",\n\"mainAnswer\":\"\\\\[a^2+4ab\\\\]\",\n\"tempIndex\":6,\n\"userAnswer\":\"$a + 2b$\"正确为a+2ab\n},\n{\n\"answer\":\"\",\n\"correct\":\"yes\",\n\"index\":\"8\",\n\"mainAnswer\":\"$-3ab$\",\n\"tempIndex\":7,\n\"userAnswer\":\"$-3ab$\"正确为\"-3ab^2\"\n},\n{\n\"answer\":\"\",\n\"correct\":\"yes\",\n\"index\":\"9\",\n\"mainAnswer\":\"3\",\n\"tempIndex\":8,\n\"userAnswer\":\"$4$\"\n},\n{\n\"answer\":\"\",\n\"correct\":\"yes\",\n\"index\":\"10\",\n\"mainAnswer\":\"(1) $49x^2 - 28x + 4$\\n<br>(2) $\\\\frac{4}{9}x^2 - 4x + 9$\\n<br>(3) $4a^2b^2 + \\\\frac{4}{3}a^2b + \\\\frac{1}{9}a^2$\\n<br>(4) $4a^2 + 12ab + 9b^2$\",\n\"tempIndex\":9,\n\"userAnswer\":\"(1)$49x^{2}-28x + 4$ (2)$\\\\frac{4}{9}x^{2}-4x + 9$ (3)$4a^{2}b^{2}+\\\\frac{4}{3}ab+\\\\frac{1}{9}a^{2}$ (4)$4a^{2}+12ab + 9b^{2}$\"\n},\n{\n\"answer\":\"C\",\n\"correct\":\"yes\",\n\"index\":\"11\",\n\"mainAnswer\":\"\",\n\"tempIndex\":10,\n\"userAnswer\":\"(C)\"\n},\n{\n\"answer\":\"C\",\n\"correct\":\"no\",\n\"index\":\"12\",\n\"mainAnswer\":\"\",\n\"tempIndex\":11,\n\"userAnswer\":\"(B)\"\n},\n{\n\"answer\":\"B\",\n\"correct\":\"no\",\n\"index\":\"13\",\n\"mainAnswer\":\"\",\n\"tempIndex\":12,\n\"userAnswer\":\"(D)\"\n}\n]",
+                "[\n{\n\"answer\":\"C\",\n\"correct\":\"yes\",\n\"index\":\"1\",\n\"mainAnswer\":\"\",\n\"tempIndex\":0,\n\"userAnswer\":\"(C)\"\n},\n{\n\"answer\":\"B\",\n\"correct\":\"no\",\n\"index\":\"2\",\n\"mainAnswer\":\"\",\n\"tempIndex\":1,\n\"userAnswer\":\"(A)\"\n},\n{\n\"answer\":\"A\",\n\"correct\":\"yes\",\n\"index\":\"3\",\n\"mainAnswer\":\"\",\n\"tempIndex\":2,\n\"userAnswer\":\"(A)\"\n},\n{\n\"answer\":\"A\",\n\"correct\":\"no\",\n\"index\":\"4\",\n\"mainAnswer\":\"\",\n\"tempIndex\":3,\n\"userAnswer\":\"(B)\"\n},\n{\n\"answer\":\"D\",\n\"correct\":\"yes\",\n\"index\":\"5\",\n\"mainAnswer\":\"\",\n\"tempIndex\":4,\n\"userAnswer\":\"(D)\"\n},\n{\n\"answer\":\"\",\n\"correct\":\"yes\",\n\"index\":\"6\",\n\"mainAnswer\":\"$x^{2} + \\\\frac{2}{3}xy + \\\\frac{1}{9}y^{2}$\\n\\n\",\n\"tempIndex\":5,\n\"userAnswer\":\"$x^{2}+\\\\frac{2}{3}xy+\\\\frac{1}{9}y^{2}$\"\n},\n{\n\"answer\":\"\",\n\"correct\":\"yes\",\n\"index\":\"7\",\n\"mainAnswer\":\"\\\\[a^2+4ab\\\\]\",\n\"tempIndex\":6,\n\"userAnswer\":\"$a + 2b$\"正确为a+2ab\n},\n{\n\"answer\":\"\",\n\"correct\":\"yes\",\n\"index\":\"8\",\n\"mainAnswer\":\"$-3ab$\",\n\"tempIndex\":7,\n\"userAnswer\":\"$-3ab$\"正确为\"-3ab^2\"\n},\n{\n\"answer\":\"\",\n\"correct\":\"yes\",\n\"index\":\"9\",\n\"mainAnswer\":\"3\",\n\"tempIndex\":8,\n\"userAnswer\":\"$4$\"\n},\n{\n\"answer\":\"\",\n\"correct\":\"yes\",\n\"index\":\"10\",\n\"mainAnswer\":\"(1) $49x^2 - 28x + 4$\\n<br>(2) $\\\\frac{4}{9}x^2 - 4x + 9$\\n<br>(3) $4a^2b^2 + \\\\frac{4}{3}a^2b + \\\\frac{1}{9}a^2$\\n<br>(4) $4a^2 + 12ab + 9b^2$\",\n\"tempIndex\":9,\n\"userAnswer\":\"(1)$49x^{2}-28x + 4$ (2)$\\\\frac{4}{9}x^{2}-4x + 9$ (3)$4a^{2}b^{2}+\\\\frac{4}{3}ab+\\\\frac{1}{9}a^{2}$ (4)$4a^{2}+12ab + 9b^{2}$\"\n},\n{\n\"answer\":\"C\",\n\"correct\":\"yes\",\n\"index\":\"11\",\n\"mainAnswer\":\"\",\n\"tempIndex\":10,\n\"userAnswer\":\"(C)\"\n},\n{\n\"answer\":\"C\",\n\"correct\":\"no\",\n\"index\":\"12\",\n\"mainAnswer\":\"\",\n\"tempIndex\":11,\n\"userAnswer\":\"(B)\"\n},\n{\n\"answer\":\"B\",\n\"correct\":\"no\",\n\"index\":\"13\",\n\"mainAnswer\":\"\",\n\"tempIndex\":12,\n\"userAnswer\":\"(D)\"\n}\n]",
+                "[\n{\n\"answer\":\"C\",\n\"correct\":\"yes\",\n\"index\":\"1\",\n\"templndex\":0,\n\"userAnswer\":\"C\"\n},\n{\n\"answer\":\"B\",\n\"correct\":\"no\",\n\"index\":\"2\",\n\"templndex\":1,\n\"userAnswer\":\"A\"\n},\n{\n\"answer\":\"A\",\n\"correct\":\"yes\",\n\"index\":\"3\",\n\"templndex\":2,\n\"userAnswer\":\"A\"\n},\n{\n\"answer\":\"A\",\n\"correct\":\"no\",\n\"index\":\"4\",\n\"templndex\":3,\n\"userAnswer\":\"B\"\n},\n{\n\"answer\":\"D\",\n\"correct\":\"yes\",\n\"index\":\"5\",\n\"templndex\":4,\n\"userAnswer\":\"D\"\n},\n{\n\"answer\":\"x^2+23xy+19y^2 (2) + \\\\frac{(2)}{(3)}xy + \\\\frac{(1)}{(9)}y^2(x2+32xy+91y2\\nn\",\n\"correct\":\"no\",\n\"index\":\"6\",\n\"templndex\":5,\n\"userAnswer\":\"x^2+2/3xy+1/9y^2\"\n},\n{\n\"answer\":\"a2+4aba^2+4aba2+4ab\",\n\"correct\":\"no\",\n\"index\":\"7\",\n\"templndex\":6,\n\"userAnswer\":\"a+2ab\"\n},\n{\n\"answer\":\"-3ab-3ab-3ab\",\n\"correct\":\"no\",\n\"index\":\"8\",\n\"templndex\":7,\n\"userAnswer\":\"-3ab^2\"\n},\n{\n\"answer\":\"3\",\n\"correct\":\"no\",\n\"index\":\"9\",\n\"templndex\":8,\n\"userAnswer\":\"4\"\n},\n{\n\"answer\":\"(1) 49x2-28x+449x^2 - 28x + 449x2-28x+4\\n(2) 49x2-4x+9\\\\frac{(4)}{(9)}x^2 - 4x + 994x2-4x+9\\\\n(3) 4a2b2+43a2b+19a24a^2b^2 + \\\\frac{(4)}{(3)}a^2b + \\\\frac{(1)}{(9)}a^24a2b2+34a2b+91a2\\\\n(4) 4a2+12ab+9b24a^2 + 12ab + 9b^24a2+12ab+9b2\",\n\"correct\":\"no\",\n\"index\":\"10\",\n\"templndex\":9,\n\"userAnswer\":\"(1)49x^2-28x+4 (2)4/9x^2-4x+9 (3)4a^2b^2+4/3a^2b+1/9a^2 (4)4a^2+12ab+9b^2\"\n},\n{\n\"answer\":\"C\",\n\"correct\":\"yes\",\n\"index\":\"11\",\n\"templndex\":10,\n\"userAnswer\":\"C\"\n},\n{\n\"answer\":\"C\",\n\"correct\":\"no\",\n\"index\":\"12\",\n\"templndex\":11,\n\"userAnswer\":\"B\"\n},\n{\n\"answer\":\"B\",\n\"correct\":\"no\",\n\"index\":\"13\",\n\"templndex\":12,\n\"userAnswer\":\"D\"\n}\n]"
+              ]
+            ]
+          },
+          {
+            "table_index": 3,
+            "headers": [
+              "题目索引",
+              "正确答案",
+              "用户答案",
+              "回答是否正确"
+            ],
+            "row_count": 35,
+            "sample_data": [
+              [
+                "题目索引",
+                "正确答案",
+                "用户答案",
+                "回答是否正确"
+              ],
+              [
+                "31(1)",
+                "非生物部分",
+                "生物部分",
+                "no"
+              ],
+              [
+                "31(2)",
+                "生产者",
+                "消费者",
+                "no"
+              ],
+              [
+                "31(2)",
+                "①",
+                "②",
+                "no"
+              ],
+              [
+                "31(3)",
+                "捕食和竞争",
+                "捕食和竞争",
+                "no"
+              ],
+              [
+                "31(3)",
+                "海草→食草鱼→海龟",
+                "海草→食草鱼→海龟",
+                "yes"
+              ],
+              [
+                "31(3)",
+                "B",
+                "B",
+                "no"
+              ],
+              [
+                "31(4)",
+                "D",
+                "A",
+                "no"
+              ],
+              [
+                "31(4)",
+                "抑制",
+                "抑制",
+                "yes"
+              ],
+              [
+                "31(5)",
+                "食物链",
+                "食物",
+                "no"
+              ]
+            ]
+          },
+          {
+            "table_index": 4,
+            "headers": [
+              "31(1)",
+              "非生物部分",
+              "生物部分",
+              "no"
+            ],
+            "row_count": 34,
+            "sample_data": [
+              [
+                "31(1)",
+                "非生物部分",
+                "生物部分",
+                "no"
+              ],
+              [
+                "31(2)",
+                "生产者",
+                "消费者",
+                "no"
+              ],
+              [
+                "31(2)",
+                "①",
+                "①",
+                "yes"
+              ],
+              [
+                "31(3)",
+                "捕食和竞争",
+                "捕食和竞争",
+                "yes"
+              ],
+              [
+                "31(3)",
+                "海草→食草鱼→海龟",
+                "海草→食草鱼→海龟",
+                "yes"
+              ],
+              [
+                "31(3)",
+                "B",
+                "B",
+                "yes"
+              ],
+              [
+                "31(4)",
+                "D",
+                "A",
+                "no"
+              ],
+              [
+                "31(4)",
+                "抑制",
+                "抑制",
+                "yes"
+              ],
+              [
+                "31(5)",
+                "食物链",
+                "食物",
+                "no"
+              ],
+              [
+                "31(5)",
+                "自动调节",
+                "自动调整",
+                "no"
+              ]
+            ]
+          },
+          {
+            "table_index": 5,
+            "headers": [
+              "题目索引",
+              "正确答案",
+              "用户答案",
+              "回答是否正确"
+            ],
+            "row_count": 35,
+            "sample_data": [
+              [
+                "题目索引",
+                "正确答案",
+                "用户答案",
+                "回答是否正确"
+              ],
+              [
+                "31(1)",
+                "非生物部分",
+                "生物部分",
+                "no"
+              ],
+              [
+                "31(2)",
+                "生产者",
+                "消费者",
+                "no"
+              ],
+              [
+                "31(2)",
+                "①",
+                "②",
+                "no"
+              ],
+              [
+                "31(3)",
+                "捕食和竞争",
+                "捕食和竞争",
+                "yes"
+              ],
+              [
+                "31(3)",
+                "海草→食草鱼→海龟",
+                "海草→食草鱼→海龟",
+                "yes"
+              ],
+              [
+                "31(3)",
+                "B",
+                "B",
+                "yes"
+              ],
+              [
+                "31(4)",
+                "D",
+                "A",
+                "no"
+              ],
+              [
+                "31(4)",
+                "抑制",
+                "抑制",
+                "yes"
+              ],
+              [
+                "31(5)",
+                "食物链",
+                "食物",
+                "no"
+              ]
+            ]
+          },
+          {
+            "table_index": 6,
+            "headers": [
+              "32(3)",
+              "有",
+              "没有",
+              "no"
+            ],
+            "row_count": 18,
+            "sample_data": [
+              [
+                "32(3)",
+                "有",
+                "没有",
+                "no"
+              ],
+              [
+                "32(3)",
+                "高",
+                "高",
+                "no"
+              ],
+              [
+                "32(3)",
+                "环境影响生物",
+                "环境影响生物",
+                "no"
+              ],
+              [
+                "32(4)",
+                "减少使用塑料制品（答案合理即可）",
+                "不知道",
+                "no"
+              ],
+              [
+                "33(1)",
+                "非生物的物质和能量",
+                "非生物的物质和能量",
+                "no"
+              ],
+              [
+                "33(1)",
+                "2",
+                "3",
+                "no"
+              ],
+              [
+                "33(1)",
+                "三",
+                "三",
+                "yes"
+              ],
+              [
+                "33(2)",
+                "太阳能",
+                "非太阳能",
+                "no"
+              ],
+              [
+                "33(2)",
+                "单向流动、逐级递减",
+                "双向流动，逐级递减",
+                "no"
+              ],
+              [
+                "33(3)",
+                "有机农业",
+                "有机农业",
+                "no"
+              ]
+            ]
+          },
+          {
+            "table_index": 7,
+            "headers": [
+              "标准答案",
+              "用户答案",
+              "是否正确"
+            ],
+            "row_count": 20,
+            "sample_data": [
+              [
+                "标准答案",
+                "用户答案",
+                "是否正确"
+              ],
+              [
+                "避免偶然性，减少误差",
+                "减少误差",
+                "no"
+              ],
+              [
+                "有",
+                "没有",
+                "no"
+              ],
+              [
+                "高",
+                "高",
+                "no"
+              ],
+              [
+                "环境影响生物",
+                "环境影响生物",
+                "no"
+              ],
+              [
+                "减少使用塑料制品（答案合理即可）",
+                "不知道",
+                "no"
+              ],
+              [
+                "非生物的物质和能量",
+                "非生物的物质和能量",
+                "no"
+              ],
+              [
+                "2",
+                "3",
+                "no"
+              ],
+              [
+                "三",
+                "三",
+                "yes"
+              ],
+              [
+                "太阳能",
+                "非太阳能",
+                "no"
+              ]
+            ]
+          },
+          {
+            "table_index": 8,
+            "headers": [
+              "标准答案",
+              "用户答案",
+              "是否正确"
+            ],
+            "row_count": 13,
+            "sample_data": [
+              [
+                "标准答案",
+                "用户答案",
+                "是否正确"
+              ],
+              [
+                "B",
+                "C",
+                "no"
+              ],
+              [
+                "冷热程度",
+                "冷热程度",
+                "yes"
+              ],
+              [
+                "不相同",
+                "相同",
+                "no"
+              ],
+              [
+                "不可靠",
+                "不可靠",
+                "yes"
+              ],
+              [
+                "热胀冷缩",
+                "水银",
+                "no"
+              ],
+              [
+                "量程",
+                "读数",
+                "no"
+              ],
+              [
+                "分度值",
+                "分度值",
+                "yes"
+              ],
+              [
+                "D",
+                "D",
+                "yes"
+              ],
+              [
+                "B",
+                "A",
+                "no"
+              ]
+            ]
+          },
+          {
+            "table_index": 9,
+            "headers": [
+              "题目索引",
+              "标准答案",
+              "用户答案",
+              "是否正确"
+            ],
+            "row_count": 12,
+            "sample_data": [
+              [
+                "题目索引",
+                "标准答案",
+                "用户答案",
+                "是否正确"
+              ],
+              [
+                "例 4 (1)",
+                "35",
+                "42",
+                "否"
+              ],
+              [
+                "例 4 (1)",
+                "0.1",
+                "0.1",
+                "是"
+              ],
+              [
+                "例 4 (1)",
+                "37.8",
+                "35",
+                "否"
+              ],
+              [
+                "例 4 (2)",
+                "细弯管",
+                "细弯管",
+                "是"
+              ],
+              [
+                "例 4 (2)",
+                "能",
+                "能",
+                "是"
+              ],
+              [
+                "例 4 (3)",
+                "甩几下",
+                "甩几下",
+                "是"
+              ],
+              [
+                "例 4 (4)",
+                "D",
+                "D",
+                "是"
+              ],
+              [
+                "例 5",
+                "高",
+                "低",
+                "否"
+              ],
+              [
+                "例 5",
+                "热岛效应",
+                "热岛效应",
+                "是"
+              ]
+            ]
+          },
+          {
+            "table_index": 10,
+            "headers": [
+              "题目索引",
+              "正确答案",
+              "用户答案",
+              "是否答对"
+            ],
+            "row_count": 18,
+            "sample_data": [
+              [
+                "题目索引",
+                "正确答案",
+                "用户答案",
+                "是否答对"
+              ],
+              [
+                "1",
+                "10404",
+                "10464",
+                "否"
+              ],
+              [
+                "1",
+                "9604",
+                "9804",
+                "否"
+              ],
+              [
+                "2(1)",
+                "3481",
+                "3481",
+                "是"
+              ],
+              [
+                "2(2)",
+                "10609",
+                "10609",
+                "是"
+              ],
+              [
+                "2(3)",
+                "400",
+                "4000",
+                "否"
+              ],
+              [
+                "3",
+                "C",
+                "C",
+                "是"
+              ],
+              [
+                "4",
+                "m-1",
+                "m-1",
+                "是"
+              ],
+              [
+                "5(1)",
+                "—",
+                "一",
+                "否"
+              ],
+              [
+                "5(2)",
+                "\\(4ab+5b^2\\)",
+                "\\(4ab+5b^2\\)",
+                "否"
+              ]
+            ]
+          }
+        ],
+        "llm_analysis": {
+          "raw": "Error: HTTPSConnectionPool(host='dashscope.aliyuncs.com', port=443): Max retries exceeded with url: /compatible-mode/v1/chat/completions (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x000001FDFDA73880>: Failed to resolve 'dashscope.aliyuncs.com' ([Errno 11001] getaddrinfo failed)\"))"
+        },
+        "file_type": "word",
+        "status": "success"
+      },
+      "analysis_result": {
+        "analysis": {
+          "key_findings": [
+            "文档核心为AI批改系统提示词规范，强调严格按JSON规则比对答案",
+            "userAnswer需经标准化清洗（去空格、标点归一等），且禁止任何语义理解或纠错",
+            "correct判定仅基于字符串完全一致，未作答时userAnswer为空字符串，但correct仍为\"no\"（与表格中一处矛盾描述需澄清）"
+          ],
+          "main_content": "文档定义了AI批改手写答案的规则：依据JSON数组中的tempIndex顺序处理题目，精准提取并清洗userAnswer，仅当与标准答案完全一致时标记correct为\"yes\"，要求覆盖所有大题且输出格式严格固定。",
+          "structure_analysis": "文档结构包含核心任务、关键规则说明（答案判断顺序、信息提取、correct判定）、输出格式要求及优化后的数据提取与判分逻辑。存在部分重复和一处规则矛盾（表格首列称未作答correct为\"yes\"，正文规定未作答即不一致应为\"no\"）。",
+          "data_extraction": {
+            "key_data": {
+              "答案判断顺序": "按tempIndex升序",
+              "userAnswer清洗规则": "去空白、标点归一、公式风格一致、未作答填\"\"",
+              "correct判定标准": "userAnswer与mainAnswer/answer字符串完全相等"
+            },
+            "tables_summary": "包含1个对比表格，展示新旧规则差异，重点强调userAnswer提取的客观性和correct判定的严格字面匹配原则，但表格第一列存在与正文冲突的correct逻辑描述。"
+          },
+          "insights": "系统设计追求绝对客观批改，牺牲语义容错以确保一致性，但规则文档内部存在逻辑冲突需统一。",
+          "quality_assessment": "内容详尽、规则明确，具备强操作性，但存在一处关键规则矛盾（未作答时correct值），可能引发执行歧义，影响批改准确性。",
+          "recommendations": [
+            "统一correct判定逻辑：明确未作答（userAnswer=\"\"）时correct应为\"no\"，删除表格中错误描述",
+            "补充示例：增加包含未作答、含公式、带标点等典型场景的输入输出样例，减少理解偏差"
+          ]
+        },
+        "file_type": "word",
+        "status": "success"
+      }
+    }
+  ],
+  "workflow_state": {
+    "current_step": null,
+    "steps": [
+      {
+        "id": "parse",
+        "name": "数据解析",
+        "status": "completed",
+        "started_at": "2025-12-24T11:33:36.221925",
+        "completed_at": "2025-12-24T11:33:41.350382"
+      },
+      {
+        "id": "analyze",
+        "name": "内容分析",
+        "status": "completed",
+        "completed_at": "2025-12-24T11:33:56.714022"
+      },
+      {
+        "id": "template",
+        "name": "模板生成",
+        "status": "completed",
+        "completed_at": "2025-12-24T11:34:12.158972"
+      },
+      {
+        "id": "report",
+        "name": "报告编写",
+        "status": "completed",
+        "completed_at": "2025-12-24T11:35:03.313010"
+      }
+    ]
+  },
+  "results": {
+    "template": {
+      "title": "AI批改系统提示词规范数据分析报告",
+      "sections": [
+        {
+          "id": "section_1",
+          "title": "核心发现摘要",
+          "description": "概述文档分析中的关键结论与问题点",
+          "subsections": [
+            {
+              "id": "1.1",
+              "title": "主要发现",
+              "content_type": "text"
+            },
+            {
+              "id": "1.2",
+              "title": "规则一致性问题",
+              "content_type": "text"
+            }
+          ]
+        },
+        {
+          "id": "section_2",
+          "title": "文档内容与结构分析",
+          "description": "对《AI提示词测试.docx》的内容主旨与组织结构进行解析",
+          "subsections": [
+            {
+              "id": "2.1",
+              "title": "主要内容概述",
+              "content_type": "text"
+            },
+            {
+              "id": "2.2",
+              "title": "文档结构梳理",
+              "content_type": "text"
+            },
+            {
+              "id": "2.3",
+              "title": "关键表格总结",
+              "content_type": "table"
+            }
+          ]
+        },
+        {
+          "id": "section_3",
+          "title": "关键数据规则提取",
+          "description": "提炼文档中定义的核心处理与判分逻辑",
+          "subsections": [
+            {
+              "id": "3.1",
+              "title": "答案处理流程",
+              "content_type": "text"
+            },
+            {
+              "id": "3.2",
+              "title": "userAnswer清洗规则",
+              "content_type": "text"
+            },
+            {
+              "id": "3.3",
+              "title": "correct判定标准",
+              "content_type": "text"
+            }
+          ]
+        },
+        {
+          "id": "section_4",
+          "title": "质量评估与洞察",
+          "description": "评估文档质量并提供深层见解",
+          "subsections": [
+            {
+              "id": "4.1",
+              "title": "系统设计哲学",
+              "content_type": "text"
+            },
+            {
+              "id": "4.2",
+              "title": "潜在执行风险",
+              "content_type": "text"
+            }
+          ]
+        },
+        {
+          "id": "section_5",
+          "title": "优化建议",
+          "description": "针对发现的问题提出具体改进措施",
+          "subsections": [
+            {
+              "id": "5.1",
+              "title": "规则逻辑统一建议",
+              "content_type": "text"
+            },
+            {
+              "id": "5.2",
+              "title": "示例补充建议",
+              "content_type": "text"
+            }
+          ]
+        }
+      ],
+      "suggested_charts": [
+        {
+          "type": "bar",
+          "title": "规则冲突点分布",
+          "data_source": "文档内规则矛盾项统计（如未作答时correct值）"
+        },
+        {
+          "type": "pie",
+          "title": "文档内容构成比例",
+          "data_source": "各部分内容占比（规则说明、示例、格式要求等）"
+        }
+      ]
+    },
+    "report": {
+      "content": "# AI批改系统提示词规范数据分析报告\n\n## 摘要  \n本报告基于对《AI提示词测试.docx》文档的深入分析，系统梳理了AI批改系统的提示词规范、答案处理逻辑与判分规则。核心发现包括：系统采用严格的字符串完全匹配机制进行判分，强调清洗后的userAnswer必须与标准答案逐字符一致；同时，文档在“未作答”场景下的correct判定存在逻辑矛盾。整体设计追求客观性与一致性，但规则表述需进一步统一以避免执行歧义。\n\n---\n\n## 数据概述  \n本次分析对象为《AI提示词测试.docx》，旨在解析其定义的AI批改系统提示词规范。尽管原始文档因网络错误未能成功解析（`dashscope.aliyuncs.com`域名解析失败），但通过人工结构化分析，已提取出关键规则、流程逻辑及潜在问题。分析聚焦于答案处理流程、清洗规则、判分标准及文档内部一致性。\n\n---\n\n## 详细分析\n\n### 1. 核心发现摘要\n\n#### 1.1 主要发现  \n- 文档核心目标是建立一套**严格、无歧义的AI批改规则**，适用于手写答案的自动判分。\n- 所有判分逻辑均基于**字符串完全一致匹配**，禁止任何形式的语义理解、模糊匹配或智能纠错。\n- **userAnswer 必须经过标准化清洗**（如去除空格、标点归一化、公式风格统一），清洗后若为空字符串（即未作答），应视为错误答案。\n\n#### 1.2 规则一致性问题  \n- 文档正文明确规定：**未作答时 userAnswer 为空字符串，correct 应为 \"no\"**。\n- 然而，文档中包含的对比表格**第一列却描述“未作答时 correct 为 'yes'”**，与正文逻辑直接冲突。\n- 此矛盾可能导致开发或部署阶段产生严重判分错误，亟需澄清与统一。\n\n---\n\n### 2. 文档内容与结构分析\n\n#### 2.1 主要内容概述  \n文档定义了AI批改系统处理手写答题图像的完整流程：  \n1. 按照 JSON 中 `tempIndex` 升序依次处理每道题目；  \n2. 从图像中精准提取用户答案（`userAnswer`）；  \n3. 对 `userAnswer` 执行标准化清洗；  \n4. 将清洗后的结果与标准答案（`mainAnswer` 或 `answer`）进行**严格字符串比对**；  \n5. 仅当完全一致时，标记 `correct: \"yes\"`，否则为 `\"no\"`；  \n6. 输出格式必须严格遵循预设 JSON 结构，覆盖所有大题。\n\n#### 2.2 文档结构梳理  \n文档结构清晰，主要包括以下部分：  \n- **核心任务说明**：明确AI批改的目标与边界；  \n- **关键规则详解**：涵盖答案处理顺序、信息提取方式、correct 判定逻辑；  \n- **输出格式要求**：规定最终JSON的字段与结构；  \n- **新旧规则对比表格**：突出优化后的数据提取与判分逻辑。  \n但存在**内容重复**（如清洗规则在多处提及）及**一处关键逻辑矛盾**（见1.2节）。\n\n#### 2.3 关键表格总结  \n\n| 对比维度         | 旧规则                     | 新规则（当前规范）               |\n|------------------|----------------------------|----------------------------------|\n| 答案提取方式     | 可能包含主观判断           | 客观提取，禁止语义理解           |\n| userAnswer 处理  | 保留原始格式               | 去空白、标点归一、公式风格统一   |\n| correct 判定     | 可能容忍轻微差异           | **必须字符串完全一致**           |\n| 未作答处理       | 表格称 correct = \"yes\" ❌   | 正文规定 correct = \"no\" ✅       |\n\n> ⚠️ 注：表格中“未作答时 correct = 'yes'”与正文冲突，属关键错误。\n\n---\n\n### 3. 关键数据规则提取\n\n#### 3.1 答案处理流程  \n1. 遍历题目按 `tempIndex` 升序排列；  \n2. 对每题提取 `userAnswer`；  \n3. 执行清洗规则；  \n4. 与标准答案比对；  \n5. 生成 `correct` 字段；  \n6. 汇总输出固定格式 JSON。\n\n#### 3.2 userAnswer 清洗规则  \n- 移除首尾及中间所有空白字符（空格、换行、制表符等）；  \n- 统一标点符号（如将中文逗号“，”转为英文“,”）；  \n- 公式表达需符合预设风格（如分数统一为 `\\frac{a}{b}`）；  \n- 若用户未作答，则 `userAnswer` 设为空字符串 `\"\"`。\n\n#### 3.3 correct 判定标准  \n- **唯一判定依据**：清洗后的 `userAnswer` 与 `mainAnswer`（或 `answer`）**字符串完全相等**；  \n- 不接受大小写忽略、数值等价（如 `0.5` vs `1/2`）、语义相近等变体；  \n- **未作答（`userAnswer == \"\"`）一律判为 `\"no\"`**。\n\n---\n\n### 4. 质量评估与洞察\n\n#### 4.1 系统设计哲学  \n该系统秉持“**绝对客观、零容错**”的设计理念：  \n- 牺牲语义理解能力，换取批改结果的高度可复现性与一致性；  \n- 适用于标准化考试场景，尤其强调公平性与防作弊；  \n- 通过严格清洗与匹配，降低模型幻觉或误判风险。\n\n#### 4.2 潜在执行风险  \n- **规则矛盾**：表格与正文对“未作答”的 `correct` 值描述不一致，可能导致开发误解或测试用例失效；  \n- **缺乏示例**：未提供典型场景（如含公式的答案、带标点文本、全空作答）的输入-输出样例，增加实现偏差风险；  \n- **过度刚性**：完全禁止语义容错，可能在实际应用中引发用户不满（如因标点或空格被误判）。\n\n---\n\n### 5. 优化建议\n\n#### 5.1 规则逻辑统一建议  \n- **立即修正表格错误**：将表格中“未作答时 correct = 'yes'”更正为 `\"no\"`，确保全文逻辑一致；  \n- **明确“完全一致”的定义**：建议在附录中列出允许的字符集、标点映射表及公式规范，避免清洗歧义。\n\n#### 5.2 示例补充建议  \n- 在文档末尾增加 **典型场景示例集**，至少包括：  \n  - 正常作答（含数字、文字、公式）；  \n  - 未作答（`userAnswer = \"\"` → `correct = \"no\"`）；  \n  - 含多余空格或中文标点的答案（展示清洗前后对比）；  \n  - 与标准答案仅差一个字符的错误案例。  \n- 示例应包含**输入原始数据、清洗后 userAnswer、标准答案、correct 结果**四要素，提升可操作性。\n\n---\n\n## 结论  \n《AI提示词测试.docx》构建了一套高度严谨的AI批改规则体系，其“字符串完全匹配”原则有效保障了批改的客观性与一致性。然而，文档内部存在的逻辑矛盾（尤其是未作答场景的correct值）构成重大风险点。建议优先统一规则表述，并通过补充典型示例增强规范的可执行性，从而确保系统在实际部署中稳定、准确运行。",
+      "generated_at": "2025-12-24T11:35:03.313010"
+    }
+  }
+}

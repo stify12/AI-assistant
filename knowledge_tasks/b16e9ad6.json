@@ -1,0 +1,188 @@
+{
+  "task_id": "b16e9ad6",
+  "created_at": "2026-01-06T16:32:35.974154",
+  "status": "completed",
+  "config": {
+    "multimodal_model": "doubao-1-5-vision-pro-32k-250115",
+    "text_model": "deepseek-v3.2",
+    "similarity_threshold": 0.85,
+    "questions_per_point": 1
+  },
+  "images": [
+    {
+      "id": "799a005a",
+      "filename": "微信图片_20260106151913_3863_22.jpg",
+      "path": "knowledge_uploads\\b16e9ad6\\f662eb0b_20260106151913_3863_22.jpg"
+    }
+  ],
+  "parsed_questions": [
+    {
+      "id": "m7vqfhbp",
+      "image_source": "微信图片_20260106151913_3863_22.jpg",
+      "content": "6. 已知\\( x_1, x_2 \\)是一元二次方程\\( x^2 - 4x + 1 = 0 \\)的两个实数根. 求\\( (x_1 + x_2)^2 \\div \\left( \frac{1}{x_1} + \frac{1}{x_2} \right) \\)的值.",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "d3k2600z",
+          "primary": "一元二次方程根与系数",
+          "secondary": "考查韦达定理（根与系数的关系）的应用，即对于一元二次方程 ax²+bx+c=0 的两根 x₁, x₂，有 x₁+x₂=-b/a，x₁x₂=c/a。题目要求利用这两个关系式化简并求值。",
+          "analysis": "1. 根据韦达定理，由方程 x²-4x+1=0 得：x₁+x₂=4，x₁x₂=1。\n2. 化简所求表达式：(x₁+x₂)² ÷ (1/x₁ + 1/x₂) = (x₁+x₂)² ÷ ((x₁+x₂)/(x₁x₂))。\n3. 代入已知数值：原式 = 4² ÷ (4/1) = 16 ÷ 4 = 4。"
+        }
+      ]
+    },
+    {
+      "id": "2zliemnd",
+      "image_source": "微信图片_20260106151913_3863_22.jpg",
+      "content": "7. 已知关于\\( x \\)的一元二次方程\\( x^2 + (2k + 3)x + k^2 = 0 \\)有两个不相等的实数根\\( x_1, x_2 \\). (1)求\\( k \\)的取值范围；(2)若\\( \frac{1}{x_1} + \frac{1}{x_2} = -1 \\)，求\\( k \\)的值.",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "2xvirh9w",
+          "primary": "一元二次方程根的性质",
+          "secondary": "考查一元二次方程根的判别式（Δ>0）与韦达定理（根与系数的关系）的综合应用，涉及根的判别条件、两根之和与积的公式变形",
+          "analysis": "（1）由Δ=(2k+3)^2-4k^2>0，解不等式得k>-3/4；（2）由韦达定理得x1+x2=-(2k+3)，x1x2=k^2，将1/x1+1/x2=(x1+x2)/(x1x2)=-1代入，得到关于k的方程，结合k的取值范围确定k的值"
+        }
+      ]
+    },
+    {
+      "id": "o29ko5dv",
+      "image_source": "微信图片_20260106151913_3863_22.jpg",
+      "content": "1. 若关于\\( x \\)的方程\\( x^2 - x + a = 0 \\)有实数根，则\\( a \\)的值可以是( ). (A) 2 (B) 1.5 (C) 1 (D) 0.25",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "s4jd5na2",
+          "primary": "一元二次方程根的判别",
+          "secondary": "考查一元二次方程有实数根的条件，即判别式Δ = b² - 4ac ≥ 0。题目要求方程x² - x + a = 0有实数根，因此需要计算判别式并求解a的取值范围。",
+          "analysis": "1. 写出方程的一般形式：x² - x + a = 0，其中a=1，b=-1，c=a。\n2. 计算判别式Δ = b² - 4ac = (-1)² - 4×1×a = 1 - 4a。\n3. 方程有实数根的条件是Δ ≥ 0，即1 - 4a ≥ 0。\n4. 解不等式：1 - 4a ≥ 0 → 4a ≤ 1 → a ≤ 0.25。\n5. 从选项(A)2、(B)1.5、(C)1、(D)0.25中，找出满足a ≤ 0.25的值，即(D)0.25。"
+        }
+      ]
+    },
+    {
+      "id": "9pc31378",
+      "image_source": "微信图片_20260106151913_3863_22.jpg",
+      "content": "2. 已知函数\\( y = kx + b \\)的图象如图所示，则一元二次方程\\( x^2 + x + k - 1 = 0 \\)根的存在情况是( ). (A) 没有实数根 (B) 有两个相等的实数根 (C) 有两个不相等的实数根 (D) 无法确定",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "cpwlmztv",
+          "primary": "一次函数与二次方程",
+          "secondary": "通过一次函数图像确定斜率k的取值范围，进而判断一元二次方程根的判别式Δ的正负，确定根的存在情况",
+          "analysis": "1. 观察一次函数y=kx+b图像，根据其下降趋势确定k<0；2. 计算一元二次方程x^2+x+k-1=0的判别式Δ=1^2-4×1×(k-1)=5-4k；3. 由k<0得-4k>0，故Δ=5-4k>5>0，因此方程有两个不相等的实数根"
+        }
+      ]
+    },
+    {
+      "id": "m74f6vii",
+      "image_source": "微信图片_20260106151913_3863_22.jpg",
+      "content": "3. 已知关于\\( x \\)的方程\\( x^2 + bx + c = 0 \\)的两根分别是\\( x_1 = \\sqrt{2} + 1 \\)，\\( x_2 = \\sqrt{2} - 1 \\)，则( ). (A) \\( b = 2\\sqrt{2} \\)，\\( c = 1 \\) (B) \\( b = 2\\sqrt{2} \\)，\\( c = -1 \\) (C) \\( b = -2\\sqrt{2} \\)，\\( c = -1 \\) (D) \\( b = -2\\sqrt{2} \\)，\\( c = 1 \\)",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "oax4qt9z",
+          "primary": "一元二次方程根与系数",
+          "secondary": "考查韦达定理（Vieta's formulas）的应用，即已知一元二次方程的两个根，利用两根之和等于一次项系数的相反数，两根之积等于常数项，求解方程系数。",
+          "analysis": "解题步骤：1. 根据韦达定理，对于方程 x² + bx + c = 0，有 x₁ + x₂ = -b，x₁ * x₂ = c。2. 代入已知根 x₁ = √2 + 1，x₂ = √2 - 1。3. 计算：x₁ + x₂ = (√2+1)+(√2-1) = 2√2，因此 -b = 2√2，得 b = -2√2。4. 计算：x₁ * x₂ = (√2+1)(√2-1) = (√2)² - 1² = 2 - 1 = 1，因此 c = 1。5. 对应选项为 D。"
+        }
+      ]
+    },
+    {
+      "id": "is6n9rei",
+      "image_source": "微信图片_20260106151913_3863_22.jpg",
+      "content": "4. 当\\( b + c = 5 \\)时，关于\\( x \\)的一元二次方程\\( 3x^2 + bx - c = 0 \\)的根的情况为( ). (A) 有两个不相等的实数根 (B) 有两个相等的实数根 (C) 没有实数根 (D) 无法确定",
+      "subject": "数学",
+      "question_type": "简答题",
+      "difficulty": "中等",
+      "knowledge_points": [
+        {
+          "id": "5pfvo7te",
+          "primary": "一元二次方程根的判别",
+          "secondary": "考查利用判别式Δ=b²-4ac判断一元二次方程根的情况，并结合已知条件进行化简和判断",
+          "analysis": "1. 写出判别式Δ=b²-4ac；2. 代入方程系数得Δ=b²-4×3×(-c)=b²+12c；3. 利用已知条件b+c=5，消去c得c=5-b，代入判别式得Δ=b²+12(5-b)=b²-12b+60；4. 判断Δ的符号：配方得Δ=(b-6)²+24>0恒成立，故方程有两个不相等的实数根"
+        }
+      ]
+    }
+  ],
+  "dedupe_results": [
+    {
+      "original_point": "一元二次方程根与系数",
+      "merged_point": "一元二次方程根与系数",
+      "similarity_score": 1.0,
+      "is_merged": false
+    },
+    {
+      "original_point": "一元二次方程根的性质",
+      "merged_point": "一元二次方程根的性质",
+      "similarity_score": 1.0,
+      "is_merged": false
+    },
+    {
+      "original_point": "一元二次方程根的判别",
+      "merged_point": "一元二次方程根的判别",
+      "similarity_score": 1.0,
+      "is_merged": false
+    },
+    {
+      "original_point": "一次函数与二次方程",
+      "merged_point": "一次函数与二次方程",
+      "similarity_score": 1.0,
+      "is_merged": false
+    }
+  ],
+  "similar_questions": [
+    {
+      "id": "62y6hgcc",
+      "knowledge_point_id": "d3k2600z",
+      "primary": "一元二次方程根与系数",
+      "secondary": "考查韦达定理（根与系数的关系）的应用，即对于一元二次方程 ax²+bx+c=0 的两根 x₁, x₂，有 x₁+x₂=-b/a，x₁x₂=c/a。题目要求利用这两个关系式化简并求值。",
+      "content": "已知方程 x² - 5x + 3 = 0 的两个根为 x₁ 和 x₂，求 (x₁ - x₂)² 的值。",
+      "answer": "13",
+      "solution_steps": "1. 由韦达定理得：x₁ + x₂ = 5，x₁x₂ = 3。\n2. 利用恒等式 (x₁ - x₂)² = (x₁ + x₂)² - 4x₁x₂。\n3. 代入计算：原式 = 5² - 4 × 3 = 25 - 12 = 13。",
+      "difficulty": "中等",
+      "question_type": "简答题"
+    },
+    {
+      "id": "qa86jjva",
+      "knowledge_point_id": "2xvirh9w",
+      "primary": "一元二次方程根的性质",
+      "secondary": "考查一元二次方程根的判别式（Δ>0）与韦达定理（根与系数的关系）的综合应用，涉及根的判别条件、两根之和与积的公式变形",
+      "content": "已知关于x的一元二次方程x² - (2m+1)x + m² = 0有两个不相等的实数根x₁, x₂。\n(1) 求实数m的取值范围；\n(2) 若满足 (x₁ - 1)(x₂ - 1) = 3，求m的值。",
+      "answer": "m = 3",
+      "solution_steps": "1. 由方程有两个不等实根，判别式 Δ > 0\n   Δ = [-(2m+1)]² - 4×1×m² = 4m + 1 > 0\n   解得 m > -1/4\n2. 由韦达定理：x₁ + x₂ = 2m + 1，x₁x₂ = m²\n3. 将条件 (x₁ - 1)(x₂ - 1) = 3 展开并代入：\n   m² - (2m + 1) + 1 = 3\n4. 化简得：m² - 2m - 3 = 0\n5. 解得 m₁ = 3，m₂ = -1\n6. 结合 m > -1/4，舍去 m = -1\n7. 故 m = 3",
+      "difficulty": "中等",
+      "question_type": "简答题"
+    },
+    {
+      "id": "ttrv7xwt",
+      "knowledge_point_id": "s4jd5na2",
+      "primary": "一元二次方程根的判别",
+      "secondary": "考查一元二次方程有实数根的条件，即判别式Δ = b² - 4ac ≥ 0。",
+      "content": "若关于x的一元二次方程x² - 2x + m = 0有实数根，则m的取值范围是（ ）\n(A) m ≥ 1\n(B) m ≤ 1\n(C) m ≥ -1\n(D) m ≤ -1",
+      "answer": "B",
+      "solution_steps": "1. 判别式 Δ = (-2)² - 4×1×m = 4 - 4m\n2. 有实数根的条件：Δ ≥ 0\n3. 4 - 4m ≥ 0\n4. 解得 m ≤ 1\n5. 对应选项 (B)",
+      "difficulty": "中等",
+      "question_type": "简答题"
+    },
+    {
+      "id": "nme3ljx1",
+      "knowledge_point_id": "cpwlmztv",
+      "primary": "一次函数与二次方程",
+      "secondary": "通过一次函数图像确定斜率k的取值范围，进而判断一元二次方程根的判别式Δ的正负，确定根的存在情况",
+      "content": "已知一次函数y=kx+2的图像从左向右呈下降趋势，则关于x的一元二次方程x^2-2x+k=0的根的情况是（ ）\nA. 有两个相等的实数根\nB. 有两个不相等的实数根\nC. 没有实数根\nD. 无法确定",
+      "answer": "B",
+      "solution_steps": "1. 一次函数y=kx+2从左向右下降，得k<0。\n2. 方程x²-2x+k=0的判别式Δ=(-2)²-4×1×k=4-4k。\n3. 由k<0，得-4k>0，故Δ=4-4k>4>0。\n4. Δ>0，方程有两个不相等的实数根。",
+      "difficulty": "中等",
+      "question_type": "简答题"
+    }
+  ]
+}

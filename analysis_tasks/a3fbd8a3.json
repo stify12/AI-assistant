@@ -1,0 +1,35 @@
+{
+  "task_id": "a3fbd8a3",
+  "name": "????",
+  "description": "??DeepSeek??",
+  "status": "pending",
+  "created_at": "2025-12-24T11:47:12.094140",
+  "updated_at": "2025-12-24T11:47:12.094140",
+  "files": [],
+  "workflow_state": {
+    "current_step": null,
+    "steps": [
+      {
+        "id": "parse",
+        "name": "数据解析",
+        "status": "pending"
+      },
+      {
+        "id": "analyze",
+        "name": "内容分析",
+        "status": "pending"
+      },
+      {
+        "id": "template",
+        "name": "模板生成",
+        "status": "pending"
+      },
+      {
+        "id": "report",
+        "name": "报告编写",
+        "status": "pending"
+      }
+    ]
+  },
+  "results": {}
+}

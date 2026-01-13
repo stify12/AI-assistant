@@ -1,0 +1,54 @@
+{
+  "task_id": "c3e3dda1",
+  "name": "批量评估-2026/1/9",
+  "status": "pending",
+  "homework_items": [
+    {
+      "homework_id": "2009455187829305346",
+      "student_id": "2001099609117622274",
+      "student_name": "冯",
+      "homework_name": "P70~85",
+      "book_id": "1997866819839905794",
+      "book_name": "袁崇焕中学校本作业.分层作业本.英语,八上",
+      "page_num": 84,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001099609117622274/1997866819839905794/1997866819839905794_84_V0IZZ.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"probably\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"easy\"\n\t},\n\t{\n\t\t\"answer\":\"surprised\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"surprised\"\n\t},\n\t{\n\t\t\"answer\":\"reminds\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"reminds\"\n\t},\n\t{\n\t\t\"answer\":\"Palace\\n\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3,\n\t\t\"userAnswer\":\"palace\"\n\t},\n\t{\n\t\t\"answer\":\"especially\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4,\n\t\t\"userAnswer\":\"especially\"\n\t},\n\t{\n\t\t\"answer\":\"During\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5,\n\t\t\"userAnswer\":\"During\"\n\t},\n\t{\n\t\t\"answer\":\"especially\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6,\n\t\t\"userAnswer\":\"especially\"\n\t},\n\t{\n\t\t\"answer\":\"forgot\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"8\",\n\t\t\"tempIndex\":7,\n\t\t\"userAnswer\":\"forgot\"\n\t},\n\t{\n\t\t\"answer\":\"peace\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"9\",\n\t\t\"tempIndex\":8,\n\t\t\"userAnswer\":\"peace\"\n\t},\n\t{\n\t\t\"answer\":\"comfortable\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":9,\n\t\t\"userAnswer\":\"comfortable\"\n\t},\n\t{\n\t\t\"answer\":\"took my breath away\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"11\",\n\t\t\"tempIndex\":10,\n\t\t\"userAnswer\":\"took my breath away\"\n\t},\n\t{\n\t\t\"answer\":\"turned around\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"12\",\n\t\t\"tempIndex\":11,\n\t\t\"userAnswer\":\"turned around\"\n\t},\n\t{\n\t\t\"answer\":\"ready to attend\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"13\",\n\t\t\"tempIndex\":12,\n\t\t\"userAnswer\":\"ready to attend\"\n\t},\n\t{\n\t\t\"answer\":\"thousands of\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"14\",\n\t\t\"tempIndex\":13,\n\t\t\"userAnswer\":\"thousands of\"\n\t},\n\t{\n\t\t\"answer\":\"fight against\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"15\",\n\t\t\"tempIndex\":14,\n\t\t\"userAnswer\":\"fight against\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"16\",\n\t\t\"tempIndex\":15,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"17\",\n\t\t\"tempIndex\":16,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"18\",\n\t\t\"tempIndex\":17,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"19\",\n\t\t\"tempIndex\":18,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"20\",\n\t\t\"tempIndex\":19,\n\t\t\"userAnswer\":\"B\"\n\t}\n]",
+      "matched_dataset": null,
+      "status": "pending",
+      "accuracy": null,
+      "evaluation": null
+    },
+    {
+      "homework_id": "2009455215637540865",
+      "student_id": "2001099609117622274",
+      "student_name": "冯",
+      "homework_name": "P70~85",
+      "book_id": "1997866819839905794",
+      "book_name": "袁崇焕中学校本作业.分层作业本.英语,八上",
+      "page_num": 85,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001099609117622274/1997866819839905794/1997866819839905794_85_BNW6E.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"invited\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"yet\"\n\t},\n\t{\n\t\t\"answer\":\"several\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"matter\"\n\t},\n\t{\n\t\t\"answer\":\"yet\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"text\"\n\t},\n\t{\n\t\t\"answer\":\"Perhaps\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3,\n\t\t\"userAnswer\":\"invite\"\n\t},\n\t{\n\t\t\"answer\":\"planned\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4,\n\t\t\"userAnswer\":\"until\"\n\t},\n\t{\n\t\t\"answer\":\"until\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5,\n\t\t\"userAnswer\":\"joy\"\n\t},\n\t{\n\t\t\"answer\":\"text(s)\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6,\n\t\t\"userAnswer\":\"plan\"\n\t},\n\t{\n\t\t\"answer\":\"covering\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"8\",\n\t\t\"tempIndex\":7,\n\t\t\"userAnswer\":\"pull\"\n\t},\n\t{\n\t\t\"answer\":\"joy\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"9\",\n\t\t\"tempIndex\":8,\n\t\t\"userAnswer\":\"several\"\n\t},\n\t{\n\t\t\"answer\":\"apartment\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":9,\n\t\t\"userAnswer\":\"cover\"\n\t},\n\t{\n\t\t\"answer\":\"pack   up\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"11\",\n\t\t\"tempIndex\":10,\n\t\t\"userAnswer\":\"pack up\"\n\t},\n\t{\n\t\t\"answer\":\"gave  her   a   lift\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"12\",\n\t\t\"tempIndex\":11,\n\t\t\"userAnswer\":\"gave her a lift\"\n\t},\n\t{\n\t\t\"answer\":\"clean   up \",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"13\",\n\t\t\"tempIndex\":12,\n\t\t\"userAnswer\":\"clean up\"\n\t},\n\t{\n\t\t\"answer\":\"share   with \",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"14\",\n\t\t\"tempIndex\":13,\n\t\t\"userAnswer\":\"share; with\"\n\t},\n\t{\n\t\t\"answer\":\"Be   careful  with\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"15\",\n\t\t\"tempIndex\":14,\n\t\t\"userAnswer\":\"Be careful with\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"16\",\n\t\t\"tempIndex\":15,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"17\",\n\t\t\"tempIndex\":16,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"18\",\n\t\t\"tempIndex\":17,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"19\",\n\t\t\"tempIndex\":18,\n\t\t\"userAnswer\":\"D\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"20\",\n\t\t\"tempIndex\":19,\n\t\t\"userAnswer\":\"C\"\n\t}\n]",
+      "matched_dataset": null,
+      "status": "pending",
+      "accuracy": null,
+      "evaluation": null
+    },
+    {
+      "homework_id": "2009455521966776322",
+      "student_id": "2003341829560381442",
+      "student_name": "江小知",
+      "homework_name": "小题批改-77页",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 77,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2003341829560381442/1997848714229166082/1997848714229166082_77_E9BT9.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"冷热程度   不相同  不可靠\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"发热程度\\\\n相同\\\\n可靠\"\n\t},\n\t{\n\t\t\"answer\":\"(1)热胀冷缩   量程   分度值\\n<br> (2)D  \\n(3)B    不能\\n<br> (4)38    -22  \",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"水银\\\\n读数 和分度值\\\\nD\\\\nA\\\\n不能\\\\n38\\\\n35\"\n\t}\n]",
+      "matched_dataset": null,
+      "status": "pending",
+      "accuracy": null,
+      "evaluation": null
+    }
+  ],
+  "overall_report": null,
+  "created_at": "2026-01-09T10:53:30.179616"
+}

@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  ai-grading:
+    build: .
+    container_name: ai-grading-platform
+    ports:
+      - "5000:5000"
+    volumes:
+      # 持久化数据目录（文件存储备用）
+      - ./datasets:/app/datasets
+      - ./batch_tasks:/app/batch_tasks
+      - ./baseline_effects:/app/baseline_effects
+      - ./sessions:/app/sessions
+      - ./chat_sessions:/app/chat_sessions
+      - ./exports:/app/exports
+      - ./knowledge_tasks:/app/knowledge_tasks
+      - ./knowledge_uploads:/app/knowledge_uploads
+      - ./analysis_files:/app/analysis_files
+      - ./analysis_tasks:/app/analysis_tasks
+      # 配置文件（prompts等非敏感配置）
+      - ./prompts.json:/app/prompts.json
+    environment:
+      - FLASK_ENV=production
+      - TZ=Asia/Shanghai
+      - USE_DB_STORAGE=true
+      # API密钥（从.env文件或命令行传入）
+      - DOUBAO_API_KEY=${DOUBAO_API_KEY}
+      - DOUBAO_API_URL=${DOUBAO_API_URL:-https://ark.cn-beijing.volces.com/api/v3/chat/completions}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - QWEN_API_KEY=${QWEN_API_KEY}
+      # 主数据库配置
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      # 应用数据库配置（可选）
+      - APP_MYSQL_HOST=${APP_MYSQL_HOST}
+      - APP_MYSQL_PORT=${APP_MYSQL_PORT:-3306}
+      - APP_MYSQL_USER=${APP_MYSQL_USER}
+      - APP_MYSQL_PASSWORD=${APP_MYSQL_PASSWORD}
+      - APP_MYSQL_DATABASE=${APP_MYSQL_DATABASE}
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

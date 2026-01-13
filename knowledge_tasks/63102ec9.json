@@ -1,0 +1,21 @@
+{
+  "task_id": "63102ec9",
+  "created_at": "2026-01-12T12:51:29.887863",
+  "status": "pending",
+  "config": {
+    "multimodal_model": "doubao-1-5-vision-pro-32k-250115",
+    "text_model": "deepseek-v3.2",
+    "similarity_threshold": 0.85,
+    "questions_per_point": 1
+  },
+  "images": [
+    {
+      "id": "e924f3ec",
+      "filename": "9.jpg",
+      "path": "knowledge_uploads\\63102ec9\\a9259c16_9.jpg"
+    }
+  ],
+  "parsed_questions": [],
+  "dedupe_results": [],
+  "similar_questions": []
+}

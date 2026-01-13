@@ -1,0 +1,5 @@
+flask
+requests
+openpyxl
+python-docx
+pymysql

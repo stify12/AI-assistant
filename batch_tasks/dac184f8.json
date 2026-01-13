@@ -1,0 +1,157 @@
+{
+  "task_id": "dac184f8",
+  "name": "批量评估-2026/1/9",
+  "status": "completed",
+  "homework_items": [
+    {
+      "homework_id": "2009453813070671874",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 76,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_76_724U8.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"冷热程度  摄氏度   ℃  \",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"热量\"\n\t},\n\t{\n\t\t\"answer\":\" 温度计  热胀冷缩  \",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"火枪；冷热\"\n\t},\n\t{\n\t\t\"answer\":\"冰水混合物   100   1  \",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"混物向；10；1\"\n\t},\n\t{\n\t\t\"answer\":\" (2)量程 分度值 <br>(3)玻璃泡<br> (4)相平 不能  \",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3,\n\t\t\"userAnswer\":\"量程；分度值；玻璃；倾斜；能\"\n\t},\n\t{\n\t\t\"answer\":\"(1)细弯管<br> (2)可以   甩几下  \",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4,\n\t\t\"userAnswer\":\"细弯管；可以；甩几下\"\n\t},\n\t{\n\t\t\"answer\":\"高\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5,\n\t\t\"userAnswer\":\"高\"\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.16666666666666666,
+      "evaluation": {
+        "accuracy": 0.16666666666666666,
+        "total_questions": 6,
+        "correct_count": 1,
+        "error_count": 5,
+        "errors": [
+          {
+            "index": "1",
+            "base_answer": "冷热程度 摄氏度 ℃",
+            "base_user": "热量 度 ℃",
+            "hw_user": "热量",
+            "error_type": "答案不匹配"
+          },
+          {
+            "index": "2",
+            "base_answer": "温度计 热胀冷缩",
+            "base_user": "火枪 冷热",
+            "hw_user": "火枪；冷热",
+            "error_type": "答案不匹配"
+          },
+          {
+            "index": "3",
+            "base_answer": "冰水混合物 100 1",
+            "base_user": "混合物 10 1",
+            "hw_user": "混物向；10；1",
+            "error_type": "答案不匹配"
+          },
+          {
+            "index": "4",
+            "base_answer": "量程 分度值 玻璃泡 相平 不能",
+            "base_user": "量程 分度值 玻璃 倾斜 能",
+            "hw_user": "量程；分度值；玻璃；倾斜；能",
+            "error_type": "答案不匹配"
+          },
+          {
+            "index": "5",
+            "base_answer": "细弯管 可以 甩几下",
+            "base_user": "细弯管 可以 甩几下",
+            "hw_user": "细弯管；可以；甩几下",
+            "error_type": "答案不匹配"
+          }
+        ]
+      }
+    },
+    {
+      "homework_id": "2009453841872957442",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 77,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_77_Y9Z5B.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"冷热程度   不相同  不可靠\",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"冷热程度；不相同；不可靠\"\n\t},\n\t{\n\t\t\"answer\":\"(1)热胀冷缩   量程   分度值\\n<br> (2)D  \\n(3)B    不能\\n<br> (4)38    -22  \",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"冷热程度；量程；分度；D；B；不能；380；-22\"\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.0,
+      "evaluation": {
+        "accuracy": 0.0,
+        "total_questions": 3,
+        "correct_count": 0,
+        "error_count": 3,
+        "errors": [
+          {
+            "index": "1",
+            "base_answer": "B",
+            "base_user": "B",
+            "hw_user": "",
+            "error_type": "缺失题目"
+          },
+          {
+            "index": "2",
+            "base_answer": "冷热程度 不相同 不可靠",
+            "base_user": "冷热程度 不相同 不可靠",
+            "hw_user": "",
+            "error_type": "缺失题目"
+          },
+          {
+            "index": "3",
+            "base_answer": "热胀冷缩 量程 分度值 D B 不能 38 -22",
+            "base_user": "冷热程度 量程 分度 D D 不能 380 -22",
+            "hw_user": "",
+            "error_type": "缺失题目"
+          }
+        ]
+      }
+    },
+    {
+      "homework_id": "2009453868666171394",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 78,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_78_TBMNS.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"(1)35~42    0.1    37.8\\n<br> (2)细弯管 能  <br>(3)甩几下<br> (4)D  \",\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"例4\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"(1)36~42，0.1，37.8 (2)细弯管，能 (3)甩几下 (4)D\"\n\t},\n\t{\n\t\t\"answer\":\"高   热岛效应   26  \\n\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"例5\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"高低，热岛效应，26\"\n\t},\n\t{\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"C\"\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.0,
+      "evaluation": {
+        "accuracy": 0.0,
+        "total_questions": 3,
+        "correct_count": 0,
+        "error_count": 3,
+        "errors": [
+          {
+            "index": "4",
+            "base_answer": "35~42 0.1 37.8 细弯管（缩口） 能 甩几下 D",
+            "base_user": "36~42 0.1 378 细弯管 不能 甩几下 D",
+            "hw_user": "",
+            "error_type": "缺失题目"
+          },
+          {
+            "index": "5",
+            "base_answer": "高 热岛效应 26",
+            "base_user": "高低 热岛效应 26",
+            "hw_user": "",
+            "error_type": "缺失题目"
+          },
+          {
+            "index": "1",
+            "base_answer": "C",
+            "base_user": "C",
+            "hw_user": "C",
+            "error_type": "答案不匹配"
+          }
+        ]
+      }
+    }
+  ],
+  "overall_report": {
+    "overall_accuracy": 0.08333333333333333,
+    "total_homework": 3,
+    "total_questions": 12,
+    "correct_questions": 1
+  },
+  "created_at": "2026-01-09T15:43:25.147774"
+}

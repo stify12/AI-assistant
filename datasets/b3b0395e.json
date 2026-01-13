@@ -1,0 +1,458 @@
+{
+  "dataset_id": "b3b0395e",
+  "book_id": "1997848714229166082",
+  "pages": [
+    76,
+    77,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86
+  ],
+  "base_effects": {
+    "76": [
+      {
+        "answer": "冷热程度 摄氏度 ℃",
+        "correct": "no",
+        "index": "1",
+        "userAnswer": "热量 度 ℃",
+        "tempIndex": 0,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "温度计 热胀冷缩",
+        "correct": "no",
+        "index": "2",
+        "userAnswer": "火枪 冷热",
+        "tempIndex": 1,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "冰水混合物 100 1",
+        "correct": "no",
+        "index": "3",
+        "userAnswer": "混合物 10 1",
+        "tempIndex": 2,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "量程 分度值 玻璃泡 相平 不能",
+        "correct": "no",
+        "index": "4",
+        "userAnswer": "量程 分度值 玻璃 倾斜 能",
+        "tempIndex": 3,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "细弯管 可以 甩几下",
+        "correct": "yes",
+        "index": "5",
+        "userAnswer": "细弯管 可以 甩几下",
+        "tempIndex": 4,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "高",
+        "correct": "yes",
+        "index": "6",
+        "userAnswer": "高",
+        "tempIndex": 5,
+        "questionType": "objective",
+        "bvalue": "4"
+      }
+    ],
+    "77": [
+      {
+        "answer": "B",
+        "correct": "yes",
+        "index": "1",
+        "userAnswer": "B",
+        "tempIndex": 0,
+        "questionType": "objective",
+        "bvalue": "1"
+      },
+      {
+        "answer": "冷热程度 不相同 不可靠",
+        "correct": "yes",
+        "index": "2",
+        "userAnswer": "冷热程度 不相同 不可靠",
+        "tempIndex": 1,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "热胀冷缩 量程 分度值 D B 不能 38 -22",
+        "correct": "no",
+        "index": "3",
+        "userAnswer": "冷热程度 量程 分度 D D 不能 380 -22",
+        "tempIndex": 2,
+        "questionType": "objective",
+        "bvalue": "4"
+      }
+    ],
+    "78": [
+      {
+        "answer": "35~42 0.1 37.8 细弯管（缩口） 能 甩几下 D",
+        "correct": "no",
+        "index": "4",
+        "userAnswer": "36~42 0.1 378 细弯管 不能 甩几下 D",
+        "tempIndex": 0,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "高 热岛效应 26",
+        "correct": "no",
+        "index": "5",
+        "userAnswer": "高低 热岛效应 26",
+        "tempIndex": 1,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "D",
+        "correct": "no",
+        "index": "1",
+        "userAnswer": "C",
+        "tempIndex": 2,
+        "questionType": "objective",
+        "bvalue": "1"
+      }
+    ],
+    "79": [
+      {
+        "answer": "C",
+        "correct": "no",
+        "index": "2",
+        "userAnswer": "D",
+        "tempIndex": 0,
+        "questionType": "objective",
+        "bvalue": "1"
+      },
+      {
+        "answer": "1 -20~50 不能",
+        "correct": "no",
+        "index": "3",
+        "userAnswer": "1 0~50 不能",
+        "tempIndex": 1,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "热胀冷缩 16 -14",
+        "correct": "no",
+        "index": "4",
+        "userAnswer": "冷热程度 36 -16",
+        "tempIndex": 2,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "0.1 37.8 乙",
+        "correct": "no",
+        "index": "5",
+        "userAnswer": "0.1 37 乙",
+        "tempIndex": 3,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "36.7 = 不能",
+        "correct": "no",
+        "index": "6",
+        "userAnswer": "36 > 能",
+        "tempIndex": 4,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "D",
+        "correct": "yes",
+        "index": "7",
+        "userAnswer": "D",
+        "tempIndex": 5,
+        "questionType": "objective",
+        "bvalue": "1"
+      }
+    ],
+    "80": [
+      {
+        "answer": "5摄氏度",
+        "correct": "no",
+        "index": "1",
+        "userAnswer": "5度",
+        "tempIndex": 0,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "B",
+        "correct": "yes",
+        "index": "2",
+        "userAnswer": "B",
+        "tempIndex": 1,
+        "questionType": "objective",
+        "bvalue": "1"
+      }
+    ],
+    "81": [
+      {
+        "answer": "空气流动加快，蒸发吸热",
+        "correct": "no",
+        "index": "1",
+        "userAnswer": "空气流速加快",
+        "tempIndex": 0,
+        "questionType": "subjective",
+        "bvalue": "5"
+      },
+      {
+        "answer": "C",
+        "correct": "yes",
+        "index": "2",
+        "userAnswer": "C",
+        "tempIndex": 1,
+        "questionType": "objective",
+        "bvalue": "1"
+      },
+      {
+        "answer": "市中心 快 小 加剧城市大气污染（合理即可） 汽化 吸热 植树造林（合理即可）",
+        "correct": "no",
+        "index": "3",
+        "userAnswer": "市中心 快 大 温度升高，造成大气污染 汽化 吸热 红色出行",
+        "tempIndex": 2,
+        "questionType": "objective",
+        "bvalue": "5"
+      }
+    ],
+    "82": [
+      {
+        "answer": "固态 液态 气态",
+        "correct": "yes",
+        "index": "1",
+        "userAnswer": "气态 液态 固态",
+        "tempIndex": 0,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "液态 气态 蒸发 沸腾",
+        "correct": "no",
+        "index": "2",
+        "userAnswer": "气态 液态 蒸气 沸腾",
+        "tempIndex": 1,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "任何 表面",
+        "correct": "no",
+        "index": "3",
+        "userAnswer": "固定 里面",
+        "tempIndex": 2,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "温度 表面积 空气流动的快慢",
+        "correct": "no",
+        "index": "4",
+        "userAnswer": "温度 面积 空气流动",
+        "tempIndex": 3,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "内部 表面 剧烈 沸点",
+        "correct": "no",
+        "index": "5",
+        "userAnswer": "外部 里面 缓慢 佛点",
+        "tempIndex": 4,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "沸点 吸热",
+        "correct": "no",
+        "index": "6",
+        "userAnswer": "佛点 放热",
+        "tempIndex": 5,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "升高 不变",
+        "correct": "no",
+        "index": "7",
+        "userAnswer": "降低 不变",
+        "tempIndex": 6,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "①③ ②⑤ ④",
+        "correct": "no",
+        "index": "1",
+        "userAnswer": "①③④ ⑤ ②",
+        "tempIndex": 7,
+        "questionType": "objective",
+        "bvalue": "4"
+      }
+    ],
+    "83": [
+      {
+        "answer": "室外 室外 快 展开 展开 快 有风吹 快",
+        "correct": "no",
+        "index": "1",
+        "userAnswer": "室外 室外 慢 展开 叠起来 好 风吹 快",
+        "tempIndex": 0,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "自下而上 A",
+        "correct": "no",
+        "index": "2",
+        "userAnswer": "自上而下 B",
+        "tempIndex": 1,
+        "questionType": "objective",
+        "bvalue": "4"
+      }
+    ],
+    "84": [
+      {
+        "answer": "99 升高 不变 水的初温过低（合理即可）",
+        "correct": "yes",
+        "index": "实验题",
+        "userAnswer": "99 升高 不变 太冷了",
+        "tempIndex": 0,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "C",
+        "correct": "no",
+        "index": "1",
+        "userAnswer": "D",
+        "tempIndex": 1,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "A",
+        "correct": "no",
+        "index": "2",
+        "userAnswer": "B",
+        "tempIndex": 2,
+        "questionType": "objective",
+        "bvalue": "1"
+      },
+      {
+        "answer": "正在 A 低于",
+        "correct": "no",
+        "index": "3",
+        "userAnswer": "正在 B 高于",
+        "tempIndex": 3,
+        "questionType": "objective",
+        "bvalue": "1"
+      }
+    ],
+    "85": [
+      {
+        "answer": "气态 液态",
+        "correct": "no",
+        "index": "1",
+        "userAnswer": "液态 气态",
+        "tempIndex": 0,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "降低温度 压缩体积",
+        "correct": "no",
+        "index": "2",
+        "userAnswer": "升高温度 压缩体积",
+        "tempIndex": 1,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "吸 放",
+        "correct": "yes",
+        "index": "3",
+        "userAnswer": "吸 放",
+        "tempIndex": 2,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "壶内 液化 汽化",
+        "correct": "yes",
+        "index": "4",
+        "userAnswer": "壶内 液化 汽化",
+        "tempIndex": 3,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "变小 液化 降低温度",
+        "correct": "no",
+        "index": "5",
+        "userAnswer": "变大 汽化 吸收",
+        "tempIndex": 4,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "液化 外 内",
+        "correct": "no",
+        "index": "6",
+        "userAnswer": "汽化 左 外",
+        "tempIndex": 5,
+        "questionType": "objective",
+        "bvalue": "4"
+      }
+    ],
+    "86": [
+      {
+        "answer": "汽化 吸收 降低",
+        "correct": "no",
+        "index": "例4",
+        "userAnswer": "液化 吸收 降低",
+        "tempIndex": 0,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "小水珠 升高 放热",
+        "correct": "no",
+        "index": "例5",
+        "userAnswer": "水蒸气 升高 放热",
+        "tempIndex": 1,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "answer": "水蒸气 液化 小水滴",
+        "correct": "yes",
+        "index": "1",
+        "userAnswer": "水蒸气 液化 小水珠",
+        "tempIndex": 2,
+        "questionType": "objective",
+        "bvalue": "4"
+      }
+    ]
+  },
+  "created_at": "2026-01-09T15:22:32.233570",
+  "question_count": 46,
+  "updated_at": "2026-01-12T12:52:00.868796"
+}

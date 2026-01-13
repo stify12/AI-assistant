@@ -1,0 +1,29 @@
+{
+  "homework_name": "P78~87",
+  "page_num": 86,
+  "subject_id": 3,
+  "base_effect": [
+    {
+      "answer": "汽化；吸收；降低",
+      "correct": "no",
+      "index": "例4",
+      "tempIndex": 0,
+      "userAnswer": ";吸收；升高"
+    },
+    {
+      "answer": "小水珠；升高；放热",
+      "correct": "no",
+      "index": "例5",
+      "tempIndex": 1,
+      "userAnswer": "小水珠；不变；吸热"
+    },
+    {
+      "answer": "水蒸气；液化；小水滴",
+      "correct": "no",
+      "index": "1",
+      "tempIndex": 2,
+      "userAnswer": "小水滴；（第二空未填）；水蒸气"
+    }
+  ],
+  "created_at": "2026-01-08T17:08:01.938266"
+}

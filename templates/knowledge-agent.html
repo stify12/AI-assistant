@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识点类题生成</title>
+    <link rel="stylesheet" href="/static/css/common.css">
+    <link rel="stylesheet" href="/static/css/knowledge-agent.css">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <button class="back-link" onclick="goBack()">返回</button>
+            <div class="header-btns">
+                <button class="history-btn" onclick="showHistoryModal()" title="历史任务">历史</button>
+                <button class="settings-btn" onclick="showSettings()" title="设置">设置</button>
+            </div>
+        </div>
+        <div class="sidebar-title">
+            <h2>知识点类题生成</h2>
+            <p>智能提取知识点，自动生成类题</p>
+        </div>
+        <div class="sidebar-config">
+            <div class="config-group">
+                <label>视觉模型</label>
+                <select id="multimodalModel"></select>
+            </div>
+            <div class="config-group">
+                <label>文本模型</label>
+                <select id="textModel"></select>
+            </div>
+            <div class="config-group">
+                <label>相似度阈值</label>
+                <input type="range" id="thresholdSlider" min="0.5" max="0.99" step="0.01" value="0.85">
+                <span id="thresholdValue">0.85</span>
+            </div>
+            <div class="config-group">
+                <label>每知识点生成</label>
+                <select id="questionCount">
+                    <option value="1" selected>1道</option>
+                    <option value="2">2道</option>
+                    <option value="3">3道</option>
+                </select>
+            </div>
+            <div class="config-group">
+                <label>解析模式</label>
+                <select id="parseMode">
+                    <option value="parallel" selected>并行解析（快速）</option>
+                    <option value="stream">流式解析（实时）</option>
+                </select>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="step-indicator">
+            <div class="step active" data-step="1"><span class="step-number">1</span><span class="step-label">上传</span></div>
+            <div class="step-line"></div>
+            <div class="step" data-step="2"><span class="step-number">2</span><span class="step-label">解析</span></div>
+            <div class="step-line"></div>
+            <div class="step" data-step="3"><span class="step-number">3</span><span class="step-label">去重</span></div>
+            <div class="step-line"></div>
+            <div class="step" data-step="4"><span class="step-number">4</span><span class="step-label">生成</span></div>
+            <div class="step-line"></div>
+            <div class="step" data-step="5"><span class="step-number">5</span><span class="step-label">校验</span></div>
+            <div class="step-line"></div>
+            <div class="step" data-step="6"><span class="step-number">6</span><span class="step-label">导出</span></div>
+        </div>
+
+        <div class="content-area">
+            <!-- 步骤1: 上传图片 -->
+            <div class="step-panel active" id="step1">
+                <div class="panel-title">上传作业图片</div>
+                <div class="panel-desc">支持 JPG/PNG/JPEG，单张不超过 10MB</div>
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-text">点击或拖拽上传</div>
+                    <input type="file" id="fileInput" multiple accept="image/jpeg,image/png,image/jpg" hidden>
+                </div>
+                <div class="preview-list" id="previewList"></div>
+                <div class="panel-actions">
+                    <button class="btn-primary" id="startParseBtn" disabled>开始解析</button>
+                    <button class="btn-auto" id="autoRunBtn" disabled>一键自动执行</button>
+                </div>
+            </div>
+
+            <!-- 步骤2: 解析题目 -->
+            <div class="step-panel" id="step2">
+                <div class="panel-title">解析题目 <button class="btn-export" onclick="exportResult('parse_result')">导出</button></div>
+                <div class="prompt-section">
+                    <div class="prompt-header"><span>提示词</span><button class="btn-small" onclick="togglePrompt('parsePrompt')">展开/收起</button></div>
+                    <pre class="prompt-content" id="parsePrompt"></pre>
+                </div>
+                <div class="stream-section">
+                    <div class="stream-header"><span>模型输出</span><span class="stream-status" id="parseStatus"></span></div>
+                    <div class="stream-content" id="parseStream"></div>
+                </div>
+                <div class="result-section" id="parseResultSection" style="display:none;">
+                    <div class="result-header">解析结果</div>
+                    <div class="result-table-wrap">
+                        <table class="result-table" id="parseResultTable">
+                            <thead><tr><th>序号</th><th>题目内容</th><th>学科</th><th>题型</th><th>难度</th><th>知识点</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="panel-actions">
+                    <button class="btn-secondary" onclick="goToStep(1)">上一步</button>
+                    <button class="btn-primary" id="confirmParseBtn" disabled>确认继续</button>
+                </div>
+            </div>
+
+            <!-- 步骤3: 知识点去重 -->
+            <div class="step-panel" id="step3">
+                <div class="panel-title">知识点去重 <button class="btn-export" onclick="exportResult('dedupe_result')">导出</button></div>
+                <div class="dedupe-info" id="dedupeInfo"></div>
+                <div class="knowledge-list" id="knowledgeList"></div>
+                <div class="panel-actions">
+                    <button class="btn-secondary" onclick="goToStep(2)">上一步</button>
+                    <button class="btn-primary" id="startGenerateBtn">生成类题</button>
+                </div>
+            </div>
+
+            <!-- 步骤4: 生成类题 -->
+            <div class="step-panel" id="step4">
+                <div class="panel-title">生成类题 <button class="btn-export" onclick="exportResult('similar_questions')">导出</button></div>
+                <div class="prompt-section">
+                    <div class="prompt-header"><span>提示词</span><button class="btn-small" onclick="togglePrompt('generatePrompt')">展开/收起</button></div>
+                    <pre class="prompt-content" id="generatePrompt"></pre>
+                </div>
+                <div class="stream-section">
+                    <div class="stream-header"><span>模型输出（并行生成）</span><span class="stream-status" id="generateStatus"></span></div>
+                    <div class="stream-content" id="generateStream"></div>
+                </div>
+                <div class="similar-list" id="similarList"></div>
+                <div class="panel-actions">
+                    <button class="btn-secondary" onclick="goToStep(3)">上一步</button>
+                    <button class="btn-primary" id="startVerifyBtn" disabled>开始校验</button>
+                </div>
+            </div>
+
+            <!-- 步骤5: 校验优化 -->
+            <div class="step-panel" id="step5">
+                <div class="panel-title">校验优化 <button class="btn-export" onclick="exportResult('similar_questions')">导出</button></div>
+                <div class="panel-desc">使用 DeepSeek 对生成的类题进行准确性校验和解题步骤优化</div>
+                <div class="prompt-section">
+                    <div class="prompt-header"><span>校验提示词</span><button class="btn-small" onclick="togglePrompt('verifyPrompt')">展开/收起</button></div>
+                    <pre class="prompt-content" id="verifyPrompt"></pre>
+                </div>
+                <div class="stream-section">
+                    <div class="stream-header"><span>校验输出</span><span class="stream-status" id="verifyStatus"></span></div>
+                    <div class="stream-content" id="verifyStream"></div>
+                </div>
+                <div class="verify-progress" id="verifyProgress"></div>
+                <div class="verified-list" id="verifiedList"></div>
+                <div class="panel-actions">
+                    <button class="btn-secondary" onclick="goToStep(4)">上一步</button>
+                    <button class="btn-primary" id="goExportBtn" disabled>查看导出选项</button>
+                </div>
+            </div>
+
+            <!-- 步骤6: 导出结果 -->
+            <div class="step-panel" id="step6">
+                <div class="panel-title">导出结果</div>
+                <div class="export-options">
+                    <div class="export-card" onclick="exportResult('parse_result')">
+                        <div class="export-icon">01</div>
+                        <div class="export-title">解析结果</div>
+                        <div class="export-desc">题目、知识点、解题思路</div>
+                    </div>
+                    <div class="export-card" onclick="exportResult('similar_questions')">
+                        <div class="export-icon">02</div>
+                        <div class="export-title">类题结果</div>
+                        <div class="export-desc">类题、答案、解题步骤</div>
+                    </div>
+                    <div class="export-card" onclick="exportResult('full_result')">
+                        <div class="export-icon">03</div>
+                        <div class="export-title">完整结果</div>
+                        <div class="export-desc">所有数据汇总</div>
+                    </div>
+                    <div class="export-card" onclick="exportResult('dedupe_result')">
+                        <div class="export-icon">04</div>
+                        <div class="export-title">去重结果</div>
+                        <div class="export-desc">知识点去重详情</div>
+                    </div>
+                </div>
+                <div class="panel-actions">
+                    <button class="btn-secondary" onclick="goToStep(5)">上一步</button>
+                    <button class="btn-primary" onclick="startNewTask()">新任务</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/static/js/knowledge-agent.js"></script>
+
+    <!-- 设置弹窗 -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content settings-modal">
+            <div class="modal-header">
+                <h3>提示词设置</h3>
+                <button class="modal-close" onclick="hideSettings()">×</button>
+            </div>
+            <div class="settings-tabs">
+                <button class="settings-tab active" data-tab="parsePrompt" onclick="switchSettingsTab('parsePrompt')">解析提示词</button>
+                <button class="settings-tab" data-tab="extractPrompt" onclick="switchSettingsTab('extractPrompt')">知识点提取</button>
+                <button class="settings-tab" data-tab="generatePrompt" onclick="switchSettingsTab('generatePrompt')">类题生成</button>
+                <button class="settings-tab" data-tab="verifyPrompt" onclick="switchSettingsTab('verifyPrompt')">校验优化</button>
+            </div>
+            <div class="settings-content">
+                <div class="settings-panel active" id="settingsParsePrompt">
+                    <div class="prompt-desc">用于识别图片中的题目信息</div>
+                    <textarea id="editParsePrompt" rows="12"></textarea>
+                </div>
+                <div class="settings-panel" id="settingsExtractPrompt">
+                    <div class="prompt-desc">用于从题目中提取知识点（每题一个）</div>
+                    <div class="prompt-vars">可用变量: <code>{content}</code> 题目内容, <code>{subject}</code> 学科</div>
+                    <textarea id="editExtractPrompt" rows="12"></textarea>
+                </div>
+                <div class="settings-panel" id="settingsGeneratePrompt">
+                    <div class="prompt-desc">用于根据知识点生成类题</div>
+                    <div class="prompt-vars">可用变量: <code>{primary}</code>, <code>{secondary}</code>, <code>{solution_approach}</code>, <code>{difficulty}</code>, <code>{type}</code>, <code>{count}</code></div>
+                    <textarea id="editGeneratePrompt" rows="12"></textarea>
+                </div>
+                <div class="settings-panel" id="settingsVerifyPrompt">
+                    <div class="prompt-desc">用于校验和优化生成的类题</div>
+                    <div class="prompt-vars">可用变量: <code>{content}</code> 题目, <code>{answer}</code> 答案, <code>{solution_steps}</code> 解题步骤</div>
+                    <textarea id="editVerifyPrompt" rows="12"></textarea>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="resetPrompts()">恢复默认</button>
+                <button class="btn-primary" onclick="savePrompts()">保存设置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史任务弹窗 -->
+    <div class="modal" id="historyModal">
+        <div class="modal-content history-modal">
+            <div class="modal-header">
+                <h3>历史任务</h3>
+                <button class="modal-close" onclick="hideHistoryModal()">×</button>
+            </div>
+            <div class="history-list" id="historyList">
+                <div class="loading-state">加载中...</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

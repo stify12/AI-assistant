@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据分析 - AI 助手</title>
+    <link rel="stylesheet" href="/static/css/common.css">
+    <link rel="stylesheet" href="/static/css/data-analysis.css">
+    <script src="https://cdn.bootcdn.net/ajax/libs/marked/9.1.6/marked.min.js"></script>
+</head>
+<body>
+    <!-- 左侧任务列表 -->
+    <aside class="task-sidebar" id="taskSidebar">
+        <div class="sidebar-header">
+            <button class="new-task-btn" onclick="showCreateTask()">
+                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                新建任务
+            </button>
+        </div>
+        <div class="task-list" id="taskList"></div>
+        <div class="sidebar-footer">
+            <button class="nav-link" onclick="goBack()">返回</button>
+            <a href="/compare" class="nav-link">对比分析</a>
+            <a href="/prompt-optimize" class="nav-link">提示词优化</a>
+        </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <!-- 欢迎页 -->
+        <div class="welcome-page" id="welcomePage">
+            <div class="welcome-icon">📊</div>
+            <h1>数据分析工作流</h1>
+            <p>上传 Excel 文件，AI 自动解析、分析并生成专业报告</p>
+            <button class="start-btn" onclick="showCreateTask()">开始分析</button>
+        </div>
+
+        <!-- 任务详情页 -->
+        <div class="task-detail" id="taskDetail" style="display:none;">
+            <div class="task-header">
+                <h2 id="taskName">任务名称</h2>
+                <span class="task-status" id="taskStatus">待处理</span>
+            </div>
+
+            <!-- 工作流步骤 -->
+            <div class="workflow-steps" id="workflowSteps">
+                <div class="step" data-step="parse">
+                    <div class="step-indicator">1</div>
+                    <div class="step-info">
+                        <div class="step-name">数据解析</div>
+                        <div class="step-desc">LLM 理解表格结构</div>
+                    </div>
+                    <div class="step-status"></div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step" data-step="analyze">
+                    <div class="step-indicator">2</div>
+                    <div class="step-info">
+                        <div class="step-name">内容分析</div>
+                        <div class="step-desc">LLM 提取关键洞察</div>
+                    </div>
+                    <div class="step-status"></div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step" data-step="template">
+                    <div class="step-indicator">3</div>
+                    <div class="step-info">
+                        <div class="step-name">模板生成</div>
+                        <div class="step-desc">LLM 设计报告结构</div>
+                    </div>
+                    <div class="step-status"></div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step" data-step="report">
+                    <div class="step-indicator">4</div>
+                    <div class="step-info">
+                        <div class="step-name">报告编写</div>
+                        <div class="step-desc">LLM 生成完整报告</div>
+                    </div>
+                    <div class="step-status"></div>
+                </div>
+            </div>
+
+            <!-- 文件上传区 -->
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">点击或拖拽上传文件</div>
+                    <div class="upload-hint">支持 .xlsx 和 .docx 格式，单文件最大 10MB，最多 10 个文件</div>
+                </div>
+                <input type="file" id="fileInput" accept=".xlsx,.docx" multiple hidden>
+                <div class="file-list" id="fileList"></div>
+                <button class="start-workflow-btn" id="startWorkflowBtn" onclick="startWorkflow()" disabled>
+                    开始分析
+                </button>
+            </div>
+
+            <!-- 结果展示区 -->
+            <div class="results-section" id="resultsSection" style="display:none;">
+                <div class="results-tabs">
+                    <button class="tab-btn active" data-tab="files" onclick="switchTab('files')">文件结果</button>
+                    <button class="tab-btn" data-tab="template" onclick="switchTab('template')">报告模板</button>
+                    <button class="tab-btn" data-tab="report" onclick="switchTab('report')">完整报告</button>
+                </div>
+                
+                <div class="tab-content" id="filesTab">
+                    <div class="file-results" id="fileResults"></div>
+                </div>
+                
+                <div class="tab-content" id="templateTab" style="display:none;">
+                    <div class="template-content" id="templateContent"></div>
+                </div>
+                
+                <div class="tab-content" id="reportTab" style="display:none;">
+                    <div class="report-actions">
+                        <button class="download-btn" onclick="downloadReport()">
+                            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                            下载 Word 报告
+                        </button>
+                    </div>
+                    <div class="report-content" id="reportContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 创建任务弹窗 -->
+    <div class="modal" id="createTaskModal">
+        <div class="modal-content">
+            <h3>新建分析任务</h3>
+            <div class="form-group">
+                <label>任务名称</label>
+                <input type="text" id="newTaskName" placeholder="例如：Q4销售数据分析">
+            </div>
+            <div class="form-group">
+                <label>任务描述（可选）</label>
+                <textarea id="newTaskDesc" rows="3" placeholder="描述分析目标和数据来源..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="hideCreateTask()">取消</button>
+                <button class="btn-save" onclick="createTask()">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/data-analysis.js"></script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+{
+  "mcpServers": {
+    "bingcn": {
+      "command": "npx",
+      "args": [
+        "bing-cn-mcp"
+      ],
+      "disabled": false
+    },
+    "mysql": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@f4ww4z/mcp-mysql-server"
+      ],
+      "env": {
+        "MYSQL_HOST": "47.113.230.78",
+        "MYSQL_PORT": "3306",
+        "MYSQL_USER": "zpsmart",
+        "MYSQL_PASSWORD": "rootyouerkj!",
+        "MYSQL_DATABASE": "zpsmart"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "execute",
+        "list_tables",
+        "query",
+        "connect_db",
+        "describe_table"
+      ]
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": [
+        "chrome-devtools-mcp@latest"
+      ],
+      "disabled": false,
+      "autoApprove": [
+        "navigate_page",
+        "take_snapshot",
+        "click",
+        "take_screenshot",
+        "handle_dialog"
+      ]
+    }
+  }
+}

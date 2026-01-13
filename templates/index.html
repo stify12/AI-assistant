@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 助手</title>
+    <link rel="stylesheet" href="/static/css/common.css">
+    <link rel="stylesheet" href="/static/css/index.css">
+    <script src="https://cdn.bootcdn.net/ajax/libs/marked/9.1.6/marked.min.js"></script>
+</head>
+<body>
+    <!-- 左侧历史对话栏 -->
+    <aside class="history-sidebar" id="historySidebar">
+        <div class="history-header">
+            <button class="new-chat-btn" onclick="startNewChat()">
+                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                新对话
+            </button>
+            <button class="toggle-history-btn" onclick="toggleHistorySidebar()">
+                <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+            </button>
+        </div>
+        <div class="history-search">
+            <input type="text" id="historySearch" placeholder="搜索对话..." oninput="filterHistory()">
+        </div>
+        <div class="history-list" id="historyList"></div>
+        <div class="history-footer">
+            <a href="/prompt-optimize" class="history-link">提示词优化</a>
+            <a href="/subject-grading" class="history-link">学科批改评估</a>
+            <a href="/data-analysis" class="history-link">数据分析</a>
+            <a href="/knowledge-agent" class="history-link">知识点类题</a>
+            <button class="history-link" onclick="showSettings()">设置</button>
+        </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <div class="main-wrapper" id="mainWrapper">
+        <!-- 顶部栏 -->
+        <header class="top-bar">
+            <button class="menu-btn" onclick="toggleHistorySidebar()">
+                <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+            </button>
+            <div class="model-selector">
+                <select id="currentModelSelect" onchange="onModelSelectChange()">
+                    <optgroup label="视觉识别">
+                        <option value="doubao-1-5-vision-pro-32k-250115">Vision Pro</option>
+                        <option value="doubao-seed-1-6-vision-250815">Seed Vision</option>
+                        <option value="doubao-seed-1-6-251015">Seed 1.6</option>
+                        <option value="doubao-seed-1-8-251228">Seed 1.8</option>
+                        <option value="doubao-seed-1-6-thinking-250715">Seed Thinking</option>
+                        <option value="qwen-vl-plus">Qwen VL</option>
+                    </optgroup>
+                    <optgroup label="日常聊天">
+                        <option value="gpt-5-chat-latest">GPT-5 Chat</option>
+                        <option value="gpt-5.2">GPT-5.2</option>
+                        <option value="gpt-5.1">GPT-5.1</option>
+                        <option value="gpt-5-mini">GPT-5 Mini</option>
+                        <option value="gpt-4.1">GPT-4.1</option>
+                        <option value="grok-4">Grok-4</option>
+                        <option value="gemini-3-pro-preview">Gemini 3 Pro</option>
+                        <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
+                        <option value="gemini-3-flash-preview-nothinking">Gemini 3 Flash NoThink</option>
+                        <option value="gemini-3-flash-preview-thinking">Gemini 3 Flash Think</option>
+                        <option value="deepseek-v3.2">DeepSeek V3.2</option>
+                    </optgroup>
+                </select>
+            </div>
+            <button class="tools-btn" onclick="toggleToolsSidebar()">工具</button>
+        </header>
+
+        <!-- 对话内容区 -->
+        <div class="chat-container" id="chatContainer">
+            <div class="chat-welcome" id="chatWelcome">
+                <h1>AI 助手</h1>
+                <p>选择模型开始对话，支持图片识别与日常聊天</p>
+            </div>
+            <div class="chat-messages" id="chatMessages"></div>
+        </div>
+
+        <!-- 输入区域 -->
+        <div class="input-area">
+            <!-- 思考程度选择器 -->
+            <div class="reasoning-selector" id="reasoningSelector" style="display:none;">
+                <span class="reasoning-label">思考程度:</span>
+                <div class="reasoning-options">
+                    <button class="reasoning-btn" data-level="minimal" onclick="setReasoningLevel('minimal')">不思考</button>
+                    <button class="reasoning-btn" data-level="low" onclick="setReasoningLevel('low')">低</button>
+                    <button class="reasoning-btn active" data-level="medium" onclick="setReasoningLevel('medium')">中</button>
+                    <button class="reasoning-btn" data-level="high" onclick="setReasoningLevel('high')">高</button>
+                </div>
+            </div>
+            <div class="input-box">
+                <div class="input-preview" id="inputPreview" style="display:none;">
+                    <img id="inputPreviewImg">
+                    <button class="preview-remove" onclick="removeInputImage()">×</button>
+                </div>
+                <div class="input-row">
+                    <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="上传图片">
+                        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                    </button>
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                    <textarea id="promptInput" placeholder="输入消息..." rows="1"></textarea>
+                    <div class="parallel-input-wrapper" title="并行处理次数">
+                        <input type="number" id="parallelCount" min="1" max="10" value="1" class="parallel-input">
+                        <span class="parallel-suffix">x</span>
+                    </div>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右侧工具栏 -->
+    <aside class="tools-sidebar" id="toolsSidebar">
+        <div class="tools-header">
+            <h3>工具箱</h3>
+            <button class="tools-close" onclick="toggleToolsSidebar()">×</button>
+        </div>
+        
+        <!-- MCP工具管理 -->
+        <div class="tools-section">
+            <div class="tools-label">联网搜索</div>
+            <div class="mcp-tool-toggle">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="useToolsToggle" checked onchange="toggleUseTools()">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">自动联网</span>
+            </div>
+            <div class="mcp-tools-list" id="mcpToolsList"></div>
+            <button class="tools-add-btn" onclick="showAddMcpTool()">+ 添加HTTP工具</button>
+        </div>
+        
+        <div class="tools-divider"></div>
+        
+        <!-- MCP服务器管理 -->
+        <div class="tools-section">
+            <div class="tools-label">MCP 服务器</div>
+            <div class="mcp-servers-list" id="mcpServersList"></div>
+            <button class="tools-add-btn" onclick="showAddMcpServer()">+ 添加MCP服务器</button>
+        </div>
+        
+        <div class="tools-divider"></div>
+        
+        <div class="tools-section">
+            <div class="tools-label">题号识别</div>
+            <textarea class="tools-textarea" id="extractPrompt" rows="3" placeholder="自定义识别提示词...">识别图片中每道题目的题号和前15个字符，输出JSON数组：[{"index":"题号","content":"内容"}]</textarea>
+            <div class="tools-upload" id="extractUploadZone" onclick="document.getElementById('extractFileInput').click()">
+                点击上传图片
+            </div>
+            <input type="file" id="extractFileInput" accept="image/*" hidden>
+            <div class="tools-preview" id="extractPreview" style="display:none;">
+                <img id="extractPreviewImg">
+                <button onclick="removeExtractImage()">×</button>
+            </div>
+            <button class="tools-action-btn" id="startExtractBtn" onclick="startExtract()" disabled>开始识别</button>
+            <div class="tools-result" id="questionsResult"></div>
+        </div>
+        
+        <div class="tools-divider"></div>
+        
+        <div class="tools-section">
+            <div class="tools-label">提示词模板</div>
+            <div class="tools-prompt-list" id="promptList"></div>
+            <button class="tools-add-btn" onclick="showAddPrompt()">+ 添加模板</button>
+        </div>
+    </aside>
+
+    <!-- MCP工具编辑弹窗 -->
+    <div class="modal" id="mcpToolModal">
+        <div class="modal-content" style="max-width:480px;">
+            <h3 id="mcpToolModalTitle">添加自定义工具</h3>
+            <div class="form-group">
+                <label>工具名称</label>
+                <input type="text" id="mcpToolName" placeholder="例如：天气查询">
+            </div>
+            <div class="form-group">
+                <label>工具描述</label>
+                <input type="text" id="mcpToolDesc" placeholder="描述工具的功能，模型会根据此判断何时调用">
+            </div>
+            <div class="form-group">
+                <label>API 地址</label>
+                <input type="text" id="mcpToolUrl" placeholder="https://api.example.com/search">
+            </div>
+            <div class="form-group">
+                <label>请求方法</label>
+                <select id="mcpToolMethod">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="hideMcpToolModal()">取消</button>
+                <button class="btn-save" onclick="saveMcpTool()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MCP服务器配置弹窗 -->
+    <div class="modal" id="mcpServerModal">
+        <div class="modal-content" style="max-width:520px;">
+            <h3>添加 MCP 服务器</h3>
+            <div class="form-group">
+                <label>服务器名称</label>
+                <input type="text" id="mcpServerName" placeholder="例如：trends-hub">
+            </div>
+            <div class="form-group">
+                <label>启动命令</label>
+                <input type="text" id="mcpServerCommand" value="npx" placeholder="npx / uvx / node">
+            </div>
+            <div class="form-group">
+                <label>命令参数（每行一个）</label>
+                <textarea id="mcpServerArgs" rows="3" placeholder="-y&#10;mcp-trends-hub@1.6.0"></textarea>
+            </div>
+            <div class="form-group">
+                <label>环境变量（JSON格式，可选）</label>
+                <textarea id="mcpServerEnv" rows="2" placeholder='{"API_KEY": "xxx"}'></textarea>
+            </div>
+            <div class="mcp-config-hint">
+                <p>示例配置：</p>
+                <pre>命令: npx
+参数:
+-y
+mcp-trends-hub@1.6.0</pre>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="hideMcpServerModal()">取消</button>
+                <button class="btn-save" onclick="saveMcpServer()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置弹窗 -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h3>设置</h3>
+            <div class="settings-section">
+                <div class="settings-section-title">豆包 API</div>
+                <div class="form-group">
+                    <label>API Key</label>
+                    <input type="password" id="apiKey" placeholder="输入豆包 API Key">
+                </div>
+                <div class="form-group">
+                    <label>API URL</label>
+                    <input type="text" id="apiUrl" value="https://ark.cn-beijing.volces.com/api/v3/chat/completions">
+                </div>
+            </div>
+            <div class="settings-section">
+                <div class="settings-section-title">Qwen3-Max</div>
+                <div class="form-group">
+                    <label>Qwen API Key</label>
+                    <input type="password" id="qwenApiKey" placeholder="输入 DashScope API Key">
+                </div>
+            </div>
+            <div class="settings-section">
+                <div class="settings-section-title">DeepSeek</div>
+                <div class="form-group">
+                    <label>DeepSeek API Key</label>
+                    <input type="password" id="deepseekApiKey" placeholder="输入 DeepSeek API Key">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="hideSettings()">取消</button>
+                <button class="btn-save" onclick="saveSettings()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示词编辑弹窗 -->
+    <div class="modal" id="promptModal">
+        <div class="modal-content" style="max-width:520px;">
+            <h3 id="promptModalTitle">添加提示词模板</h3>
+            <div class="form-group">
+                <label>模板名称</label>
+                <input type="text" id="newPromptName" placeholder="例如：答案识别">
+            </div>
+            <div class="form-group">
+                <label>提示词内容</label>
+                <textarea id="newPromptContent" rows="10" placeholder="直接输入提示词内容..."></textarea>
+            </div>
+            <div class="optimize-row">
+                <button class="optimize-btn" id="optimizeBtn" onclick="optimizePrompt()">AI优化</button>
+                <span class="optimize-hint">使用 Qwen3-Max 优化提示词</span>
+            </div>
+            <div id="optimizeResult" class="optimize-result" style="display:none;">
+                <div class="optimize-result-header">
+                    <span>优化建议</span>
+                    <button class="apply-btn" onclick="applyOptimizedPrompt()">应用</button>
+                </div>
+                <div id="optimizeContent" class="optimize-content"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="hideAddPrompt()">取消</button>
+                <button class="btn-save" onclick="savePrompt()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片放大弹窗 -->
+    <div class="image-modal" id="imageModal" onclick="hideImageModal()">
+        <img id="modalImg" src="">
+    </div>
+
+    <script src="/static/js/index.js"></script>
+</body>
+</html>
