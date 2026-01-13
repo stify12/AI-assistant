@@ -42,10 +42,114 @@ def batch_evaluation():
 @common_bp.route('/api/config', methods=['GET', 'POST'])
 def config():
     if request.method == 'GET':
-        return jsonify(ConfigService.load_config())
+        # 获取配置时不返回API密钥（密钥存储在浏览器localStorage）
+        config_data = ConfigService.load_config(apply_headers=False)
+        # 移除敏感信息
+        safe_config = {
+            'api_url': config_data.get('api_url', ''),
+            'mysql': config_data.get('mysql', {}),
+            'app_mysql': config_data.get('app_mysql', {}),
+            'prompts': config_data.get('prompts', {}),
+            'use_ai_compare': config_data.get('use_ai_compare', False),
+            # 返回API密钥配置状态（是否已配置）
+            'api_keys_status': ConfigService.get_api_keys_status()
+        }
+        return jsonify(safe_config)
     else:
-        ConfigService.save_config(request.json)
+        # 保存配置时，只保存非敏感配置到服务器
+        data = request.json
+        config_data = ConfigService.load_config(apply_headers=False)
+        
+        # 只更新非API密钥的配置
+        if 'api_url' in data:
+            config_data['api_url'] = data['api_url']
+        if 'mysql' in data:
+            config_data['mysql'] = data['mysql']
+        if 'app_mysql' in data:
+            config_data['app_mysql'] = data['app_mysql']
+        if 'use_ai_compare' in data:
+            config_data['use_ai_compare'] = data['use_ai_compare']
+        
+        ConfigService.save_config(config_data)
         return jsonify({'success': True})
+
+
+@common_bp.route('/api/validate-api-key', methods=['POST'])
+def validate_api_key():
+    """验证API密钥是否有效"""
+    import requests as http_requests
+    
+    data = request.json
+    key_type = data.get('type')  # doubao, deepseek, qwen
+    api_key = data.get('api_key')
+    
+    if not key_type or not api_key:
+        return jsonify({'valid': False, 'error': '缺少参数'})
+    
+    try:
+        if key_type == 'doubao':
+            # 验证豆包API
+            url = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions'
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {api_key}'
+            }
+            payload = {
+                'model': 'doubao-1-5-vision-pro-32k-250115',
+                'messages': [{'role': 'user', 'content': 'hi'}],
+                'max_tokens': 1
+            }
+            res = http_requests.post(url, json=payload, headers=headers, timeout=10)
+            if res.status_code == 200 or 'choices' in res.json():
+                return jsonify({'valid': True})
+            else:
+                error = res.json().get('error', {}).get('message', '验证失败')
+                return jsonify({'valid': False, 'error': error})
+                
+        elif key_type == 'deepseek':
+            # 验证DeepSeek API
+            url = 'https://api.deepseek.com/chat/completions'
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {api_key}'
+            }
+            payload = {
+                'model': 'deepseek-chat',
+                'messages': [{'role': 'user', 'content': 'hi'}],
+                'max_tokens': 1
+            }
+            res = http_requests.post(url, json=payload, headers=headers, timeout=10)
+            if res.status_code == 200 or 'choices' in res.json():
+                return jsonify({'valid': True})
+            else:
+                error = res.json().get('error', {}).get('message', '验证失败')
+                return jsonify({'valid': False, 'error': error})
+                
+        elif key_type == 'qwen':
+            # 验证通义千问API
+            url = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {api_key}'
+            }
+            payload = {
+                'model': 'qwen-turbo',
+                'messages': [{'role': 'user', 'content': 'hi'}],
+                'max_tokens': 1
+            }
+            res = http_requests.post(url, json=payload, headers=headers, timeout=10)
+            if res.status_code == 200 or 'choices' in res.json():
+                return jsonify({'valid': True})
+            else:
+                error = res.json().get('error', {}).get('message', '验证失败')
+                return jsonify({'valid': False, 'error': error})
+        else:
+            return jsonify({'valid': False, 'error': '未知的API类型'})
+            
+    except http_requests.Timeout:
+        return jsonify({'valid': False, 'error': '请求超时'})
+    except Exception as e:
+        return jsonify({'valid': False, 'error': str(e)})
 
 
 # ========== 会话管理 API ==========

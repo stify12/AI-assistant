@@ -66,15 +66,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// ========== 会话管理 ==========
-async function loadAllSessions() {
+// ========== 会话管理（本地存储） ==========
+const SESSIONS_STORAGE_KEY = 'ai_chat_sessions';
+
+function loadAllSessions() {
     try {
-        const res = await fetch('/api/all-sessions');
-        allSessions = await res.json();
+        const stored = localStorage.getItem(SESSIONS_STORAGE_KEY);
+        allSessions = stored ? JSON.parse(stored) : [];
         renderHistoryList();
     } catch (e) {
         console.error('Load sessions error:', e);
         allSessions = [];
+    }
+}
+
+function saveAllSessionsToLocal() {
+    try {
+        localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(allSessions));
+    } catch (e) {
+        console.error('Save sessions error:', e);
     }
 }
 
@@ -108,90 +118,69 @@ function filterHistory() {
     });
 }
 
-async function startNewChat() {
-    try {
-        const res = await fetch('/api/session', { method: 'POST' });
-        const data = await res.json();
-        currentSessionId = data.session_id;
-        chatHistory = [];
-        
-        // 添加到列表顶部
-        allSessions.unshift({
-            id: currentSessionId,
-            title: '新对话',
-            updated_at: new Date().toISOString()
-        });
-        renderHistoryList();
-        
-        // 清空对话区域，显示欢迎界面
-        document.getElementById('chatWelcome').style.display = '';
-        document.getElementById('chatMessages').innerHTML = '';
-        
-        // 清空输入框
-        document.getElementById('promptInput').value = '';
-        removeInputImage();
-    } catch (e) {
-        console.error('Start new chat error:', e);
-    }
+function startNewChat() {
+    currentSessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    chatHistory = [];
+    
+    // 添加到列表顶部
+    allSessions.unshift({
+        id: currentSessionId,
+        title: '新对话',
+        messages: [],
+        updated_at: new Date().toISOString()
+    });
+    saveAllSessionsToLocal();
+    renderHistoryList();
+    
+    // 清空对话区域，显示欢迎界面
+    document.getElementById('chatWelcome').style.display = '';
+    document.getElementById('chatMessages').innerHTML = '';
+    
+    // 清空输入框
+    document.getElementById('promptInput').value = '';
+    removeInputImage();
 }
 
-async function loadSession(sessionId) {
-    try {
-        const res = await fetch(`/api/session/${sessionId}`);
-        const data = await res.json();
-        
+function loadSession(sessionId) {
+    const session = allSessions.find(s => s.id === sessionId);
+    if (session) {
         currentSessionId = sessionId;
-        chatHistory = data.messages || [];
+        chatHistory = session.messages || [];
         
         renderHistoryList();
         renderChatMessages();
-    } catch (e) {
-        console.error('Load session error:', e);
     }
 }
 
-async function renameSession(sessionId) {
+function renameSession(sessionId) {
     const session = allSessions.find(s => s.id === sessionId);
     const newTitle = prompt('输入新名称:', session?.title || '新对话');
     if (!newTitle) return;
     
-    try {
-        await fetch(`/api/session/${sessionId}/rename`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: newTitle })
-        });
-        
-        if (session) session.title = newTitle;
+    if (session) {
+        session.title = newTitle;
+        saveAllSessionsToLocal();
         renderHistoryList();
-    } catch (e) {
-        console.error('Rename error:', e);
     }
 }
 
-async function deleteSession(sessionId) {
+function deleteSession(sessionId) {
     if (!confirm('确定删除此对话？')) return;
     
-    try {
-        await fetch('/api/session', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ session_id: sessionId })
-        });
-        
-        allSessions = allSessions.filter(s => s.id !== sessionId);
-        
-        if (sessionId === currentSessionId) {
-            if (allSessions.length > 0) {
-                loadSession(allSessions[0].id);
-            } else {
-                startNewChat();
-            }
+    allSessions = allSessions.filter(s => s.id !== sessionId);
+    saveAllSessionsToLocal();
+    
+    if (sessionId === currentSessionId) {
+        if (allSessions.length > 0) {
+            loadSession(allSessions[0].id);
         } else {
-            renderHistoryList();
+            currentSessionId = null;
+            chatHistory = [];
+            document.getElementById('chatWelcome').style.display = '';
+            document.getElementById('chatMessages').innerHTML = '';
         }
-    } catch (e) {
-        console.error('Delete error:', e);
+    } else {
+        renderHistoryList();
     }
 }
 
@@ -325,24 +314,18 @@ async function sendMessage() {
     // 获取并行数量
     const parallelCount = parseInt(document.getElementById('parallelCount').value) || 1;
     
-    // 如果没有当前会话，先创建一个
+    // 如果没有当前会话，先创建一个（本地）
     if (!currentSessionId) {
-        try {
-            const res = await fetch('/api/session', { method: 'POST' });
-            const data = await res.json();
-            currentSessionId = data.session_id;
-            chatHistory = [];
-            allSessions.unshift({
-                id: currentSessionId,
-                title: '新对话',
-                updated_at: new Date().toISOString()
-            });
-            renderHistoryList();
-        } catch (e) {
-            console.error('Create session error:', e);
-            btn.disabled = false;
-            return;
-        }
+        currentSessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        chatHistory = [];
+        allSessions.unshift({
+            id: currentSessionId,
+            title: '新对话',
+            messages: [],
+            updated_at: new Date().toISOString()
+        });
+        saveAllSessionsToLocal();
+        renderHistoryList();
     }
     
     // 添加用户消息到UI
@@ -395,8 +378,8 @@ async function sendSingleMessage(prompt, imageToSend, model, modelName, modelAva
             prompt,
             image: imageToSend,
             model,
-            session_id: currentSessionId,
-            use_context: true,
+            session_id: null,  // 不使用服务器端会话存储
+            use_context: false,
             stream: true,
             use_tools: useTools && CHAT_MODELS.includes(model)
         };
@@ -408,7 +391,7 @@ async function sendSingleMessage(prompt, imageToSend, model, modelName, modelAva
         
         const res = await fetch(apiUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getApiHeaders(),
             body: JSON.stringify(requestBody)
         });
         
@@ -509,29 +492,30 @@ async function sendSingleMessage(prompt, imageToSend, model, modelName, modelAva
             }
         }
         
-        // 请求完成后，重新加载会话以同步历史
+        // 请求完成后，保存到本地存储
         if (currentSessionId && fullText) {
-            try {
-                const sessionRes = await fetch(`/api/session/${currentSessionId}`);
-                const sessionData = await sessionRes.json();
-                chatHistory = sessionData.messages || [];
+            // 添加用户消息和AI回复到历史
+            const userMsg = { role: 'user', content: prompt, image: imageToSend };
+            const assistantMsg = { role: 'assistant', content: fullText, model: model };
+            chatHistory.push(userMsg, assistantMsg);
+            
+            // 更新会话
+            const session = allSessions.find(s => s.id === currentSessionId);
+            if (session) {
+                session.messages = chatHistory;
+                session.updated_at = new Date().toISOString();
                 
                 // 更新会话标题（如果是第一轮对话）
                 if (chatHistory.length === 2) {
-                    const title = prompt.slice(0, 10);
-                    const session = allSessions.find(s => s.id === currentSessionId);
-                    if (session) {
-                        session.title = title;
-                        renderHistoryList();
-                    }
-                    fetch(`/api/session/${currentSessionId}/rename`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ title })
-                    });
+                    session.title = prompt.slice(0, 10);
                 }
-            } catch (e) {
-                console.error('Sync session error:', e);
+                
+                // 移到列表顶部
+                allSessions = allSessions.filter(s => s.id !== currentSessionId);
+                allSessions.unshift(session);
+                
+                saveAllSessionsToLocal();
+                renderHistoryList();
             }
         }
         
@@ -600,7 +584,7 @@ async function sendParallelMessages(prompt, imageToSend, model, modelName, model
                 
                 const res = await fetch(apiUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getApiHeaders(),
                     body: JSON.stringify(requestBody)
                 });
                 
@@ -689,44 +673,31 @@ async function sendParallelMessages(prompt, imageToSend, model, modelName, model
     // 等待所有请求完成
     const results = await Promise.all(promises);
     
-    // 并行处理完成后，手动保存到会话
+    // 并行处理完成后，保存到本地存储
     const firstResult = results.find(r => r);
     if (firstResult && currentSessionId) {
-        // 调用后端保存并行结果
-        try {
-            await fetch('/api/session/save-parallel', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    session_id: currentSessionId,
-                    user_message: prompt,
-                    has_image: !!imageToSend,
-                    assistant_message: `[并行处理 ${count}次]\n\n${firstResult}`,
-                    model: model
-                })
-            });
+        // 添加用户消息和AI回复到历史
+        const userMsg = { role: 'user', content: prompt, image: imageToSend };
+        const assistantMsg = { role: 'assistant', content: `[并行处理 ${count}次]\n\n${firstResult}`, model: model };
+        chatHistory.push(userMsg, assistantMsg);
+        
+        // 更新会话
+        const session = allSessions.find(s => s.id === currentSessionId);
+        if (session) {
+            session.messages = chatHistory;
+            session.updated_at = new Date().toISOString();
             
-            // 重新加载会话以同步历史
-            const sessionRes = await fetch(`/api/session/${currentSessionId}`);
-            const sessionData = await sessionRes.json();
-            chatHistory = sessionData.messages || [];
-            
-            // 更新会话标题
+            // 更新会话标题（如果是第一轮对话）
             if (chatHistory.length === 2) {
-                const title = prompt.slice(0, 10);
-                const session = allSessions.find(s => s.id === currentSessionId);
-                if (session) {
-                    session.title = title;
-                    renderHistoryList();
-                }
-                fetch(`/api/session/${currentSessionId}/rename`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title })
-                });
+                session.title = prompt.slice(0, 10);
             }
-        } catch (e) {
-            console.error('Save parallel result error:', e);
+            
+            // 移到列表顶部
+            allSessions = allSessions.filter(s => s.id !== currentSessionId);
+            allSessions.unshift(session);
+            
+            saveAllSessionsToLocal();
+            renderHistoryList();
         }
     }
 }
@@ -775,12 +746,16 @@ function hideImageModal() {
 // ========== 设置 ==========
 async function loadConfig() {
     try {
+        // 从localStorage加载API密钥
+        const savedKeys = JSON.parse(localStorage.getItem('ai_api_keys') || '{}');
+        document.getElementById('apiKey').value = savedKeys.doubao || '';
+        document.getElementById('deepseekApiKey').value = savedKeys.deepseek || '';
+        document.getElementById('qwenApiKey').value = savedKeys.qwen || '';
+        
+        // 从服务器加载其他配置
         const res = await fetch('/api/config');
         const config = await res.json();
-        document.getElementById('apiKey').value = config.api_key || '';
         document.getElementById('apiUrl').value = config.api_url || '';
-        document.getElementById('qwenApiKey').value = config.qwen_api_key || '';
-        document.getElementById('deepseekApiKey').value = config.deepseek_api_key || '';
         
         // 加载数据库配置
         if (config.mysql) {
@@ -821,6 +796,50 @@ function switchSettingsTab(tab) {
     document.getElementById('settingsPanel_database').style.display = tab === 'database' ? 'block' : 'none';
 }
 
+async function validateApiKey(type) {
+    const statusEl = document.getElementById('settingsStatus');
+    const inputMap = {
+        'doubao': 'apiKey',
+        'deepseek': 'deepseekApiKey',
+        'qwen': 'qwenApiKey'
+    };
+    const apiKey = document.getElementById(inputMap[type]).value;
+    
+    if (!apiKey) {
+        statusEl.textContent = '请先输入API密钥';
+        statusEl.className = 'settings-status error';
+        return;
+    }
+    
+    statusEl.textContent = '正在验证...';
+    statusEl.className = 'settings-status';
+    
+    try {
+        const res = await fetch('/api/validate-api-key', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type, api_key: apiKey })
+        });
+        const result = await res.json();
+        
+        if (result.valid) {
+            statusEl.textContent = '验证成功';
+            statusEl.className = 'settings-status success';
+        } else {
+            statusEl.textContent = '验证失败: ' + (result.error || '未知错误');
+            statusEl.className = 'settings-status error';
+        }
+    } catch (e) {
+        statusEl.textContent = '验证请求失败: ' + e.message;
+        statusEl.className = 'settings-status error';
+    }
+    
+    setTimeout(() => {
+        statusEl.textContent = '';
+        statusEl.className = 'settings-status';
+    }, 3000);
+}
+
 async function testDatabaseConnection(type) {
     const statusEl = document.getElementById('settingsStatus');
     statusEl.textContent = '正在测试连接...';
@@ -851,14 +870,14 @@ async function testDatabaseConnection(type) {
         const result = await res.json();
         
         if (result.success) {
-            statusEl.textContent = '✓ 连接成功';
+            statusEl.textContent = '连接成功';
             statusEl.className = 'settings-status success';
         } else {
-            statusEl.textContent = '✗ ' + (result.error || '连接失败');
+            statusEl.textContent = result.error || '连接失败';
             statusEl.className = 'settings-status error';
         }
     } catch (e) {
-        statusEl.textContent = '✗ 请求失败: ' + e.message;
+        statusEl.textContent = '请求失败: ' + e.message;
         statusEl.className = 'settings-status error';
     }
     
@@ -872,11 +891,17 @@ async function saveSettings() {
     const statusEl = document.getElementById('settingsStatus');
     statusEl.textContent = '正在保存...';
     
+    // 保存API密钥到localStorage
+    const apiKeys = {
+        doubao: document.getElementById('apiKey').value,
+        deepseek: document.getElementById('deepseekApiKey').value,
+        qwen: document.getElementById('qwenApiKey').value
+    };
+    localStorage.setItem('ai_api_keys', JSON.stringify(apiKeys));
+    
+    // 保存其他配置到服务器
     const config = {
-        api_key: document.getElementById('apiKey').value,
         api_url: document.getElementById('apiUrl').value,
-        qwen_api_key: document.getElementById('qwenApiKey').value,
-        deepseek_api_key: document.getElementById('deepseekApiKey').value,
         mysql: {
             host: document.getElementById('mysqlHost').value,
             port: parseInt(document.getElementById('mysqlPort').value) || 3306,
@@ -899,13 +924,25 @@ async function saveSettings() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(config)
         });
-        statusEl.textContent = '✓ 保存成功';
+        statusEl.textContent = '保存成功';
         statusEl.className = 'settings-status success';
         setTimeout(() => hideSettings(), 1500);
     } catch (e) {
-        statusEl.textContent = '✗ 保存失败: ' + e.message;
+        statusEl.textContent = '保存失败: ' + e.message;
         statusEl.className = 'settings-status error';
     }
+}
+
+// 获取API请求头（包含localStorage中的API密钥）
+function getApiHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    const savedKeys = JSON.parse(localStorage.getItem('ai_api_keys') || '{}');
+    
+    if (savedKeys.doubao) headers['X-Doubao-Api-Key'] = savedKeys.doubao;
+    if (savedKeys.deepseek) headers['X-Deepseek-Api-Key'] = savedKeys.deepseek;
+    if (savedKeys.qwen) headers['X-Qwen-Api-Key'] = savedKeys.qwen;
+    
+    return headers;
 }
 
 // ========== 提示词管理 ==========
@@ -985,7 +1022,7 @@ async function optimizePrompt() {
     try {
         const res = await fetch('/api/optimize-prompt', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getApiHeaders(),
             body: JSON.stringify({ prompt: content })
         });
         const data = await res.json();
@@ -1055,7 +1092,7 @@ async function startExtract() {
     try {
         const res = await fetch('/api/extract-questions', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getApiHeaders(),
             body: JSON.stringify({
                 image: extractImage,
                 prompt: document.getElementById('extractPrompt').value

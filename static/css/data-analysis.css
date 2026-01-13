@@ -1,8 +1,8 @@
-/* 数据分析页面样式 */
+/* 数据分析页面样式 - 白底黑体简约设计 */
 body {
     display: flex;
     min-height: 100vh;
-    background: #f5f5f7;
+    background: #fafafa;
 }
 
 /* 左侧任务列表 */
@@ -23,7 +23,7 @@ body {
 .new-task-btn {
     width: 100%;
     padding: 10px 16px;
-    background: #1d6f8c;
+    background: #1d1d1f;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -37,7 +37,7 @@ body {
 }
 
 .new-task-btn:hover {
-    background: #155a73;
+    background: #424245;
 }
 
 .task-list {
@@ -52,6 +52,7 @@ body {
     cursor: pointer;
     margin-bottom: 4px;
     transition: background 0.2s;
+    border: 1px solid transparent;
 }
 
 .task-item:hover {
@@ -59,7 +60,8 @@ body {
 }
 
 .task-item.active {
-    background: #e8f4f8;
+    background: #f5f5f7;
+    border-color: #1d1d1f;
 }
 
 .task-item-name {
@@ -84,8 +86,8 @@ body {
 
 .task-item-status.pending { background: #f5f5f7; color: #86868b; }
 .task-item-status.running { background: #fff3e0; color: #e65100; }
-.task-item-status.completed { background: #e8f5e9; color: #2e7d32; }
-.task-item-status.failed { background: #ffebee; color: #c62828; }
+.task-item-status.completed { background: #e3f9e5; color: #1e7e34; }
+.task-item-status.failed { background: #ffeef0; color: #d73a49; }
 
 .sidebar-footer {
     padding: 12px;
@@ -97,12 +99,17 @@ body {
 
 .nav-link {
     font-size: 12px;
-    color: #1d6f8c;
+    color: #1d1d1f;
     text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
 }
 
 .nav-link:hover {
-    text-decoration: underline;
+    background: #f5f5f7;
 }
 
 /* 主内容区 */
@@ -123,14 +130,15 @@ body {
 }
 
 .welcome-icon {
-    font-size: 64px;
     margin-bottom: 24px;
+    opacity: 0.8;
 }
 
 .welcome-page h1 {
     font-size: 28px;
     color: #1d1d1f;
     margin-bottom: 12px;
+    font-weight: 600;
 }
 
 .welcome-page p {
@@ -141,7 +149,7 @@ body {
 
 .start-btn {
     padding: 12px 32px;
-    background: #1d6f8c;
+    background: #1d1d1f;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -151,7 +159,7 @@ body {
 }
 
 .start-btn:hover {
-    background: #155a73;
+    background: #424245;
 }
 
 /* 任务详情 */
@@ -171,6 +179,7 @@ body {
     font-size: 24px;
     color: #1d1d1f;
     margin: 0;
+    font-weight: 600;
 }
 
 .task-status {
@@ -182,7 +191,7 @@ body {
 }
 
 .task-status.running { background: #fff3e0; color: #e65100; }
-.task-status.completed { background: #e8f5e9; color: #2e7d32; }
+.task-status.completed { background: #e3f9e5; color: #1e7e34; }
 
 /* 工作流步骤 */
 .workflow-steps {
@@ -193,7 +202,7 @@ body {
     background: #fff;
     border-radius: 12px;
     margin-bottom: 24px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border: 1px solid #e5e5e5;
 }
 
 .step {
@@ -206,11 +215,11 @@ body {
 }
 
 .step.active {
-    background: #e8f4f8;
+    background: #f5f5f7;
 }
 
 .step.completed .step-indicator {
-    background: #2e7d32;
+    background: #1e7e34;
 }
 
 .step.running .step-indicator {
@@ -258,7 +267,7 @@ body {
 }
 
 .step-connector.completed {
-    background: #2e7d32;
+    background: #1e7e34;
 }
 
 /* 上传区域 */
@@ -267,11 +276,11 @@ body {
     border-radius: 12px;
     padding: 24px;
     margin-bottom: 24px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border: 1px solid #e5e5e5;
 }
 
 .upload-zone {
-    border: 2px dashed #e5e5e5;
+    border: 2px dashed #d2d2d7;
     border-radius: 12px;
     padding: 48px;
     text-align: center;
@@ -280,17 +289,16 @@ body {
 }
 
 .upload-zone:hover {
-    border-color: #1d6f8c;
-    background: #f8fbfc;
+    border-color: #1d1d1f;
+    background: #fafafa;
 }
 
 .upload-zone.dragover {
-    border-color: #1d6f8c;
-    background: #e8f4f8;
+    border-color: #1d1d1f;
+    background: #f5f5f7;
 }
 
 .upload-icon {
-    font-size: 48px;
     margin-bottom: 16px;
 }
 
@@ -326,7 +334,11 @@ body {
 }
 
 .file-icon {
-    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .file-name {
@@ -345,12 +357,12 @@ body {
     border-radius: 4px;
 }
 
-.file-status.uploaded { background: #e8f4f8; color: #1d6f8c; }
+.file-status.uploaded { background: #f5f5f7; color: #1d1d1f; }
 .file-status.parsing { background: #fff3e0; color: #e65100; }
-.file-status.parsed { background: #e8f5e9; color: #2e7d32; }
+.file-status.parsed { background: #e3f9e5; color: #1e7e34; }
 .file-status.analyzing { background: #fff3e0; color: #e65100; }
-.file-status.analyzed { background: #e8f5e9; color: #2e7d32; }
-.file-status.failed { background: #ffebee; color: #c62828; }
+.file-status.analyzed { background: #e3f9e5; color: #1e7e34; }
+.file-status.failed { background: #ffeef0; color: #d73a49; }
 
 .file-remove {
     background: none;
@@ -358,12 +370,19 @@ body {
     color: #86868b;
     cursor: pointer;
     font-size: 18px;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.file-remove:hover {
+    background: #e5e5e5;
+    color: #1d1d1f;
 }
 
 .start-workflow-btn {
     width: 100%;
     padding: 14px;
-    background: #1d6f8c;
+    background: #1d1d1f;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -374,7 +393,7 @@ body {
 }
 
 .start-workflow-btn:hover:not(:disabled) {
-    background: #155a73;
+    background: #424245;
 }
 
 .start-workflow-btn:disabled {
@@ -388,20 +407,21 @@ body {
     background: #fff;
     border-radius: 12px;
     padding: 24px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border: 1px solid #e5e5e5;
 }
 
 .results-tabs {
     display: flex;
-    gap: 8px;
+    gap: 4px;
     margin-bottom: 24px;
-    border-bottom: 1px solid #e5e5e5;
-    padding-bottom: 12px;
+    padding: 4px;
+    background: #f5f5f5;
+    border-radius: 8px;
 }
 
 .tab-btn {
     padding: 8px 16px;
-    background: none;
+    background: transparent;
     border: none;
     font-size: 14px;
     color: #86868b;
@@ -411,12 +431,14 @@ body {
 }
 
 .tab-btn:hover {
-    background: #f5f5f7;
+    color: #1d1d1f;
+    background: rgba(0,0,0,0.03);
 }
 
 .tab-btn.active {
-    background: #1d6f8c;
-    color: #fff;
+    background: #fff;
+    color: #1d1d1f;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .tab-content {
@@ -494,7 +516,7 @@ body {
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    background: #1d6f8c;
+    background: #1d1d1f;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -504,7 +526,7 @@ body {
 }
 
 .download-btn:hover {
-    background: #155a73;
+    background: #424245;
 }
 
 .report-content {
@@ -513,9 +535,9 @@ body {
     color: #1d1d1f;
 }
 
-.report-content h1 { font-size: 24px; margin: 24px 0 16px; }
-.report-content h2 { font-size: 20px; margin: 20px 0 12px; }
-.report-content h3 { font-size: 16px; margin: 16px 0 8px; }
+.report-content h1 { font-size: 24px; margin: 24px 0 16px; font-weight: 600; }
+.report-content h2 { font-size: 20px; margin: 20px 0 12px; font-weight: 600; }
+.report-content h3 { font-size: 16px; margin: 16px 0 8px; font-weight: 600; }
 .report-content p { margin: 12px 0; }
 .report-content ul, .report-content ol { margin: 12px 0; padding-left: 24px; }
 .report-content li { margin: 6px 0; }
@@ -564,7 +586,7 @@ body {
 
 .modal-content {
     background: #fff;
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 24px;
     width: 90%;
     max-width: 480px;
@@ -574,6 +596,7 @@ body {
     font-size: 18px;
     color: #1d1d1f;
     margin: 0 0 20px;
+    font-weight: 600;
 }
 
 .form-group {
@@ -591,7 +614,7 @@ body {
 .form-group textarea {
     width: 100%;
     padding: 10px 12px;
-    border: 1px solid #e5e5e5;
+    border: 1px solid #d2d2d7;
     border-radius: 8px;
     font-size: 14px;
     box-sizing: border-box;
@@ -600,7 +623,7 @@ body {
 .form-group input:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: #1d6f8c;
+    border-color: #1d1d1f;
 }
 
 .modal-actions {
@@ -614,15 +637,19 @@ body {
     padding: 10px 20px;
     background: #f5f5f7;
     color: #424245;
-    border: none;
+    border: 1px solid #d2d2d7;
     border-radius: 8px;
     font-size: 14px;
     cursor: pointer;
 }
 
+.btn-cancel:hover {
+    background: #e5e5e5;
+}
+
 .btn-save {
     padding: 10px 20px;
-    background: #1d6f8c;
+    background: #1d1d1f;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -631,7 +658,7 @@ body {
 }
 
 .btn-save:hover {
-    background: #155a73;
+    background: #424245;
 }
 
 /* 响应式 */

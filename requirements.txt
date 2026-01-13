@@ -3,3 +3,5 @@ requests
 openpyxl
 python-docx
 pymysql
+langchain
+langchain-core

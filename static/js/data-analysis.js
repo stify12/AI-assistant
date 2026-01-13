@@ -172,11 +172,11 @@ function updateWorkflowSteps(workflowState) {
 // 获取文件图标
 function getFileIcon(filename) {
     if (filename.toLowerCase().endsWith('.xlsx')) {
-        return '📊';
+        return '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="#1e7e34" d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/></svg>';
     } else if (filename.toLowerCase().endsWith('.docx')) {
-        return '📄';
+        return '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="#1565c0" d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/></svg>';
     }
-    return '📁';
+    return '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="#86868b" d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/></svg>';
 }
 
 // 更新文件列表

@@ -274,37 +274,15 @@ mcp-trends-hub@1.6.0</pre>
             
             <!-- 数据库配置 -->
             <div class="settings-panel" id="settingsPanel_database" style="display:none;">
-                <div class="settings-section">
-                    <div class="settings-section-title">主数据库（作业数据源）</div>
-                    <div class="form-row">
-                        <div class="form-group" style="flex:2;">
-                            <label>主机地址</label>
-                            <input type="text" id="mysqlHost" placeholder="例如: 127.0.0.1">
-                        </div>
-                        <div class="form-group" style="flex:1;">
-                            <label>端口</label>
-                            <input type="number" id="mysqlPort" value="3306">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>用户名</label>
-                            <input type="text" id="mysqlUser" placeholder="数据库用户名">
-                        </div>
-                        <div class="form-group">
-                            <label>密码</label>
-                            <input type="password" id="mysqlPassword" placeholder="数据库密码">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>数据库名</label>
-                        <input type="text" id="mysqlDatabase" placeholder="数据库名称">
-                    </div>
-                    <button class="btn-test" onclick="testDatabaseConnection('main')">测试连接</button>
-                </div>
+                <!-- 主数据库配置已移至服务器环境变量 -->
+                <input type="hidden" id="mysqlHost">
+                <input type="hidden" id="mysqlPort" value="3306">
+                <input type="hidden" id="mysqlUser">
+                <input type="hidden" id="mysqlPassword">
+                <input type="hidden" id="mysqlDatabase">
                 
                 <div class="settings-section">
-                    <div class="settings-section-title">应用数据库（可选，存储评估结果）</div>
+                    <div class="settings-section-title">应用数据库（存储评估结果）</div>
                     <div class="form-row">
                         <div class="form-group" style="flex:2;">
                             <label>主机地址</label>

@@ -40,7 +40,11 @@
         "take_snapshot",
         "click",
         "take_screenshot",
-        "handle_dialog"
+        "handle_dialog",
+        "new_page",
+        "fill",
+        "wait_for",
+        "list_console_messages"
       ]
     }
   }

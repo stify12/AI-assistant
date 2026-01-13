@@ -1,0 +1,11 @@
+{
+  "name": "部署到服务器",
+  "description": "同步代码到宝塔服务器并重启容器",
+  "trigger": {
+    "type": "manual"
+  },
+  "action": {
+    "type": "shell",
+    "command": "powershell -ExecutionPolicy Bypass -File deploy.ps1"
+  }
+}

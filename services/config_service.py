@@ -2,9 +2,11 @@
 配置服务模块
 提供配置文件和提示词文件的读写操作
 支持环境变量覆盖敏感配置
+支持从请求头获取API密钥（浏览器localStorage存储）
 """
 import os
 import json
+from flask import request
 
 
 class ConfigService:
@@ -38,6 +40,13 @@ class ConfigService:
         'APP_MYSQL_DATABASE': 'app_mysql.database',
     }
     
+    # 请求头映射（请求头名 -> 配置路径）
+    HEADER_MAPPINGS = {
+        'X-Doubao-Api-Key': 'api_key',
+        'X-Deepseek-Api-Key': 'deepseek_api_key',
+        'X-Qwen-Api-Key': 'qwen_api_key',
+    }
+    
     @staticmethod
     def _set_nested_value(config, path, value):
         """设置嵌套配置值"""
@@ -62,8 +71,25 @@ class ConfigService:
         return config
     
     @staticmethod
-    def load_config():
-        """加载配置（环境变量优先）"""
+    def _apply_header_overrides(config):
+        """应用请求头覆盖（用于浏览器localStorage存储的API密钥）"""
+        try:
+            for header_name, config_path in ConfigService.HEADER_MAPPINGS.items():
+                header_value = request.headers.get(header_name)
+                if header_value:
+                    ConfigService._set_nested_value(config, config_path, header_value)
+        except RuntimeError:
+            # 不在请求上下文中，跳过
+            pass
+        return config
+    
+    @staticmethod
+    def load_config(apply_headers=True):
+        """加载配置（环境变量优先，请求头次之）
+        
+        Args:
+            apply_headers: 是否应用请求头中的API密钥覆盖
+        """
         # 先从文件加载基础配置
         if os.path.exists(ConfigService.CONFIG_FILE):
             with open(ConfigService.CONFIG_FILE, 'r', encoding='utf-8') as f:
@@ -77,7 +103,22 @@ class ConfigService:
         
         # 应用环境变量覆盖
         config = ConfigService._apply_env_overrides(config)
+        
+        # 应用请求头覆盖（浏览器localStorage中的API密钥）
+        if apply_headers:
+            config = ConfigService._apply_header_overrides(config)
+        
         return config
+    
+    @staticmethod
+    def get_api_keys_status():
+        """获取API密钥配置状态（不返回实际密钥值）"""
+        config = ConfigService.load_config(apply_headers=False)
+        return {
+            'doubao': bool(config.get('api_key')),
+            'deepseek': bool(config.get('deepseek_api_key')),
+            'qwen': bool(config.get('qwen_api_key')),
+        }
     
     @staticmethod
     def save_config(config):

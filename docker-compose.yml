@@ -37,7 +37,7 @@ services:
     environment:
       - FLASK_ENV=production
       - TZ=Asia/Shanghai
-      - USE_DB_STORAGE=true
+      - USE_DB_STORAGE=false
       # API密钥（从.env文件或命令行传入）
       - DOUBAO_API_KEY=${DOUBAO_API_KEY}
       - DOUBAO_API_URL=${DOUBAO_API_URL:-https://ark.cn-beijing.volces.com/api/v3/chat/completions}

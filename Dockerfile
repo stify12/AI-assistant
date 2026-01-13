@@ -1,5 +1,5 @@
-# 使用 Python 3.11 作为基础镜像
-FROM python:3.11-slim
+# 使用 Python 3.11 作为基础镜像 (基于 Debian Bookworm)
+FROM python:3.11-slim-bookworm
 
 # 设置工作目录
 WORKDIR /app
@@ -11,18 +11,23 @@ ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 ENV USE_DB_STORAGE=true
 
+# 配置国内镜像源（阿里云）
+RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources && \
+    sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources
+
 # 安装系统依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     default-libmysqlclient-dev \
     pkg-config \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # 复制依赖文件
 COPY requirements.txt .
 
-# 安装 Python 依赖
-RUN pip install --no-cache-dir -r requirements.txt gunicorn
+# 配置pip国内镜像源并安装依赖
+RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ -r requirements.txt gunicorn
 
 # 复制应用代码
 COPY . .
