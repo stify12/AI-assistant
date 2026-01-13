@@ -3,18 +3,18 @@
   "api_url": "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
   "deepseek_api_key": "",
   "mysql": {
-    "database": "",
-    "host": "",
-    "password": "",
+    "host": "47.113.230.78",
     "port": 3306,
-    "user": ""
+    "user": "zpsmart",
+    "password": "rootyouerkj!",
+    "database": "zpsmart"
   },
   "app_mysql": {
-    "database": "",
-    "host": "",
-    "password": "",
+    "host": "47.82.64.147",
     "port": 3306,
-    "user": ""
+    "user": "aiuser",
+    "password": "123456",
+    "database": "aiuser"
   },
   "prompts": {
     "compare_answer": "你是专业的答案比对专家...",
