@@ -2,6 +2,7 @@
 AI批改效果分析平台 - 主入口文件
 Flask 应用初始化和蓝图注册
 """
+import os
 from flask import Flask
 
 # 创建 Flask 应用实例
@@ -17,4 +18,6 @@ app.register_blueprint(knowledge_agent_bp)
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    # 开发模式支持热重载
+    debug_mode = os.environ.get('FLASK_DEBUG', '0') == '1' or os.environ.get('FLASK_ENV') == 'development'
+    app.run(debug=debug_mode, host='0.0.0.0', port=5000)

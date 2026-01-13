@@ -1,0 +1,42 @@
+version: '3.8'
+
+# 开发模式配置 - 支持代码热重载
+# 使用方式: docker-compose -f docker-compose.dev.yml up
+
+services:
+  ai-grading:
+    build: .
+    container_name: ai-grading-dev
+    ports:
+      - "5000:5000"
+    volumes:
+      # 挂载整个项目目录，实现完全热更新
+      - .:/app
+      # 排除不需要同步的目录
+      - /app/__pycache__
+      - /app/.git
+      - /app/.hypothesis
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - TZ=Asia/Shanghai
+      - USE_DB_STORAGE=true
+      - DOUBAO_API_KEY=${DOUBAO_API_KEY}
+      - DOUBAO_API_URL=${DOUBAO_API_URL:-https://ark.cn-beijing.volces.com/api/v3/chat/completions}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - QWEN_API_KEY=${QWEN_API_KEY}
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - APP_MYSQL_HOST=${APP_MYSQL_HOST}
+      - APP_MYSQL_PORT=${APP_MYSQL_PORT:-3306}
+      - APP_MYSQL_USER=${APP_MYSQL_USER}
+      - APP_MYSQL_PASSWORD=${APP_MYSQL_PASSWORD}
+      - APP_MYSQL_DATABASE=${APP_MYSQL_DATABASE}
+    env_file:
+      - .env
+    # 开发模式使用 Flask 内置服务器，支持自动重载
+    command: ["python", "app.py"]
+    restart: unless-stopped

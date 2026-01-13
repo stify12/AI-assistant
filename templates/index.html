@@ -234,36 +234,110 @@ mcp-trends-hub@1.6.0</pre>
 
     <!-- 设置弹窗 -->
     <div class="modal" id="settingsModal">
-        <div class="modal-content">
-            <h3>设置</h3>
-            <div class="settings-section">
-                <div class="settings-section-title">豆包 API</div>
-                <div class="form-group">
-                    <label>API Key</label>
-                    <input type="password" id="apiKey" placeholder="输入豆包 API Key">
+        <div class="modal-content" style="max-width: 600px;">
+            <h3>系统设置</h3>
+            
+            <!-- 设置标签页 -->
+            <div class="settings-tabs">
+                <button class="settings-tab active" onclick="switchSettingsTab('api')">API 密钥</button>
+                <button class="settings-tab" onclick="switchSettingsTab('database')">数据库</button>
+            </div>
+            
+            <!-- API 密钥配置 -->
+            <div class="settings-panel" id="settingsPanel_api">
+                <div class="settings-section">
+                    <div class="settings-section-title">豆包 API（视觉识别）</div>
+                    <div class="form-group">
+                        <label>API Key</label>
+                        <input type="password" id="apiKey" placeholder="输入豆包 API Key">
+                    </div>
+                    <div class="form-group">
+                        <label>API URL</label>
+                        <input type="text" id="apiUrl" value="https://ark.cn-beijing.volces.com/api/v3/chat/completions">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>API URL</label>
-                    <input type="text" id="apiUrl" value="https://ark.cn-beijing.volces.com/api/v3/chat/completions">
+                <div class="settings-section">
+                    <div class="settings-section-title">DeepSeek（评估分析）</div>
+                    <div class="form-group">
+                        <label>DeepSeek API Key</label>
+                        <input type="password" id="deepseekApiKey" placeholder="输入 DeepSeek API Key">
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <div class="settings-section-title">通义千问（可选）</div>
+                    <div class="form-group">
+                        <label>Qwen API Key</label>
+                        <input type="password" id="qwenApiKey" placeholder="输入 DashScope API Key">
+                    </div>
                 </div>
             </div>
-            <div class="settings-section">
-                <div class="settings-section-title">Qwen3-Max</div>
-                <div class="form-group">
-                    <label>Qwen API Key</label>
-                    <input type="password" id="qwenApiKey" placeholder="输入 DashScope API Key">
+            
+            <!-- 数据库配置 -->
+            <div class="settings-panel" id="settingsPanel_database" style="display:none;">
+                <div class="settings-section">
+                    <div class="settings-section-title">主数据库（作业数据源）</div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex:2;">
+                            <label>主机地址</label>
+                            <input type="text" id="mysqlHost" placeholder="例如: 127.0.0.1">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>端口</label>
+                            <input type="number" id="mysqlPort" value="3306">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>用户名</label>
+                            <input type="text" id="mysqlUser" placeholder="数据库用户名">
+                        </div>
+                        <div class="form-group">
+                            <label>密码</label>
+                            <input type="password" id="mysqlPassword" placeholder="数据库密码">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>数据库名</label>
+                        <input type="text" id="mysqlDatabase" placeholder="数据库名称">
+                    </div>
+                    <button class="btn-test" onclick="testDatabaseConnection('main')">测试连接</button>
+                </div>
+                
+                <div class="settings-section">
+                    <div class="settings-section-title">应用数据库（可选，存储评估结果）</div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex:2;">
+                            <label>主机地址</label>
+                            <input type="text" id="appMysqlHost" placeholder="留空则不使用">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>端口</label>
+                            <input type="number" id="appMysqlPort" value="3306">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>用户名</label>
+                            <input type="text" id="appMysqlUser" placeholder="数据库用户名">
+                        </div>
+                        <div class="form-group">
+                            <label>密码</label>
+                            <input type="password" id="appMysqlPassword" placeholder="数据库密码">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>数据库名</label>
+                        <input type="text" id="appMysqlDatabase" placeholder="数据库名称">
+                    </div>
+                    <button class="btn-test" onclick="testDatabaseConnection('app')">测试连接</button>
                 </div>
             </div>
-            <div class="settings-section">
-                <div class="settings-section-title">DeepSeek</div>
-                <div class="form-group">
-                    <label>DeepSeek API Key</label>
-                    <input type="password" id="deepseekApiKey" placeholder="输入 DeepSeek API Key">
-                </div>
-            </div>
+            
+            <div class="settings-status" id="settingsStatus"></div>
+            
             <div class="modal-actions">
                 <button class="btn-cancel" onclick="hideSettings()">取消</button>
-                <button class="btn-save" onclick="saveSettings()">保存</button>
+                <button class="btn-save" onclick="saveSettings()">保存配置</button>
             </div>
         </div>
     </div>

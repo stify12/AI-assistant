@@ -7,7 +7,19 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      # 持久化数据目录（文件存储备用）
+      # ========== 热更新：挂载代码目录 ==========
+      # Python 代码（修改后需重启容器生效）
+      - ./app.py:/app/app.py
+      - ./routes:/app/routes
+      - ./services:/app/services
+      - ./utils:/app/utils
+      - ./knowledge_agent:/app/knowledge_agent
+      
+      # 前端代码（修改后刷新浏览器即可生效）
+      - ./templates:/app/templates
+      - ./static:/app/static
+      
+      # ========== 持久化数据目录 ==========
       - ./datasets:/app/datasets
       - ./batch_tasks:/app/batch_tasks
       - ./baseline_effects:/app/baseline_effects
@@ -18,8 +30,10 @@ services:
       - ./knowledge_uploads:/app/knowledge_uploads
       - ./analysis_files:/app/analysis_files
       - ./analysis_tasks:/app/analysis_tasks
-      # 配置文件（prompts等非敏感配置）
+      
+      # ========== 配置文件 ==========
       - ./prompts.json:/app/prompts.json
+      - ./config.json:/app/config.json
     environment:
       - FLASK_ENV=production
       - TZ=Asia/Shanghai

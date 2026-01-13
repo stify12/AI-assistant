@@ -260,3 +260,57 @@ def eval_config_api():
     else:
         ConfigService.save_eval_config(request.json)
         return jsonify({'success': True})
+
+
+# ========== 数据库连接测试 API ==========
+
+@common_bp.route('/api/test-database', methods=['POST'])
+def test_database_connection():
+    """测试数据库连接"""
+    data = request.json
+    db_type = data.get('type', 'main')  # main 或 app
+    
+    try:
+        import pymysql
+        
+        if db_type == 'main':
+            host = data.get('host') or data.get('mysql', {}).get('host', '')
+            port = int(data.get('port') or data.get('mysql', {}).get('port', 3306))
+            user = data.get('user') or data.get('mysql', {}).get('user', '')
+            password = data.get('password') or data.get('mysql', {}).get('password', '')
+            database = data.get('database') or data.get('mysql', {}).get('database', '')
+        else:
+            host = data.get('host') or data.get('app_mysql', {}).get('host', '')
+            port = int(data.get('port') or data.get('app_mysql', {}).get('port', 3306))
+            user = data.get('user') or data.get('app_mysql', {}).get('user', '')
+            password = data.get('password') or data.get('app_mysql', {}).get('password', '')
+            database = data.get('database') or data.get('app_mysql', {}).get('database', '')
+        
+        if not host or not user or not database:
+            return jsonify({'success': False, 'error': '请填写完整的数据库配置'})
+        
+        # 尝试连接
+        conn = pymysql.connect(
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            database=database,
+            connect_timeout=5
+        )
+        conn.close()
+        
+        return jsonify({'success': True, 'message': '连接成功'})
+    
+    except pymysql.err.OperationalError as e:
+        error_msg = str(e)
+        if 'Access denied' in error_msg:
+            return jsonify({'success': False, 'error': '用户名或密码错误'})
+        elif 'Unknown database' in error_msg:
+            return jsonify({'success': False, 'error': '数据库不存在'})
+        elif 'connect' in error_msg.lower():
+            return jsonify({'success': False, 'error': '无法连接到数据库服务器，请检查地址和端口'})
+        else:
+            return jsonify({'success': False, 'error': error_msg})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})

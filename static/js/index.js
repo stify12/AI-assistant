@@ -781,29 +781,131 @@ async function loadConfig() {
         document.getElementById('apiUrl').value = config.api_url || '';
         document.getElementById('qwenApiKey').value = config.qwen_api_key || '';
         document.getElementById('deepseekApiKey').value = config.deepseek_api_key || '';
+        
+        // 加载数据库配置
+        if (config.mysql) {
+            document.getElementById('mysqlHost').value = config.mysql.host || '';
+            document.getElementById('mysqlPort').value = config.mysql.port || 3306;
+            document.getElementById('mysqlUser').value = config.mysql.user || '';
+            document.getElementById('mysqlPassword').value = config.mysql.password || '';
+            document.getElementById('mysqlDatabase').value = config.mysql.database || '';
+        }
+        if (config.app_mysql) {
+            document.getElementById('appMysqlHost').value = config.app_mysql.host || '';
+            document.getElementById('appMysqlPort').value = config.app_mysql.port || 3306;
+            document.getElementById('appMysqlUser').value = config.app_mysql.user || '';
+            document.getElementById('appMysqlPassword').value = config.app_mysql.password || '';
+            document.getElementById('appMysqlDatabase').value = config.app_mysql.database || '';
+        }
     } catch (e) {}
 }
 
 function showSettings() {
     document.getElementById('settingsModal').classList.add('show');
+    switchSettingsTab('api');
 }
 
 function hideSettings() {
     document.getElementById('settingsModal').classList.remove('show');
+    document.getElementById('settingsStatus').textContent = '';
+}
+
+function switchSettingsTab(tab) {
+    // 更新标签页状态
+    document.querySelectorAll('.settings-tab').forEach(t => {
+        t.classList.toggle('active', t.textContent.includes(tab === 'api' ? 'API' : '数据库'));
+    });
+    
+    // 显示对应面板
+    document.getElementById('settingsPanel_api').style.display = tab === 'api' ? 'block' : 'none';
+    document.getElementById('settingsPanel_database').style.display = tab === 'database' ? 'block' : 'none';
+}
+
+async function testDatabaseConnection(type) {
+    const statusEl = document.getElementById('settingsStatus');
+    statusEl.textContent = '正在测试连接...';
+    statusEl.className = 'settings-status';
+    
+    let data = { type };
+    
+    if (type === 'main') {
+        data.host = document.getElementById('mysqlHost').value;
+        data.port = document.getElementById('mysqlPort').value;
+        data.user = document.getElementById('mysqlUser').value;
+        data.password = document.getElementById('mysqlPassword').value;
+        data.database = document.getElementById('mysqlDatabase').value;
+    } else {
+        data.host = document.getElementById('appMysqlHost').value;
+        data.port = document.getElementById('appMysqlPort').value;
+        data.user = document.getElementById('appMysqlUser').value;
+        data.password = document.getElementById('appMysqlPassword').value;
+        data.database = document.getElementById('appMysqlDatabase').value;
+    }
+    
+    try {
+        const res = await fetch('/api/test-database', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+            statusEl.textContent = '✓ 连接成功';
+            statusEl.className = 'settings-status success';
+        } else {
+            statusEl.textContent = '✗ ' + (result.error || '连接失败');
+            statusEl.className = 'settings-status error';
+        }
+    } catch (e) {
+        statusEl.textContent = '✗ 请求失败: ' + e.message;
+        statusEl.className = 'settings-status error';
+    }
+    
+    setTimeout(() => {
+        statusEl.textContent = '';
+        statusEl.className = 'settings-status';
+    }, 5000);
 }
 
 async function saveSettings() {
-    await fetch('/api/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            api_key: document.getElementById('apiKey').value,
-            api_url: document.getElementById('apiUrl').value,
-            qwen_api_key: document.getElementById('qwenApiKey').value,
-            deepseek_api_key: document.getElementById('deepseekApiKey').value
-        })
-    });
-    hideSettings();
+    const statusEl = document.getElementById('settingsStatus');
+    statusEl.textContent = '正在保存...';
+    
+    const config = {
+        api_key: document.getElementById('apiKey').value,
+        api_url: document.getElementById('apiUrl').value,
+        qwen_api_key: document.getElementById('qwenApiKey').value,
+        deepseek_api_key: document.getElementById('deepseekApiKey').value,
+        mysql: {
+            host: document.getElementById('mysqlHost').value,
+            port: parseInt(document.getElementById('mysqlPort').value) || 3306,
+            user: document.getElementById('mysqlUser').value,
+            password: document.getElementById('mysqlPassword').value,
+            database: document.getElementById('mysqlDatabase').value
+        },
+        app_mysql: {
+            host: document.getElementById('appMysqlHost').value,
+            port: parseInt(document.getElementById('appMysqlPort').value) || 3306,
+            user: document.getElementById('appMysqlUser').value,
+            password: document.getElementById('appMysqlPassword').value,
+            database: document.getElementById('appMysqlDatabase').value
+        }
+    };
+    
+    try {
+        await fetch('/api/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config)
+        });
+        statusEl.textContent = '✓ 保存成功';
+        statusEl.className = 'settings-status success';
+        setTimeout(() => hideSettings(), 1500);
+    } catch (e) {
+        statusEl.textContent = '✗ 保存失败: ' + e.message;
+        statusEl.className = 'settings-status error';
+    }
 }
 
 // ========== 提示词管理 ==========
