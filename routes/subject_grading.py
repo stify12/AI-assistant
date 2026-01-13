@@ -93,7 +93,7 @@ def get_grading_homework():
         # 根据是否有hw_publish_id决定查询条件
         if hw_publish_id:
             sql = """
-                SELECT h.id, h.student_id, h.hw_publish_id, h.subject_id, h.page_num, h.pic_path, 
+                SELECT h.id, h.student_id, h.hw_publish_id, h.subject_id, h.book_id, h.page_num, h.pic_path, 
                        h.homework_result, h.create_time, h.update_time,
                        p.content AS homework_name,
                        s.name AS student_name
@@ -109,7 +109,7 @@ def get_grading_homework():
             rows = DatabaseService.execute_query(sql, (subject_id, hw_publish_id))
         else:
             sql = """
-                SELECT h.id, h.student_id, h.hw_publish_id, h.subject_id, h.page_num, h.pic_path, 
+                SELECT h.id, h.student_id, h.hw_publish_id, h.subject_id, h.book_id, h.page_num, h.pic_path, 
                        h.homework_result, h.create_time, h.update_time,
                        p.content AS homework_name,
                        s.name AS student_name
@@ -141,6 +141,7 @@ def get_grading_homework():
                 'hw_publish_id': row.get('hw_publish_id', ''),
                 'homework_name': row.get('homework_name', ''),
                 'subject_id': row.get('subject_id'),
+                'book_id': row.get('book_id', ''),
                 'page_num': row.get('page_num'),
                 'pic_path': row.get('pic_path', ''),
                 'homework_result': homework_result,
@@ -727,7 +728,9 @@ def save_baseline_effect():
 
 @subject_grading_bp.route('/load-baseline', methods=['POST'])
 def load_baseline_effect():
-    """加载已保存的基准效果（优先从数据集加载，其次从baseline_effects加载）"""
+    """加载已保存的基准效果（从数据库加载，严格按book_id + page_num匹配）"""
+    from services.database_service import AppDatabaseService
+    
     data = request.json
     homework_name = data.get('homework_name', '')
     page_num = data.get('page_num', '')
@@ -742,21 +745,21 @@ def load_baseline_effect():
         base_effect = []
         source = None
         
-        # 1. 如果有book_id，从数据集中查找（必须同时匹配book_id和page_num）
+        # 1. 必须有book_id才能从数据库中查找（严格按book_id + page_num匹配）
         if book_id:
-            for filename in StorageService.list_datasets():
-                dataset_id = filename.replace('.json', '')
-                ds_data = StorageService.load_dataset(dataset_id)
-                if ds_data and str(ds_data.get('book_id', '')) == str(book_id):
-                    base_effects = ds_data.get('base_effects', {})
-                    page_key = str(page_num)
-                    if page_key in base_effects:
-                        base_effect = base_effects[page_key]
-                        source = 'dataset'
-                        print(f"[LoadBaseline] Found in dataset {dataset_id}, page {page_key}")
-                        break
+            # 从数据库查找数据集
+            datasets = AppDatabaseService.get_datasets(book_id=book_id)
+            if datasets:
+                dataset = datasets[0]
+                dataset_id = dataset['dataset_id']
+                # 获取该页的基准效果
+                effects = AppDatabaseService.get_baseline_effects_by_page(dataset_id, int(page_num))
+                if effects:
+                    base_effect = effects
+                    source = 'dataset'
+                    print(f"[LoadBaseline] Found in database: dataset_id={dataset_id}, book_id={book_id}, page={page_num}, count={len(effects)}")
         
-        # 2. 如果数据集中没找到，从baseline_effects目录加载（按homework_name + page_num）
+        # 2. 如果数据库中没找到，从baseline_effects目录加载（按homework_name + page_num，兼容旧数据）
         if not base_effect and homework_name:
             safe_name = re.sub(r'[<>:"/\\|?*]', '_', homework_name)
             filename = f"{safe_name}_{page_num}.json"
@@ -765,10 +768,10 @@ def load_baseline_effect():
             if saved_data:
                 base_effect = saved_data.get('base_effect', [])
                 source = 'baseline'
-                print(f"[LoadBaseline] Found in baseline_effects: {filename}")
+                print(f"[LoadBaseline] Found in baseline_effects file: {filename}")
         
         if not base_effect:
-            print(f"[LoadBaseline] Not found")
+            print(f"[LoadBaseline] Not found for book_id={book_id}, page_num={page_num}")
             return jsonify({'success': False, 'error': '未找到保存的基准效果'})
         
         return jsonify({

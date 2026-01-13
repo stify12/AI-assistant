@@ -467,7 +467,7 @@ function closeLargeImage() {
 }
 
 // ========== 渲染批改结果表格 ==========
-// JSON结构: {"answer":"A","correct":"yes","index":"13","tempIndex":0,"userAnswer":"A"}
+// JSON结构: {"answer":"A","correct":"yes","index":"13","tempIndex":0,"userAnswer":"A","children":[...]}
 function renderResultTable(data) {
     if (!data || data.length === 0) return '<div class="empty-hint">暂无数据</div>';
     
@@ -485,38 +485,53 @@ function renderResultTable(data) {
     `;
     
     data.forEach((item) => {
-        const index = item.index || item.tempIndex || '-';
-        // 标准答案：优先取 answer，没有则取 mainAnswer
-        const answer = item.answer || item.mainAnswer || '-';
-        const userAnswer = item.userAnswer || '-';
-        const correct = item.correct;
+        const hasChildren = item.children && item.children.length > 0;
         
-        // 判断正确/错误状态
-        let statusClass = '';
-        let statusText = '-';
-        if (correct === 'yes' || correct === true || correct === 1) {
-            statusClass = 'status-correct';
-            statusText = '✓';
-        } else if (correct === 'no' || correct === false || correct === 0) {
-            statusClass = 'status-wrong';
-            statusText = '✗';
-        } else if (correct === 'partial') {
-            statusClass = 'status-partial';
-            statusText = '△';
+        if (hasChildren) {
+            // 有子题的复合题：渲染每个子题
+            item.children.forEach((child) => {
+                html += renderResultRow(child);
+            });
+        } else {
+            // 普通题目：直接渲染
+            html += renderResultRow(item);
         }
-        
-        html += `
-            <tr class="${statusClass}">
-                <td class="col-no">${index}</td>
-                <td class="col-std">${escapeHtml(String(answer))}</td>
-                <td class="col-user">${escapeHtml(String(userAnswer))}</td>
-                <td class="col-result ${statusClass}">${statusText}</td>
-            </tr>
-        `;
     });
     
     html += '</tbody></table>';
     return html;
+}
+
+// ========== 渲染单行结果 ==========
+function renderResultRow(item) {
+    const index = item.index || item.tempIndex || '-';
+    // 标准答案：优先取 answer，没有则取 mainAnswer
+    const answer = item.answer || item.mainAnswer || '-';
+    const userAnswer = item.userAnswer || '-';
+    const correct = item.correct;
+    
+    // 判断正确/错误状态
+    let statusClass = '';
+    let statusText = '-';
+    if (correct === 'yes' || correct === true || correct === 1) {
+        statusClass = 'status-correct';
+        statusText = '✓';
+    } else if (correct === 'no' || correct === false || correct === 0) {
+        statusClass = 'status-wrong';
+        statusText = '✗';
+    } else if (correct === 'partial') {
+        statusClass = 'status-partial';
+        statusText = '△';
+    }
+    
+    return `
+        <tr class="${statusClass}">
+            <td class="col-no">${escapeHtml(String(index))}</td>
+            <td class="col-std">${escapeHtml(String(answer))}</td>
+            <td class="col-user">${escapeHtml(String(userAnswer))}</td>
+            <td class="col-result ${statusClass}">${statusText}</td>
+        </tr>
+    `;
 }
 
 // ========== 渲染筛选后的表格 ==========
@@ -1197,17 +1212,17 @@ function renderEvaluationResult() {
             const analysisHtml = analysis.recognition_match !== undefined ? `
                 <div class="analysis-badges">
                     <span class="analysis-badge ${analysis.recognition_match ? 'badge-success' : 'badge-error'}">
-                        识别${analysis.recognition_match ? '✓' : '✗'}
+                        识别 ${analysis.recognition_match ? '是' : '否'}
                     </span>
                     <span class="analysis-badge ${analysis.judgment_match ? 'badge-success' : 'badge-error'}">
-                        判断${analysis.judgment_match ? '✓' : '✗'}
+                        判断 ${analysis.judgment_match ? '是' : '否'}
                     </span>
                     ${analysis.is_hallucination ? '<span class="analysis-badge badge-warning">幻觉</span>' : ''}
                 </div>
             ` : '';
             
             // 改进建议
-            const suggestionHtml = err.suggestion ? `<div class="suggestion-text">💡 ${escapeHtml(err.suggestion)}</div>` : '';
+            const suggestionHtml = err.suggestion ? `<div class="suggestion-text">${escapeHtml(err.suggestion)}</div>` : '';
             
             return `
                 <tr data-index="${err.index}" data-error-type="${err.error_type}" data-severity="${err.severity_code || 'medium'}">
