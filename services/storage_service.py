@@ -164,13 +164,26 @@ class StorageService:
                     page_key = str(effect['page_num'])
                     if page_key not in base_effects:
                         base_effects[page_key] = []
+                    
+                    # 解析extra_data获取额外字段
+                    extra_data = effect.get('extra_data')
+                    if isinstance(extra_data, str):
+                        try:
+                            extra_data = json.loads(extra_data)
+                        except:
+                            extra_data = {}
+                    elif extra_data is None:
+                        extra_data = {}
+                    
                     base_effects[page_key].append({
                         'index': effect['question_index'],
                         'tempIndex': effect['temp_index'],
                         'type': effect['question_type'],
                         'answer': effect['answer'],
                         'userAnswer': effect['user_answer'],
-                        'correct': effect['is_correct']
+                        'correct': effect['is_correct'],
+                        'questionType': extra_data.get('questionType', 'objective'),
+                        'bvalue': extra_data.get('bvalue', '4')
                     })
                 
                 pages = row['pages']
@@ -226,9 +239,21 @@ class StorageService:
                     question_count
                 )
             
-            # 保存基准效果
+            # 保存基准效果（包含questionType和bvalue）
             for page_num, effects in base_effects.items():
-                AppDatabaseService.save_baseline_effects(dataset_id, int(page_num), effects)
+                formatted_effects = []
+                for effect in effects:
+                    formatted_effects.append({
+                        'index': effect.get('index', ''),
+                        'tempIndex': effect.get('tempIndex', 0),
+                        'type': effect.get('type', effect.get('questionType', 'choice')),
+                        'answer': effect.get('answer', ''),
+                        'userAnswer': effect.get('userAnswer', ''),
+                        'correct': effect.get('correct', ''),
+                        'questionType': effect.get('questionType', 'objective'),
+                        'bvalue': effect.get('bvalue', '4')
+                    })
+                AppDatabaseService.save_baseline_effects(dataset_id, int(page_num), formatted_effects)
             return
         
         filepath = StorageService.get_file_path(StorageService.DATASETS_DIR, dataset_id)

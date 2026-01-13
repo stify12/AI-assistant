@@ -493,11 +493,25 @@ function renderRecognizePreview() {
                 <div class="recognize-count">共 ${result.data.length} 题</div>
             `;
         } else {
+            // 错误或待识别状态
+            let errorMsg = '';
+            if (result?.error) {
+                errorMsg = `<div class="recognize-error">错误: ${escapeHtml(result.error)}</div>`;
+            }
+            
+            // 如果有 raw_preview，显示预览
+            if (result?.raw_preview) {
+                errorMsg += `<details style="margin-top:10px;">
+                    <summary style="cursor:pointer;color:#666;">查看AI返回内容预览</summary>
+                    <pre style="background:#f5f5f5;padding:10px;border-radius:4px;font-size:12px;max-height:200px;overflow:auto;">${escapeHtml(result.raw_preview)}</pre>
+                </details>`;
+            }
+            
             dataHtml = `
                 <textarea class="recognize-textarea" id="recognizeData_${page}" 
                           placeholder="点击"开始识别"自动识别，或手动输入JSON数组"
-                          onchange="updateRecognizeData(${page}, this.value)">${result?.data ? JSON.stringify(result.data, null, 2) : ''}</textarea>
-                ${result?.error ? `<div class="recognize-error">错误: ${escapeHtml(result.error)}</div>` : ''}
+                          onchange="updateRecognizeData(${page}, this.value)"></textarea>
+                ${errorMsg}
             `;
         }
         
@@ -612,10 +626,23 @@ function addTableRow(page) {
 
 function updateRecognizeData(page, value) {
     try {
+        // 忽略空值
+        if (!value || !value.trim()) {
+            return;
+        }
+        
         const data = JSON.parse(value);
+        
+        // 验证是否为数组
+        if (!Array.isArray(data)) {
+            console.error('识别数据必须是数组格式');
+            return;
+        }
+        
         recognizeResults[page] = { success: true, data: data };
     } catch (e) {
-        // 解析失败
+        console.error('JSON解析失败:', e.message);
+        // 不更新 recognizeResults，保持原有错误状态
     }
     checkCanSave();
 }
@@ -669,6 +696,29 @@ async function recognizePage(page) {
                 subject_id: selectedBook.subject_id
             })
         });
+        
+        // 检查响应状态
+        if (!res.ok) {
+            const contentType = res.headers.get('content-type');
+            let errorMsg = `HTTP ${res.status}`;
+            
+            if (contentType && contentType.includes('application/json')) {
+                const data = await res.json();
+                errorMsg = data.error || errorMsg;
+            } else {
+                // 返回的是HTML或其他非JSON内容
+                errorMsg = `服务器错误 (${res.status})，请检查后端日志`;
+            }
+            
+            recognizeResults[page] = {
+                success: false,
+                error: errorMsg
+            };
+            renderRecognizePreview();
+            checkCanSave();
+            return;
+        }
+        
         const data = await res.json();
         
         if (data.success) {
@@ -685,7 +735,7 @@ async function recognizePage(page) {
     } catch (e) {
         recognizeResults[page] = {
             success: false,
-            error: e.message
+            error: `请求失败: ${e.message}`
         };
     }
     

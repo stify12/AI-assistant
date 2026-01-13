@@ -25,11 +25,11 @@ const BatchEvaluation = {
         
         if (this.enabled) {
             toggleBtn.classList.add('active');
-            toggleBtn.innerHTML = '<span>退出批量</span>';
+            toggleBtn.textContent = '退出多次';
             batchBar.style.display = 'flex';
         } else {
             toggleBtn.classList.remove('active');
-            toggleBtn.innerHTML = '<span>批量评估</span>';
+            toggleBtn.textContent = '多次评估';
             batchBar.style.display = 'none';
         }
         
@@ -97,7 +97,7 @@ const BatchEvaluation = {
         const selectedList = Array.from(this.selectedItems).map(i => homeworkList[i]);
         this.results = [];
         
-        showLoading(`正在批量评估 0/${selectedList.length}...`);
+        showLoading(`正在多次评估 0/${selectedList.length}...`);
         
         let successCount = 0;
         let failCount = 0;
@@ -105,7 +105,7 @@ const BatchEvaluation = {
         for (let i = 0; i < selectedList.length; i++) {
             const homework = selectedList[i];
             document.getElementById('loadingText').textContent = 
-                `正在批量评估 ${i + 1}/${selectedList.length}...`;
+                `正在多次评估 ${i + 1}/${selectedList.length}...`;
             
             try {
                 // 加载基准效果
@@ -175,7 +175,7 @@ const BatchEvaluation = {
         }
         
         hideLoading();
-        showToast(`批量评估完成: ${successCount} 成功, ${failCount} 失败`, 
+        showToast(`多次评估完成: ${successCount} 成功, ${failCount} 失败`, 
             failCount > 0 ? 'warning' : 'success');
         
         this.showResults();

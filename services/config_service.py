@@ -43,6 +43,7 @@ class ConfigService:
     # 请求头映射（请求头名 -> 配置路径）
     HEADER_MAPPINGS = {
         'X-Doubao-Api-Key': 'api_key',
+        'X-Gpt-Api-Key': 'gpt_api_key',
         'X-Deepseek-Api-Key': 'deepseek_api_key',
         'X-Qwen-Api-Key': 'qwen_api_key',
     }
@@ -84,11 +85,12 @@ class ConfigService:
         return config
     
     @staticmethod
-    def load_config(apply_headers=True):
-        """加载配置（环境变量优先，请求头次之）
+    def load_config(apply_headers=True, user_id=None):
+        """加载配置（优先级：用户数据库配置 > 环境变量 > 文件配置）
         
         Args:
             apply_headers: 是否应用请求头中的API密钥覆盖
+            user_id: 用户ID，如果提供则从数据库加载用户配置
         """
         # 先从文件加载基础配置
         if os.path.exists(ConfigService.CONFIG_FILE):
@@ -98,11 +100,31 @@ class ConfigService:
             config = {
                 'api_key': '',
                 'model': 'doubao-1.5-vision-pro-250328',
-                'api_url': 'https://ark.cn-beijing.volces.com/api/v3/chat/completions'
+                'api_url': 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
+                'gpt_api_key': '',
+                'gpt_api_url': 'https://api.gpt.ge/v1/chat/completions',
+                'deepseek_api_key': '',
+                'qwen_api_key': ''
             }
         
         # 应用环境变量覆盖
         config = ConfigService._apply_env_overrides(config)
+        
+        # 从数据库加载用户配置（优先级最高）
+        if user_id:
+            try:
+                from services.database_service import AppDatabaseService
+                user_api_keys = AppDatabaseService.get_user_api_keys(user_id)
+                print(f"[Config] 加载用户 {user_id} 的配置: {list(user_api_keys.keys()) if user_api_keys else '无'}")
+                if user_api_keys:
+                    # 用户配置覆盖默认配置
+                    for key, value in user_api_keys.items():
+                        if value:  # 只覆盖非空值
+                            config[key] = value
+            except Exception as e:
+                print(f"[Config] 加载用户配置失败: {e}")
+                import traceback
+                traceback.print_exc()
         
         # 应用请求头覆盖（浏览器localStorage中的API密钥）
         if apply_headers:

@@ -39,5 +39,5 @@ RUN mkdir -p datasets batch_tasks baseline_effects sessions chat_sessions \
 # 暴露端口
 EXPOSE 5000
 
-# 启动命令 - 使用 gunicorn 生产服务器
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "120", "app:app"]
+# 启动命令 - 使用 gunicorn 生产服务器，增加超时时间以支持长时间的 AI 识别请求
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "300", "--graceful-timeout", "300", "app:app"]

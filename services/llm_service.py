@@ -15,9 +15,9 @@ class LLMService:
     DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions'
     
     @staticmethod
-    def call_qwen(prompt, system_prompt='你是一个专业的AI助手。', model='qwen3-max', timeout=60):
+    def call_qwen(prompt, system_prompt='你是一个专业的AI助手。', model='qwen3-max', timeout=60, user_id=None):
         """调用 Qwen 模型"""
-        config = ConfigService.load_config()
+        config = ConfigService.load_config(user_id=user_id)
         api_key = config.get('qwen_api_key')
         
         if not api_key:
@@ -59,9 +59,9 @@ class LLMService:
             return {'error': str(e)}
     
     @staticmethod
-    def call_deepseek(prompt, system_prompt='你是一个专业的AI助手。', model='deepseek-chat', timeout=60):
+    def call_deepseek(prompt, system_prompt='你是一个专业的AI助手。', model='deepseek-chat', timeout=60, user_id=None):
         """调用 DeepSeek 模型"""
-        config = ConfigService.load_config()
+        config = ConfigService.load_config(user_id=user_id)
         api_key = config.get('deepseek_api_key')
         
         if not api_key:
@@ -101,11 +101,13 @@ class LLMService:
             return {'error': str(e)}
     
     @staticmethod
-    def call_vision_model(image, prompt, model=None, timeout=120):
+    def call_vision_model(image, prompt, model=None, timeout=120, user_id=None):
         """调用视觉模型"""
-        config = ConfigService.load_config()
+        config = ConfigService.load_config(user_id=user_id)
         api_url = config.get('api_url', 'https://ark.cn-beijing.volces.com/api/v3/chat/completions')
         api_key = config.get('api_key')
+        
+        print(f"[Vision] user_id={user_id}, model={model}, api_key={'已配置' if api_key else '未配置'}")
         
         if not api_key:
             return {'error': '请先配置 API Key'}
@@ -199,11 +201,36 @@ class LLMService:
         
         content = LLMService.remove_think_tags(content)
         
+        # 尝试直接解析整个内容
         try:
+            parsed = json.loads(content.strip())
+            if isinstance(parsed, list):
+                return parsed
+        except:
+            pass
+        
+        # 移除 markdown 代码块标记
+        content = re.sub(r'```json\s*', '', content)
+        content = re.sub(r'```\s*', '', content)
+        content = content.strip()
+        
+        # 再次尝试直接解析
+        try:
+            parsed = json.loads(content)
+            if isinstance(parsed, list):
+                return parsed
+        except:
+            pass
+        
+        # 使用正则提取 JSON 数组
+        try:
+            # 贪婪匹配最外层的 JSON 数组
             json_match = re.search(r'\[[\s\S]*\]', content)
             if json_match:
-                return json.loads(json_match.group())
-        except:
+                json_str = json_match.group()
+                return json.loads(json_str)
+        except Exception as e:
+            print(f"[ExtractJSON] Failed to parse: {str(e)}")
             pass
         
         return None

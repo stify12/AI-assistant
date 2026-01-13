@@ -164,6 +164,10 @@ def get_homework_tasks():
         return jsonify({'success': False, 'error': '缺少subject_id参数'})
     
     try:
+        # 添加超时保护，限制查询时间范围
+        if hours > 720:  # 最多30天
+            hours = 720
+        
         sql = """
             SELECT p.id AS hw_publish_id, p.content AS task_name, 
                    COUNT(h.id) AS homework_count,
@@ -177,7 +181,10 @@ def get_homework_tasks():
             ORDER BY latest_time DESC
             LIMIT 50
         """
+        
+        print(f"[HomeworkTasks] Querying subject_id={subject_id}, hours={hours}")
         rows = DatabaseService.execute_query(sql, (subject_id, hours))
+        print(f"[HomeworkTasks] Found {len(rows)} tasks")
         
         tasks = []
         for row in rows:
@@ -191,7 +198,10 @@ def get_homework_tasks():
         return jsonify({'success': True, 'data': tasks})
     
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+        print(f"[HomeworkTasks] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': f'查询失败: {str(e)}'}), 500
 
 
 # ========== 识别 API ==========
@@ -199,19 +209,22 @@ def get_homework_tasks():
 @subject_grading_bp.route('/recognize', methods=['POST'])
 def recognize_base_effect():
     """图片识别基准效果"""
+    from routes.auth import get_current_user_id
+    user_id = get_current_user_id()
+    
     data = request.json
     image = data.get('image', '')
     
     if not image:
         return jsonify({'success': False, 'error': '缺少图片数据'})
     
-    config = ConfigService.load_config()
+    config = ConfigService.load_config(user_id=user_id)
     
     # 使用通用识别提示词
     prompts_config = config.get('prompts', {})
     prompt = prompts_config.get('recognize', '请识别图片中作业的每道题答案。')
     
-    result = LLMService.call_vision_model(image, prompt, 'doubao-1-5-vision-pro-32k-250115')
+    result = LLMService.call_vision_model(image, prompt, 'doubao-1-5-vision-pro-32k-250115', user_id=user_id)
     
     if result.get('error'):
         return jsonify({'success': False, 'error': result['error']})
@@ -226,6 +239,9 @@ def recognize_base_effect():
 @subject_grading_bp.route('/auto-recognize', methods=['POST'])
 def auto_recognize_from_db():
     """从数据库图片自动识别基准效果"""
+    from routes.auth import get_current_user_id
+    user_id = get_current_user_id()
+    
     data = request.json
     homework_id = data.get('homework_id')
     pic_path = data.get('pic_path', '')
@@ -236,13 +252,13 @@ def auto_recognize_from_db():
     if not pic_path:
         return jsonify({'success': False, 'error': '图片路径为空'})
     
-    config = ConfigService.load_config()
+    config = ConfigService.load_config(user_id=user_id)
     
     # 使用通用识别提示词
     prompts_config = config.get('prompts', {})
     prompt = prompts_config.get('recognize', '请识别图片中作业的每道题答案。')
     
-    result = LLMService.call_vision_model(pic_path, prompt, 'doubao-seed-1-8-251228')
+    result = LLMService.call_vision_model(pic_path, prompt, 'doubao-seed-1-8-251228', user_id=user_id)
     
     if result.get('error'):
         return jsonify({'success': False, 'error': result['error']})
@@ -298,7 +314,10 @@ def evaluate_grading():
 
 def do_ai_compare(base_effect, homework_result):
     """使用AI模型逐题比对"""
-    config = ConfigService.load_config()
+    from routes.auth import get_current_user_id
+    user_id = get_current_user_id()
+    
+    config = ConfigService.load_config(user_id=user_id)
     
     # 获取比对提示词
     prompts_config = config.get('prompts', {})
@@ -327,7 +346,8 @@ def do_ai_compare(base_effect, homework_result):
     result = LLMService.call_deepseek(
         prompt, 
         '你是专业的答案比对专家，请严格按照要求输出JSON数组。',
-        timeout=120
+        timeout=120,
+        user_id=user_id
     )
     
     if result.get('error'):
@@ -716,11 +736,13 @@ def load_baseline_effect():
     if not page_num:
         return jsonify({'success': False, 'error': '缺少页码'})
     
+    print(f"[LoadBaseline] homework_name={homework_name}, page_num={page_num}, book_id={book_id}")
+    
     try:
         base_effect = []
         source = None
         
-        # 1. 优先从数据集中查找（按book_id和page_num匹配）
+        # 1. 如果有book_id，从数据集中查找（必须同时匹配book_id和page_num）
         if book_id:
             for filename in StorageService.list_datasets():
                 dataset_id = filename.replace('.json', '')
@@ -731,22 +753,10 @@ def load_baseline_effect():
                     if page_key in base_effects:
                         base_effect = base_effects[page_key]
                         source = 'dataset'
+                        print(f"[LoadBaseline] Found in dataset {dataset_id}, page {page_key}")
                         break
         
-        # 2. 如果没有book_id或数据集中没找到，尝试遍历所有数据集按页码匹配
-        if not base_effect:
-            for filename in StorageService.list_datasets():
-                dataset_id = filename.replace('.json', '')
-                ds_data = StorageService.load_dataset(dataset_id)
-                if ds_data:
-                    base_effects = ds_data.get('base_effects', {})
-                    page_key = str(page_num)
-                    if page_key in base_effects:
-                        base_effect = base_effects[page_key]
-                        source = 'dataset'
-                        break
-        
-        # 3. 最后从baseline_effects目录加载
+        # 2. 如果数据集中没找到，从baseline_effects目录加载（按homework_name + page_num）
         if not base_effect and homework_name:
             safe_name = re.sub(r'[<>:"/\\|?*]', '_', homework_name)
             filename = f"{safe_name}_{page_num}.json"
@@ -755,8 +765,10 @@ def load_baseline_effect():
             if saved_data:
                 base_effect = saved_data.get('base_effect', [])
                 source = 'baseline'
+                print(f"[LoadBaseline] Found in baseline_effects: {filename}")
         
         if not base_effect:
+            print(f"[LoadBaseline] Not found")
             return jsonify({'success': False, 'error': '未找到保存的基准效果'})
         
         return jsonify({
@@ -766,6 +778,9 @@ def load_baseline_effect():
         })
     
     except Exception as e:
+        print(f"[LoadBaseline] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
 
 

@@ -11,6 +11,7 @@ from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 
 from services.config_service import ConfigService
 from services.session_service import SessionService
+from routes.auth import get_current_user_id
 
 common_bp = Blueprint('common', __name__)
 
@@ -41,28 +42,56 @@ def batch_evaluation():
 
 @common_bp.route('/api/config', methods=['GET', 'POST'])
 def config():
+    user_id = get_current_user_id()
+    
     if request.method == 'GET':
-        # 获取配置时不返回API密钥（密钥存储在浏览器localStorage）
-        config_data = ConfigService.load_config(apply_headers=False)
-        # 移除敏感信息
+        # 获取配置时从数据库加载用户配置
+        config_data = ConfigService.load_config(apply_headers=False, user_id=user_id)
+        # 移除敏感信息（不返回完整密钥，只返回是否已配置）
         safe_config = {
             'api_url': config_data.get('api_url', ''),
+            'gpt_api_url': config_data.get('gpt_api_url', 'https://api.gpt.ge/v1/chat/completions'),
             'mysql': config_data.get('mysql', {}),
             'app_mysql': config_data.get('app_mysql', {}),
             'prompts': config_data.get('prompts', {}),
             'use_ai_compare': config_data.get('use_ai_compare', False),
             # 返回API密钥配置状态（是否已配置）
-            'api_keys_status': ConfigService.get_api_keys_status()
+            'has_api_key': bool(config_data.get('api_key')),
+            'has_gpt_api_key': bool(config_data.get('gpt_api_key')),
+            'has_deepseek_api_key': bool(config_data.get('deepseek_api_key')),
+            'has_qwen_api_key': bool(config_data.get('qwen_api_key'))
         }
         return jsonify(safe_config)
     else:
-        # 保存配置时，只保存非敏感配置到服务器
+        # 保存配置
         data = request.json
-        config_data = ConfigService.load_config(apply_headers=False)
         
-        # 只更新非API密钥的配置
-        if 'api_url' in data:
-            config_data['api_url'] = data['api_url']
+        # 如果已登录，保存API密钥到数据库（用户级别）
+        if user_id:
+            from services.database_service import AppDatabaseService
+            api_keys = {}
+            if 'api_key' in data:
+                api_keys['api_key'] = data['api_key']
+                api_keys['doubao_key'] = data['api_key']  # 兼容旧字段名
+            if 'gpt_api_key' in data:
+                api_keys['gpt_api_key'] = data['gpt_api_key']
+                api_keys['gpt_key'] = data['gpt_api_key']  # 兼容旧字段名
+            if 'deepseek_api_key' in data:
+                api_keys['deepseek_api_key'] = data['deepseek_api_key']
+                api_keys['deepseek_key'] = data['deepseek_api_key']  # 兼容旧字段名
+            if 'qwen_api_key' in data:
+                api_keys['qwen_api_key'] = data['qwen_api_key']
+                api_keys['qwen_key'] = data['qwen_api_key']  # 兼容旧字段名
+            if 'api_url' in data:
+                api_keys['api_url'] = data['api_url']
+            if 'gpt_api_url' in data:
+                api_keys['gpt_api_url'] = data['gpt_api_url']
+            
+            if api_keys:
+                AppDatabaseService().update_user_api_keys(user_id, api_keys)
+        
+        # 保存非敏感配置到服务器文件
+        config_data = ConfigService.load_config(apply_headers=False)
         if 'mysql' in data:
             config_data['mysql'] = data['mysql']
         if 'app_mysql' in data:
@@ -157,10 +186,11 @@ def validate_api_key():
 @common_bp.route('/api/session', methods=['POST', 'DELETE'])
 def session_api():
     """会话管理API"""
+    user_id = get_current_user_id()
     if request.method == 'POST':
         # 创建新会话
         session_id = str(uuid.uuid4())[:8]
-        SessionService.save_session(session_id, {'messages': [], 'created_at': datetime.now().isoformat()})
+        SessionService.save_session(session_id, {'messages': [], 'created_at': datetime.now().isoformat()}, user_id=user_id)
         return jsonify({'session_id': session_id})
     else:
         # 清除会话
@@ -180,7 +210,8 @@ def get_session(session_id):
 @common_bp.route('/api/all-sessions', methods=['GET'])
 def get_all_sessions():
     """获取所有会话列表"""
-    sessions = SessionService.get_all_sessions()
+    user_id = get_current_user_id()
+    sessions = SessionService.get_all_sessions(user_id=user_id)
     return jsonify(sessions)
 
 
@@ -206,6 +237,7 @@ def save_parallel_result():
     if not session_id:
         return jsonify({'error': '缺少session_id'}), 400
     
+    user_id = get_current_user_id()
     session_data = SessionService.load_session(session_id)
     
     # 添加用户消息
@@ -221,7 +253,7 @@ def save_parallel_result():
         'model': model
     })
     
-    SessionService.save_session(session_id, session_data)
+    SessionService.save_session(session_id, session_data, user_id=user_id)
     return jsonify({'success': True})
 
 

@@ -43,15 +43,17 @@
 
             <!-- 数据列表区域 -->
             <div class="section" id="dataListSection">
-                <div class="section-title">批改数据列表</div>
+                <div class="section-header-row">
+                    <div class="section-title">批改数据列表</div>
+                    <button class="batch-mode-btn" id="batchModeBtn" onclick="BatchEvaluation.toggle()">
+                        多次评估
+                    </button>
+                </div>
                 
                 <div class="data-list-container">
                     <div class="data-list-header">
                         <span id="dataCount">共 0 条记录</span>
                         <div class="header-actions">
-                            <button class="batch-mode-btn" id="batchModeBtn" onclick="BatchEvaluation.toggle()">
-                                <span>批量评估</span>
-                            </button>
                             <select id="timeRangeFilter" onchange="loadHomeworkData()">
                                 <option value="0.167">最近10分钟</option>
                                 <option value="0.5">最近30分钟</option>
@@ -60,7 +62,12 @@
                                 <option value="72">最近3天</option>
                                 <option value="168">最近7天</option>
                             </select>
-                            <button class="btn btn-small" onclick="refreshData()">刷新</button>
+                            <button class="btn-icon" onclick="refreshData()" title="刷新数据">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M23 4v6h-6M1 20v-6h6"/>
+                                    <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                                </svg>
+                            </button>
                         </div>
                     </div>
                     
@@ -69,7 +76,7 @@
                         <input type="checkbox" class="batch-checkbox" onclick="BatchEvaluation.toggleAll()">
                         <span id="batchSelectedCount">已选 0 条</span>
                         <button class="btn btn-small btn-primary" id="batchEvaluateBtn" onclick="BatchEvaluation.evaluate()" disabled>
-                            开始批量评估
+                            开始评估
                         </button>
                     </div>
                     
@@ -382,11 +389,11 @@
         </div>
     </div>
 
-    <!-- 批量评估结果弹窗 -->
+    <!-- 多次评估结果弹窗 -->
     <div id="batchResultModal" onclick="BatchEvaluation.hideResultModal(event)">
         <div class="batch-result-content" onclick="event.stopPropagation()">
             <div class="batch-result-header">
-                <h3>批量评估结果</h3>
+                <h3>多次评估结果</h3>
                 <div style="display:flex;gap:8px;">
                     <button class="btn btn-small" onclick="BatchEvaluation.exportResults()">导出结果</button>
                     <button class="close-btn" onclick="BatchEvaluation.hideResultModal()">×</button>

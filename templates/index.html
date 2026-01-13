@@ -66,6 +66,17 @@
                 </select>
             </div>
             <button class="tools-btn" onclick="toggleToolsSidebar()">工具</button>
+            <!-- 用户头像按钮 -->
+            <div class="user-avatar-wrapper" id="userAvatarWrapper">
+                <button class="user-avatar-btn" id="userAvatarBtn" onclick="toggleUserMenu()">
+                    <svg class="avatar-icon" id="avatarIcon" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    <span class="avatar-letter" id="avatarLetter" style="display:none;"></span>
+                </button>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-dropdown-header" id="userDropdownHeader"></div>
+                    <button class="user-dropdown-item" onclick="handleLogout()">退出登录</button>
+                </div>
+            </div>
         </header>
 
         <!-- 对话内容区 -->
@@ -246,7 +257,10 @@ mcp-trends-hub@1.6.0</pre>
             <!-- API 密钥配置 -->
             <div class="settings-panel" id="settingsPanel_api">
                 <div class="settings-section">
-                    <div class="settings-section-title">豆包 API（视觉识别）</div>
+                    <div class="settings-section-title">
+                        豆包 API（视觉识别）
+                        <a href="https://console.volcengine.com/ark" target="_blank" class="api-link">获取密钥</a>
+                    </div>
                     <div class="form-group">
                         <label>API Key</label>
                         <input type="password" id="apiKey" placeholder="输入豆包 API Key">
@@ -257,14 +271,34 @@ mcp-trends-hub@1.6.0</pre>
                     </div>
                 </div>
                 <div class="settings-section">
-                    <div class="settings-section-title">DeepSeek（评估分析）</div>
+                    <div class="settings-section-title">
+                        GPT API（日常聊天）
+                        <a href="https://api.gpt.ge" target="_blank" class="api-link">获取密钥</a>
+                    </div>
+                    <div class="form-group">
+                        <label>GPT API Key</label>
+                        <input type="password" id="gptApiKey" placeholder="输入 GPT API Key">
+                    </div>
+                    <div class="form-group">
+                        <label>GPT API URL</label>
+                        <input type="text" id="gptApiUrl" value="https://api.gpt.ge/v1/chat/completions">
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <div class="settings-section-title">
+                        DeepSeek（评估分析）
+                        <a href="https://platform.deepseek.com" target="_blank" class="api-link">获取密钥</a>
+                    </div>
                     <div class="form-group">
                         <label>DeepSeek API Key</label>
                         <input type="password" id="deepseekApiKey" placeholder="输入 DeepSeek API Key">
                     </div>
                 </div>
                 <div class="settings-section">
-                    <div class="settings-section-title">通义千问（可选）</div>
+                    <div class="settings-section-title">
+                        通义千问（可选）
+                        <a href="https://dashscope.console.aliyun.com" target="_blank" class="api-link">获取密钥</a>
+                    </div>
                     <div class="form-group">
                         <label>Qwen API Key</label>
                         <input type="password" id="qwenApiKey" placeholder="输入 DashScope API Key">
@@ -353,6 +387,33 @@ mcp-trends-hub@1.6.0</pre>
     <!-- 图片放大弹窗 -->
     <div class="image-modal" id="imageModal" onclick="hideImageModal()">
         <img id="modalImg" src="">
+    </div>
+
+    <!-- 登录弹窗 -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content login-modal-content">
+            <h3>登录</h3>
+            <p class="login-hint">没有账号？输入用户名密码自动注册</p>
+            <div class="form-group">
+                <label>用户名</label>
+                <input type="text" id="loginUsername" placeholder="请输入用户名" autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" id="loginPassword" placeholder="请输入密码" autocomplete="current-password">
+            </div>
+            <div class="form-group remember-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="loginRemember" checked>
+                    <span>记住登录</span>
+                </label>
+            </div>
+            <div class="login-error" id="loginError" style="display:none;"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="hideLoginModal()">取消</button>
+                <button class="btn-save login-btn" id="loginBtn" onclick="handleLogin()">登录</button>
+            </div>
+        </div>
     </div>
 
     <script src="/static/js/index.js"></script>

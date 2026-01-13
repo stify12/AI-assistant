@@ -253,9 +253,14 @@ class AppDatabaseService:
             (dataset_id, page_num)
         )
         for effect in effects:
+            # 构建extra_data存储额外字段
+            extra_data = {
+                'questionType': effect.get('questionType', 'objective'),
+                'bvalue': effect.get('bvalue', '4')
+            }
             sql = """INSERT INTO baseline_effects 
-                     (dataset_id, page_num, question_index, temp_index, question_type, answer, user_answer, is_correct)
-                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
+                     (dataset_id, page_num, question_index, temp_index, question_type, answer, user_answer, is_correct, extra_data)
+                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
             AppDatabaseService.execute_insert(sql, (
                 dataset_id, page_num,
                 effect.get('index', ''),
@@ -263,7 +268,8 @@ class AppDatabaseService:
                 effect.get('type', 'choice'),
                 effect.get('answer', ''),
                 effect.get('userAnswer', ''),
-                effect.get('correct', '')
+                effect.get('correct', ''),
+                json.dumps(extra_data, ensure_ascii=False)
             ))
     
     # ========== 批量任务相关操作 ==========
@@ -447,3 +453,88 @@ class AppDatabaseService:
         sql = """INSERT INTO prompt_templates (name, content, prompt_type, is_default) 
                  VALUES (%s, %s, %s, %s)"""
         return AppDatabaseService.execute_insert(sql, (name, content, prompt_type, 1 if is_default else 0))
+
+    # ========== 用户相关操作 ==========
+    
+    @staticmethod
+    def get_user_by_id(user_id):
+        """根据ID获取用户"""
+        sql = "SELECT * FROM users WHERE id = %s"
+        return AppDatabaseService.execute_one(sql, (user_id,))
+    
+    @staticmethod
+    def get_user_by_username(username):
+        """根据用户名获取用户"""
+        sql = "SELECT * FROM users WHERE username = %s"
+        return AppDatabaseService.execute_one(sql, (username,))
+    
+    @staticmethod
+    def get_user_by_token(token):
+        """根据记住登录Token获取用户"""
+        sql = "SELECT * FROM users WHERE remember_token = %s"
+        return AppDatabaseService.execute_one(sql, (token,))
+    
+    @staticmethod
+    def create_user(username, password_hash):
+        """创建用户"""
+        sql = """INSERT INTO users (username, password_hash, created_at, updated_at) 
+                 VALUES (%s, %s, %s, %s)"""
+        now = datetime.now()
+        return AppDatabaseService.execute_insert(sql, (username, password_hash, now, now))
+    
+    @staticmethod
+    def update_user_token(user_id, token, expires_at):
+        """更新用户的记住登录Token"""
+        sql = "UPDATE users SET remember_token = %s, token_expires_at = %s, updated_at = %s WHERE id = %s"
+        return AppDatabaseService.execute_update(sql, (token, expires_at, datetime.now(), user_id))
+    
+    @staticmethod
+    def update_user_api_keys(user_id, api_keys):
+        """更新用户的API密钥配置"""
+        api_keys_json = json.dumps(api_keys, ensure_ascii=False) if api_keys else None
+        sql = "UPDATE users SET api_keys = %s, updated_at = %s WHERE id = %s"
+        return AppDatabaseService.execute_update(sql, (api_keys_json, datetime.now(), user_id))
+    
+    @staticmethod
+    def get_user_api_keys(user_id):
+        """获取用户的API密钥配置"""
+        sql = "SELECT api_keys FROM users WHERE id = %s"
+        row = AppDatabaseService.execute_one(sql, (user_id,))
+        if row and row['api_keys']:
+            try:
+                keys = json.loads(row['api_keys'])
+                # 兼容旧字段名
+                result = {}
+                result['api_key'] = keys.get('api_key') or keys.get('doubao_key', '')
+                result['gpt_api_key'] = keys.get('gpt_api_key') or keys.get('gpt_key', '')
+                result['deepseek_api_key'] = keys.get('deepseek_api_key') or keys.get('deepseek_key', '')
+                result['qwen_api_key'] = keys.get('qwen_api_key') or keys.get('qwen_key', '')
+                result['api_url'] = keys.get('api_url', '')
+                result['gpt_api_url'] = keys.get('gpt_api_url', '')
+                return result
+            except:
+                return {}
+        return {}
+    
+    # ========== 会话相关操作（支持用户隔离）==========
+    
+    @staticmethod
+    def get_chat_sessions_by_user(user_id, session_type='chat'):
+        """获取指定用户的会话列表"""
+        sql = "SELECT * FROM chat_sessions WHERE user_id = %s AND session_type = %s ORDER BY updated_at DESC"
+        return AppDatabaseService.execute_query(sql, (user_id, session_type))
+    
+    @staticmethod
+    def save_chat_session_with_user(session_id, user_id, session_type='chat', title='新对话', messages=None):
+        """保存或更新会话（带用户ID）"""
+        existing = AppDatabaseService.get_chat_session(session_id)
+        messages_json = json.dumps(messages or [], ensure_ascii=False)
+        
+        if existing:
+            sql = "UPDATE chat_sessions SET title = %s, messages = %s, updated_at = %s WHERE session_id = %s"
+            return AppDatabaseService.execute_update(sql, (title, messages_json, datetime.now(), session_id))
+        else:
+            sql = """INSERT INTO chat_sessions (session_id, user_id, session_type, title, messages, created_at, updated_at) 
+                     VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+            now = datetime.now()
+            return AppDatabaseService.execute_insert(sql, (session_id, user_id, session_type, title, messages_json, now, now))

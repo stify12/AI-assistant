@@ -44,7 +44,10 @@
         "new_page",
         "fill",
         "wait_for",
-        "list_console_messages"
+        "list_console_messages",
+        "list_network_requests",
+        "get_network_request",
+        "select_page"
       ]
     }
   }

@@ -8,6 +8,24 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- =====================================================
+-- 0. 用户表
+-- =====================================================
+DROP TABLE IF EXISTS `users`;
+CREATE TABLE `users` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `username` VARCHAR(50) NOT NULL COMMENT '用户名',
+  `password_hash` VARCHAR(255) NOT NULL COMMENT '密码哈希',
+  `api_keys` JSON COMMENT 'API密钥配置',
+  `remember_token` VARCHAR(64) DEFAULT NULL COMMENT '记住登录Token',
+  `token_expires_at` DATETIME DEFAULT NULL COMMENT 'Token过期时间',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_username` (`username`),
+  KEY `idx_remember_token` (`remember_token`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
+
+-- =====================================================
 -- 1. 系统配置表
 -- =====================================================
 DROP TABLE IF EXISTS `sys_config`;
@@ -36,6 +54,7 @@ INSERT INTO `sys_config` (`config_key`, `config_value`, `description`) VALUES
 DROP TABLE IF EXISTS `prompt_templates`;
 CREATE TABLE `prompt_templates` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` INT UNSIGNED DEFAULT NULL COMMENT '所属用户ID(NULL为系统模板)',
   `name` VARCHAR(100) NOT NULL COMMENT '提示词名称',
   `prompt_type` VARCHAR(50) NOT NULL DEFAULT 'general' COMMENT '类型: general/recognize/compare/evaluate',
   `content` TEXT NOT NULL COMMENT '提示词内容',
@@ -44,7 +63,8 @@ CREATE TABLE `prompt_templates` (
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
-  KEY `idx_prompt_type` (`prompt_type`)
+  KEY `idx_prompt_type` (`prompt_type`),
+  KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='提示词模板表';
 
 -- =====================================================
@@ -230,6 +250,7 @@ CREATE TABLE `analysis_files` (
 DROP TABLE IF EXISTS `chat_sessions`;
 CREATE TABLE `chat_sessions` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` INT UNSIGNED DEFAULT NULL COMMENT '所属用户ID',
   `session_id` VARCHAR(64) NOT NULL COMMENT '会话唯一标识',
   `session_type` VARCHAR(20) DEFAULT 'chat' COMMENT '会话类型: chat/analysis',
   `title` VARCHAR(200) DEFAULT '新对话' COMMENT '会话标题',
@@ -239,7 +260,8 @@ CREATE TABLE `chat_sessions` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_session_id` (`session_id`),
   KEY `idx_session_type` (`session_type`),
-  KEY `idx_updated_at` (`updated_at`)
+  KEY `idx_updated_at` (`updated_at`),
+  KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会话记录表';
 
 -- =====================================================
@@ -268,6 +290,7 @@ CREATE TABLE `knowledge_documents` (
 DROP TABLE IF EXISTS `knowledge_tasks`;
 CREATE TABLE `knowledge_tasks` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` INT UNSIGNED DEFAULT NULL COMMENT '所属用户ID',
   `task_id` VARCHAR(32) NOT NULL COMMENT '任务唯一标识',
   `query` TEXT NOT NULL COMMENT '用户查询',
   `doc_ids` JSON COMMENT '关联文档ID列表',
@@ -275,7 +298,8 @@ CREATE TABLE `knowledge_tasks` (
   `status` VARCHAR(20) DEFAULT 'pending' COMMENT '状态',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_task_id` (`task_id`)
+  UNIQUE KEY `uk_task_id` (`task_id`),
+  KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='知识库任务表';
 
 -- =====================================================
@@ -284,6 +308,7 @@ CREATE TABLE `knowledge_tasks` (
 DROP TABLE IF EXISTS `model_stats`;
 CREATE TABLE `model_stats` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` INT UNSIGNED DEFAULT NULL COMMENT '所属用户ID',
   `model_name` VARCHAR(100) NOT NULL COMMENT '模型名称',
   `call_date` DATE NOT NULL COMMENT '调用日期',
   `call_count` INT DEFAULT 0 COMMENT '调用次数',
@@ -294,8 +319,9 @@ CREATE TABLE `model_stats` (
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_model_date` (`model_name`, `call_date`),
-  KEY `idx_call_date` (`call_date`)
+  UNIQUE KEY `uk_user_model_date` (`user_id`, `model_name`, `call_date`),
+  KEY `idx_call_date` (`call_date`),
+  KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='模型调用统计表';
 
 -- =====================================================
@@ -348,7 +374,8 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- 完成提示
 -- =====================================================
 -- 数据库表创建完成！
--- 共创建 16 张表：
+-- 共创建 17 张表：
+-- 0. users - 用户表
 -- 1. sys_config - 系统配置
 -- 2. prompt_templates - 提示词模板
 -- 3. datasets - 数据集

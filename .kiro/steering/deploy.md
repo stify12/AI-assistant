@@ -9,29 +9,22 @@
 - **密钥文件**: C:\Users\Administrator\.ssh\id_ed25519_baota
 - **连接命令**: `ssh -i "$env:USERPROFILE\.ssh\id_ed25519_baota" root@47.82.64.147`
 
-## 部署方式
-
-### 一键部署
+## 一键部署
 ```powershell
-.\deploy.ps1
+.\deploy-quick.ps1
 ```
 
-### 手动部署步骤
-1. 本地修改代码
-2. 运行 `.\deploy.ps1` 同步代码到服务器
-3. 脚本自动重启 Docker 容器
-4. 刷新浏览器查看效果
+使用 tar 打包 + ssh 流式传输，比逐个 scp 快很多。
 
-## 部署脚本说明
-- `deploy.ps1`: PowerShell 部署脚本，使用 scp 上传文件
-- `deploy.bat`: Batch 部署脚本，使用 rsync 同步（需要 Git Bash）
+## 同步内容
+- 主文件: app.py, requirements.txt, Dockerfile, docker-compose.yml 等
+- 目录: routes, services, utils, templates, static, knowledge_agent, tests
 
 ## 排除文件
-部署时不会同步以下文件/目录：
 - `.git`, `__pycache__`, `*.pyc`
 - `sessions/`, `exports/`, `batch_tasks/`
 - `analysis_tasks/`, `knowledge_tasks/`, `prompt_tasks/`
-- `knowledge_uploads/`, `*.log`
+- `knowledge_uploads/`, `datasets/`, `chat_sessions/`
 - `config.json`, `.env` (服务器独立配置)
 
 ## 服务器操作
@@ -48,7 +41,7 @@ ssh -i "$env:USERPROFILE\.ssh\id_ed25519_baota" root@47.82.64.147 "docker logs a
 
 ### 重启容器
 ```bash
-ssh -i "$env:USERPROFILE\.ssh\id_ed25519_baota" root@47.82.64.147 "cd /www/wwwroot/ai-grading/Ai && docker-compose restart"
+ssh -i "$env:USERPROFILE\.ssh\id_ed25519_baota" root@47.82.64.147 "docker restart ai-grading-platform"
 ```
 
 ### 重新构建

@@ -13,6 +13,7 @@ from flask import Blueprint, request, jsonify, Response
 
 from services.config_service import ConfigService
 from services.session_service import SessionService
+from routes.auth import get_current_user_id
 
 chat_bp = Blueprint('chat', __name__)
 
@@ -148,9 +149,10 @@ def get_enabled_tools():
 @chat_bp.route('/api/chat-session', methods=['POST', 'DELETE'])
 def chat_session_api():
     """聊天会话管理API"""
+    user_id = get_current_user_id()
     if request.method == 'POST':
         session_id = str(uuid.uuid4())[:8]
-        SessionService.save_chat_session(session_id, {'messages': [], 'created_at': datetime.now().isoformat()})
+        SessionService.save_chat_session(session_id, {'messages': [], 'created_at': datetime.now().isoformat()}, user_id=user_id)
         return jsonify({'session_id': session_id})
     else:
         session_id = request.json.get('session_id')
@@ -168,10 +170,114 @@ def get_chat_session(session_id):
 
 # ========== 聊天 API ==========
 
+@chat_bp.route('/api/analyze', methods=['POST'])
+def analyze():
+    """分析API - 处理豆包视觉模型请求"""
+    start_time = time.time()
+    user_id = get_current_user_id()
+    
+    data = request.json
+    prompt = data.get('prompt', '')
+    image_data = data.get('image')
+    model = data.get('model', 'doubao-1-5-vision-pro-32k-250115')
+    stream = data.get('stream', True)
+    reasoning_effort = data.get('reasoning_effort', 'medium')
+    
+    if not prompt and not image_data:
+        return jsonify({'error': '请输入消息或上传图片'}), 400
+    
+    config = ConfigService.load_config(user_id=user_id)
+    api_url = config.get('api_url', 'https://ark.cn-beijing.volces.com/api/v3/chat/completions')
+    api_key = config.get('api_key', '')
+    
+    if not api_key:
+        return jsonify({'error': '请先配置豆包 API Key'}), 400
+    
+    # 构建消息
+    if image_data:
+        user_content = []
+        if prompt:
+            user_content.append({'type': 'text', 'text': prompt})
+        user_content.append({
+            'type': 'image_url',
+            'image_url': {'url': image_data}
+        })
+        messages = [{'role': 'user', 'content': user_content}]
+    else:
+        messages = [{'role': 'user', 'content': prompt}]
+    
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {api_key}'
+    }
+    
+    payload = {
+        'model': model,
+        'messages': messages,
+        'stream': stream
+    }
+    
+    # Seed 1.8 模型支持 reasoning_effort 参数
+    if 'seed-1-8' in model:
+        payload['reasoning_effort'] = reasoning_effort
+    
+    if stream:
+        def generate():
+            try:
+                response = requests.post(api_url, json=payload, headers=headers, timeout=180, stream=True)
+                
+                for line in response.iter_lines():
+                    if line:
+                        line_str = line.decode('utf-8')
+                        if line_str.startswith('data: '):
+                            data_str = line_str[6:]
+                            if data_str == '[DONE]':
+                                yield f"data: {json.dumps({'done': True})}\n\n"
+                                break
+                            try:
+                                chunk = json.loads(data_str)
+                                if 'choices' in chunk and len(chunk['choices']) > 0:
+                                    delta = chunk['choices'][0].get('delta', {})
+                                    content = delta.get('content', '')
+                                    if content:
+                                        yield f"data: {json.dumps({'content': content})}\n\n"
+                                    
+                                    # 检查是否结束
+                                    if chunk['choices'][0].get('finish_reason'):
+                                        usage = chunk.get('usage', {})
+                                        yield f"data: {json.dumps({'done': True, 'usage': usage})}\n\n"
+                            except json.JSONDecodeError:
+                                pass
+            except Exception as e:
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        
+        return Response(generate(), mimetype='text/event-stream')
+    else:
+        try:
+            response = requests.post(api_url, json=payload, headers=headers, timeout=180)
+            result = response.json()
+            
+            if 'error' in result:
+                return jsonify({'error': result['error'].get('message', '请求失败')}), 500
+            
+            if 'choices' in result:
+                content = result['choices'][0]['message'].get('content', '')
+                return jsonify({
+                    'content': content,
+                    'usage': result.get('usage', {}),
+                    'time': round(time.time() - start_time, 2)
+                })
+            
+            return jsonify({'error': '未获取到响应'}), 500
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+
 @chat_bp.route('/api/chat', methods=['POST'])
 def chat():
     """聊天API - 支持Function Calling和MCP工具"""
     start_time = time.time()
+    user_id = get_current_user_id()
     
     data = request.json
     prompt = data.get('prompt', '')
@@ -181,22 +287,29 @@ def chat():
     stream = data.get('stream', True)
     use_tools = data.get('use_tools', True)
     
+    print(f"[Chat] user_id={user_id}, model={model}, prompt={prompt[:50] if prompt else 'None'}")
+    
     if not prompt and not image_data:
         return jsonify({'error': '请输入消息'}), 400
     
-    config = ConfigService.load_config()
+    config = ConfigService.load_config(user_id=user_id)
     is_deepseek = 'deepseek' in model.lower()
     
     if is_deepseek:
         api_url = 'https://api.deepseek.com/chat/completions'
         api_key = config.get('deepseek_api_key', '')
+        print(f"[Chat] DeepSeek API Key: {'已配置' if api_key else '未配置'}")
         if not api_key:
             return jsonify({'error': '请先配置 DeepSeek API Key'}), 400
         if model == 'deepseek-v3.2':
             model = 'deepseek-chat'
     else:
-        api_url = 'https://api.gpt.ge/v1/chat/completions'
-        api_key = 'sk-7z5lwQIQaOV5pPZ4D1CdD96200314cB3Bf51C021065eE95b'
+        api_url = config.get('gpt_api_url', 'https://api.gpt.ge/v1/chat/completions')
+        api_key = config.get('gpt_api_key', '')
+        print(f"[Chat] GPT API URL: {api_url}")
+        print(f"[Chat] GPT API Key: {'已配置' if api_key else '未配置'}")
+        if not api_key:
+            return jsonify({'error': '请先配置 GPT API Key'}), 400
     
     # 构建消息列表
     messages = []

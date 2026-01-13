@@ -1,0 +1,300 @@
+{
+  "dataset_id": "09fcb84f",
+  "book_id": "1997866819839905794",
+  "pages": [
+    82
+  ],
+  "base_effects": {
+    "82": [
+      {
+        "answer": "A",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "9",
+        "questionType": "objective",
+        "tempIndex": 0,
+        "userAnswer": "C"
+      },
+      {
+        "answer": "B",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "10",
+        "questionType": "objective",
+        "tempIndex": 1,
+        "userAnswer": "C"
+      },
+      {
+        "answer": "B",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "11",
+        "questionType": "objective",
+        "tempIndex": 2,
+        "userAnswer": "A"
+      },
+      {
+        "answer": "A",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "12",
+        "questionType": "objective",
+        "tempIndex": 3,
+        "userAnswer": "D"
+      },
+      {
+        "answer": "D",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "13",
+        "questionType": "objective",
+        "tempIndex": 4,
+        "userAnswer": "C"
+      },
+      {
+        "answer": "D",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "14",
+        "questionType": "objective",
+        "tempIndex": 5,
+        "userAnswer": "A"
+      },
+      {
+        "answer": "D",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "15",
+        "questionType": "objective",
+        "tempIndex": 6,
+        "userAnswer": "A"
+      },
+      {
+        "answer": "B",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "(四).1",
+        "questionType": "objective",
+        "tempIndex": 7,
+        "userAnswer": "D"
+      },
+      {
+        "answer": "A",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "(四).2",
+        "questionType": "objective",
+        "tempIndex": 8,
+        "userAnswer": "C"
+      },
+      {
+        "answer": "D",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "(四).3",
+        "questionType": "objective",
+        "tempIndex": 9,
+        "userAnswer": "B"
+      },
+      {
+        "answer": "C",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "(四).4",
+        "questionType": "objective",
+        "tempIndex": 10,
+        "userAnswer": "B"
+      },
+      {
+        "answer": "B",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "(四).5",
+        "questionType": "objective",
+        "tempIndex": 11,
+        "userAnswer": "A"
+      },
+      {
+        "answer": "A",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "(四).6",
+        "questionType": "objective",
+        "tempIndex": 12,
+        "userAnswer": "B"
+      },
+      {
+        "answer": "D",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "(四).7",
+        "questionType": "objective",
+        "tempIndex": 13,
+        "userAnswer": "C"
+      },
+      {
+        "answer": "C",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "(四).8",
+        "questionType": "objective",
+        "tempIndex": 14,
+        "userAnswer": "B"
+      },
+      {
+        "answer": "B",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "(四).9",
+        "questionType": "objective",
+        "tempIndex": 15,
+        "userAnswer": "C"
+      },
+      {
+        "answer": "B",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "(四)10",
+        "questionType": "objective",
+        "tempIndex": 16,
+        "userAnswer": "A"
+      },
+      {
+        "answer": "square",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "(五).1",
+        "questionType": "objective",
+        "tempIndex": 17,
+        "userAnswer": "SBuare"
+      },
+      {
+        "answer": "arrival",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "(五).2",
+        "questionType": "objective",
+        "tempIndex": 18,
+        "userAnswer": "arrivaled"
+      },
+      {
+        "answer": "glue",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "(五).3",
+        "questionType": "objective",
+        "tempIndex": 19,
+        "userAnswer": "glued"
+      },
+      {
+        "answer": "prince",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "(五).4",
+        "questionType": "objective",
+        "tempIndex": 20,
+        "userAnswer": "prioce"
+      },
+      {
+        "answer": "spoon",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "(五).5",
+        "questionType": "objective",
+        "tempIndex": 21,
+        "userAnswer": "soopn"
+      },
+      {
+        "answer": "bored",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "(五).6",
+        "questionType": "objective",
+        "tempIndex": 22,
+        "userAnswer": "bore"
+      },
+      {
+        "answer": "personal",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "(五).7",
+        "questionType": "objective",
+        "tempIndex": 23,
+        "userAnswer": "person"
+      },
+      {
+        "answer": "simple",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "(五).8",
+        "questionType": "objective",
+        "tempIndex": 24,
+        "userAnswer": "smiple"
+      },
+      {
+        "answer": "actually",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "(五).9",
+        "questionType": "objective",
+        "tempIndex": 25,
+        "userAnswer": "actual"
+      },
+      {
+        "answer": "Wherever",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "(五)10",
+        "questionType": "objective",
+        "tempIndex": 26,
+        "userAnswer": "wherever"
+      },
+      {
+        "answer": "mess",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "(六).1",
+        "questionType": "objective",
+        "tempIndex": 27,
+        "userAnswer": "mass"
+      },
+      {
+        "answer": "clean",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "(六).2",
+        "questionType": "objective",
+        "tempIndex": 28,
+        "userAnswer": "deun"
+      },
+      {
+        "answer": "bedroom",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "(六).3",
+        "questionType": "objective",
+        "tempIndex": 29,
+        "userAnswer": "bedrom"
+      },
+      {
+        "answer": "rubbish",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "(六).4",
+        "questionType": "objective",
+        "tempIndex": 30,
+        "userAnswer": "rubbishs"
+      },
+      {
+        "answer": "outside",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "(六).5",
+        "questionType": "objective",
+        "tempIndex": 31,
+        "userAnswer": "otuside"
+      }
+    ]
+  },
+  "created_at": "2026-01-13T17:26:26.159987"
+}

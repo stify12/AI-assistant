@@ -24,12 +24,18 @@ def get_dataset_available_homework():
     """获取指定页码的可用作业图片列表"""
     book_id = request.args.get('book_id')
     page_num = request.args.get('page_num', type=int)
-    hours = request.args.get('hours', 24, type=int)
+    hours = request.args.get('hours', 12, type=int)  # 默认12小时，减少查询范围
     
     if not book_id or page_num is None:
         return jsonify({'success': False, 'error': '缺少必要参数'})
     
+    # 限制最大查询范围，避免查询过慢
+    if hours > 168:  # 最多7天
+        hours = 168
+    
     try:
+        print(f"[AvailableHomework] Querying book_id={book_id}, page_num={page_num}, hours={hours}")
+        
         sql = """
             SELECT h.id, h.student_id, h.pic_path, h.homework_result, h.create_time,
                    s.name AS student_name
@@ -47,6 +53,7 @@ def get_dataset_available_homework():
         """
         
         rows = DatabaseService.execute_query(sql, (book_id, page_num, hours))
+        print(f"[AvailableHomework] Found {len(rows)} records")
         
         config = ConfigService.load_config()
         pic_base_url = config.get('pic_base_url', '')
@@ -79,6 +86,7 @@ def get_dataset_available_homework():
         return jsonify({'success': True, 'data': homework_list})
     
     except Exception as e:
+        print(f"[AvailableHomework] Error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
 
@@ -174,15 +182,27 @@ def build_dynamic_prompt(data_value_items, subject_id=0):
 @dataset_manage_bp.route('/api/dataset/recognize', methods=['POST'])
 def dataset_recognize():
     """识别作业图片的基准效果 - 使用动态提示词"""
-    data = request.json
-    homework_id = data.get('homework_id')
-    pic_path = data.get('pic_path', '')
-    subject_id = data.get('subject_id', 0)
-    
-    if not homework_id and not pic_path:
-        return jsonify({'success': False, 'error': '缺少作业ID或图片路径'})
-    
-    config = ConfigService.load_config()
+    try:
+        from routes.auth import get_current_user_id
+        user_id = get_current_user_id()
+        
+        data = request.json
+        if not data:
+            return jsonify({'success': False, 'error': '请求数据为空'}), 400
+        
+        homework_id = data.get('homework_id')
+        pic_path = data.get('pic_path', '')
+        subject_id = data.get('subject_id', 0)
+        
+        if not homework_id and not pic_path:
+            return jsonify({'success': False, 'error': '缺少作业ID或图片路径'}), 400
+        
+        config = ConfigService.load_config(user_id=user_id)
+    except Exception as e:
+        print(f"[DatasetRecognize] Init error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': f'初始化失败: {str(e)}'}), 500
     
     try:
         # 从数据库获取作业信息，包括 data_value
@@ -233,15 +253,22 @@ def dataset_recognize():
             prompt_key = subject_prompt_map.get(subject_id, 'recognize')
             prompt = prompts_config.get(prompt_key, prompts_config.get('recognize', '请识别图片中作业的每道题答案。'))
         
-        # 调用视觉模型
-        result = LLMService.call_vision_model(pic_url, prompt, 'doubao-seed-1-8-251228')
+        # 调用视觉模型，设置较长的超时时间以支持多题目识别
+        result = LLMService.call_vision_model(pic_url, prompt, 'doubao-seed-1-8-251228', timeout=240, user_id=user_id)
         
         if result.get('error'):
             return jsonify({'success': False, 'error': result['error']})
         
         # 提取JSON数组
-        base_effect = LLMService.extract_json_array(result.get('content', ''))
-        if base_effect:
+        content = result.get('content', '')
+        print(f"[DatasetRecognize] AI Response length: {len(content)}")
+        print(f"[DatasetRecognize] AI Response preview: {content[:500]}")
+        
+        base_effect = LLMService.extract_json_array(content)
+        
+        if base_effect and isinstance(base_effect, list) and len(base_effect) > 0:
+            print(f"[DatasetRecognize] Extracted {len(base_effect)} items")
+            
             # 转换字段格式，保持与 homework_result 一致
             formatted_data = []
             for item in base_effect:
@@ -264,7 +291,15 @@ def dataset_recognize():
             
             return jsonify({'success': True, 'data': formatted_data})
         else:
-            return jsonify({'success': False, 'error': '无法解析识别结果', 'raw': result.get('content', '')})
+            print(f"[DatasetRecognize] Failed to extract JSON array")
+            return jsonify({
+                'success': False, 
+                'error': '无法解析识别结果，AI返回的内容格式不正确', 
+                'raw_preview': content[:1000] if content else ''
+            })
     
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+        print(f"[DatasetRecognize] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': f'识别失败: {str(e)}'}), 500

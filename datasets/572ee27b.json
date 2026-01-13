@@ -1,0 +1,960 @@
+{
+  "dataset_id": "572ee27b",
+  "book_id": "1997866819839905794",
+  "pages": [
+    80,
+    81,
+    84,
+    85,
+    86
+  ],
+  "base_effects": {
+    "80": [
+      {
+        "answer": "B",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "1",
+        "questionType": "objective",
+        "tempIndex": 0,
+        "userAnswer": "D"
+      },
+      {
+        "answer": "C",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "2",
+        "questionType": "objective",
+        "tempIndex": 1,
+        "userAnswer": "A"
+      },
+      {
+        "answer": "C",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "3",
+        "questionType": "objective",
+        "tempIndex": 2,
+        "userAnswer": "A"
+      },
+      {
+        "answer": "D",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "4",
+        "questionType": "objective",
+        "tempIndex": 3,
+        "userAnswer": "C"
+      },
+      {
+        "answer": "A",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "5",
+        "questionType": "objective",
+        "tempIndex": 4,
+        "userAnswer": "B"
+      },
+      {
+        "answer": "6. it\n7. tips\n8. when\n9. friendly\n10. a\n11. or\n12. interested\n13. listener\n14. show\n15. truth",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "二",
+        "questionType": "objective",
+        "tempIndex": 5,
+        "userAnswer": "6. friends\n7. interest\n8. or\n9. feel\n10. when\n11. find\n12. good\n13. Here\n14. prefer\n15. taking"
+      }
+    ],
+    "81": [
+      {
+        "answer": "/ɪ/",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "(一)1",
+        "questionType": "objective",
+        "tempIndex": 0,
+        "userAnswer": "/ɪ/"
+      },
+      {
+        "answer": "/e/",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "(一)2",
+        "questionType": "objective",
+        "tempIndex": 1,
+        "userAnswer": "/e/"
+      },
+      {
+        "answer": "/ɑː/",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "(一)3",
+        "questionType": "objective",
+        "tempIndex": 2,
+        "userAnswer": "/ɑː/"
+      },
+      {
+        "answer": "/uː/",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "(一).4",
+        "questionType": "objective",
+        "tempIndex": 3,
+        "userAnswer": "/uː/"
+      },
+      {
+        "answer": "/e/",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "(一).5",
+        "questionType": "objective",
+        "tempIndex": 4,
+        "userAnswer": "/ə/"
+      },
+      {
+        "answer": "/e/",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "(一).6",
+        "questionType": "objective",
+        "tempIndex": 5,
+        "userAnswer": "/əɪ/"
+      },
+      {
+        "answer": "/k/",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "(一).7",
+        "questionType": "objective",
+        "tempIndex": 6,
+        "userAnswer": "/kl/"
+      },
+      {
+        "answer": "/əʊ/",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "(一).8",
+        "questionType": "objective",
+        "tempIndex": 7,
+        "userAnswer": "/əʊ/"
+      },
+      {
+        "answer": "/sk/",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "(一).9",
+        "questionType": "objective",
+        "tempIndex": 8,
+        "userAnswer": "/sk/"
+      },
+      {
+        "answer": "/ʃ/",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "(一)10",
+        "questionType": "objective",
+        "tempIndex": 9,
+        "userAnswer": "/ʃ/"
+      },
+      {
+        "answer": "/θ/",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "(一)11",
+        "questionType": "objective",
+        "tempIndex": 10,
+        "userAnswer": "/θ/"
+      },
+      {
+        "answer": "/tʃ/",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "(一)12",
+        "questionType": "objective",
+        "tempIndex": 11,
+        "userAnswer": "/tʃ/"
+      },
+      {
+        "answer": "/n/",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "(一)13",
+        "questionType": "objective",
+        "tempIndex": 12,
+        "userAnswer": "/ŋ/"
+      },
+      {
+        "answer": "/bl/",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "(一)14",
+        "questionType": "objective",
+        "tempIndex": 13,
+        "userAnswer": "/bl/"
+      },
+      {
+        "answer": "/ɪə/",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "(一)15",
+        "questionType": "objective",
+        "tempIndex": 14,
+        "userAnswer": "/ɪə/"
+      },
+      {
+        "answer": "B",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(二).1",
+        "questionType": "objective",
+        "tempIndex": 15,
+        "userAnswer": "B"
+      },
+      {
+        "answer": "D",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(二).2",
+        "questionType": "objective",
+        "tempIndex": 16,
+        "userAnswer": "D"
+      },
+      {
+        "answer": "A",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(二).3",
+        "questionType": "objective",
+        "tempIndex": 17,
+        "userAnswer": "A"
+      },
+      {
+        "answer": "C",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(二).4",
+        "questionType": "objective",
+        "tempIndex": 18,
+        "userAnswer": "C"
+      },
+      {
+        "answer": "D",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(二).5",
+        "questionType": "objective",
+        "tempIndex": 19,
+        "userAnswer": "D"
+      },
+      {
+        "answer": "A",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(二).6",
+        "questionType": "objective",
+        "tempIndex": 20,
+        "userAnswer": "A"
+      },
+      {
+        "answer": "B",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(二).7",
+        "questionType": "objective",
+        "tempIndex": 21,
+        "userAnswer": "B"
+      },
+      {
+        "answer": "B",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(二).8",
+        "questionType": "objective",
+        "tempIndex": 22,
+        "userAnswer": "B"
+      },
+      {
+        "answer": "D",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(二).9",
+        "questionType": "objective",
+        "tempIndex": 23,
+        "userAnswer": "D"
+      },
+      {
+        "answer": "B",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(二)10",
+        "questionType": "objective",
+        "tempIndex": 24,
+        "userAnswer": "B"
+      },
+      {
+        "answer": "A",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(二)11",
+        "questionType": "objective",
+        "tempIndex": 25,
+        "userAnswer": "A"
+      },
+      {
+        "answer": "C",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(二)12",
+        "questionType": "objective",
+        "tempIndex": 26,
+        "userAnswer": "C"
+      },
+      {
+        "answer": "A",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(二)13",
+        "questionType": "objective",
+        "tempIndex": 27,
+        "userAnswer": "A"
+      },
+      {
+        "answer": "A/C/D",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(二)14",
+        "questionType": "objective",
+        "tempIndex": 28,
+        "userAnswer": "B"
+      },
+      {
+        "answer": "D",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(二)15",
+        "questionType": "objective",
+        "tempIndex": 29,
+        "userAnswer": "D"
+      },
+      {
+        "answer": "D",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(三).1",
+        "questionType": "objective",
+        "tempIndex": 30,
+        "userAnswer": "D"
+      },
+      {
+        "answer": "C",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(三).2",
+        "questionType": "objective",
+        "tempIndex": 31,
+        "userAnswer": "C"
+      },
+      {
+        "answer": "D",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(三).3",
+        "questionType": "objective",
+        "tempIndex": 32,
+        "userAnswer": "D"
+      },
+      {
+        "answer": "A",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(三).4",
+        "questionType": "objective",
+        "tempIndex": 33,
+        "userAnswer": "A"
+      },
+      {
+        "answer": "B",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(三).5",
+        "questionType": "objective",
+        "tempIndex": 34,
+        "userAnswer": "B"
+      },
+      {
+        "answer": "C",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(三).6",
+        "questionType": "objective",
+        "tempIndex": 35,
+        "userAnswer": "C"
+      },
+      {
+        "answer": "B",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(三).7",
+        "questionType": "objective",
+        "tempIndex": 36,
+        "userAnswer": "B"
+      },
+      {
+        "answer": "C",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "(三).8",
+        "questionType": "objective",
+        "tempIndex": 37,
+        "userAnswer": "C"
+      }
+    ],
+    "84": [
+      {
+        "answer": "probably",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "1",
+        "questionType": "objective",
+        "tempIndex": 0,
+        "userAnswer": "probaly"
+      },
+      {
+        "answer": "surprised",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "2",
+        "questionType": "objective",
+        "tempIndex": 1,
+        "userAnswer": "surpriesd"
+      },
+      {
+        "answer": "reminds",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "3",
+        "questionType": "objective",
+        "tempIndex": 2,
+        "userAnswer": "remind"
+      },
+      {
+        "answer": "Palace",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "4",
+        "questionType": "objective",
+        "tempIndex": 3,
+        "userAnswer": "palace"
+      },
+      {
+        "answer": "especially",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "5",
+        "questionType": "objective",
+        "tempIndex": 4,
+        "userAnswer": "eff"
+      },
+      {
+        "answer": "During",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "6",
+        "questionType": "objective",
+        "tempIndex": 5,
+        "userAnswer": "during"
+      },
+      {
+        "answer": "especially",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "7",
+        "questionType": "objective",
+        "tempIndex": 6,
+        "userAnswer": "espcially"
+      },
+      {
+        "answer": "forgot",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "8",
+        "questionType": "objective",
+        "tempIndex": 7,
+        "userAnswer": "forget"
+      },
+      {
+        "answer": "peace",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "9",
+        "questionType": "objective",
+        "tempIndex": 8,
+        "userAnswer": "pease"
+      },
+      {
+        "answer": "comfortable",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "10",
+        "questionType": "objective",
+        "tempIndex": 9,
+        "userAnswer": "comfortales"
+      },
+      {
+        "answer": "took my breath away",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "11",
+        "questionType": "objective",
+        "tempIndex": 10,
+        "userAnswer": "took me breath way"
+      },
+      {
+        "answer": "turned around",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "12",
+        "questionType": "objective",
+        "tempIndex": 11,
+        "userAnswer": "turned aorund"
+      },
+      {
+        "answer": "ready to attend",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "13",
+        "questionType": "objective",
+        "tempIndex": 12,
+        "userAnswer": "ready to attend"
+      },
+      {
+        "answer": "thousands of",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "14",
+        "questionType": "objective",
+        "tempIndex": 13,
+        "userAnswer": "thousands to"
+      },
+      {
+        "answer": "fight against",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "15",
+        "questionType": "objective",
+        "tempIndex": 14,
+        "userAnswer": "fighted gainst"
+      },
+      {
+        "answer": "B",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "16",
+        "questionType": "objective",
+        "tempIndex": 15,
+        "userAnswer": "A"
+      },
+      {
+        "answer": "C",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "17",
+        "questionType": "objective",
+        "tempIndex": 16,
+        "userAnswer": "B"
+      },
+      {
+        "answer": "A",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "18",
+        "questionType": "objective",
+        "tempIndex": 17,
+        "userAnswer": "D"
+      },
+      {
+        "answer": "B",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "19",
+        "questionType": "objective",
+        "tempIndex": 18,
+        "userAnswer": "C"
+      },
+      {
+        "answer": "B",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "20",
+        "questionType": "objective",
+        "tempIndex": 19,
+        "userAnswer": "F"
+      }
+    ],
+    "85": [
+      {
+        "answer": "invited",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "1",
+        "questionType": "objective",
+        "tempIndex": 0,
+        "userAnswer": "invited"
+      },
+      {
+        "answer": "several",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "2",
+        "questionType": "objective",
+        "tempIndex": 1,
+        "userAnswer": "several"
+      },
+      {
+        "answer": "yet",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "3",
+        "questionType": "objective",
+        "tempIndex": 2,
+        "userAnswer": "yet"
+      },
+      {
+        "answer": "Perhaps",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "4",
+        "questionType": "objective",
+        "tempIndex": 3,
+        "userAnswer": "perhaps"
+      },
+      {
+        "answer": "planned",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "5",
+        "questionType": "objective",
+        "tempIndex": 4,
+        "userAnswer": "planned"
+      },
+      {
+        "answer": "until",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "6",
+        "questionType": "objective",
+        "tempIndex": 5,
+        "userAnswer": "until"
+      },
+      {
+        "answer": "text(s)",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "7",
+        "questionType": "objective",
+        "tempIndex": 6,
+        "userAnswer": "text"
+      },
+      {
+        "answer": "covering",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "8",
+        "questionType": "objective",
+        "tempIndex": 7,
+        "userAnswer": "covering"
+      },
+      {
+        "answer": "joy",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "9",
+        "questionType": "objective",
+        "tempIndex": 8,
+        "userAnswer": "joy"
+      },
+      {
+        "answer": "apartment",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "10",
+        "questionType": "objective",
+        "tempIndex": 9,
+        "userAnswer": "apartment"
+      },
+      {
+        "answer": "pack up",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "11",
+        "questionType": "objective",
+        "tempIndex": 10,
+        "userAnswer": "pack up"
+      },
+      {
+        "answer": "gave her a lift",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "12",
+        "questionType": "objective",
+        "tempIndex": 11,
+        "userAnswer": "gave her a lift"
+      },
+      {
+        "answer": "clean up",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "13",
+        "questionType": "objective",
+        "tempIndex": 12,
+        "userAnswer": "clean up"
+      },
+      {
+        "answer": "share with",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "14",
+        "questionType": "objective",
+        "tempIndex": 13,
+        "userAnswer": "share with"
+      },
+      {
+        "answer": "Be careful with",
+        "bvalue": "4",
+        "correct": "yes",
+        "index": "15",
+        "questionType": "objective",
+        "tempIndex": 14,
+        "userAnswer": "Be careful with"
+      },
+      {
+        "answer": "C",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "16",
+        "questionType": "objective",
+        "tempIndex": 15,
+        "userAnswer": "C"
+      },
+      {
+        "answer": "A",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "17",
+        "questionType": "objective",
+        "tempIndex": 16,
+        "userAnswer": "A"
+      },
+      {
+        "answer": "C",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "18",
+        "questionType": "objective",
+        "tempIndex": 17,
+        "userAnswer": "C"
+      },
+      {
+        "answer": "A",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "19",
+        "questionType": "objective",
+        "tempIndex": 18,
+        "userAnswer": "A"
+      },
+      {
+        "answer": "A",
+        "bvalue": "1",
+        "correct": "yes",
+        "index": "20",
+        "questionType": "objective",
+        "tempIndex": 19,
+        "userAnswer": "A"
+      }
+    ],
+    "86": [
+      {
+        "answer": "serious",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "1",
+        "questionType": "objective",
+        "tempIndex": 0,
+        "userAnswer": "seriou"
+      },
+      {
+        "answer": "sense",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "2",
+        "questionType": "objective",
+        "tempIndex": 1,
+        "userAnswer": "sanse"
+      },
+      {
+        "answer": "expects",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "3",
+        "questionType": "objective",
+        "tempIndex": 2,
+        "userAnswer": "expect"
+      },
+      {
+        "answer": "shyer",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "4",
+        "questionType": "objective",
+        "tempIndex": 3,
+        "userAnswer": "shyers"
+      },
+      {
+        "answer": "facts",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "5",
+        "questionType": "objective",
+        "tempIndex": 4,
+        "userAnswer": "fact"
+      },
+      {
+        "answer": "situations",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "6",
+        "questionType": "objective",
+        "tempIndex": 5,
+        "userAnswer": "situation"
+      },
+      {
+        "answer": "performed",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "7",
+        "questionType": "objective",
+        "tempIndex": 6,
+        "userAnswer": "performed"
+      },
+      {
+        "answer": "interests",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "8",
+        "questionType": "objective",
+        "tempIndex": 7,
+        "userAnswer": "interests"
+      },
+      {
+        "answer": "pleasure",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "9",
+        "questionType": "objective",
+        "tempIndex": 8,
+        "userAnswer": "pleasure"
+      },
+      {
+        "answer": "opinions",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "10",
+        "questionType": "objective",
+        "tempIndex": 9,
+        "userAnswer": "opinions"
+      },
+      {
+        "answer": "compare     with / to",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "11",
+        "questionType": "objective",
+        "tempIndex": 10,
+        "userAnswer": "compare with"
+      },
+      {
+        "answer": "in   my  spare   time",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "12",
+        "questionType": "objective",
+        "tempIndex": 11,
+        "userAnswer": "in my spara times"
+      },
+      {
+        "answer": "Thanks  to",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "13",
+        "questionType": "objective",
+        "tempIndex": 12,
+        "userAnswer": "Thank to"
+      },
+      {
+        "answer": "makes   a   mistake",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "14",
+        "questionType": "objective",
+        "tempIndex": 13,
+        "userAnswer": "make a mistake"
+      },
+      {
+        "answer": "cares   about",
+        "bvalue": "4",
+        "correct": "no",
+        "index": "15",
+        "questionType": "objective",
+        "tempIndex": 14,
+        "userAnswer": "care about"
+      },
+      {
+        "answer": "C",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "16",
+        "questionType": "objective",
+        "tempIndex": 15,
+        "userAnswer": "O"
+      },
+      {
+        "answer": "C",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "17",
+        "questionType": "objective",
+        "tempIndex": 16,
+        "userAnswer": "D"
+      },
+      {
+        "answer": "C",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "18",
+        "questionType": "objective",
+        "tempIndex": 17,
+        "userAnswer": "A"
+      },
+      {
+        "answer": "A",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "19",
+        "questionType": "objective",
+        "tempIndex": 18,
+        "userAnswer": "B"
+      },
+      {
+        "answer": "A",
+        "bvalue": "1",
+        "correct": "no",
+        "index": "20",
+        "questionType": "objective",
+        "tempIndex": 19,
+        "userAnswer": "B"
+      }
+    ]
+  },
+  "created_at": "2026-01-13T17:36:42.482610"
+}

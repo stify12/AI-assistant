@@ -53,19 +53,34 @@
 .toast-info { border-left: 4px solid #3b82f6; }
 .toast-info .toast-icon { color: #3b82f6; }
 
+/* ========== 区块标题行布局 ========== */
+.section-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.section-header-row .section-title {
+    margin-bottom: 0;
+}
+
 /* ========== 批量评估模式 ========== */
 .batch-mode-btn {
-    padding: 8px 16px;
-    background: #f5f5f5;
+    padding: 6px 14px;
+    background: #fff;
     border: 1px solid #d2d2d7;
-    border-radius: 8px;
-    font-size: 13px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #1d1d1f;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
 }
 
 .batch-mode-btn:hover {
-    background: #e8e8e8;
+    background: #f5f5f5;
+    border-color: #1d1d1f;
 }
 
 .batch-mode-btn.active {
@@ -74,18 +89,52 @@
     border-color: #1d1d1f;
 }
 
+/* ========== 图标按钮 ========== */
+.btn-icon {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: #fff;
+    border: 1px solid #d2d2d7;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    transition: all 0.15s ease;
+}
+
+.btn-icon:hover {
+    background: #f5f5f5;
+    border-color: #1d1d1f;
+    color: #1d1d1f;
+}
+
 .batch-action-bar {
     display: none;
     align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
+    gap: 10px;
+    padding: 10px 12px;
     background: #f5f5f7;
-    border-radius: 8px;
-    margin-bottom: 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
 }
 
 .batch-action-bar.show {
     display: flex;
+}
+
+.batch-action-bar #batchSelectedCount {
+    font-size: 12px;
+    color: #666;
+    flex: 1;
+}
+
+.batch-action-bar #batchEvaluateBtn {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 6px;
 }
 
 .batch-checkbox {
@@ -229,6 +278,7 @@
     padding: 12px;
     text-align: left;
     border-bottom: 1px solid #f0f0f0;
+    color: #1d1d1f;
 }
 
 .batch-results-table th {
@@ -239,12 +289,20 @@
     text-transform: uppercase;
 }
 
+.batch-results-table td {
+    font-size: 13px;
+}
+
 .batch-results-table tr:hover {
     background: #fafafa;
 }
 
 .batch-results-table .row-error {
     background: #fef2f2;
+}
+
+.batch-results-table .row-error td {
+    color: #1d1d1f;
 }
 
 /* ========== 详细分析视图 ========== */

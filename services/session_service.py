@@ -56,16 +56,25 @@ class SessionService:
         return {'messages': [], 'created_at': datetime.now().isoformat()}
     
     @staticmethod
-    def save_session(session_id, session_data):
+    def save_session(session_id, session_data, user_id=None):
         """保存会话历史"""
         if USE_DB_STORAGE:
             from .database_service import AppDatabaseService
-            AppDatabaseService.save_chat_session(
-                session_id,
-                session_type='session',
-                title=session_data.get('title', '新对话'),
-                messages=session_data.get('messages', [])
-            )
+            if user_id:
+                AppDatabaseService.save_chat_session_with_user(
+                    session_id,
+                    user_id,
+                    session_type='session',
+                    title=session_data.get('title', '新对话'),
+                    messages=session_data.get('messages', [])
+                )
+            else:
+                AppDatabaseService.save_chat_session(
+                    session_id,
+                    session_type='session',
+                    title=session_data.get('title', '新对话'),
+                    messages=session_data.get('messages', [])
+                )
             return
         
         session_file = SessionService.get_session_file(session_id)
@@ -86,11 +95,14 @@ class SessionService:
             os.remove(session_file)
     
     @staticmethod
-    def get_all_sessions():
+    def get_all_sessions(user_id=None):
         """获取所有会话列表"""
         if USE_DB_STORAGE:
             from .database_service import AppDatabaseService
-            rows = AppDatabaseService.get_chat_sessions('session')
+            if user_id:
+                rows = AppDatabaseService.get_chat_sessions_by_user(user_id, 'session')
+            else:
+                rows = AppDatabaseService.get_chat_sessions('session')
             return [{
                 'id': row['session_id'],
                 'title': row['title'],
@@ -159,16 +171,25 @@ class SessionService:
         return {'messages': [], 'created_at': datetime.now().isoformat()}
     
     @staticmethod
-    def save_chat_session(session_id, session_data):
+    def save_chat_session(session_id, session_data, user_id=None):
         """保存聊天会话"""
         if USE_DB_STORAGE:
             from .database_service import AppDatabaseService
-            AppDatabaseService.save_chat_session(
-                session_id,
-                session_type='chat',
-                title=session_data.get('title', '新对话'),
-                messages=session_data.get('messages', [])
-            )
+            if user_id:
+                AppDatabaseService.save_chat_session_with_user(
+                    session_id,
+                    user_id,
+                    session_type='chat',
+                    title=session_data.get('title', '新对话'),
+                    messages=session_data.get('messages', [])
+                )
+            else:
+                AppDatabaseService.save_chat_session(
+                    session_id,
+                    session_type='chat',
+                    title=session_data.get('title', '新对话'),
+                    messages=session_data.get('messages', [])
+                )
             return
         
         session_file = SessionService.get_chat_session_file(session_id)

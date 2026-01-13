@@ -303,6 +303,12 @@ function removeInputImage() {
 }
 
 async function sendMessage() {
+    // 检查是否已登录
+    if (!currentUser) {
+        showLoginModal();
+        return;
+    }
+    
     const input = document.getElementById('promptInput');
     const prompt = input.value.trim();
     
@@ -749,6 +755,7 @@ async function loadConfig() {
         // 从localStorage加载API密钥
         const savedKeys = JSON.parse(localStorage.getItem('ai_api_keys') || '{}');
         document.getElementById('apiKey').value = savedKeys.doubao || '';
+        document.getElementById('gptApiKey').value = savedKeys.gpt || '';
         document.getElementById('deepseekApiKey').value = savedKeys.deepseek || '';
         document.getElementById('qwenApiKey').value = savedKeys.qwen || '';
         
@@ -756,6 +763,7 @@ async function loadConfig() {
         const res = await fetch('/api/config');
         const config = await res.json();
         document.getElementById('apiUrl').value = config.api_url || '';
+        document.getElementById('gptApiUrl').value = config.gpt_api_url || 'https://api.gpt.ge/v1/chat/completions';
         
         // 加载数据库配置
         if (config.mysql) {
@@ -894,14 +902,20 @@ async function saveSettings() {
     // 保存API密钥到localStorage
     const apiKeys = {
         doubao: document.getElementById('apiKey').value,
+        gpt: document.getElementById('gptApiKey').value,
         deepseek: document.getElementById('deepseekApiKey').value,
         qwen: document.getElementById('qwenApiKey').value
     };
     localStorage.setItem('ai_api_keys', JSON.stringify(apiKeys));
     
-    // 保存其他配置到服务器
+    // 保存配置到服务器（包含API密钥）
     const config = {
+        api_key: apiKeys.doubao,
+        gpt_api_key: apiKeys.gpt,
+        deepseek_api_key: apiKeys.deepseek,
+        qwen_api_key: apiKeys.qwen,
         api_url: document.getElementById('apiUrl').value,
+        gpt_api_url: document.getElementById('gptApiUrl').value,
         mysql: {
             host: document.getElementById('mysqlHost').value,
             port: parseInt(document.getElementById('mysqlPort').value) || 3306,
@@ -939,6 +953,7 @@ function getApiHeaders() {
     const savedKeys = JSON.parse(localStorage.getItem('ai_api_keys') || '{}');
     
     if (savedKeys.doubao) headers['X-Doubao-Api-Key'] = savedKeys.doubao;
+    if (savedKeys.gpt) headers['X-Gpt-Api-Key'] = savedKeys.gpt;
     if (savedKeys.deepseek) headers['X-Deepseek-Api-Key'] = savedKeys.deepseek;
     if (savedKeys.qwen) headers['X-Qwen-Api-Key'] = savedKeys.qwen;
     
@@ -1445,3 +1460,230 @@ async function saveMcpServer() {
         alert('请求失败: ' + e.message);
     }
 }
+
+// ========== 用户认证 ==========
+let currentUser = null;
+
+// 检查登录状态
+async function checkAuthStatus() {
+    try {
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
+        if (data.logged_in) {
+            currentUser = data.user;
+            updateUserUI(true);
+            // 加载用户的API密钥
+            loadUserApiKeys();
+        } else {
+            currentUser = null;
+            updateUserUI(false);
+        }
+    } catch (e) {
+        console.error('Check auth status error:', e);
+        currentUser = null;
+        updateUserUI(false);
+    }
+}
+
+// 更新用户界面
+function updateUserUI(loggedIn) {
+    const avatarBtn = document.getElementById('userAvatarBtn');
+    const avatarIcon = document.getElementById('avatarIcon');
+    const avatarLetter = document.getElementById('avatarLetter');
+    const dropdownHeader = document.getElementById('userDropdownHeader');
+    
+    if (loggedIn && currentUser) {
+        avatarBtn.classList.add('logged-in');
+        avatarIcon.style.display = 'none';
+        avatarLetter.style.display = '';
+        avatarLetter.textContent = currentUser.username.charAt(0).toUpperCase();
+        dropdownHeader.textContent = currentUser.username;
+    } else {
+        avatarBtn.classList.remove('logged-in');
+        avatarIcon.style.display = '';
+        avatarLetter.style.display = 'none';
+        dropdownHeader.textContent = '';
+    }
+}
+
+// 切换用户菜单
+function toggleUserMenu() {
+    if (!currentUser) {
+        showLoginModal();
+        return;
+    }
+    
+    const dropdown = document.getElementById('userDropdown');
+    dropdown.classList.toggle('show');
+    
+    // 点击外部关闭
+    if (dropdown.classList.contains('show')) {
+        setTimeout(() => {
+            document.addEventListener('click', closeUserMenuOnClickOutside);
+        }, 0);
+    }
+}
+
+function closeUserMenuOnClickOutside(e) {
+    const wrapper = document.getElementById('userAvatarWrapper');
+    if (!wrapper.contains(e.target)) {
+        document.getElementById('userDropdown').classList.remove('show');
+        document.removeEventListener('click', closeUserMenuOnClickOutside);
+    }
+}
+
+// 显示登录弹窗
+function showLoginModal() {
+    document.getElementById('loginUsername').value = '';
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('loginRemember').checked = true;
+    document.getElementById('loginError').style.display = 'none';
+    document.getElementById('loginModal').classList.add('show');
+    document.getElementById('loginUsername').focus();
+}
+
+// 隐藏登录弹窗
+function hideLoginModal() {
+    document.getElementById('loginModal').classList.remove('show');
+}
+
+// 处理登录
+async function handleLogin() {
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const remember = document.getElementById('loginRemember').checked;
+    const errorEl = document.getElementById('loginError');
+    const loginBtn = document.getElementById('loginBtn');
+    
+    if (!username) {
+        errorEl.textContent = '请输入用户名';
+        errorEl.style.display = '';
+        return;
+    }
+    if (!password) {
+        errorEl.textContent = '请输入密码';
+        errorEl.style.display = '';
+        return;
+    }
+    
+    loginBtn.disabled = true;
+    loginBtn.textContent = '登录中...';
+    errorEl.style.display = 'none';
+    
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, remember })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            currentUser = data.user;
+            updateUserUI(true);
+            hideLoginModal();
+            // 加载用户的API密钥
+            loadUserApiKeys();
+            // 刷新会话列表
+            loadAllSessions();
+        } else {
+            errorEl.textContent = data.error || '登录失败';
+            errorEl.style.display = '';
+        }
+    } catch (e) {
+        errorEl.textContent = '网络错误，请重试';
+        errorEl.style.display = '';
+    } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = '登录';
+    }
+}
+
+// 处理登出
+async function handleLogout() {
+    try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+        console.error('Logout error:', e);
+    }
+    
+    currentUser = null;
+    updateUserUI(false);
+    document.getElementById('userDropdown').classList.remove('show');
+}
+
+// 加载用户API密钥
+async function loadUserApiKeys() {
+    if (!currentUser) return;
+    
+    try {
+        const res = await fetch('/api/auth/api-keys');
+        const keys = await res.json();
+        
+        // 如果用户有保存的密钥，更新到localStorage并刷新输入框
+        if (keys.doubao_key || keys.deepseek_key || keys.qwen_key || keys.gpt_key) {
+            const apiKeys = {
+                doubao: keys.doubao_key || '',
+                gpt: keys.gpt_key || '',
+                deepseek: keys.deepseek_key || '',
+                qwen: keys.qwen_key || ''
+            };
+            localStorage.setItem('ai_api_keys', JSON.stringify(apiKeys));
+            
+            // 刷新输入框显示
+            document.getElementById('apiKey').value = apiKeys.doubao;
+            document.getElementById('gptApiKey').value = apiKeys.gpt;
+            document.getElementById('deepseekApiKey').value = apiKeys.deepseek;
+            document.getElementById('qwenApiKey').value = apiKeys.qwen;
+        }
+    } catch (e) {
+        console.error('Load user API keys error:', e);
+    }
+}
+
+// 保存用户API密钥
+async function saveUserApiKeys() {
+    if (!currentUser) return;
+    
+    const savedKeys = JSON.parse(localStorage.getItem('ai_api_keys') || '{}');
+    const keys = {
+        doubao_key: savedKeys.doubao || '',
+        gpt_key: savedKeys.gpt || '',
+        deepseek_key: savedKeys.deepseek || '',
+        qwen_key: savedKeys.qwen || ''
+    };
+    
+    try {
+        await fetch('/api/auth/api-keys', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(keys)
+        });
+    } catch (e) {
+        console.error('Save user API keys error:', e);
+    }
+}
+
+// 登录弹窗键盘事件
+document.addEventListener('keydown', (e) => {
+    const loginModal = document.getElementById('loginModal');
+    if (loginModal.classList.contains('show')) {
+        if (e.key === 'Escape') {
+            hideLoginModal();
+        } else if (e.key === 'Enter') {
+            handleLogin();
+        }
+    }
+});
+
+// 点击弹窗外部关闭
+document.getElementById('loginModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'loginModal') {
+        hideLoginModal();
+    }
+});
+
+// 页面加载时检查登录状态
+document.addEventListener('DOMContentLoaded', () => {
+    checkAuthStatus();
+});

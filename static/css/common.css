@@ -218,6 +218,39 @@ body {
     color: var(--text-muted);
 }
 
+/* ========== 设置区块样式 ========== */
+.settings-section {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settings-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.settings-section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+
+.api-link {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+.api-link:hover {
+    text-decoration: underline;
+}
+
 /* ========== 弹窗通用样式 ========== */
 .modal {
     display: none;
