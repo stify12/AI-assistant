@@ -156,6 +156,23 @@ body {
     transition: all 0.2s;
 }
 
+.task-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.task-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.task-re-eval-btn {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    font-size: 12px;
+}
+
 .task-item:hover, .book-item:hover, .dataset-item:hover, .homework-item:hover {
     border-color: #1d1d1f;
 }
@@ -1719,5 +1736,333 @@ body {
 @media (max-width: 768px) {
     .type-stats-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+
+/* ========== 可视化图表样式 ========== */
+.charts-container {
+    margin: 20px 0;
+}
+
+.chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.chart-box {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 16px;
+    min-height: 280px;
+}
+
+.chart-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.chart-box canvas {
+    max-height: 240px;
+}
+
+/* 响应式：小屏幕时垂直排列 */
+@media (max-width: 900px) {
+    .chart-grid {
+        grid-template-columns: 1fr;
+    }
+}
+/* ========== 编辑基准数据样式 ========== */
+.baseline-edit-info {
+    background: #f5f5f7;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.baseline-edit-info .info-row {
+    display: flex;
+    margin-bottom: 8px;
+}
+
+.baseline-edit-info .info-row:last-child {
+    margin-bottom: 0;
+}
+
+.baseline-edit-info .info-label {
+    font-weight: 500;
+    color: #1d1d1f;
+    width: 100px;
+    flex-shrink: 0;
+}
+
+.baseline-edit-info .info-value {
+    color: #86868b;
+}
+
+.baseline-edit-tabs {
+    margin-bottom: 20px;
+}
+
+.tab-buttons {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid #e5e5e5;
+    padding-bottom: 12px;
+}
+
+.tab-btn {
+    padding: 8px 16px;
+    border: 1px solid #d2d2d7;
+    border-radius: 6px;
+    background: #fff;
+    color: #1d1d1f;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.tab-btn:hover {
+    background: #f5f5f7;
+}
+
+.tab-btn.active {
+    background: #1d1d1f;
+    color: #fff;
+    border-color: #1d1d1f;
+}
+
+.baseline-tab-content {
+    min-height: 400px;
+}
+
+/* 表格编辑样式 */
+.baseline-table-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.baseline-table-container {
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.baseline-edit-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.baseline-edit-table th {
+    background: #f5f5f7;
+    padding: 12px;
+    text-align: left;
+    font-weight: 500;
+    color: #1d1d1f;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.baseline-edit-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+}
+
+.baseline-edit-table tr:last-child td {
+    border-bottom: none;
+}
+
+.baseline-edit-table tr:hover {
+    background: #fafafa;
+}
+
+.form-input-small {
+    width: 60px;
+    padding: 6px 8px;
+    border: 1px solid #d2d2d7;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #d2d2d7;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #d2d2d7;
+    border-radius: 4px;
+    font-size: 14px;
+    background: #fff;
+}
+
+/* JSON编辑样式 */
+.json-edit-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+#baselineJsonEditor {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d2d2d7;
+    border-radius: 8px;
+    font-family: 'Monaco', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    resize: vertical;
+    background: #fafafa;
+}
+
+.json-validation-result {
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* 对比视图样式 */
+.compare-view-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.compare-section {
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.compare-section-title {
+    background: #f5f5f7;
+    padding: 12px 16px;
+    font-weight: 500;
+    color: #1d1d1f;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.compare-data-table {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.compare-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.compare-table th {
+    background: #fafafa;
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 500;
+    color: #1d1d1f;
+    border-bottom: 1px solid #e5e5e5;
+    position: sticky;
+    top: 0;
+}
+
+.compare-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 13px;
+}
+
+.compare-table tr:hover {
+    background: #fafafa;
+}
+
+/* 作业项目操作按钮样式调整 */
+.homework-item-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.homework-item-actions .btn {
+    white-space: nowrap;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .compare-view-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .baseline-edit-table th,
+    .baseline-edit-table td {
+        padding: 6px 8px;
+        font-size: 13px;
+    }
+    
+    .form-input-small {
+        width: 50px;
+    }
+    
+    .homework-item-actions {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .homework-item-actions .btn {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+}
+/* 警告按钮样式 */
+.btn-warning {
+    background: #e65100;
+    color: #fff;
+    border: 1px solid #e65100;
+}
+
+.btn-warning:hover {
+    background: #d84315;
+    border-color: #d84315;
+}
+
+.btn-warning:disabled {
+    background: #ffcc80;
+    border-color: #ffcc80;
+    color: #fff;
+    opacity: 0.6;
+}
+
+/* 任务操作按钮间距调整 */
+.task-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.task-actions .btn {
+    white-space: nowrap;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .task-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .task-actions .btn {
+        margin-bottom: 4px;
     }
 }

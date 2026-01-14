@@ -625,3 +625,64 @@ def cleanup():
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
+
+
+def test_normalize_answer_punctuation():
+    """测试标点符号标准化"""
+    from utils.text_utils import normalize_answer
+    
+    # 测试句末标点符号
+    assert normalize_answer('答案。') == normalize_answer('答案')
+    assert normalize_answer('正确！') == normalize_answer('正确')
+    assert normalize_answer('是吗？') == normalize_answer('是吗')
+    
+    # 测试中英文标点混合
+    assert normalize_answer('A，B，C。') == normalize_answer('A B C')
+    assert normalize_answer('选项：A') == normalize_answer('选项 A')
+    
+    # 测试多个标点符号
+    assert normalize_answer('答案。。。') == normalize_answer('答案')
+    assert normalize_answer('正确！！！') == normalize_answer('正确')
+    
+    # 测试中间的标点符号
+    assert normalize_answer('A,B,C') == normalize_answer('A B C')
+    assert normalize_answer('选项：A；选项：B') == normalize_answer('选项 A 选项 B')
+    
+    # 测试保留数学符号
+    assert normalize_answer('x+y=10') == 'x+y=10'
+    assert normalize_answer('(a+b)*c') == '(a+b)*c'
+    
+    print("✓ 标点符号标准化测试通过")
+
+
+def test_normalize_answer_comparison():
+    """测试实际场景中的答案比较"""
+    from utils.text_utils import normalize_answer
+    
+    # 场景1：句末标点差异
+    base = "这是正确答案。"
+    ai = "这是正确答案"
+    assert normalize_answer(base) == normalize_answer(ai), "句末标点应该被忽略"
+    
+    # 场景2：中英文标点混合
+    base = "选项A、B、C"
+    ai = "选项A,B,C"
+    assert normalize_answer(base) == normalize_answer(ai), "中英文标点应该统一"
+    
+    # 场景3：多余空格和标点
+    base = "答案是：  A  。"
+    ai = "答案是:A"
+    assert normalize_answer(base) == normalize_answer(ai), "空格和标点应该被标准化"
+    
+    # 场景4：数学表达式
+    base = "x+y=10"
+    ai = "x + y = 10"
+    # 注意：这里空格会被保留，所以不相等是正常的
+    # 如果需要更宽松的比较，可以使用 normalize_answer_strict
+    
+    print("✓ 答案比较场景测试通过")
+
+
+if __name__ == '__main__':
+    test_normalize_answer_punctuation()
+    test_normalize_answer_comparison()

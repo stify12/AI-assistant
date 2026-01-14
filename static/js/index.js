@@ -908,6 +908,11 @@ async function saveSettings() {
     };
     localStorage.setItem('ai_api_keys', JSON.stringify(apiKeys));
     
+    // 如果已登录，保存API密钥到用户数据库
+    if (currentUser) {
+        await saveUserApiKeys();
+    }
+    
     // 保存配置到服务器（包含API密钥）
     const config = {
         api_key: apiKeys.doubao,

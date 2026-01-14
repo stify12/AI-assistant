@@ -14,6 +14,13 @@ let currentQuestionFilter = 'all'; // 当前题型筛选
 let currentTaskId = ''; // 当前选中的作业任务ID
 let taskList = []; // 作业任务列表
 
+// 数据缓存
+const dataCache = {
+    tasks: {},      // 按学科缓存任务列表 { subjectId: { data: [], timestamp: Date } }
+    homework: {},   // 按学科+任务+时间范围缓存作业数据
+    expireTime: 5 * 60 * 1000  // 缓存5分钟过期
+};
+
 // 学科配置
 const SUBJECTS = {
     0: { id: 0, name: '英语' },
@@ -103,10 +110,25 @@ function hideRightPanelSections() {
 }
 
 // ========== 加载批改数据 ==========
-async function loadHomeworkData() {
-    showLoading('正在加载批改数据...');
-    
+async function loadHomeworkData(forceRefresh = false) {
     const hours = document.getElementById('timeRangeFilter')?.value || 1;
+    const cacheKey = `${currentSubject}_${currentTaskId}_${hours}`;
+    
+    // 检查缓存
+    if (!forceRefresh && dataCache.homework[cacheKey]) {
+        const cached = dataCache.homework[cacheKey];
+        if (Date.now() - cached.timestamp < dataCache.expireTime) {
+            homeworkList = cached.data;
+            renderHomeworkList();
+            return;
+        }
+    }
+    
+    // 显示局部加载状态
+    const listContainer = document.getElementById('homeworkList');
+    if (listContainer) {
+        listContainer.innerHTML = '<div class="loading-inline">加载中...</div>';
+    }
     
     try {
         let url = `/api/grading/homework?subject_id=${currentSubject}&hours=${hours}`;
@@ -119,6 +141,11 @@ async function loadHomeworkData() {
         
         if (data.success) {
             homeworkList = data.data || [];
+            // 更新缓存
+            dataCache.homework[cacheKey] = {
+                data: homeworkList,
+                timestamp: Date.now()
+            };
             renderHomeworkList();
         } else {
             showError('加载失败: ' + (data.error || '未知错误'));
@@ -126,18 +153,31 @@ async function loadHomeworkData() {
     } catch (e) {
         showError('请求失败: ' + e.message);
     }
-    
-    hideLoading();
 }
 
 // ========== 加载作业任务列表 ==========
-async function loadHomeworkTasks() {
+async function loadHomeworkTasks(forceRefresh = false) {
+    // 检查缓存
+    if (!forceRefresh && dataCache.tasks[currentSubject]) {
+        const cached = dataCache.tasks[currentSubject];
+        if (Date.now() - cached.timestamp < dataCache.expireTime) {
+            taskList = cached.data;
+            renderTaskList();
+            return;
+        }
+    }
+    
     try {
         const res = await fetch(`/api/grading/homework-tasks?subject_id=${currentSubject}&hours=168`);
         const data = await res.json();
         
         if (data.success) {
             taskList = data.data || [];
+            // 更新缓存
+            dataCache.tasks[currentSubject] = {
+                data: taskList,
+                timestamp: Date.now()
+            };
             renderTaskList();
         }
     } catch (e) {
@@ -266,6 +306,14 @@ function renderSelectedData() {
         </div>
     ` : '';
     
+    // 解析AI批改结果
+    let resultData = [];
+    try {
+        resultData = JSON.parse(selectedHomework.homework_result || '[]');
+    } catch (e) {
+        resultData = [];
+    }
+    
     const infoHtml = `
         ${thumbnailHtml}
         <div class="info-item">
@@ -291,16 +339,11 @@ function renderSelectedData() {
     `;
     document.getElementById('selectedDataInfo').innerHTML = infoHtml;
     
+    // 渲染原始批改结果JSON
+    document.getElementById('rawResultJson').textContent = JSON.stringify(resultData, null, 2);
+    
     // 隐藏大图预览
     document.getElementById('largeImagePreview').style.display = 'none';
-    
-    // 在右侧渲染AI批改结果表格
-    let resultData = [];
-    try {
-        resultData = JSON.parse(selectedHomework.homework_result || '[]');
-    } catch (e) {
-        resultData = [];
-    }
     
     currentResultData = resultData; // 保存原始数据
     currentQuestionFilter = 'all'; // 重置筛选
@@ -1267,7 +1310,7 @@ function getErrorTypeClass(errorType) {
         '识别正确-判断错误': 'warning',
         '格式差异': 'success',
         '缺失题目': 'default',
-        'AI幻觉': 'purple',
+        'AI识别幻觉': 'purple',
         '标准答案不一致': 'orange'
     };
     return typeMap[errorType] || 'default';
@@ -1432,7 +1475,7 @@ function renderCharts() {
                 '识别正确-判断错误': '#f59e0b',    // 橙色
                 '格式差异': '#10b981',             // 绿色
                 '缺失题目': '#6b7280',             // 灰色
-                'AI幻觉': '#8b5cf6'                // 紫色
+                'AI识别幻觉': '#8b5cf6'            // 紫色
             };
             
             const colors = labels.map(label => colorMap[label] || '#6b7280');
@@ -2078,7 +2121,8 @@ function clearHistory() {
 
 // ========== 刷新数据 ==========
 function refreshData() {
-    loadHomeworkData();
+    loadHomeworkTasks(true);
+    loadHomeworkData(true);
 }
 
 // ========== 工具函数 ==========
@@ -2923,7 +2967,7 @@ function getDefaultPrompt(key) {
 - recognition_correct_judgment_error: 识别正确但判断错误
 - format_diff: 格式差异，内容本质相同但格式不同
 - missing: AI结果中缺少该题
-- hallucination: AI幻觉，学生答错但AI识别成了正确答案
+- hallucination: AI识别幻觉，AI将学生的错误答案识别成了标准答案
 
 【输出格式】
 输出JSON数组，每个元素包含：
@@ -2955,7 +2999,7 @@ function getDefaultPrompt(key) {
    - 识别正确-判断错误：识别对了但判断错了
    - 格式差异：内容正确但格式不同
    - 缺失题目：AI结果中缺少该题
-   - AI幻觉：学生答错但AI识别成了正确答案
+   - AI识别幻觉：AI将学生的错误答案识别成了标准答案
 
 输出格式JSON对象，包含评估结果。`
     };

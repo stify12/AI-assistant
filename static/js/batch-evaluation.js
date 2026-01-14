@@ -102,17 +102,25 @@ function renderTaskList() {
     }
     
     container.innerHTML = taskList.map(task => `
-        <div class="task-item ${selectedTask?.task_id === task.task_id ? 'selected' : ''}" 
-             onclick="selectTask('${task.task_id}')">
-            <div class="task-item-title">
-                ${escapeHtml(task.name)}
-                <span class="task-item-status status-${task.status}">${getStatusText(task.status)}</span>
+        <div class="task-item ${selectedTask?.task_id === task.task_id ? 'selected' : ''}">
+            <div class="task-item-content" onclick="selectTask('${task.task_id}')">
+                <div class="task-item-title">
+                    ${escapeHtml(task.name)}
+                    <span class="task-item-status status-${task.status}">${getStatusText(task.status)}</span>
+                </div>
+                <div class="task-item-meta">
+                    ${task.homework_count || 0} 个作业 | 
+                    ${task.status === 'completed' ? `准确率: ${(task.overall_accuracy * 100).toFixed(1)}% | ` : ''}
+                    ${formatTime(task.created_at)}
+                </div>
             </div>
-            <div class="task-item-meta">
-                ${task.homework_count || 0} 个作业 | 
-                ${task.status === 'completed' ? `准确率: ${(task.overall_accuracy * 100).toFixed(1)}% | ` : ''}
-                ${formatTime(task.created_at)}
-            </div>
+            ${task.status === 'completed' ? `
+                <button class="btn btn-small btn-secondary task-re-eval-btn" 
+                        onclick="event.stopPropagation(); reEvaluateTask('${task.task_id}')" 
+                        title="重新评估">
+                    重新评估
+                </button>
+            ` : ''}
         </div>
     `).join('');
 }
@@ -159,10 +167,36 @@ function renderTaskDetail() {
     // 按钮状态
     const isCompleted = selectedTask.status === 'completed';
     const isPending = selectedTask.status === 'pending';
-    document.getElementById('startEvalBtn').disabled = !isPending;
-    document.getElementById('startEvalBtn').textContent = isPending ? '开始评估' : (isCompleted ? '已完成' : '评估中...');
+    const needsReset = checkTaskNeedsReset();
+    
+    document.getElementById('startEvalBtn').disabled = !isPending && !needsReset;
+    
+    if (needsReset) {
+        document.getElementById('startEvalBtn').textContent = '重新评估';
+        document.getElementById('startEvalBtn').className = 'btn btn-warning';
+    } else if (isPending) {
+        document.getElementById('startEvalBtn').textContent = '开始评估';
+        document.getElementById('startEvalBtn').className = 'btn btn-secondary';
+    } else if (isCompleted) {
+        document.getElementById('startEvalBtn').textContent = '已完成';
+        document.getElementById('startEvalBtn').className = 'btn btn-secondary';
+    } else {
+        document.getElementById('startEvalBtn').textContent = '评估中...';
+        document.getElementById('startEvalBtn').className = 'btn btn-secondary';
+    }
+    
     document.getElementById('exportBtn').disabled = !isCompleted;
     document.getElementById('aiReportBtn').disabled = !isCompleted;
+    
+    // 显示/隐藏重置按钮
+    const resetBtn = document.getElementById('resetTaskBtn');
+    if (resetBtn) {
+        if (isCompleted && needsReset) {
+            resetBtn.style.display = 'inline-block';
+        } else {
+            resetBtn.style.display = 'none';
+        }
+    }
     
     // 进度条
     if (selectedTask.status === 'running') {
@@ -219,6 +253,9 @@ function renderOverallReport(report) {
         </div>
     `;
     document.getElementById('overallStats').innerHTML = statsHtml;
+    
+    // 渲染可视化图表
+    renderOverallCharts(report);
     
     // 题目类型分类统计
     let detailHtml = '';
@@ -297,6 +334,350 @@ function renderOverallReport(report) {
     document.getElementById('statsDetail').innerHTML = detailHtml;
 }
 
+// ========== 图表实例 ==========
+let batchChartInstances = {
+    errorTypePie: null,
+    typeBar: null,
+    errorTrend: null,
+    metricsRadar: null
+};
+
+// ========== 销毁图表 ==========
+function destroyBatchCharts() {
+    Object.values(batchChartInstances).forEach(chart => {
+        if (chart) chart.destroy();
+    });
+    batchChartInstances = { errorTypePie: null, typeBar: null, errorTrend: null, metricsRadar: null };
+}
+
+// ========== 渲染总体报告图表 ==========
+function renderOverallCharts(report) {
+    destroyBatchCharts();
+    
+    // 1. 错误类型分布饼图
+    const errorDist = aggregateErrorDistribution();
+    const errorLabels = Object.keys(errorDist).filter(k => errorDist[k] > 0);
+    const errorData = errorLabels.map(k => errorDist[k]);
+    
+    if (errorLabels.length > 0) {
+        const colorMap = {
+            '识别错误-判断正确': '#3b82f6',
+            '识别错误-判断错误': '#ef4444',
+            '识别正确-判断错误': '#f59e0b',
+            '格式差异': '#10b981',
+            '缺失题目': '#6b7280',
+            'AI识别幻觉': '#8b5cf6'
+        };
+        const colors = errorLabels.map(label => colorMap[label] || '#6b7280');
+        
+        batchChartInstances.errorTypePie = new Chart(document.getElementById('errorTypePieChart'), {
+            type: 'doughnut',
+            data: {
+                labels: errorLabels,
+                datasets: [{
+                    data: errorData,
+                    backgroundColor: colors,
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { 
+                        position: 'bottom',
+                        labels: { padding: 8, font: { size: 11 }, color: '#1d1d1f', boxWidth: 12 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${context.label}: ${value}题 (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        // 没有错误时显示提示
+        const canvas = document.getElementById('errorTypePieChart');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.font = '14px sans-serif';
+            ctx.fillStyle = '#86868b';
+            ctx.textAlign = 'center';
+            ctx.fillText('暂无错误数据', canvas.width / 2, canvas.height / 2);
+        }
+    }
+    
+    // 2. 题型准确率对比柱状图
+    const byType = report.by_question_type || {};
+    const objective = byType.objective || {};
+    const subjective = byType.subjective || {};
+    const choice = byType.choice || {};
+    const nonChoice = byType.non_choice || {};
+    
+    const typeLabels = [];
+    const typeData = [];
+    const typeColors = [];
+    
+    if (objective.total > 0) {
+        typeLabels.push('客观题');
+        typeData.push((objective.accuracy || 0) * 100);
+        typeColors.push('#3b82f6');
+    }
+    if (subjective.total > 0) {
+        typeLabels.push('主观题');
+        typeData.push((subjective.accuracy || 0) * 100);
+        typeColors.push('#8b5cf6');
+    }
+    if (choice.total > 0) {
+        typeLabels.push('选择题');
+        typeData.push((choice.accuracy || 0) * 100);
+        typeColors.push('#10b981');
+    }
+    if (nonChoice.total > 0) {
+        typeLabels.push('非选择题');
+        typeData.push((nonChoice.accuracy || 0) * 100);
+        typeColors.push('#f59e0b');
+    }
+    
+    if (typeLabels.length > 0) {
+        batchChartInstances.typeBar = new Chart(document.getElementById('typeBarChart'), {
+            type: 'bar',
+            data: {
+                labels: typeLabels,
+                datasets: [{
+                    label: '准确率',
+                    data: typeData,
+                    backgroundColor: typeColors,
+                    borderRadius: 6,
+                    barThickness: 40
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 100,
+                        ticks: { 
+                            font: { size: 11 }, 
+                            color: '#666',
+                            callback: v => v + '%'
+                        },
+                        grid: { color: '#f0f0f0' }
+                    },
+                    x: {
+                        ticks: { font: { size: 12 }, color: '#1d1d1f' },
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `准确率: ${ctx.parsed.y.toFixed(1)}%`
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // 3. 高频错误题目 TOP5 柱状图
+    const homeworkItems = selectedTask?.homework_items || [];
+    const completedItems = homeworkItems.filter(h => h.status === 'completed' && h.evaluation);
+    
+    if (completedItems.length > 0) {
+        // 统计每道题的错误次数和错误类型（按页码+题号组合）
+        const questionErrors = {}; // { 'P2-第5题': { total: 3, types: {...}, page: 2, index: '5' } }
+        
+        completedItems.forEach(item => {
+            const pageNum = item.page_num || '?';
+            // 错误数据在 evaluation.errors 数组中
+            const errors = item.evaluation?.errors || [];
+            errors.forEach(err => {
+                const qIndex = err.index || '未知';
+                const qKey = `P${pageNum}-${qIndex}`;
+                const errorType = err.error_type || '未分类';
+                
+                if (!questionErrors[qKey]) {
+                    questionErrors[qKey] = { total: 0, types: {}, page: pageNum, index: qIndex };
+                }
+                questionErrors[qKey].total++;
+                questionErrors[qKey].types[errorType] = (questionErrors[qKey].types[errorType] || 0) + 1;
+            });
+        });
+        
+        // 按错误次数排序，取前5
+        const sortedQuestions = Object.entries(questionErrors)
+            .sort((a, b) => b[1].total - a[1].total)
+            .slice(0, 5);
+        
+        if (sortedQuestions.length > 0) {
+            // 生成标签：第X题(PY)
+            const labels = sortedQuestions.map(([, info]) => `第${info.index}题(P${info.page})`);
+            
+            // 错误类型配置
+            const errorTypeConfig = [
+                { key: '识别错误-判断正确', color: '#3b82f6' },
+                { key: '识别错误-判断错误', color: '#ef4444' },
+                { key: '识别正确-判断错误', color: '#f59e0b' },
+                { key: '格式差异', color: '#10b981' },
+                { key: '缺失题目', color: '#6b7280' },
+                { key: 'AI识别幻觉', color: '#8b5cf6' }
+            ];
+            
+            // 生成堆叠柱状图数据集
+            const datasets = errorTypeConfig.map(type => {
+                const data = sortedQuestions.map(([, info]) => info.types[type.key] || 0);
+                const hasData = data.some(v => v > 0);
+                return {
+                    label: type.key,
+                    data: data,
+                    backgroundColor: type.color,
+                    borderRadius: 4,
+                    hidden: !hasData
+                };
+            });
+            
+            batchChartInstances.errorTrend = new Chart(document.getElementById('errorTrendChart'), {
+                type: 'bar',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            stacked: true,
+                            ticks: { font: { size: 11 }, color: '#666', stepSize: 1 },
+                            grid: { color: '#f0f0f0' },
+                            title: { display: true, text: '错误次数', font: { size: 11 }, color: '#666' }
+                        },
+                        x: {
+                            stacked: true,
+                            ticks: { font: { size: 11 }, color: '#1d1d1f' },
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: { padding: 6, font: { size: 9 }, color: '#1d1d1f', boxWidth: 10 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                afterTitle: (items) => {
+                                    const idx = items[0].dataIndex;
+                                    const total = sortedQuestions[idx][1].total;
+                                    return `总错误: ${total}次`;
+                                },
+                                label: ctx => ctx.parsed.y > 0 ? `${ctx.dataset.label}: ${ctx.parsed.y}次` : null
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            // 没有错误数据
+            const canvas = document.getElementById('errorTrendChart');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.font = '14px sans-serif';
+                ctx.fillStyle = '#86868b';
+                ctx.textAlign = 'center';
+                ctx.fillText('暂无错误数据', canvas.width / 2, canvas.height / 2);
+            }
+        }
+    } else {
+        // 没有数据时显示提示
+        const canvas = document.getElementById('errorTrendChart');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.font = '14px sans-serif';
+            ctx.fillStyle = '#86868b';
+            ctx.textAlign = 'center';
+            ctx.fillText('暂无趋势数据', canvas.width / 2, canvas.height / 2);
+        }
+    }
+    
+    // 4. 评估指标雷达图
+    const accuracy = (report.overall_accuracy || 0) * 100;
+    const completeness = report.total_questions > 0 ? 100 : 0;
+    const objectiveAcc = objective.total > 0 ? (objective.accuracy || 0) * 100 : accuracy;
+    const choiceAcc = choice.total > 0 ? (choice.accuracy || 0) * 100 : accuracy;
+    const consistency = completedItems.length > 1 ? calculateConsistency(completedItems) : accuracy;
+    
+    batchChartInstances.metricsRadar = new Chart(document.getElementById('metricsRadarChart'), {
+        type: 'radar',
+        data: {
+            labels: ['总体准确率', '客观题准确率', '选择题准确率', '一致性', '完整性'],
+            datasets: [{
+                label: '评估指标',
+                data: [accuracy, objectiveAcc, choiceAcc, consistency, completeness],
+                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                borderColor: '#3b82f6',
+                pointBackgroundColor: '#3b82f6',
+                pointBorderColor: '#fff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { stepSize: 20, font: { size: 10 }, color: '#666' },
+                    pointLabels: { font: { size: 11 }, color: '#1d1d1f' },
+                    grid: { color: '#e5e5e5' },
+                    angleLines: { color: '#e5e5e5' }
+                }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+// ========== 计算一致性（准确率标准差的反向指标） ==========
+function calculateConsistency(items) {
+    if (items.length < 2) return 100;
+    const accuracies = items.map(h => (h.accuracy || 0) * 100);
+    const mean = accuracies.reduce((a, b) => a + b, 0) / accuracies.length;
+    const variance = accuracies.reduce((sum, acc) => sum + Math.pow(acc - mean, 2), 0) / accuracies.length;
+    const stdDev = Math.sqrt(variance);
+    return Math.max(0, 100 - stdDev * 2);
+}
+
+// ========== 聚合所有作业的错误类型分布 ==========
+function aggregateErrorDistribution() {
+    const dist = {
+        '识别错误-判断正确': 0,
+        '识别错误-判断错误': 0,
+        '识别正确-判断错误': 0,
+        '格式差异': 0,
+        '缺失题目': 0,
+        'AI识别幻觉': 0
+    };
+    
+    if (!selectedTask || !selectedTask.homework_items) return dist;
+    
+    selectedTask.homework_items.forEach(item => {
+        const evaluation = item.evaluation || {};
+        const errorDist = evaluation.error_distribution || {};
+        
+        Object.keys(dist).forEach(key => {
+            dist[key] += errorDist[key] || 0;
+        });
+    });
+    
+    return dist;
+}
+
 function renderHomeworkList(items) {
     const container = document.getElementById('homeworkList');
     if (!items || items.length === 0) {
@@ -324,6 +705,9 @@ function renderHomeworkList(items) {
                     </div>
                 </div>
                 <div class="homework-item-actions">
+                    <button class="btn btn-small btn-secondary" onclick="event.stopPropagation(); editBaselineData('${item.homework_id}')" title="编辑基准数据">
+                        编辑
+                    </button>
                     <button class="btn btn-small btn-ai" onclick="event.stopPropagation(); openAiEvaluation('${item.homework_id}')" title="AI评估">
                         AI评估
                     </button>
@@ -464,13 +848,81 @@ async function createTask() {
 }
 
 
+// ========== 重新评估任务（从任务列表触发） ==========
+async function reEvaluateTask(taskId) {
+    if (!confirm('确定要重新评估此任务吗？将使用本地评估重新计算所有作业的评估结果。')) {
+        return;
+    }
+    
+    showLoading('正在重置任务...');
+    
+    try {
+        // 1. 先重置任务状态
+        const resetRes = await fetch(`/api/batch/tasks/${taskId}/reset`, {
+            method: 'POST'
+        });
+        const resetData = await resetRes.json();
+        
+        if (!resetData.success) {
+            hideLoading();
+            alert('重置任务失败: ' + (resetData.error || '未知错误'));
+            return;
+        }
+        
+        // 2. 选中该任务
+        selectedTask = resetData.data;
+        renderTaskList();
+        renderTaskDetail();
+        
+        hideLoading();
+        
+        // 3. 自动开始评估
+        await startBatchEvaluation();
+        
+        // 4. 刷新任务列表
+        await loadTaskList();
+        
+    } catch (e) {
+        hideLoading();
+        alert('重新评估失败: ' + e.message);
+    }
+}
+
+
 // ========== 批量评估执行 ==========
 async function startBatchEvaluation() {
     if (!selectedTask) return;
     
+    const needsReset = checkTaskNeedsReset();
+    
+    // 如果需要重置，先重置任务状态
+    if (needsReset) {
+        showLoading('准备重新评估...');
+        try {
+            const resetRes = await fetch(`/api/batch/tasks/${selectedTask.task_id}/reset`, {
+                method: 'POST'
+            });
+            const resetData = await resetRes.json();
+            
+            if (!resetData.success) {
+                hideLoading();
+                alert('重置任务失败: ' + (resetData.error || '未知错误'));
+                return;
+            }
+            
+            selectedTask = resetData.data;
+            renderTaskDetail();
+        } catch (e) {
+            hideLoading();
+            alert('重置任务失败: ' + e.message);
+            return;
+        }
+    }
+    
     const btn = document.getElementById('startEvalBtn');
     btn.disabled = true;
     btn.textContent = '评估中...';
+    btn.className = 'btn btn-secondary';
     
     document.getElementById('progressContainer').style.display = 'block';
     document.getElementById('progressFill').style.width = '0%';
@@ -509,7 +961,8 @@ async function startBatchEvaluation() {
     } catch (e) {
         alert('评估失败: ' + e.message);
         btn.disabled = false;
-        btn.textContent = '开始评估';
+        btn.textContent = needsReset ? '重新评估' : '开始评估';
+        btn.className = needsReset ? 'btn btn-warning' : 'btn btn-secondary';
     }
 }
 
@@ -1028,7 +1481,7 @@ function renderEvalDetail(detail) {
                             '识别正确-判断错误': '#f59e0b',
                             '格式差异': '#10b981',
                             '缺失题目': '#6b7280',
-                            'AI幻觉': '#8b5cf6'
+                            'AI识别幻觉': '#8b5cf6'
                         };
                         const color = colorMap[type] || '#6b7280';
                         return `
@@ -1201,7 +1654,7 @@ function getErrorTypeClass(errorType) {
         '识别正确-判断错误': 'tag-warning',
         '格式差异': 'tag-success',
         '缺失题目': 'tag-default',
-        'AI幻觉': 'tag-purple',
+        'AI识别幻觉': 'tag-purple',
         '标准答案不一致': 'tag-orange'
     };
     return classMap[errorType] || 'tag-default';
@@ -1705,4 +2158,594 @@ function formatTime(timeStr) {
         hour: '2-digit',
         minute: '2-digit'
     });
+}
+
+// ========== 编辑基准数据功能 ==========
+async function editBaselineData(homeworkId) {
+    if (!selectedTask) return;
+    
+    showLoading('加载基准数据...');
+    try {
+        // 获取作业详情
+        const res = await fetch(`/api/batch/tasks/${selectedTask.task_id}/homework/${homeworkId}`);
+        const data = await res.json();
+        
+        if (!data.success) {
+            hideLoading();
+            alert('加载失败: ' + (data.error || '未知错误'));
+            return;
+        }
+        
+        const detail = data.data;
+        hideLoading();
+        
+        // 打开编辑基准数据弹窗
+        showEditBaselineModal(detail);
+        
+    } catch (e) {
+        hideLoading();
+        alert('加载失败: ' + e.message);
+    }
+}
+
+function showEditBaselineModal(homeworkDetail) {
+    // 创建或获取弹窗
+    let modal = document.getElementById('editBaselineModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'editBaselineModal';
+        modal.className = 'modal';
+        modal.onclick = (e) => { if (e.target === modal) hideModal('editBaselineModal'); };
+        document.body.appendChild(modal);
+    }
+    
+    const baseEffect = homeworkDetail.base_effect || [];
+    const aiResult = homeworkDetail.ai_result || [];
+    
+    modal.innerHTML = `
+        <div class="modal-content modal-large" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>编辑基准数据 - ${escapeHtml(homeworkDetail.book_name || '未知书本')} 第${homeworkDetail.page_num || '-'}页</h3>
+                <button class="close-btn" onclick="hideModal('editBaselineModal')">x</button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <div class="baseline-edit-info">
+                    <div class="info-row">
+                        <span class="info-label">学生:</span>
+                        <span class="info-value">${escapeHtml(homeworkDetail.student_name || homeworkDetail.student_id || '-')}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">书本ID:</span>
+                        <span class="info-value">${escapeHtml(homeworkDetail.book_id || '-')}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">页码:</span>
+                        <span class="info-value">${homeworkDetail.page_num || '-'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">当前基准题目数:</span>
+                        <span class="info-value">${baseEffect.length}</span>
+                    </div>
+                </div>
+                
+                <div class="baseline-edit-tabs">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="switchBaselineTab('table')">表格编辑</button>
+                        <button class="tab-btn" onclick="switchBaselineTab('json')">JSON编辑</button>
+                        <button class="tab-btn" onclick="switchBaselineTab('compare')">对比视图</button>
+                    </div>
+                </div>
+                
+                <!-- 表格编辑视图 -->
+                <div class="baseline-tab-content" id="baselineTableTab">
+                    <div class="baseline-table-actions">
+                        <button class="btn btn-small" onclick="addBaselineQuestion()">添加题目</button>
+                        <button class="btn btn-small btn-secondary" onclick="autoFillFromAI()">从AI结果填充</button>
+                        <button class="btn btn-small btn-secondary" onclick="clearAllBaseline()">清空全部</button>
+                    </div>
+                    <div class="baseline-table-container">
+                        <table class="baseline-edit-table" id="baselineEditTable">
+                            <thead>
+                                <tr>
+                                    <th>题号</th>
+                                    <th>用户答案</th>
+                                    <th>判断结果</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="baselineTableBody">
+                                <!-- 动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- JSON编辑视图 -->
+                <div class="baseline-tab-content" id="baselineJsonTab" style="display:none;">
+                    <div class="json-edit-actions">
+                        <button class="btn btn-small" onclick="formatBaselineJson()">格式化</button>
+                        <button class="btn btn-small btn-secondary" onclick="validateBaselineJson()">验证</button>
+                    </div>
+                    <textarea id="baselineJsonEditor" rows="20" placeholder="输入基准效果JSON数组...">${JSON.stringify(baseEffect, null, 2)}</textarea>
+                    <div class="json-validation-result" id="jsonValidationResult"></div>
+                </div>
+                
+                <!-- 对比视图 -->
+                <div class="baseline-tab-content" id="baselineCompareTab" style="display:none;">
+                    <div class="compare-view-container">
+                        <div class="compare-section">
+                            <div class="compare-section-title">基准数据 (${baseEffect.length}题)</div>
+                            <div class="compare-data-table">
+                                <table class="compare-table">
+                                    <thead>
+                                        <tr><th>题号</th><th>用户答案</th><th>判断</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        ${baseEffect.map(item => `
+                                            <tr>
+                                                <td>${escapeHtml(String(item.index || '-'))}</td>
+                                                <td>${escapeHtml(item.userAnswer || '-')}</td>
+                                                <td><span class="${item.correct === 'yes' ? 'text-success' : 'text-error'}">${item.correct || '-'}</span></td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="compare-section">
+                            <div class="compare-section-title">AI批改结果 (${aiResult.length}题)</div>
+                            <div class="compare-data-table">
+                                <table class="compare-table">
+                                    <thead>
+                                        <tr><th>题号</th><th>用户答案</th><th>判断</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        ${aiResult.map(item => `
+                                            <tr>
+                                                <td>${escapeHtml(String(item.index || '-'))}</td>
+                                                <td>${escapeHtml(item.userAnswer || '-')}</td>
+                                                <td><span class="${item.correct === 'yes' ? 'text-success' : 'text-error'}">${item.correct || '-'}</span></td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('editBaselineModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveBaselineData('${homeworkDetail.homework_id}')">保存基准数据</button>
+            </div>
+        </div>
+    `;
+    
+    // 保存当前作业数据
+    window.currentEditingHomework = homeworkDetail;
+    
+    // 渲染表格
+    renderBaselineEditTable();
+    
+    showModal('editBaselineModal');
+}
+
+function switchBaselineTab(tabName) {
+    // 更新按钮状态
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // 显示对应内容
+    document.querySelectorAll('.baseline-tab-content').forEach(content => {
+        content.style.display = 'none';
+    });
+    
+    if (tabName === 'table') {
+        document.getElementById('baselineTableTab').style.display = 'block';
+        renderBaselineEditTable();
+    } else if (tabName === 'json') {
+        document.getElementById('baselineJsonTab').style.display = 'block';
+        syncJsonFromTable();
+    } else if (tabName === 'compare') {
+        document.getElementById('baselineCompareTab').style.display = 'block';
+    }
+}
+
+function renderBaselineEditTable() {
+    const homework = window.currentEditingHomework;
+    if (!homework) return;
+    
+    const baseEffect = homework.base_effect || [];
+    const tbody = document.getElementById('baselineTableBody');
+    
+    if (!tbody) return;
+    
+    tbody.innerHTML = baseEffect.map((item, index) => `
+        <tr data-index="${index}">
+            <td>
+                <input type="text" class="form-input-small" value="${escapeHtml(String(item.index || ''))}" 
+                       onchange="updateBaselineField(${index}, 'index', this.value)">
+            </td>
+            <td>
+                <input type="text" class="form-input" value="${escapeHtml(item.userAnswer || '')}" 
+                       onchange="updateBaselineField(${index}, 'userAnswer', this.value)">
+            </td>
+            <td>
+                <select class="form-select" onchange="updateBaselineField(${index}, 'correct', this.value)">
+                    <option value="">请选择</option>
+                    <option value="yes" ${item.correct === 'yes' ? 'selected' : ''}>正确</option>
+                    <option value="no" ${item.correct === 'no' ? 'selected' : ''}>错误</option>
+                </select>
+            </td>
+            <td>
+                <button class="btn btn-small btn-danger" onclick="removeBaselineQuestion(${index})">删除</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function updateBaselineField(index, field, value) {
+    const homework = window.currentEditingHomework;
+    if (!homework || !homework.base_effect || index >= homework.base_effect.length) return;
+    
+    homework.base_effect[index][field] = value;
+}
+
+function addBaselineQuestion() {
+    const homework = window.currentEditingHomework;
+    if (!homework) return;
+    
+    if (!homework.base_effect) {
+        homework.base_effect = [];
+    }
+    
+    const newIndex = homework.base_effect.length + 1;
+    homework.base_effect.push({
+        index: String(newIndex),
+        userAnswer: '',
+        correct: ''
+    });
+    
+    renderBaselineEditTable();
+}
+
+function removeBaselineQuestion(index) {
+    const homework = window.currentEditingHomework;
+    if (!homework || !homework.base_effect || index >= homework.base_effect.length) return;
+    
+    if (confirm('确定要删除这道题吗？')) {
+        homework.base_effect.splice(index, 1);
+        renderBaselineEditTable();
+    }
+}
+
+function autoFillFromAI() {
+    const homework = window.currentEditingHomework;
+    if (!homework) return;
+    
+    const aiResult = homework.ai_result || [];
+    if (aiResult.length === 0) {
+        alert('没有AI批改结果可以填充');
+        return;
+    }
+    
+    if (!confirm(`确定要用AI批改结果(${aiResult.length}题)覆盖当前基准数据吗？`)) {
+        return;
+    }
+    
+    homework.base_effect = aiResult.map(item => ({
+        index: String(item.index || ''),
+        userAnswer: item.userAnswer || '',
+        correct: item.correct || ''
+    }));
+    
+    renderBaselineEditTable();
+    alert('已从AI批改结果填充基准数据');
+}
+
+function clearAllBaseline() {
+    const homework = window.currentEditingHomework;
+    if (!homework) return;
+    
+    if (!confirm('确定要清空所有基准数据吗？')) {
+        return;
+    }
+    
+    homework.base_effect = [];
+    renderBaselineEditTable();
+}
+
+function syncJsonFromTable() {
+    const homework = window.currentEditingHomework;
+    if (!homework) return;
+    
+    const jsonEditor = document.getElementById('baselineJsonEditor');
+    if (jsonEditor) {
+        jsonEditor.value = JSON.stringify(homework.base_effect || [], null, 2);
+    }
+}
+
+function formatBaselineJson() {
+    const jsonEditor = document.getElementById('baselineJsonEditor');
+    if (!jsonEditor) return;
+    
+    try {
+        const parsed = JSON.parse(jsonEditor.value);
+        jsonEditor.value = JSON.stringify(parsed, null, 2);
+        document.getElementById('jsonValidationResult').innerHTML = 
+            '<span style="color: #10b981;">✓ JSON格式正确</span>';
+    } catch (e) {
+        document.getElementById('jsonValidationResult').innerHTML = 
+            '<span style="color: #ef4444;">✗ JSON格式错误: ' + escapeHtml(e.message) + '</span>';
+    }
+}
+
+function validateBaselineJson() {
+    const jsonEditor = document.getElementById('baselineJsonEditor');
+    if (!jsonEditor) return;
+    
+    try {
+        const parsed = JSON.parse(jsonEditor.value);
+        if (!Array.isArray(parsed)) {
+            throw new Error('基准数据必须是数组格式');
+        }
+        
+        // 验证每个题目的必要字段
+        for (let i = 0; i < parsed.length; i++) {
+            const item = parsed[i];
+            if (!item.hasOwnProperty('index')) {
+                throw new Error(`第${i+1}个题目缺少index字段`);
+            }
+            if (!item.hasOwnProperty('userAnswer')) {
+                throw new Error(`第${i+1}个题目缺少userAnswer字段`);
+            }
+            if (!item.hasOwnProperty('correct')) {
+                throw new Error(`第${i+1}个题目缺少correct字段`);
+            }
+        }
+        
+        document.getElementById('jsonValidationResult').innerHTML = 
+            `<span style="color: #10b981;">✓ JSON格式正确，包含${parsed.length}道题目</span>`;
+        
+        // 更新内存中的数据
+        const homework = window.currentEditingHomework;
+        if (homework) {
+            homework.base_effect = parsed;
+        }
+        
+    } catch (e) {
+        document.getElementById('jsonValidationResult').innerHTML = 
+            '<span style="color: #ef4444;">✗ ' + escapeHtml(e.message) + '</span>';
+    }
+}
+
+async function saveBaselineData(homeworkId) {
+    const homework = window.currentEditingHomework;
+    if (!homework) {
+        alert('没有可保存的数据');
+        return;
+    }
+    
+    // 如果当前在JSON编辑模式，先验证并同步数据
+    const activeTab = document.querySelector('.tab-btn.active');
+    if (activeTab && activeTab.textContent.includes('JSON')) {
+        const jsonEditor = document.getElementById('baselineJsonEditor');
+        if (jsonEditor) {
+            try {
+                const parsed = JSON.parse(jsonEditor.value);
+                homework.base_effect = parsed;
+            } catch (e) {
+                alert('JSON格式错误，请先修正: ' + e.message);
+                return;
+            }
+        }
+    }
+    
+    const baseEffect = homework.base_effect || [];
+    
+    if (baseEffect.length === 0) {
+        if (!confirm('基准数据为空，确定要保存吗？')) {
+            return;
+        }
+    }
+    
+    showLoading('保存基准数据...');
+    
+    try {
+        // 查找或创建对应的数据集
+        const bookId = homework.book_id;
+        const pageNum = homework.page_num;
+        const pageNumInt = parseInt(pageNum, 10);
+        
+        if (!bookId || pageNum === null || pageNum === undefined) {
+            hideLoading();
+            alert('缺少书本ID或页码信息，无法保存');
+            return;
+        }
+        
+        // 先查找是否已有对应book_id的数据集（不管页码）
+        const datasetsRes = await fetch(`/api/batch/datasets?book_id=${bookId}`);
+        const datasetsData = await datasetsRes.json();
+        
+        let targetDatasetId = null;
+        let existingDataset = null;
+        
+        if (datasetsData.success) {
+            const datasets = datasetsData.data || [];
+            // 优先查找包含该页码的数据集
+            for (const ds of datasets) {
+                if (ds.pages) {
+                    // 同时检查整数和字符串形式的页码
+                    const hasPage = ds.pages.some(p => 
+                        parseInt(p, 10) === pageNumInt || String(p) === String(pageNum)
+                    );
+                    if (hasPage) {
+                        targetDatasetId = ds.dataset_id;
+                        existingDataset = ds;
+                        break;
+                    }
+                }
+            }
+            
+            // 如果没有找到包含该页码的数据集，使用同一book_id的第一个数据集
+            if (!targetDatasetId && datasets.length > 0) {
+                targetDatasetId = datasets[0].dataset_id;
+                existingDataset = datasets[0];
+            }
+        }
+        
+        if (targetDatasetId) {
+            // 更新现有数据集 - 添加或更新该页码的基准效果
+            // 先获取完整的数据集数据
+            const fullDatasetRes = await fetch(`/api/batch/datasets/${targetDatasetId}`);
+            const fullDatasetData = await fullDatasetRes.json();
+            
+            if (!fullDatasetData.success) {
+                throw new Error('获取数据集详情失败');
+            }
+            
+            const existingBaseEffects = fullDatasetData.data.base_effects || {};
+            const existingPages = fullDatasetData.data.pages || [];
+            
+            // 合并基准效果
+            existingBaseEffects[String(pageNumInt)] = baseEffect;
+            
+            // 确保页码列表包含当前页码
+            const newPages = [...new Set([...existingPages.map(p => parseInt(p, 10)), pageNumInt])].sort((a, b) => a - b);
+            
+            const updateRes = await fetch(`/api/batch/datasets/${targetDatasetId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pages: newPages,
+                    base_effects: existingBaseEffects
+                })
+            });
+            
+            const updateData = await updateRes.json();
+            if (!updateData.success) {
+                throw new Error(updateData.error || '更新数据集失败');
+            }
+            
+            console.log(`已更新数据集 ${targetDatasetId}，页码: ${pageNumInt}`);
+        } else {
+            // 创建新数据集
+            const createRes = await fetch('/api/batch/datasets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    book_id: bookId,
+                    pages: [pageNumInt],
+                    base_effects: {
+                        [String(pageNumInt)]: baseEffect
+                    }
+                })
+            });
+            
+            const createData = await createRes.json();
+            if (!createData.success) {
+                throw new Error(createData.error || '创建数据集失败');
+            }
+            
+            targetDatasetId = createData.dataset_id;
+            console.log(`已创建新数据集 ${targetDatasetId}，页码: ${pageNumInt}`);
+        }
+        
+        hideLoading();
+        hideModal('editBaselineModal');
+        
+        // 更新任务中的作业匹配状态
+        if (selectedTask) {
+            const item = selectedTask.homework_items.find(h => h.homework_id === homeworkId);
+            if (item) {
+                item.matched_dataset = targetDatasetId;
+                item.status = 'matched';
+                // 如果之前已经评估过，清除评估结果以便重新评估
+                if (item.accuracy !== null || item.evaluation) {
+                    item.accuracy = null;
+                    item.evaluation = null;
+                }
+                renderHomeworkList(selectedTask.homework_items);
+            }
+            
+            // 刷新整个任务的数据集匹配状态
+            refreshTaskDatasets();
+        }
+        
+        alert(`基准数据保存成功！\n数据集ID: ${targetDatasetId}\n题目数: ${baseEffect.length}`);
+        
+    } catch (e) {
+        hideLoading();
+        alert('保存失败: ' + e.message);
+    }
+}
+// ========== 任务状态管理 ==========
+async function refreshTaskDatasets() {
+    if (!selectedTask) return;
+    
+    try {
+        const res = await fetch(`/api/batch/tasks/${selectedTask.task_id}/refresh-datasets`, {
+            method: 'POST'
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            // 更新本地任务数据
+            selectedTask = data.data;
+            renderTaskDetail();
+            
+            // 如果有更新，显示提示
+            if (data.updated_count > 0) {
+                console.log(`已刷新 ${data.updated_count} 个作业的数据集匹配状态`);
+            }
+        }
+    } catch (e) {
+        console.error('刷新数据集匹配状态失败:', e);
+    }
+}
+
+async function resetBatchTask() {
+    if (!selectedTask) return;
+    
+    if (!confirm('确定要重置此任务吗？\n重置后可以重新进行批量评估，但会清除当前的评估结果。')) {
+        return;
+    }
+    
+    showLoading('重置任务状态...');
+    try {
+        const res = await fetch(`/api/batch/tasks/${selectedTask.task_id}/reset`, {
+            method: 'POST'
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            selectedTask = data.data;
+            renderTaskDetail();
+            alert('任务已重置，可以重新进行批量评估');
+        } else {
+            alert('重置失败: ' + (data.error || '未知错误'));
+        }
+    } catch (e) {
+        alert('重置失败: ' + e.message);
+    }
+    hideLoading();
+}
+
+function checkTaskNeedsReset() {
+    if (!selectedTask) return false;
+    
+    // 检查是否有作业的数据集匹配状态发生变化但任务仍为已完成状态
+    if (selectedTask.status === 'completed') {
+        const hasNewMatches = selectedTask.homework_items.some(item => 
+            item.matched_dataset && (item.status === 'matched' || item.status === 'pending')
+        );
+        
+        if (hasNewMatches) {
+            return true;
+        }
+    }
+    
+    return false;
 }

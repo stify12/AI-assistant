@@ -297,15 +297,20 @@ def evaluate_grading():
     homework_result = data.get('homework_result', [])
     use_ai_compare = data.get('use_ai_compare', False)  # 是否使用AI模型比对
     
+    print(f"[Evaluate] use_ai_compare={use_ai_compare}, base_effect_count={len(base_effect)}, homework_result_count={len(homework_result)}")
+    
     if not base_effect:
         return jsonify({'success': False, 'error': '缺少基准效果数据'})
     
     # 如果启用AI比对，调用大模型逐题解析
     if use_ai_compare:
+        print("[Evaluate] 调用AI比对...")
         ai_compare_result = do_ai_compare(base_effect, homework_result)
+        print(f"[Evaluate] AI比对结果: success={ai_compare_result.get('success')}, error={ai_compare_result.get('error')}")
         if ai_compare_result.get('success'):
             return jsonify({'success': True, 'evaluation': ai_compare_result['evaluation']})
         # AI比对失败，回退到本地计算
+        print("[Evaluate] AI比对失败，回退到本地计算")
     
     # 本地对比计算
     evaluation = do_local_evaluation(base_effect, homework_result)
@@ -377,7 +382,7 @@ def convert_ai_compare_to_evaluation(compare_results, base_effect, homework_resu
         '识别正确-判断错误': 0,
         '格式差异': 0,
         '缺失题目': 0,
-        'AI幻觉': 0,
+        'AI识别幻觉': 0,
         '标准答案不一致': 0
     }
     
@@ -389,7 +394,7 @@ def convert_ai_compare_to_evaluation(compare_results, base_effect, homework_resu
         'recognition_correct_judgment_error': '识别正确-判断错误',
         'format_diff': '格式差异',
         'missing': '缺失题目',
-        'hallucination': 'AI幻觉',
+        'hallucination': 'AI识别幻觉',
         'answer_mismatch': '标准答案不一致'
     }
     
@@ -475,7 +480,7 @@ def convert_ai_compare_to_evaluation(compare_results, base_effect, homework_resu
     
     # 计算真正的精确率、召回率、F1
     tp = correct_count
-    fp = error_distribution.get('识别正确-判断错误', 0) + error_distribution.get('AI幻觉', 0)
+    fp = error_distribution.get('识别正确-判断错误', 0) + error_distribution.get('AI识别幻觉', 0)
     fn = error_distribution.get('识别错误-判断错误', 0)
     
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0
@@ -483,7 +488,7 @@ def convert_ai_compare_to_evaluation(compare_results, base_effect, homework_resu
     f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
     
     # 计算幻觉率
-    hallucination_count = error_distribution.get('AI幻觉', 0)
+    hallucination_count = error_distribution.get('AI识别幻觉', 0)
     wrong_answers_count = sum(1 for b in base_effect if str(b.get('correct', '')).lower() == 'no')
     hallucination_rate = hallucination_count / wrong_answers_count if wrong_answers_count > 0 else 0
     
@@ -522,7 +527,7 @@ def do_local_evaluation(base_effect, homework_result):
         '识别正确-判断错误': 0,
         '格式差异': 0,
         '缺失题目': 0,
-        'AI幻觉': 0,
+        'AI识别幻觉': 0,
         '基准数据不完整': 0
     }
     
@@ -593,11 +598,12 @@ def do_local_evaluation(base_effect, homework_result):
             user_match = norm_base_user == norm_hw_user
             correct_match = base_correct == hw_correct
             
-            # 检测AI幻觉：学生答错了，但AI识别成了正确答案
-            if base_correct == 'no' and norm_hw_user == norm_base_answer:
+            # 检测AI识别幻觉：学生答错了 + AI识别的用户答案≠基准用户答案 + AI识别的用户答案=标准答案
+            # 即AI把学生的错误手写答案"脑补"成了标准答案
+            if base_correct == 'no' and not user_match and norm_hw_user == norm_base_answer:
                 is_match = False
-                error_type = 'AI幻觉'
-                explanation = f'学生答案"{base_user}"是错误的，但AI识别成了正确答案"{hw_user}"'
+                error_type = 'AI识别幻觉'
+                explanation = f'AI将学生答案"{base_user}"识别为"{hw_user}"（标准答案），属于识别幻觉'
                 severity = 'high'
             elif user_match and correct_match:
                 is_match = True
@@ -656,7 +662,7 @@ def do_local_evaluation(base_effect, homework_result):
                 'analysis': {
                     'recognition_match': recognition_match,
                     'judgment_match': judgment_match,
-                    'is_hallucination': error_type == 'AI幻觉'
+                    'is_hallucination': error_type == 'AI识别幻觉'
                 }
             })
     
@@ -664,7 +670,7 @@ def do_local_evaluation(base_effect, homework_result):
     
     # 计算真正的精确率、召回率、F1
     tp = correct_count
-    fp = error_distribution.get('识别正确-判断错误', 0) + error_distribution.get('AI幻觉', 0)
+    fp = error_distribution.get('识别正确-判断错误', 0) + error_distribution.get('AI识别幻觉', 0)
     fn = error_distribution.get('识别错误-判断错误', 0)
     
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0
@@ -672,7 +678,7 @@ def do_local_evaluation(base_effect, homework_result):
     f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
     
     # 计算幻觉率
-    hallucination_count = error_distribution.get('AI幻觉', 0)
+    hallucination_count = error_distribution.get('AI识别幻觉', 0)
     wrong_answers_count = sum(1 for b in base_effect if str(b.get('correct', '')).lower() == 'no')
     hallucination_rate = hallucination_count / wrong_answers_count if wrong_answers_count > 0 else 0
     

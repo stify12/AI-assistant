@@ -5,7 +5,10 @@
       "args": [
         "bing-cn-mcp"
       ],
-      "disabled": false
+      "disabled": false,
+      "autoApprove": [
+        "bing_search"
+      ]
     },
     "mysql": {
       "command": "npx",

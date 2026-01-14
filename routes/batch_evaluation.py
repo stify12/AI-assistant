@@ -367,11 +367,12 @@ def classify_error(base_item, hw_item):
         user_match = norm_base_user == norm_hw_user
         correct_match = base_correct == hw_correct
         
-        # 检测AI幻觉：学生答错了，但AI识别成了正确答案
-        if base_correct == 'no' and norm_hw_user == norm_base_answer:
+        # 检测AI识别幻觉：学生答错了 + AI识别的用户答案≠基准用户答案 + AI识别的用户答案=标准答案
+        # 即AI把学生的错误手写答案"脑补"成了标准答案
+        if base_correct == 'no' and not user_match and norm_hw_user == norm_base_answer:
             is_match = False
-            error_type = 'AI幻觉'
-            explanation = f'学生答案"{base_user}"是错误的，但AI识别成了正确答案"{hw_user}"'
+            error_type = 'AI识别幻觉'
+            explanation = f'AI将学生答案"{base_user}"识别为"{hw_user}"（标准答案），属于识别幻觉'
             severity = 'high'
         elif user_match and correct_match:
             is_match = True
@@ -509,6 +510,11 @@ def batch_datasets():
     
     else:  # POST
         data = request.json
+        print(f"[CreateDataset] Received request: book_id={data.get('book_id') if data else None}")
+        
+        if not data:
+            return jsonify({'success': False, 'error': '请求数据为空'})
+        
         book_id = data.get('book_id')
         pages = data.get('pages', [])
         base_effects = data.get('base_effects', {})
@@ -518,6 +524,7 @@ def batch_datasets():
         
         try:
             dataset_id = str(uuid.uuid4())[:8]
+            print(f"[CreateDataset] Creating dataset: {dataset_id}, pages={pages}")
             
             # 为每个页码的题目添加类型信息
             enriched_base_effects = enrich_base_effects_with_question_types(book_id, base_effects)
@@ -530,9 +537,13 @@ def batch_datasets():
                 'created_at': datetime.now().isoformat()
             })
             
+            print(f"[CreateDataset] Dataset saved successfully: {dataset_id}")
             return jsonify({'success': True, 'dataset_id': dataset_id})
         
         except Exception as e:
+            import traceback
+            traceback.print_exc()
+            print(f"[CreateDataset] Error: {str(e)}")
             return jsonify({'success': False, 'error': str(e)})
 
 
@@ -554,24 +565,50 @@ def dataset_detail(dataset_id):
             
             update_data = request.get_json()
             
+            # 更新页码列表
+            if 'pages' in update_data:
+                # 合并新旧页码，去重并排序
+                existing_pages = set(int(p) for p in data.get('pages', []))
+                new_pages = set(int(p) for p in update_data['pages'])
+                merged_pages = sorted(existing_pages | new_pages)
+                data['pages'] = merged_pages
+            
             if 'base_effects' in update_data:
+                # 合并基准效果，而不是完全覆盖
+                existing_effects = data.get('base_effects', {})
+                new_effects = update_data['base_effects']
+                
                 # 为更新的基准效果添加题目类型信息
                 book_id = data.get('book_id')
-                enriched_effects = enrich_base_effects_with_question_types(book_id, update_data['base_effects'])
-                data['base_effects'] = enriched_effects
+                enriched_new_effects = enrich_base_effects_with_question_types(book_id, new_effects)
                 
+                # 合并：新的覆盖旧的，保留未更新的页码
+                for page_key, effects in enriched_new_effects.items():
+                    existing_effects[str(page_key)] = effects
+                
+                data['base_effects'] = existing_effects
+                
+                # 更新页码列表（确保包含所有有基准效果的页码）
+                all_pages = set(int(p) for p in existing_effects.keys())
+                if 'pages' in data:
+                    all_pages |= set(int(p) for p in data['pages'])
+                data['pages'] = sorted(all_pages)
+                
+                # 更新题目数量
                 question_count = 0
                 for page_data in data['base_effects'].values():
                     if isinstance(page_data, list):
                         question_count += len(page_data)
                 data['question_count'] = question_count
-                data['pages'] = sorted([int(p) for p in data['base_effects'].keys()])
             
             data['updated_at'] = datetime.now().isoformat()
             StorageService.save_dataset(dataset_id, data)
             
+            print(f"[UpdateDataset] Updated dataset {dataset_id}, pages={data.get('pages')}")
             return jsonify({'success': True, 'data': data})
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return jsonify({'success': False, 'error': str(e)})
     
     else:  # GET
@@ -821,16 +858,32 @@ def batch_tasks():
                 if ds:
                     datasets.append(ds)
             
+            # 按数据集包含的页码数量降序排序，优先匹配包含更多页码的数据集
+            datasets.sort(key=lambda ds: len(ds.get('pages', [])), reverse=True)
+            
             homework_items = []
             for row in rows:
                 book_id = str(row.get('book_id', '')) if row.get('book_id') else ''
                 page_num = row.get('page_num')
+                # 确保 page_num 是整数类型用于匹配
+                page_num_int = int(page_num) if page_num is not None else None
                 
                 matched_dataset = None
                 for ds in datasets:
-                    if ds.get('book_id') == book_id and page_num in ds.get('pages', []):
-                        matched_dataset = ds.get('dataset_id')
-                        break
+                    ds_book_id = str(ds.get('book_id', '')) if ds.get('book_id') else ''
+                    ds_pages = ds.get('pages', [])
+                    base_effects = ds.get('base_effects', {})
+                    
+                    # 同时检查整数和字符串形式的页码
+                    if ds_book_id == book_id and page_num_int is not None:
+                        # 检查数据集的 pages 数组
+                        page_in_pages = page_num_int in ds_pages or str(page_num_int) in [str(p) for p in ds_pages]
+                        # 检查数据集的 base_effects 是否包含该页码的数据
+                        page_in_effects = str(page_num_int) in base_effects
+                        
+                        if page_in_pages and page_in_effects:
+                            matched_dataset = ds.get('dataset_id')
+                            break
                 
                 homework_items.append({
                     'homework_id': row['id'],
@@ -1020,8 +1073,10 @@ def get_homework_detail(task_id, homework_id):
             'success': True,
             'data': {
                 'homework_id': homework_id,
+                'book_id': homework_item.get('book_id', ''),
                 'book_name': homework_item.get('book_name', ''),
                 'page_num': homework_item.get('page_num'),
+                'student_id': homework_item.get('student_id', ''),
                 'student_name': homework_item.get('student_name', ''),
                 'status': homework_item.get('status', ''),
                 'accuracy': homework_item.get('accuracy', 0),
@@ -1148,11 +1203,17 @@ def batch_evaluate(task_id):
     return Response(generate(), mimetype='text/event-stream')
 
 
-def do_evaluation(base_effect, homework_result, use_ai_compare=False):
+def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=None):
     """
     执行评估计算 - 全部按tempIndex匹配
     支持本地计算和AI模型比对
     包含题目类型分类统计
+    
+    Args:
+        base_effect: 基准效果数据
+        homework_result: AI批改结果
+        use_ai_compare: 是否使用AI比对
+        user_id: 用户ID，用于加载用户API配置
     """
     total = len(base_effect)
     correct_count = 0
@@ -1163,7 +1224,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False):
         '识别正确-判断错误': 0,
         '格式差异': 0,
         '缺失题目': 0,
-        'AI幻觉': 0
+        'AI识别幻觉': 0
     }
     
     # 题目类型分类统计
@@ -1176,7 +1237,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False):
     
     # 如果启用AI比对
     if use_ai_compare:
-        ai_result = do_ai_compare_batch(base_effect, homework_result)
+        ai_result = do_ai_compare_batch(base_effect, homework_result, user_id=user_id)
         if ai_result:
             return ai_result
     
@@ -1257,11 +1318,12 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False):
             user_match = norm_base_user == norm_hw_user
             correct_match = base_correct == hw_correct
             
-            # 检测AI幻觉：学生答错了，但AI识别成了正确答案
-            if base_correct == 'no' and norm_hw_user == norm_base_answer:
+            # 检测AI识别幻觉：学生答错了 + AI识别的用户答案≠基准用户答案 + AI识别的用户答案=标准答案
+            # 即AI把学生的错误手写答案"脑补"成了标准答案
+            if base_correct == 'no' and not user_match and norm_hw_user == norm_base_answer:
                 is_match = False
-                error_type = 'AI幻觉'
-                explanation = f'学生答案"{base_user}"是错误的，但AI识别成了正确答案"{hw_user}"'
+                error_type = 'AI识别幻觉'
+                explanation = f'AI将学生答案"{base_user}"识别为"{hw_user}"（标准答案），属于识别幻觉'
                 severity = 'high'
             elif user_match and correct_match:
                 is_match = True
@@ -1331,7 +1393,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False):
                 'analysis': {
                     'recognition_match': recognition_match,
                     'judgment_match': judgment_match,
-                    'is_hallucination': error_type == 'AI幻觉'
+                    'is_hallucination': error_type == 'AI识别幻觉'
                 },
                 # 添加题目类型标注
                 'question_category': question_category
@@ -1347,7 +1409,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False):
     
     # 计算真正的精确率、召回率、F1
     tp = correct_count
-    fp = error_distribution.get('识别正确-判断错误', 0) + error_distribution.get('AI幻觉', 0)
+    fp = error_distribution.get('识别正确-判断错误', 0) + error_distribution.get('AI识别幻觉', 0)
     fn = error_distribution.get('识别错误-判断错误', 0)
     
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0
@@ -1355,7 +1417,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False):
     f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
     
     # 计算幻觉率
-    hallucination_count = error_distribution.get('AI幻觉', 0)
+    hallucination_count = error_distribution.get('AI识别幻觉', 0)
     wrong_answers_count = sum(1 for b in base_effect if str(b.get('correct', '')).lower() == 'no')
     hallucination_rate = hallucination_count / wrong_answers_count if wrong_answers_count > 0 else 0
     
@@ -1374,15 +1436,16 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False):
     }
 
 
-def do_ai_compare_batch(base_effect, homework_result):
+def do_ai_compare_batch(base_effect, homework_result, user_id=None):
     """批量评估中使用AI模型比对"""
-    config = ConfigService.load_config()
+    config = ConfigService.load_config(user_id=user_id)
     
     # 获取比对提示词
     prompts_config = config.get('prompts', {})
     compare_prompt = prompts_config.get('compare_answer', '')
     
     if not compare_prompt:
+        print('[AI Compare Batch] 未配置比对提示词')
         return None
     
     prompt = f"""{compare_prompt}
@@ -1399,21 +1462,24 @@ def do_ai_compare_batch(base_effect, homework_result):
         result = LLMService.call_deepseek(
             prompt, 
             '你是专业的答案比对专家，请严格按照要求输出JSON数组。',
-            timeout=120
+            timeout=120,
+            user_id=user_id
         )
         
         if result.get('error'):
+            print(f'[AI Compare Batch] DeepSeek调用失败: {result.get("error")}')
             return None
         
         compare_results = LLMService.extract_json_array(result.get('content', ''))
         
         if not compare_results:
+            print('[AI Compare Batch] 无法解析AI返回结果')
             return None
         
         # 转换为评估结果格式
         return convert_batch_ai_compare(compare_results, base_effect, homework_result)
     except Exception as e:
-        print(f'AI比对失败: {str(e)}')
+        print(f'[AI Compare Batch] AI比对失败: {str(e)}')
         return None
 
 
@@ -1428,7 +1494,7 @@ def convert_batch_ai_compare(compare_results, base_effect, homework_result):
         '识别正确-判断错误': 0,
         '格式差异': 0,
         '缺失题目': 0,
-        'AI幻觉': 0
+        'AI识别幻觉': 0
     }
     
     # 题目类型分类统计
@@ -1446,7 +1512,7 @@ def convert_batch_ai_compare(compare_results, base_effect, homework_result):
         'recognition_correct_judgment_error': '识别正确-判断错误',
         'format_diff': '格式差异',
         'missing': '缺失题目',
-        'hallucination': 'AI幻觉'
+        'hallucination': 'AI识别幻觉'
     }
     
     hw_dict = {str(item.get('index', '')): item for item in homework_result if item.get('index')}
@@ -1559,14 +1625,14 @@ def convert_batch_ai_compare(compare_results, base_effect, homework_result):
     accuracy = correct_count / total if total > 0 else 0
     
     tp = correct_count
-    fp = error_distribution.get('识别正确-判断错误', 0) + error_distribution.get('AI幻觉', 0)
+    fp = error_distribution.get('识别正确-判断错误', 0) + error_distribution.get('AI识别幻觉', 0)
     fn = error_distribution.get('识别错误-判断错误', 0)
     
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0
     f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
     
-    hallucination_count = error_distribution.get('AI幻觉', 0)
+    hallucination_count = error_distribution.get('AI识别幻觉', 0)
     wrong_answers_count = sum(1 for b in base_effect if str(b.get('correct', '')).lower() == 'no')
     hallucination_rate = hallucination_count / wrong_answers_count if wrong_answers_count > 0 else 0
     
@@ -1753,10 +1819,15 @@ def export_batch_excel(task_id):
 def batch_ai_evaluate(task_id):
     """执行并行AI评估（SSE流式返回）"""
     from concurrent.futures import ThreadPoolExecutor, as_completed
+    from routes.auth import get_current_user_id
     
     task_data = StorageService.load_batch_task(task_id)
     if not task_data:
         return jsonify({'success': False, 'error': '任务不存在'})
+    
+    # 获取当前用户ID
+    user_id = get_current_user_id()
+    print(f"[AI Evaluate] 用户ID: {user_id}")
     
     # 获取并行数
     data = request.get_json() or {}
@@ -1805,11 +1876,11 @@ def batch_ai_evaluate(task_id):
                     pass
                 
                 if base_effect and homework_result:
-                    # 使用AI比对
-                    evaluation = do_evaluation(base_effect, homework_result, use_ai_compare=True)
+                    # 使用AI比对，传递user_id
+                    evaluation = do_evaluation(base_effect, homework_result, use_ai_compare=True, user_id=user_id)
                     if not evaluation:
                         # AI比对失败，回退到本地计算
-                        evaluation = do_evaluation(base_effect, homework_result, use_ai_compare=False)
+                        evaluation = do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=user_id)
                     
                     return {
                         'homework_id': homework_id,
@@ -1898,3 +1969,108 @@ def batch_ai_evaluate(task_id):
         yield f"data: {json.dumps({'type': 'complete', 'overall_accuracy': overall_accuracy, 'total_questions': total_questions, 'correct_questions': total_correct, 'by_question_type': aggregated_type_stats})}\n\n"
     
     return Response(generate(), mimetype='text/event-stream')
+
+@batch_evaluation_bp.route('/tasks/<task_id>/reset', methods=['POST'])
+def reset_batch_task(task_id):
+    """重置批量评估任务状态，允许重新评估"""
+    try:
+        task_data = StorageService.load_batch_task(task_id)
+        if not task_data:
+            return jsonify({'success': False, 'error': '任务不存在'})
+        
+        # 重置任务状态
+        task_data['status'] = 'pending'
+        task_data['overall_report'] = None
+        
+        # 重置所有作业项的评估状态
+        for item in task_data.get('homework_items', []):
+            if item.get('status') in ['completed', 'failed']:
+                item['status'] = 'matched' if item.get('matched_dataset') else 'pending'
+                item['accuracy'] = None
+                item['evaluation'] = None
+                # 保留错误信息以便调试
+                if 'error' in item:
+                    del item['error']
+        
+        # 保存更新后的任务数据
+        StorageService.save_batch_task(task_id, task_data)
+        
+        return jsonify({
+            'success': True, 
+            'message': '任务已重置，可以重新进行批量评估',
+            'data': task_data
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@batch_evaluation_bp.route('/tasks/<task_id>/refresh-datasets', methods=['POST'])
+def refresh_task_datasets(task_id):
+    """刷新任务中作业的数据集匹配状态"""
+    try:
+        task_data = StorageService.load_batch_task(task_id)
+        if not task_data:
+            return jsonify({'success': False, 'error': '任务不存在'})
+        
+        # 加载所有数据集
+        datasets = []
+        for filename in StorageService.list_datasets():
+            ds = StorageService.load_dataset(filename[:-5])
+            if ds:
+                datasets.append(ds)
+        
+        # 按数据集包含的页码数量降序排序，优先匹配包含更多页码的数据集
+        datasets.sort(key=lambda ds: len(ds.get('pages', [])), reverse=True)
+        
+        updated_count = 0
+        
+        # 重新匹配每个作业的数据集
+        for item in task_data.get('homework_items', []):
+            book_id = str(item.get('book_id', '')) if item.get('book_id') else ''
+            page_num = item.get('page_num')
+            # 确保 page_num 是整数类型用于匹配
+            page_num_int = int(page_num) if page_num is not None else None
+            
+            old_dataset = item.get('matched_dataset')
+            new_dataset = None
+            
+            # 查找匹配的数据集
+            for ds in datasets:
+                ds_book_id = str(ds.get('book_id', '')) if ds.get('book_id') else ''
+                ds_pages = ds.get('pages', [])
+                base_effects = ds.get('base_effects', {})
+                
+                # 同时检查整数和字符串形式的页码
+                if ds_book_id == book_id and page_num_int is not None:
+                    # 检查数据集的 pages 数组
+                    page_in_pages = page_num_int in ds_pages or str(page_num_int) in [str(p) for p in ds_pages]
+                    # 检查数据集的 base_effects 是否包含该页码的数据
+                    page_in_effects = str(page_num_int) in base_effects
+                    
+                    if page_in_pages and page_in_effects:
+                        new_dataset = ds.get('dataset_id')
+                        break
+            
+            # 更新匹配状态
+            if new_dataset != old_dataset:
+                item['matched_dataset'] = new_dataset
+                if new_dataset:
+                    item['status'] = 'matched'
+                else:
+                    item['status'] = 'pending'
+                updated_count += 1
+        
+        # 如果有更新，保存任务数据
+        if updated_count > 0:
+            StorageService.save_batch_task(task_id, task_data)
+        
+        return jsonify({
+            'success': True,
+            'message': f'已刷新数据集匹配状态，更新了 {updated_count} 个作业',
+            'updated_count': updated_count,
+            'data': task_data
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})

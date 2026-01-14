@@ -10,6 +10,8 @@ def normalize_answer(text):
     """
     标准化答案，用于比较AI批改结果和基准效果
     处理：空格、换行、中英文标点、数学符号等
+    
+    核心原则：移除所有不影响答案语义的标点符号和空白字符
     """
     if not text:
         return ''
@@ -19,18 +21,19 @@ def normalize_answer(text):
     # 1. 统一大小写
     text = text.lower()
     
-    # 2. 统一中英文标点为英文
-    punctuation_map = {
-        '，': ',', '。': '.', '；': ';', '：': ':', 
-        '！': '!', '？': '?', '"': '"', '"': '"',
-        ''': "'", ''': "'", '（': '(', '）': ')',
-        '【': '[', '】': ']', '《': '<', '》': '>',
-        '、': ',', '～': '~', '—': '-', '…': '...'
-    }
-    for cn, en in punctuation_map.items():
-        text = text.replace(cn, en)
+    # 2. 移除HTML标签（如 <br>）
+    text = re.sub(r'<[^>]+>', '', text)
     
-    # 3. 统一数学符号
+    # 3. 将换行符和制表符替换为空格（而不是直接移除）
+    text = text.replace('\\n', ' ').replace('\\r', ' ').replace('\\t', ' ')
+    text = text.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
+    
+    # 4. 移除markdown格式标记
+    text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)  # **bold**
+    text = re.sub(r'\*([^*]+)\*', r'\1', text)      # *italic*
+    text = re.sub(r'`([^`]+)`', r'\1', text)        # `code`
+    
+    # 5. 统一数学符号（保留这些符号，因为它们影响语义）
     math_symbol_map = {
         '×': '*', '÷': '/', '−': '-', '＋': '+',
         '＝': '=', '≠': '!=', '≤': '<=', '≥': '>=',
@@ -40,18 +43,25 @@ def normalize_answer(text):
     for symbol, replacement in math_symbol_map.items():
         text = text.replace(symbol, replacement)
     
-    # 4. 移除常见的格式标记
-    text = text.replace('\\n', '').replace('\\r', '').replace('\\t', '')
+    # 6. 移除所有中英文标点符号（不影响答案语义的）
+    # 包括：句号、逗号、分号、冒号、问号、感叹号、引号、括号、顿号等
+    punctuation_to_remove = [
+        # 中文标点
+        '，', '。', '；', '：', '！', '？', '"', '"', ''', ''',
+        '（', '）', '【', '】', '《', '》', '、', '～', '—', '…',
+        '·', '「', '」', '『', '』', '〈', '〉', '〔', '〕', '｛', '｝',
+        # 英文标点
+        ',', '.', ';', ':', '!', '?', '"', "'", '(', ')', '[', ']',
+        '{', '}', '<', '>', '~', '-', '_', '/', '\\', '|', '@', '#',
+        '$', '%', '^', '&', '`'
+    ]
+    for punct in punctuation_to_remove:
+        text = text.replace(punct, ' ')
     
-    # 5. 移除markdown格式标记
-    text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)  # **bold**
-    text = re.sub(r'\*([^*]+)\*', r'\1', text)      # *italic*
-    text = re.sub(r'`([^`]+)`', r'\1', text)        # `code`
+    # 7. 移除序号标记周围的多余空格（如 ① ② 等）
+    text = re.sub(r'\s*([①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮])\s*', r'\1', text)
     
-    # 6. 将所有分隔符统一为空格（逗号、分号、顿号等）
-    text = re.sub(r'[,;、，；\s]+', ' ', text)
-    
-    # 7. 移除多余空格，保留单个空格作为分隔
+    # 8. 将所有连续空白字符统一为单个空格
     text = re.sub(r'\s+', ' ', text).strip()
     
     return text

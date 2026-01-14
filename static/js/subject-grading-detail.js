@@ -137,7 +137,7 @@ const DetailedAnalysis = {
                                 </span>
                             ` : ''}
                             ${analysis.is_hallucination ? `
-                                <span class="analysis-badge badge-warning">⚠ AI幻觉</span>
+                                <span class="analysis-badge badge-warning">AI识别幻觉</span>
                             ` : ''}
                         </div>
                         ${item.explanation ? `
@@ -241,7 +241,7 @@ const DetailedAnalysis = {
             '识别正确-判断错误': 'warning',
             '格式差异': 'success',
             '缺失题目': 'default',
-            'AI幻觉': 'purple',
+            'AI识别幻觉': 'purple',
             '标准答案不一致': 'orange'
         };
         return typeMap[errorType] || 'default';

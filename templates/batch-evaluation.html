@@ -6,6 +6,7 @@
     <title>批量评估</title>
     <link rel="stylesheet" href="/static/css/common.css">
     <link rel="stylesheet" href="/static/css/batch-evaluation.css">
+    <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
     <!-- 导航栏 -->
@@ -69,6 +70,7 @@
                                 <button class="btn btn-primary" id="batchAiEvalBtn" onclick="batchAiEvaluation()">一键AI评估</button>
                                 <button class="btn btn-secondary" id="exportBtn" onclick="exportExcel()" disabled>导出Excel</button>
                                 <button class="btn btn-secondary" id="aiReportBtn" onclick="generateAIReport()" disabled>AI分析</button>
+                                <button class="btn btn-warning" id="resetTaskBtn" onclick="resetBatchTask()" style="display:none;">重置任务</button>
                                 <button class="btn btn-danger" onclick="deleteCurrentTask()">删除任务</button>
                             </div>
                         </div>
@@ -85,6 +87,31 @@
                         <div class="overall-report" id="overallReport" style="display:none;">
                             <div class="report-title">总体报告</div>
                             <div class="stats-grid" id="overallStats"></div>
+                            
+                            <!-- 可视化图表 -->
+                            <div class="charts-container" id="chartsContainer">
+                                <div class="chart-grid">
+                                    <div class="chart-box">
+                                        <div class="chart-title">错误类型分布</div>
+                                        <canvas id="errorTypePieChart"></canvas>
+                                    </div>
+                                    <div class="chart-box">
+                                        <div class="chart-title">题型准确率对比</div>
+                                        <canvas id="typeBarChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="chart-grid">
+                                    <div class="chart-box">
+                                        <div class="chart-title">高频错误题目 TOP5</div>
+                                        <canvas id="errorTrendChart"></canvas>
+                                    </div>
+                                    <div class="chart-box">
+                                        <div class="chart-title">评估指标雷达图</div>
+                                        <canvas id="metricsRadarChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="stats-detail" id="statsDetail"></div>
                         </div>
 

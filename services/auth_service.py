@@ -1,12 +1,10 @@
 """
 认证服务模块
-提供用户认证、密码哈希、Token管理等功能
+提供用户认证、Token管理等功能
 """
-import os
 import json
 import secrets
 from datetime import datetime, timedelta
-from werkzeug.security import generate_password_hash, check_password_hash
 
 
 class AuthService:
@@ -17,13 +15,13 @@ class AuthService:
     
     @staticmethod
     def hash_password(password: str) -> str:
-        """密码哈希"""
-        return generate_password_hash(password)
+        """密码存储 - 明文存储"""
+        return password
     
     @staticmethod
-    def verify_password(password: str, password_hash: str) -> bool:
-        """验证密码"""
-        return check_password_hash(password_hash, password)
+    def verify_password(password: str, stored_password: str) -> bool:
+        """验证密码 - 直接比较"""
+        return password == stored_password
     
     @staticmethod
     def login_or_register(username: str, password: str) -> dict:
@@ -157,4 +155,3 @@ class AuthService:
         """保存用户API密钥"""
         from .database_service import AppDatabaseService
         AppDatabaseService.update_user_api_keys(user_id, api_keys)
-

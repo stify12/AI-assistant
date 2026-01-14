@@ -539,6 +539,19 @@ body {
     font-size: 13px;
 }
 
+/* 文字按钮样式 - 黑体字 */
+.btn-text {
+    background: transparent;
+    border: none;
+    color: #1d1d1f;
+    font-weight: 600;
+    padding: 6px 10px;
+}
+
+.btn-text:hover {
+    background: #f5f5f7;
+}
+
 .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;

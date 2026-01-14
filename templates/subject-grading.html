@@ -106,6 +106,11 @@
             <div class="section" id="selectedDataSection" style="display:none;">
                 <div class="section-title">选中数据详情</div>
                 <div class="selected-data-info" id="selectedDataInfo"></div>
+                <!-- 原始批改结果 -->
+                <div class="raw-result-section">
+                    <div class="raw-result-label">原始批改结果</div>
+                    <pre class="raw-result-json" id="rawResultJson"></pre>
+                </div>
                 <!-- 大图预览区域 -->
                 <div class="large-image-preview" id="largeImagePreview" style="display:none;">
                     <div class="large-image-header">
@@ -210,7 +215,7 @@
 
             <!-- 评估操作区域 -->
             <div class="section" id="evaluateSection" style="display:none;">
-                <div class="section-title">评估操作</div>
+                <div class="section-title">单次评估</div>
                 <div class="section-desc">本地计算或调用AI大模型进行智能比对</div>
                 
                 <div class="evaluate-actions">
