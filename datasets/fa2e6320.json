@@ -1,0 +1,176 @@
+{
+  "dataset_id": "fa2e6320",
+  "book_id": "1998967464626053121",
+  "subject_id": 1,
+  "pages": [
+    2,
+    3,
+    4,
+    5
+  ],
+  "base_effects": {
+    "2": [
+      {
+        "index": "5",
+        "answer": "苏州园林冠江南（合乎题干要求即可）",
+        "userAnswer": "苏州园林誉九州",
+        "correct": "yes",
+        "tempIndex": 0,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "index": "6",
+        "answer": "①建筑——巧夺天工　②文学——诗词沃土　③旅游——观赏胜地",
+        "userAnswer": "建筑——砖瓦风骨 文学——纸墨风华",
+        "correct": "yes",
+        "tempIndex": 1,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "index": "7",
+        "answer": "示例：阿姨，您好！飞宇热爱古建筑，学了课文内容后开展拓展活动，探寻身边的文化遗产，这不但不会影响他的学习，还能培养他的学习能力，提升他的学习深度。阿姨，您就让飞宇开展这次有意义的活动吧！\n",
+        "userAnswer": "阿姨您好！飞宇想开展“探寻本地园林史迹”的活动，其实是把课堂上学到的古建筑知识用到实践中，能加深理解、增长见识，一点也不耽误学习，您就放心让他参加吧！",
+        "correct": "yes",
+        "tempIndex": 2,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "index": "(1)",
+        "answer": "成岗　舍己为人（或为保护同志和党组织宁可牺牲自己）",
+        "userAnswer": "成岗 舍己为人",
+        "correct": "yes",
+        "tempIndex": 3,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "index": "(2)",
+        "answer": "C",
+        "userAnswer": "C",
+        "correct": "yes",
+        "tempIndex": 4,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "index": "9",
+        "answer": "(1)感叹句\n(2)祈使句\n(3)疑问句\n(4)陈述句\n",
+        "userAnswer": "(1)感叹句 (2)祈使句 (3)疑问句 (4)陈述句",
+        "correct": "no",
+        "tempIndex": 5,
+        "questionType": "objective",
+        "bvalue": "4"
+      }
+    ],
+    "3": [
+      {
+        "index": "10",
+        "answer": "平台　四周　碑文　空间",
+        "userAnswer": "平台　四周　碑文　空间",
+        "correct": "yes",
+        "tempIndex": 0,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "index": "11",
+        "answer": "作比较、列数字。“栏杆的形状和天安门前金水桥的汉白玉栏杆一样”运用了作比较的说明方法，将人民英雄纪念碑的栏杆与天安门前金水桥的汉白玉栏杆进行对比，突出两者形状相似，同时强调了栏杆美观朴素、洁白耀眼的特点，使读者更直观地理解栏杆的样式，增强了说明的生动性和准确性。“在一块60吨重、14.7米高的碑心石上”运用列数字的说明方法，描述碑心石的重量和高度，用具体的数字让读者更直观地了解碑心石的规模和大小，使说明更具有说服力。",
+        "userAnswer": "作比较、列数字。将纪念碑的栏杆与天安门前金水桥对比，突出形状相似，强调栏杆的美观朴素；列数字让读者更直观了解碑心石的大小，更有说服力",
+        "correct": "no",
+        "tempIndex": 1,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "index": "12",
+        "answer": "不能删，说明毛主席、周总理对此事态度非常慎重，显示建碑的意义重大。三段碑文分开写，由近溯远，层次清晰，表达了人民对各个历史阶段革命先烈的崇敬和怀念之情。\n\n",
+        "userAnswer": "不可以",
+        "correct": "no",
+        "tempIndex": 2,
+        "questionType": "objective",
+        "bvalue": "4"
+      }
+    ],
+    "4": [
+      {
+        "index": "13",
+        "answer": "A",
+        "userAnswer": "",
+        "correct": "yes",
+        "tempIndex": 0,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "index": "14",
+        "answer": "不仅历史悠久",
+        "userAnswer": "",
+        "correct": "no",
+        "tempIndex": 1,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "index": "15",
+        "answer": " 列数字、打比方、摹状貌。\n<br>示例1：列举长、高、桥孔个数三项具体数字，科学准确地说明了双龙桥是云南古桥梁中规模最大的多孔联拱桥。（列数字）\n<br>示例2：将远观的双龙桥比作横卧在水面上的长虹，生动形象地说明了17个桥孔一字排开的雄美景象，写出了拱桥的形状优美。（打比方）\n<br>示例3：细致描摹桥孔“一字排开，孔孔相连”，桥上阁楼“楼中有楼，檐外有檐，雕琢精美”，通过具体的文字呈现特征，使读者更直观地感受其样貌。（摹状貌）\n（选择一种回答即可，3分）\n",
+        "userAnswer": "",
+        "correct": "no",
+        "tempIndex": 2,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "index": "16",
+        "answer": "古桥具有很高的价值，但古桥的现状令人担忧，我们应重视对古桥的维修和保护。（意思相符即可）\n",
+        "userAnswer": "古桥具有很高的价值，但古桥的现状令人担忧，我们要重视古桥的维护",
+        "correct": "yes",
+        "tempIndex": 3,
+        "questionType": "objective",
+        "bvalue": "4"
+      }
+    ],
+    "5": [
+      {
+        "index": "17",
+        "answer": "（1）大雀却捕不到，为什么呢？\n<br>（2）因此君子应当慎重地选择所要跟随的人。\n",
+        "userAnswer": "",
+        "correct": "",
+        "tempIndex": 0,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "index": "18",
+        "answer": "善惊以远害/利食而忘患/自其心矣/而以所从为祸福。",
+        "userAnswer": "",
+        "correct": "yes",
+        "tempIndex": 1,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "index": "19",
+        "answer": "示例：谨慎选择正确的人来跟从并且效仿，将会影响我们之后的人生，要多借鉴长者的经验。（或：不要贪图眼前利益，要有忧患意识。回答符合文意即可。）\n",
+        "userAnswer": "",
+        "correct": "",
+        "tempIndex": 2,
+        "questionType": "objective",
+        "bvalue": "4"
+      },
+      {
+        "index": "20",
+        "answer": "| 作文等级       | 评分标准                                                     |\n| -------------- | ------------------------------------------------------------ |\n| 一类卷（36—40分） | 1. 切合题意，立意明确，中心突出，材料具体生动，富有真情实感。<br>2. 结构严谨，注意照应，详略得当。<br>3. 语言得体、流畅。 |\n| 二类卷（30—35分） | 1. 符合题意，立意明确，中心突出，材料具体，有真情实感。<br>2. 结构完整，条理清楚。<br>3. 语言规范、通顺。 |\n| 三类卷（24—29分） | 1. 基本符合题意，立意明确，材料能表现中心，有情感。<br>2. 结构基本完整，有条理。<br>3. 语言基本通顺，有少数错别字。 |\n| 四类卷（16—23分） | 1. 不符合题意，立意不明确，材料难以表现中心，缺乏情感。<br>2. 结构不完整，条理不清楚。<br>3. 语言不通顺，错别字较多。 |\n| 五类卷（0—15分）  | 1. 没有中心，空洞无物，严重离题。<br>2. 结构残缺，不成篇章。<br>3. 文理不通，错别字较多。 |\n| 加分           | 符合如下条件之一，可酌情加1—3分（加至本题满分为止）：<br>1. 情真意切，立意深刻。<br>2. 构思独特，富有创意。<br>3. 语言优美，富有个性。<br>4. 文面整洁，书写优美。 |\n| 扣分           | 1. 没有标题扣2分。<br>2. 不足500字，每少50字扣1分。<br>3. 错别字每3个扣1分（重复的错别字不计），最多扣3分。<br>4. 不能正确使用标点扣1—3分。<br>5. 文面脏乱，字迹潦草，难以辨认者扣1—3分。<br>6. 出现暴露身份的真实校名、地名、人名的扣1—3分。 |\n",
+        "userAnswer": "",
+        "correct": "",
+        "tempIndex": 3,
+        "questionType": "objective",
+        "bvalue": "4"
+      }
+    ]
+  },
+  "created_at": "2026-01-14T17:15:07.717350",
+  "question_count": 17
+}
