@@ -1600,3 +1600,33 @@ body {
     flex: 1;
     overflow-y: auto;
 }
+
+
+/* 学生答案文本框 - 完整展示 */
+.recognize-table .answer-textarea {
+    width: 100%;
+    min-height: 60px;
+    padding: 8px 10px;
+    border: 1px solid #d2d2d7;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    line-height: 1.5;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.recognize-table .answer-textarea:focus {
+    outline: none;
+    border-color: #1d1d1f;
+}
+
+/* 调整表格行高度适应文本框 */
+.recognize-table td {
+    vertical-align: top;
+    padding: 10px 12px;
+}
+
+.recognize-table td:first-child {
+    vertical-align: middle;
+}

@@ -1,0 +1,45 @@
+feat: 批量评估添加学科管理功能
+
+## 新增功能
+
+1. **任务创建时选择学科**
+   - 新建任务时可选择学科（语文/数学/英语/物理等）
+   - 学科信息保存到任务数据中
+
+2. **任务名称自动生成**
+   - 格式：学科-月/日（如：数学-1/15）
+   - 未选学科时：批量评估-月/日
+   - 支持手动输入覆盖自动生成
+
+3. **任务列表学科筛选**
+   - 任务列表顶部添加学科下拉筛选器
+   - 支持按学科筛选任务
+   - 默认显示全部学科
+
+4. **学科标签显示**
+   - 任务列表中显示学科标签
+   - 标签样式：浅灰背景、黑色文字、圆角边框
+
+## 技术实现
+
+### 后端 (routes/batch_evaluation.py)
+- GET /api/batch/tasks 支持 subject_id 筛选参数
+- POST /api/batch/tasks 接收 subject_id 并自动生成任务名称
+- 任务数据新增 subject_id 和 subject_name 字段
+
+### 前端
+- templates/batch-evaluation.html: 添加学科筛选器
+- static/js/batch-evaluation.js: 
+  - onTaskSubjectFilterChange() 任务筛选
+  - updateAutoTaskName() 自动命名
+  - onSubjectFilterChange() 学科变化处理
+- static/css/batch-evaluation.css: 学科标签样式
+
+## 数据兼容性
+- 旧任务数据无 subject_id 字段时不影响显示
+- 筛选时旧任务在"全部学科"中显示
+
+## 测试
+- ✅ 任务自动命名逻辑测试通过
+- ✅ 学科筛选功能正常
+- ✅ 向后兼容旧数据

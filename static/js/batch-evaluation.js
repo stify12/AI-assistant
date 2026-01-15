@@ -30,6 +30,24 @@ document.addEventListener('DOMContentLoaded', () => {
     loadBookList();
 });
 
+// ========== 任务列表学科筛选 ==========
+let currentSubjectFilter = '';
+
+function filterBySubject(subjectId) {
+    currentSubjectFilter = subjectId;
+    // 更新按钮状态
+    document.querySelectorAll('.subject-filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.value === subjectId);
+    });
+    loadTaskList(subjectId || null);
+}
+
+// 兼容旧函数名
+function onTaskSubjectFilterChange() {
+    const subjectId = currentSubjectFilter;
+    loadTaskList(subjectId || null);
+}
+
 // ========== 返回导航 ==========
 function goBack() {
     if (window.history.length > 1) {
@@ -78,9 +96,13 @@ function hideDrawer() {
 }
 
 // ========== 任务管理 ==========
-async function loadTaskList() {
+async function loadTaskList(subjectId = null) {
     try {
-        const res = await fetch('/api/batch/tasks');
+        let url = '/api/batch/tasks';
+        if (subjectId !== null && subjectId !== '') {
+            url += `?subject_id=${subjectId}`;
+        }
+        const res = await fetch(url);
         const data = await res.json();
         if (data.success) {
             taskList = data.data || [];
@@ -107,6 +129,7 @@ function renderTaskList() {
         <div class="task-item ${selectedTask?.task_id === task.task_id ? 'selected' : ''}">
             <div class="task-item-content" onclick="selectTask('${task.task_id}')">
                 <div class="task-item-title">
+                    ${task.subject_name ? `<span class="subject-tag">${escapeHtml(task.subject_name)}</span>` : ''}
                     ${escapeHtml(task.name)}
                     <span class="task-item-status status-${task.status}">${getStatusText(task.status)}</span>
                 </div>
@@ -116,13 +139,6 @@ function renderTaskList() {
                     ${formatTime(task.created_at)}
                 </div>
             </div>
-            ${task.status === 'completed' ? `
-                <button class="btn btn-small btn-secondary task-re-eval-btn" 
-                        onclick="event.stopPropagation(); reEvaluateTask('${task.task_id}')" 
-                        title="重新评估">
-                    重新评估
-                </button>
-            ` : ''}
         </div>
     `).join('');
 }
@@ -189,6 +205,12 @@ function renderTaskDetail() {
     
     document.getElementById('exportBtn').disabled = !isCompleted;
     document.getElementById('aiReportBtn').disabled = !isCompleted;
+    
+    // 显示/隐藏重新评估按钮
+    const reEvalBtn = document.getElementById('reEvalBtn');
+    if (reEvalBtn) {
+        reEvalBtn.style.display = isCompleted ? 'inline-block' : 'none';
+    }
     
     // 显示/隐藏重置按钮
     const resetBtn = document.getElementById('resetTaskBtn');
@@ -733,12 +755,40 @@ function getHomeworkStatusText(status) {
 
 // ========== 新建任务 ==========
 function showCreateTaskModal() {
-    document.getElementById('taskNameInput').value = `批量评估-${new Date().toLocaleDateString()}`;
+    // 清空任务名称，让用户选择学科后自动生成
+    document.getElementById('taskNameInput').value = '';
+    document.getElementById('taskNameInput').placeholder = '留空则自动生成：学科-月/日';
     selectedHomeworkIds.clear();
     currentHwTaskId = '';
     loadHomeworkTasksForFilter();
     loadHomeworkForTask();
     showModal('createTaskModal');
+}
+
+// ========== 学科筛选变化时更新任务名称 ==========
+function onSubjectFilterChange() {
+    updateAutoTaskName();
+    loadHomeworkTasksForFilter();
+    loadHomeworkForTask();
+}
+
+function updateAutoTaskName() {
+    const nameInput = document.getElementById('taskNameInput');
+    const subjectId = document.getElementById('hwSubjectFilter').value;
+    
+    // 如果用户已经手动输入了名称，不自动更新
+    if (nameInput.value && !nameInput.value.match(/^(批量评估|语文|数学|英语|物理)-\d{1,2}\/\d{1,2}$/)) {
+        return;
+    }
+    
+    const now = new Date();
+    const monthDay = `${now.getMonth() + 1}/${now.getDate()}`;
+    
+    if (subjectId && SUBJECT_NAMES[subjectId]) {
+        nameInput.placeholder = `${SUBJECT_NAMES[subjectId]}-${monthDay}`;
+    } else {
+        nameInput.placeholder = `批量评估-${monthDay}`;
+    }
 }
 
 // ========== 加载作业任务列表（用于筛选） ==========
@@ -890,10 +940,8 @@ function updateSelectedCount() {
 
 async function createTask() {
     const name = document.getElementById('taskNameInput').value.trim();
-    if (!name) {
-        alert('请输入任务名称');
-        return;
-    }
+    const subjectId = document.getElementById('hwSubjectFilter').value;
+    
     if (selectedHomeworkIds.size === 0) {
         alert('请至少选择一个作业');
         return;
@@ -906,6 +954,7 @@ async function createTask() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 name: name,
+                subject_id: subjectId ? parseInt(subjectId) : null,
                 homework_ids: Array.from(selectedHomeworkIds)
             })
         });
@@ -962,6 +1011,13 @@ async function reEvaluateTask(taskId) {
     } catch (e) {
         hideLoading();
         alert('重新评估失败: ' + e.message);
+    }
+}
+
+// ========== 重新评估当前任务（从任务详情触发） ==========
+function reEvaluateCurrentTask() {
+    if (selectedTask && selectedTask.task_id) {
+        reEvaluateTask(selectedTask.task_id);
     }
 }
 

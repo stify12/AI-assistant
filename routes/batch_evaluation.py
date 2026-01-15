@@ -967,16 +967,26 @@ def batch_tasks():
     StorageService.ensure_dir(BATCH_TASKS_DIR)
     
     if request.method == 'GET':
+        # 获取筛选参数
+        subject_id = request.args.get('subject_id', type=int)
+        
         try:
             tasks = []
             for filename in StorageService.list_batch_tasks():
                 task_id = filename[:-5]
                 data = StorageService.load_batch_task(task_id)
                 if data:
+                    # 学科筛选
+                    task_subject_id = data.get('subject_id')
+                    if subject_id is not None and task_subject_id != subject_id:
+                        continue
+                    
                     overall_report = data.get('overall_report') or {}
                     tasks.append({
                         'task_id': data.get('task_id'),
                         'name': data.get('name', ''),
+                        'subject_id': task_subject_id,
+                        'subject_name': data.get('subject_name', ''),
                         'status': data.get('status', 'pending'),
                         'homework_count': len(data.get('homework_items', [])),
                         'overall_accuracy': overall_report.get('overall_accuracy', 0),
@@ -994,6 +1004,7 @@ def batch_tasks():
     else:  # POST
         data = request.json
         name = data.get('name', '')
+        subject_id = data.get('subject_id')
         homework_ids = data.get('homework_ids', [])
         
         if not homework_ids:
@@ -1012,6 +1023,30 @@ def batch_tasks():
                 WHERE h.id IN ({placeholders})
             """
             rows = DatabaseService.execute_query(sql, tuple(homework_ids))
+            
+            # 获取学科名称
+            subject_name = ''
+            if subject_id is not None:
+                subject_map = {
+                    1: '语文',
+                    2: '数学',
+                    3: '英语',
+                    4: '物理',
+                    5: '化学',
+                    6: '生物',
+                    7: '政治',
+                    8: '历史',
+                    9: '地理'
+                }
+                subject_name = subject_map.get(subject_id, f'学科{subject_id}')
+            
+            # 如果没有提供任务名称，自动生成：学科-月/日
+            if not name:
+                now = datetime.now()
+                if subject_name:
+                    name = f'{subject_name}-{now.month}/{now.day}'
+                else:
+                    name = f'批量评估-{now.month}/{now.day}'
             
             # 加载数据集
             datasets = []
@@ -1066,7 +1101,9 @@ def batch_tasks():
             task_id = str(uuid.uuid4())[:8]
             task_data = {
                 'task_id': task_id,
-                'name': name or f'批量评估-{datetime.now().strftime("%Y%m%d%H%M")}',
+                'name': name,
+                'subject_id': subject_id,
+                'subject_name': subject_name,
                 'status': 'pending',
                 'homework_items': homework_items,
                 'overall_report': None,

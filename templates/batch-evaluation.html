@@ -41,6 +41,14 @@
                         <div class="section-title">评估任务</div>
                         <button class="btn btn-primary" onclick="showCreateTaskModal()">新建任务</button>
                     </div>
+                    <!-- 学科筛选按钮组 -->
+                    <div class="subject-filter-group" id="subjectFilterGroup">
+                        <button class="subject-filter-btn active" data-value="" onclick="filterBySubject('')">全部</button>
+                        <button class="subject-filter-btn" data-value="0" onclick="filterBySubject('0')">英语</button>
+                        <button class="subject-filter-btn" data-value="1" onclick="filterBySubject('1')">语文</button>
+                        <button class="subject-filter-btn" data-value="2" onclick="filterBySubject('2')">数学</button>
+                        <button class="subject-filter-btn" data-value="3" onclick="filterBySubject('3')">物理</button>
+                    </div>
                     <div class="task-list" id="taskList">
                         <div class="empty-state">
                             <div class="empty-state-icon">--</div>
@@ -68,6 +76,7 @@
                             <div class="task-actions">
                                 <button class="btn btn-secondary" id="startEvalBtn" onclick="startBatchEvaluation()">本地评估</button>
                                 <button class="btn btn-primary" id="batchAiEvalBtn" onclick="batchAiEvaluation()">一键AI评估</button>
+                                <button class="btn btn-secondary" id="reEvalBtn" onclick="reEvaluateCurrentTask()" style="display:none;">重新评估</button>
                                 <button class="btn btn-secondary" id="exportBtn" onclick="exportExcel()" disabled>导出Excel</button>
                                 <button class="btn btn-secondary" id="aiReportBtn" onclick="generateAIReport()" disabled>AI分析</button>
                                 <button class="btn btn-warning" id="resetTaskBtn" onclick="resetBatchTask()" style="display:none;">重置任务</button>

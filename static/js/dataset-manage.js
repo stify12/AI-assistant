@@ -568,7 +568,7 @@ function renderResultTable(page, data) {
                 ${data.map((item, idx) => `
                     <tr data-idx="${idx}">
                         <td><input type="text" value="${escapeHtml(item.index || '')}" onchange="updateTableCell(${page}, ${idx}, 'index', this.value)"></td>
-                        <td><input type="text" value="${escapeHtml(item.userAnswer || '')}" onchange="updateTableCell(${page}, ${idx}, 'userAnswer', this.value)"></td>
+                        <td><textarea class="answer-textarea" onchange="updateTableCell(${page}, ${idx}, 'userAnswer', this.value)">${escapeHtml(item.userAnswer || '')}</textarea></td>
                         <td>
                             <select onchange="updateTableCell(${page}, ${idx}, 'correct', this.value)">
                                 <option value="yes" ${item.correct === 'yes' ? 'selected' : ''}>正确</option>
