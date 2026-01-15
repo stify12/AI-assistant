@@ -17,6 +17,9 @@ const SUBJECT_NAMES = {
 
 // ========== 初始化 ==========
 document.addEventListener('DOMContentLoaded', () => {
+    // 优先加载数据集概览（快速）
+    loadDatasetOverview();
+    // 后台加载书本列表（较慢，不阻塞页面）
     loadBooks();
 });
 
@@ -63,7 +66,13 @@ function hideImageModal() {
 }
 
 // ========== 图书列表 ==========
+let booksLoaded = false;  // 标记是否已加载
+
 async function loadBooks() {
+    if (booksLoaded && Object.keys(bookList).length > 0) {
+        return;  // 已加载过，不重复加载
+    }
+    
     const container = document.getElementById('bookList');
     container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载中...</div></div>';
     
@@ -73,6 +82,7 @@ async function loadBooks() {
         
         if (data.success) {
             bookList = data.data || {};
+            booksLoaded = true;
             renderBooks();
         } else {
             container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载失败</div></div>';
@@ -161,7 +171,8 @@ async function selectBook(bookId, subjectId) {
         renderBooks();
         renderBookDetail();
         
-        // 隐藏添加面板，显示详情
+        // 隐藏概览，显示详情
+        document.getElementById('datasetOverview').style.display = 'none';
         document.getElementById('addDatasetPanel').style.display = 'none';
         document.getElementById('bookDetail').style.display = 'block';
         document.getElementById('emptyRight').style.display = 'none';
@@ -251,7 +262,15 @@ function showAddDatasetPanel() {
 
 function hideAddDatasetPanel() {
     document.getElementById('addDatasetPanel').style.display = 'none';
-    document.getElementById('bookDetail').style.display = 'block';
+    
+    // 根据当前视图显示对应内容
+    if (currentView === 'overview') {
+        document.getElementById('bookDetail').style.display = 'none';
+        document.getElementById('datasetOverview').style.display = 'flex';
+    } else {
+        document.getElementById('bookDetail').style.display = 'block';
+        document.getElementById('datasetOverview').style.display = 'none';
+    }
 }
 
 function togglePage(page) {
@@ -1277,3 +1296,138 @@ async function saveEditDataset() {
     
     hideLoading();
 }
+
+
+// ========== 数据集概览功能（首页默认显示） ==========
+let allBooksWithDatasets = [];  // 所有有数据集的书本
+
+// 页面加载时加载概览
+async function loadDatasetOverview() {
+    const container = document.getElementById('overviewBookList');
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载中...</div></div>';
+    
+    try {
+        // 获取所有有数据集的书本
+        const res = await fetch('/api/batch/datasets/all-books');
+        const data = await res.json();
+        
+        if (data.success) {
+            allBooksWithDatasets = data.data || [];
+            renderOverviewBookList();
+        } else {
+            container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载失败</div></div>';
+        }
+    } catch (e) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载失败: ' + e.message + '</div></div>';
+    }
+}
+
+// 渲染概览书本列表
+function renderOverviewBookList() {
+    const container = document.getElementById('overviewBookList');
+    const statsContainer = document.getElementById('overviewStats');
+    
+    if (allBooksWithDatasets.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">暂无数据集，请从左侧选择图书添加</div></div>';
+        statsContainer.innerHTML = '';
+        return;
+    }
+    
+    // 统计
+    const totalBooks = allBooksWithDatasets.length;
+    const totalDatasets = allBooksWithDatasets.reduce((sum, b) => sum + (b.dataset_count || 0), 0);
+    const totalQuestions = allBooksWithDatasets.reduce((sum, b) => sum + (b.question_count || 0), 0);
+    
+    statsContainer.innerHTML = `
+        <div class="overview-stat-card">
+            <div class="overview-stat-num">${totalBooks}</div>
+            <div class="overview-stat-label">本书</div>
+        </div>
+        <div class="overview-stat-card">
+            <div class="overview-stat-num">${totalDatasets}</div>
+            <div class="overview-stat-label">数据集</div>
+        </div>
+        <div class="overview-stat-card">
+            <div class="overview-stat-num">${totalQuestions}</div>
+            <div class="overview-stat-label">题目</div>
+        </div>
+    `;
+    
+    // 按学科分组
+    const bySubject = {};
+    allBooksWithDatasets.forEach(book => {
+        const subjectId = book.subject_id || 0;
+        if (!bySubject[subjectId]) {
+            bySubject[subjectId] = [];
+        }
+        bySubject[subjectId].push(book);
+    });
+    
+    let html = '';
+    for (const [subjectId, books] of Object.entries(bySubject)) {
+        html += `
+            <div class="overview-subject-group">
+                <div class="overview-subject-header">
+                    <span class="overview-subject-tag">${SUBJECT_NAMES[subjectId] || '未知学科'}</span>
+                    <span class="overview-subject-count">${books.length} 本书</span>
+                </div>
+                <div class="overview-book-grid">
+                    ${books.map(book => `
+                        <div class="overview-book-card" onclick="goToBookDetail('${book.book_id}', ${subjectId})">
+                            <div class="overview-book-header">
+                                <div class="overview-book-name" title="${escapeHtml(book.book_name)}">${escapeHtml(book.book_name)}</div>
+                            </div>
+                            <div class="overview-book-stats">
+                                <div class="overview-book-stat">
+                                    <span class="stat-value">${book.dataset_count || 0}</span>
+                                    <span class="stat-label">数据集</span>
+                                </div>
+                                <div class="overview-book-stat">
+                                    <span class="stat-value">${book.question_count || 0}</span>
+                                    <span class="stat-label">题目</span>
+                                </div>
+                                <div class="overview-book-stat">
+                                    <span class="stat-value">${book.pages?.length || 0}</span>
+                                    <span class="stat-label">页码</span>
+                                </div>
+                            </div>
+                            <div class="overview-book-pages">
+                                <span class="pages-label">覆盖页码:</span>
+                                <span class="pages-list">${book.pages?.slice(0, 8).join(', ') || '-'}${book.pages?.length > 8 ? ' ...' : ''}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+}
+
+// 点击概览中的书本，跳转到详情
+async function goToBookDetail(bookId, subjectId) {
+    // 隐藏概览，显示详情
+    document.getElementById('datasetOverview').style.display = 'none';
+    
+    // 调用选择书本的逻辑
+    await selectBook(bookId, subjectId);
+}
+
+// 返回概览
+function backToOverview() {
+    selectedBook = null;
+    datasetList = [];
+    
+    // 重置左侧选中状态
+    renderBooks();
+    
+    // 隐藏详情，显示概览
+    document.getElementById('bookDetail').style.display = 'none';
+    document.getElementById('addDatasetPanel').style.display = 'none';
+    document.getElementById('datasetOverview').style.display = 'block';
+    
+    // 刷新概览数据
+    loadDatasetOverview();
+}
+

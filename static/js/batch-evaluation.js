@@ -13,6 +13,8 @@ let homeworkForTask = [];
 let selectedHomeworkIds = new Set();
 let selectedPages = new Set();
 let pageBaseEffects = {};
+let currentHwTaskId = ''; // 当前选中的作业任务ID
+let hwTaskList = []; // 作业任务列表
 
 // 学科名称映射
 const SUBJECT_NAMES = {
@@ -733,8 +735,82 @@ function getHomeworkStatusText(status) {
 function showCreateTaskModal() {
     document.getElementById('taskNameInput').value = `批量评估-${new Date().toLocaleDateString()}`;
     selectedHomeworkIds.clear();
+    currentHwTaskId = '';
+    loadHomeworkTasksForFilter();
     loadHomeworkForTask();
     showModal('createTaskModal');
+}
+
+// ========== 加载作业任务列表（用于筛选） ==========
+async function loadHomeworkTasksForFilter() {
+    const subjectId = document.getElementById('hwSubjectFilter').value;
+    const hours = document.getElementById('hwTimeFilter').value;
+    
+    try {
+        let url = `/api/batch/homework-tasks?hours=${hours}`;
+        if (subjectId) url += `&subject_id=${subjectId}`;
+        
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (data.success) {
+            hwTaskList = data.data || [];
+            renderHwTaskList();
+        }
+    } catch (e) {
+        console.error('加载作业任务失败:', e);
+    }
+}
+
+// ========== 渲染作业任务列表 ==========
+function renderHwTaskList() {
+    const container = document.getElementById('hwTaskList');
+    
+    let html = `
+        <div class="task-item ${currentHwTaskId === '' ? 'active' : ''}" data-task-id="" onclick="selectHomeworkTask(this, '')">
+            <span class="task-name">全部作业</span>
+        </div>
+    `;
+    
+    if (hwTaskList.length > 0) {
+        html += hwTaskList.map(task => `
+            <div class="task-item ${currentHwTaskId == task.hw_publish_id ? 'active' : ''}" 
+                 data-task-id="${task.hw_publish_id}" 
+                 onclick="selectHomeworkTask(this, '${task.hw_publish_id}')">
+                <span class="task-name">${escapeHtml(task.task_name || '未命名任务')}</span>
+                <span class="task-count">${task.homework_count || 0}</span>
+            </div>
+        `).join('');
+    }
+    
+    container.innerHTML = html;
+}
+
+// ========== 选择作业任务 ==========
+function selectHomeworkTask(element, taskId) {
+    currentHwTaskId = taskId;
+    
+    // 更新选中状态
+    document.querySelectorAll('#hwTaskList .task-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.taskId === taskId);
+    });
+    
+    // 重新加载作业列表
+    loadHomeworkForTask();
+}
+
+// ========== 学科筛选变化 ==========
+function onSubjectFilterChange() {
+    currentHwTaskId = '';
+    loadHomeworkTasksForFilter();
+    loadHomeworkForTask();
+}
+
+// ========== 时间筛选变化 ==========
+function onTimeFilterChange() {
+    currentHwTaskId = '';
+    loadHomeworkTasksForFilter();
+    loadHomeworkForTask();
 }
 
 async function loadHomeworkForTask() {
@@ -747,6 +823,7 @@ async function loadHomeworkForTask() {
     try {
         let url = `/api/batch/homework?hours=${hours}`;
         if (subjectId) url += `&subject_id=${subjectId}`;
+        if (currentHwTaskId) url += `&hw_publish_id=${currentHwTaskId}`;
         
         const res = await fetch(url);
         const data = await res.json();

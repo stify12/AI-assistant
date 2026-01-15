@@ -50,7 +50,8 @@
         "list_console_messages",
         "list_network_requests",
         "get_network_request",
-        "select_page"
+        "select_page",
+        "list_pages"
       ]
     }
   }

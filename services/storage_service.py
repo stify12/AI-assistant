@@ -279,6 +279,60 @@ class StorageService:
         
         return StorageService.list_json_files(StorageService.DATASETS_DIR)
     
+    @staticmethod
+    def get_all_datasets_summary():
+        """获取所有数据集的摘要信息（不加载base_effects详情，提升性能）"""
+        if USE_DB_STORAGE:
+            from .database_service import AppDatabaseService
+            # 直接查询数据库，一次性获取所有需要的字段
+            sql = """
+                SELECT dataset_id, book_id, book_name, subject_id, pages, question_count, created_at
+                FROM datasets
+                ORDER BY created_at DESC
+            """
+            rows = AppDatabaseService.execute_query(sql)
+            result = []
+            for row in rows:
+                pages = row.get('pages', [])
+                if isinstance(pages, str):
+                    try:
+                        pages = json.loads(pages)
+                    except:
+                        pages = []
+                result.append({
+                    'dataset_id': row['dataset_id'],
+                    'book_id': row['book_id'],
+                    'book_name': row['book_name'],
+                    'subject_id': row['subject_id'],
+                    'pages': pages,
+                    'question_count': row.get('question_count', 0),
+                    'created_at': row['created_at'].isoformat() if row.get('created_at') else ''
+                })
+            return result
+        
+        # 文件存储模式：只读取必要字段
+        result = []
+        for filename in StorageService.list_json_files(StorageService.DATASETS_DIR):
+            dataset_id = filename[:-5]
+            filepath = StorageService.get_file_path(StorageService.DATASETS_DIR, dataset_id)
+            data = StorageService.load_json(filepath)
+            if data:
+                # 计算题目数量
+                question_count = 0
+                for effects in data.get('base_effects', {}).values():
+                    question_count += len(effects) if isinstance(effects, list) else 0
+                
+                result.append({
+                    'dataset_id': dataset_id,
+                    'book_id': data.get('book_id'),
+                    'book_name': data.get('book_name', ''),
+                    'subject_id': data.get('subject_id'),
+                    'pages': data.get('pages', []),
+                    'question_count': question_count,
+                    'created_at': data.get('created_at', '')
+                })
+        return result
+    
     # ========== 基准效果存储 ==========
     
     @staticmethod

@@ -13,6 +13,7 @@ class LLMService:
     
     QWEN_API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
     DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions'
+    ZHIPU_API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
     
     @staticmethod
     def call_qwen(prompt, system_prompt='你是一个专业的AI助手。', model='qwen3-max', timeout=60, user_id=None):
@@ -83,6 +84,48 @@ class LLMService:
         try:
             response = requests.post(
                 LLMService.DEEPSEEK_API_URL,
+                json=payload,
+                headers=headers,
+                timeout=timeout
+            )
+            result = response.json()
+            
+            if 'choices' in result:
+                content = result['choices'][0]['message']['content']
+                return {'success': True, 'content': content, 'raw': result}
+            else:
+                error_msg = result.get('error', {}).get('message', '请求失败')
+                return {'error': error_msg}
+        except requests.Timeout:
+            return {'error': '请求超时'}
+        except Exception as e:
+            return {'error': str(e)}
+    
+    @staticmethod
+    def call_zhipu(prompt, system_prompt='你是一个专业的AI助手。', model='glm-4', timeout=60, user_id=None):
+        """调用智谱 GLM 模型"""
+        config = ConfigService.load_config(user_id=user_id)
+        api_key = config.get('zhipu_api_key')
+        
+        if not api_key:
+            return {'error': '请先配置智谱 API Key'}
+        
+        payload = {
+            'model': model,
+            'messages': [
+                {'role': 'system', 'content': system_prompt},
+                {'role': 'user', 'content': prompt}
+            ]
+        }
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {api_key}'
+        }
+        
+        try:
+            response = requests.post(
+                LLMService.ZHIPU_API_URL,
                 json=payload,
                 headers=headers,
                 timeout=timeout

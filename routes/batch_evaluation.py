@@ -15,6 +15,7 @@ from services.config_service import ConfigService
 from services.database_service import DatabaseService
 from services.storage_service import StorageService
 from services.llm_service import LLMService
+from services.semantic_eval_service import SemanticEvalService
 from utils.text_utils import normalize_answer, has_format_diff
 
 batch_evaluation_bp = Blueprint('batch_evaluation', __name__)
@@ -472,6 +473,90 @@ def get_book_pages(book_id):
 
 # ========== 数据集管理 API ==========
 
+@batch_evaluation_bp.route('/datasets/all-books', methods=['GET'])
+def get_all_books_with_datasets():
+    """获取所有有数据集的书本概览 - 优化版本"""
+    try:
+        # 使用摘要方法，避免加载完整数据
+        all_datasets = StorageService.get_all_datasets_summary()
+        
+        # 按书本分组统计
+        books_map = {}
+        book_ids_need_info = []
+        
+        for data in all_datasets:
+            book_id = data.get('book_id')
+            if not book_id:
+                continue
+            
+            if book_id not in books_map:
+                books_map[book_id] = {
+                    'book_id': book_id,
+                    'book_name': data.get('book_name', ''),
+                    'subject_id': data.get('subject_id'),
+                    'dataset_count': 0,
+                    'question_count': 0,
+                    'pages': set()
+                }
+                # 记录需要查询的book_id
+                if not data.get('book_name'):
+                    book_ids_need_info.append(book_id)
+            
+            books_map[book_id]['dataset_count'] += 1
+            books_map[book_id]['question_count'] += data.get('question_count', 0)
+            
+            # 收集页码
+            for page in data.get('pages', []):
+                books_map[book_id]['pages'].add(page)
+        
+        # 批量查询数据库获取书本名称和学科信息
+        if book_ids_need_info:
+            try:
+                placeholders = ','.join(['%s'] * len(book_ids_need_info))
+                sql = f"SELECT id, book_name, subject_id FROM zp_make_book WHERE id IN ({placeholders})"
+                rows = DatabaseService.execute_query(sql, tuple(book_ids_need_info))
+                
+                # 构建查询结果映射
+                book_info_map = {row['id']: row for row in rows}
+                
+                # 更新书本信息
+                for book_id in book_ids_need_info:
+                    book_info = books_map.get(book_id)
+                    if book_info:
+                        db_info = book_info_map.get(book_id)
+                        if db_info:
+                            book_info['book_name'] = db_info.get('book_name', '') or f'书本 {book_id[-6:]}'
+                            if book_info['subject_id'] is None:
+                                book_info['subject_id'] = db_info.get('subject_id', 0)
+                        else:
+                            book_info['book_name'] = f'书本 {book_id[-6:]}'
+            except Exception as e:
+                print(f"[AllBooks] Batch query error: {e}")
+                for book_id in book_ids_need_info:
+                    if books_map.get(book_id) and not books_map[book_id]['book_name']:
+                        books_map[book_id]['book_name'] = f'书本 {book_id[-6:]}'
+        
+        # 转换为列表
+        result = []
+        for book in books_map.values():
+            book['pages'] = sorted(list(book['pages']))
+            if book['subject_id'] is None:
+                book['subject_id'] = 0
+            if not book['book_name']:
+                book['book_name'] = f"书本 {book['book_id'][-6:]}"
+            result.append(book)
+        
+        # 按数据集数量排序
+        result.sort(key=lambda x: x['dataset_count'], reverse=True)
+        
+        return jsonify({'success': True, 'data': result})
+    
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)})
+
+
 @batch_evaluation_bp.route('/datasets', methods=['GET', 'POST'])
 def batch_datasets():
     """数据集管理"""
@@ -738,24 +823,23 @@ def enrich_base_effects_with_types():
 
 # ========== 批量任务管理 API ==========
 
-@batch_evaluation_bp.route('/homework', methods=['GET'])
-def get_batch_homework():
-    """获取可用于批量评估的作业列表"""
+@batch_evaluation_bp.route('/homework-tasks', methods=['GET'])
+def get_homework_tasks():
+    """获取作业任务列表（按hw_publish_id分组）"""
     subject_id = request.args.get('subject_id', type=int)
-    hours = request.args.get('hours', 24, type=int)
+    hours = request.args.get('hours', 168, type=int)  # 默认7天
     
     try:
+        # 添加超时保护，限制查询时间范围
+        if hours > 720:  # 最多30天
+            hours = 720
+        
         sql = """
-            SELECT h.id, h.student_id, h.hw_publish_id, h.subject_id, h.page_num, 
-                   h.pic_path, h.homework_result, h.create_time,
-                   p.content AS homework_name,
-                   s.name AS student_name,
-                   b.id AS book_id,
-                   b.book_name AS book_name
-            FROM zp_homework h
-            LEFT JOIN zp_homework_publish p ON h.hw_publish_id = p.id
-            LEFT JOIN zp_student s ON h.student_id = s.id
-            LEFT JOIN zp_make_book b ON p.book_id = b.id
+            SELECT p.id AS hw_publish_id, p.content AS task_name, 
+                   COUNT(h.id) AS homework_count,
+                   MAX(h.create_time) AS latest_time
+            FROM zp_homework_publish p
+            INNER JOIN zp_homework h ON h.hw_publish_id = p.id
             WHERE h.status = 3 
               AND h.create_time >= DATE_SUB(NOW(), INTERVAL %s HOUR)
         """
@@ -765,7 +849,85 @@ def get_batch_homework():
             sql += " AND h.subject_id = %s"
             params.append(subject_id)
         
-        sql += " ORDER BY h.create_time DESC LIMIT 500"
+        sql += """
+            GROUP BY p.id, p.content
+            ORDER BY latest_time DESC
+            LIMIT 50
+        """
+        
+        rows = DatabaseService.execute_query(sql, tuple(params))
+        
+        tasks = []
+        for row in rows:
+            tasks.append({
+                'hw_publish_id': row['hw_publish_id'],
+                'task_name': row.get('task_name', ''),
+                'homework_count': row.get('homework_count', 0),
+                'latest_time': row['latest_time'].isoformat() if row.get('latest_time') else None
+            })
+        
+        return jsonify({'success': True, 'data': tasks})
+    
+    except Exception as e:
+        print(f"[HomeworkTasks] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': f'查询失败: {str(e)}'}), 500
+
+
+@batch_evaluation_bp.route('/homework', methods=['GET'])
+def get_batch_homework():
+    """获取可用于批量评估的作业列表"""
+    subject_id = request.args.get('subject_id', type=int)
+    hours = request.args.get('hours', 24, type=int)
+    hw_publish_id = request.args.get('hw_publish_id', type=int)
+    
+    try:
+        # 根据是否有hw_publish_id决定查询条件
+        if hw_publish_id:
+            sql = """
+                SELECT h.id, h.student_id, h.hw_publish_id, h.subject_id, h.page_num, 
+                       h.pic_path, h.homework_result, h.create_time,
+                       p.content AS homework_name,
+                       s.name AS student_name,
+                       b.id AS book_id,
+                       b.book_name AS book_name
+                FROM zp_homework h
+                LEFT JOIN zp_homework_publish p ON h.hw_publish_id = p.id
+                LEFT JOIN zp_student s ON h.student_id = s.id
+                LEFT JOIN zp_make_book b ON p.book_id = b.id
+                WHERE h.status = 3 
+                  AND h.hw_publish_id = %s
+            """
+            params = [hw_publish_id]
+            
+            if subject_id is not None:
+                sql += " AND h.subject_id = %s"
+                params.append(subject_id)
+            
+            sql += " ORDER BY h.create_time DESC LIMIT 500"
+        else:
+            sql = """
+                SELECT h.id, h.student_id, h.hw_publish_id, h.subject_id, h.page_num, 
+                       h.pic_path, h.homework_result, h.create_time,
+                       p.content AS homework_name,
+                       s.name AS student_name,
+                       b.id AS book_id,
+                       b.book_name AS book_name
+                FROM zp_homework h
+                LEFT JOIN zp_homework_publish p ON h.hw_publish_id = p.id
+                LEFT JOIN zp_student s ON h.student_id = s.id
+                LEFT JOIN zp_make_book b ON p.book_id = b.id
+                WHERE h.status = 3 
+                  AND h.create_time >= DATE_SUB(NOW(), INTERVAL %s HOUR)
+            """
+            params = [hours]
+            
+            if subject_id is not None:
+                sql += " AND h.subject_id = %s"
+                params.append(subject_id)
+            
+            sql += " ORDER BY h.create_time DESC LIMIT 500"
         
         rows = DatabaseService.execute_query(sql, tuple(params))
         
@@ -1437,54 +1599,69 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
 
 
 def do_ai_compare_batch(base_effect, homework_result, user_id=None):
-    """批量评估中使用AI模型比对"""
+    """
+    批量评估中使用语义级评估系统
+    使用 SemanticEvalService 进行更精准的 AI 批改效果分析
+    """
     config = ConfigService.load_config(user_id=user_id)
     
-    # 获取比对提示词
-    prompts_config = config.get('prompts', {})
-    compare_prompt = prompts_config.get('compare_answer', '')
-    
-    if not compare_prompt:
-        print('[AI Compare Batch] 未配置比对提示词')
+    # 检查是否配置了 DeepSeek API Key
+    if not config.get('deepseek_api_key'):
+        print('[AI Compare Batch] 未配置 DeepSeek API Key，回退到本地评估')
         return None
-    
-    prompt = f"""{compare_prompt}
-
-【基准效果数据】
-{json.dumps(base_effect, ensure_ascii=False, indent=2)}
-
-【AI批改结果数据】
-{json.dumps(homework_result, ensure_ascii=False, indent=2)}
-
-请逐题分析并输出JSON数组。"""
     
     try:
-        result = LLMService.call_deepseek(
-            prompt, 
-            '你是专业的答案比对专家，请严格按照要求输出JSON数组。',
-            timeout=120,
-            user_id=user_id
+        # 构建评估项目列表
+        items = []
+        hw_dict = {}
+        for i, hw_item in enumerate(homework_result):
+            temp_idx = hw_item.get('tempIndex', i)
+            hw_dict[int(temp_idx)] = hw_item
+        
+        for i, base_item in enumerate(base_effect):
+            base_temp_idx = base_item.get('tempIndex', i)
+            if base_temp_idx is not None:
+                base_temp_idx = int(base_temp_idx)
+            else:
+                base_temp_idx = i
+            
+            hw_item = hw_dict.get(base_temp_idx, {})
+            
+            items.append({
+                'index': str(base_item.get('index', i + 1)),
+                'standard_answer': str(base_item.get('answer', '') or base_item.get('mainAnswer', '')),
+                'base_user_answer': str(base_item.get('userAnswer', '')),
+                'base_correct': get_correct_value(base_item),
+                'ai_user_answer': str(hw_item.get('userAnswer', '')),
+                'ai_correct': get_correct_value(hw_item)
+            })
+        
+        # 执行语义评估
+        semantic_result = SemanticEvalService.evaluate_batch(
+            subject='通用',
+            question_type='客观题',
+            items=items,
+            eval_model='deepseek-chat'
         )
         
-        if result.get('error'):
-            print(f'[AI Compare Batch] DeepSeek调用失败: {result.get("error")}')
-            return None
+        # 转换为批量评估结果格式
+        return convert_semantic_to_batch_result(
+            semantic_result, 
+            base_effect, 
+            homework_result
+        )
         
-        compare_results = LLMService.extract_json_array(result.get('content', ''))
-        
-        if not compare_results:
-            print('[AI Compare Batch] 无法解析AI返回结果')
-            return None
-        
-        # 转换为评估结果格式
-        return convert_batch_ai_compare(compare_results, base_effect, homework_result)
     except Exception as e:
-        print(f'[AI Compare Batch] AI比对失败: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        print(f'[AI Compare Batch] 语义评估失败: {str(e)}')
         return None
 
 
-def convert_batch_ai_compare(compare_results, base_effect, homework_result):
-    """将批量AI比对结果转换为评估结果格式"""
+def convert_semantic_to_batch_result(semantic_result, base_effect, homework_result):
+    """
+    将语义评估结果转换为批量评估结果格式
+    """
     total = len(base_effect)
     correct_count = 0
     errors = []
@@ -1505,33 +1682,41 @@ def convert_batch_ai_compare(compare_results, base_effect, homework_result):
         'non_choice': {'total': 0, 'correct': 0, 'accuracy': 0}
     }
     
+    # 错误类型映射
     error_type_map = {
-        'correct': None,
-        'recognition_error_judgment_correct': '识别错误-判断正确',
-        'recognition_error_judgment_error': '识别错误-判断错误',
-        'recognition_correct_judgment_error': '识别正确-判断错误',
-        'format_diff': '格式差异',
-        'missing': '缺失题目',
-        'hallucination': 'AI识别幻觉'
+        '完全正确': None,
+        '语义等价': None,  # 语义等价视为正确
+        '识别错误-判断正确': '识别错误-判断正确',
+        '识别错误-判断错误': '识别错误-判断错误',
+        '识别正确-判断错误': '识别正确-判断错误',
+        '格式差异': '格式差异',
+        'AI幻觉': 'AI识别幻觉'
     }
     
-    hw_dict = {str(item.get('index', '')): item for item in homework_result if item.get('index')}
+    # 构建索引字典
+    hw_dict = {}
+    for i, hw_item in enumerate(homework_result):
+        temp_idx = hw_item.get('tempIndex', i)
+        hw_dict[int(temp_idx)] = hw_item
+        idx = str(hw_item.get('index', ''))
+        if idx:
+            hw_dict[f'idx_{idx}'] = hw_item
     
-    # 构建基准效果的index集合和字典
     base_dict = {str(b.get('index', '')): b for b in base_effect}
-    base_indices = set(base_dict.keys())
-    processed_indices = set()
     
-    for result in compare_results:
-        idx = str(result.get('index', ''))
+    # 处理语义评估结果
+    semantic_results = semantic_result.get('results', [])
+    result_dict = {str(r.get('index', '')): r for r in semantic_results}
+    
+    for i, base_item in enumerate(base_effect):
+        idx = str(base_item.get('index', ''))
+        base_temp_idx = base_item.get('tempIndex', i)
+        if base_temp_idx is not None:
+            base_temp_idx = int(base_temp_idx)
+        else:
+            base_temp_idx = i
         
-        # 跳过不在基准效果中的题目，避免重复计数
-        if idx not in base_indices or idx in processed_indices:
-            continue
-        processed_indices.add(idx)
-        
-        # 获取基准效果中的题目数据用于类型分类
-        base_item = base_dict.get(idx, {})
+        # 获取题目类型分类
         question_category = classify_question_type(base_item)
         
         # 更新题目类型统计 - 总数
@@ -1545,11 +1730,18 @@ def convert_batch_ai_compare(compare_results, base_effect, homework_result):
         else:
             type_stats['non_choice']['total'] += 1
         
-        is_correct = result.get('is_correct', False)
-        error_type_key = result.get('error_type', 'correct')
-        error_type = error_type_map.get(error_type_key)
+        # 获取语义评估结果
+        sem_result = result_dict.get(idx, {})
+        verdict = sem_result.get('verdict', 'UNKNOWN')
+        error_type_raw = sem_result.get('error_type', '')
         
-        if is_correct or error_type is None:
+        # 获取 AI 批改结果
+        hw_item = hw_dict.get(base_temp_idx) or hw_dict.get(f'idx_{idx}', {})
+        
+        # 判断是否正确
+        is_correct = verdict == 'PASS' or error_type_raw in ('完全正确', '语义等价')
+        
+        if is_correct:
             correct_count += 1
             # 更新题目类型统计 - 正确数
             if question_category['is_objective']:
@@ -1562,10 +1754,17 @@ def convert_batch_ai_compare(compare_results, base_effect, homework_result):
             else:
                 type_stats['non_choice']['correct'] += 1
         else:
-            if error_type in error_distribution:
+            # 映射错误类型
+            error_type = error_type_map.get(error_type_raw, '识别错误-判断错误')
+            if error_type and error_type in error_distribution:
                 error_distribution[error_type] += 1
             
-            hw_item = hw_dict.get(idx, {})
+            # 获取详细说明
+            explanation = sem_result.get('summary', '')
+            if not explanation:
+                recognition = sem_result.get('recognition', {})
+                if isinstance(recognition, dict):
+                    explanation = recognition.get('detail', '')
             
             errors.append({
                 'index': idx,
@@ -1579,41 +1778,17 @@ def convert_batch_ai_compare(compare_results, base_effect, homework_result):
                     'userAnswer': hw_item.get('userAnswer', ''),
                     'correct': hw_item.get('correct', '')
                 },
-                'error_type': error_type,
-                'explanation': result.get('explanation', ''),
-                'question_category': question_category
-            })
-    
-    # 处理基准效果中存在但AI未返回结果的题目（视为缺失）
-    for base_item in base_effect:
-        idx = str(base_item.get('index', ''))
-        if idx not in processed_indices:
-            # 获取题目类型分类
-            question_category = classify_question_type(base_item)
-            
-            # 更新题目类型统计 - 总数（缺失题目也计入总数，但不计入正确数）
-            if question_category['is_objective']:
-                type_stats['objective']['total'] += 1
-            else:
-                type_stats['subjective']['total'] += 1
-            
-            if question_category['is_choice']:
-                type_stats['choice']['total'] += 1
-            else:
-                type_stats['non_choice']['total'] += 1
-            
-            error_distribution['缺失题目'] += 1
-            errors.append({
-                'index': idx,
-                'base_effect': {
-                    'answer': base_item.get('answer', '') or base_item.get('mainAnswer', ''),
-                    'userAnswer': base_item.get('userAnswer', ''),
-                    'correct': base_item.get('correct', '')
-                },
-                'ai_result': {'answer': '', 'userAnswer': '', 'correct': ''},
-                'error_type': '缺失题目',
-                'explanation': 'AI比对结果中缺少该题',
-                'question_category': question_category
+                'error_type': error_type or error_type_raw,
+                'explanation': explanation,
+                'severity': sem_result.get('severity', 'medium'),
+                'severity_cn': sem_result.get('severity_cn', '中等'),
+                'question_category': question_category,
+                'semantic_detail': {
+                    'recognition': sem_result.get('recognition', {}),
+                    'judgment': sem_result.get('judgment', {}),
+                    'hallucination': sem_result.get('hallucination', {}),
+                    'suggestion': sem_result.get('suggestion', '')
+                }
             })
     
     # 计算题目类型准确率
@@ -1624,6 +1799,7 @@ def convert_batch_ai_compare(compare_results, base_effect, homework_result):
     
     accuracy = correct_count / total if total > 0 else 0
     
+    # 计算精确率、召回率、F1
     tp = correct_count
     fp = error_distribution.get('识别正确-判断错误', 0) + error_distribution.get('AI识别幻觉', 0)
     fn = error_distribution.get('识别错误-判断错误', 0)
@@ -1632,9 +1808,14 @@ def convert_batch_ai_compare(compare_results, base_effect, homework_result):
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0
     f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
     
+    # 计算幻觉率
     hallucination_count = error_distribution.get('AI识别幻觉', 0)
     wrong_answers_count = sum(1 for b in base_effect if str(b.get('correct', '')).lower() == 'no')
     hallucination_rate = hallucination_count / wrong_answers_count if wrong_answers_count > 0 else 0
+    
+    # 获取语义评估的能力评分
+    semantic_summary = semantic_result.get('summary', {})
+    capability_scores = semantic_summary.get('capability_scores', {})
     
     return {
         'accuracy': accuracy,
@@ -1648,7 +1829,11 @@ def convert_batch_ai_compare(compare_results, base_effect, homework_result):
         'errors': errors,
         'error_distribution': error_distribution,
         'by_question_type': type_stats,
-        'ai_compared': True
+        'ai_compared': True,
+        'semantic_evaluated': True,
+        'capability_scores': capability_scores,
+        'semantic_conclusion': semantic_summary.get('conclusion', ''),
+        'semantic_recommendations': semantic_summary.get('recommendations', [])
     }
 
 
@@ -2071,6 +2256,202 @@ def refresh_task_datasets(task_id):
             'updated_count': updated_count,
             'data': task_data
         })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+# ========== 语义级评估 API ==========
+
+@batch_evaluation_bp.route('/tasks/<task_id>/semantic-evaluate', methods=['POST'])
+def semantic_evaluate_task(task_id):
+    """
+    对批量任务执行语义级评估
+    使用 LLM 进行更精准的语义分析
+    """
+    config = ConfigService.load_config()
+    if not config.get('deepseek_api_key'):
+        return jsonify({'success': False, 'error': '请先配置 DeepSeek API Key 以使用语义评估功能'})
+    
+    task_data = StorageService.load_batch_task(task_id)
+    if not task_data:
+        return jsonify({'success': False, 'error': '任务不存在'})
+    
+    data = request.get_json() or {}
+    subject = data.get('subject', '数学')
+    question_type = data.get('question_type', '客观题')
+    eval_model = data.get('eval_model', 'deepseek-v3.2')
+    
+    def generate():
+        homework_items = task_data.get('homework_items', [])
+        total_items = len(homework_items)
+        completed = 0
+        
+        all_semantic_results = []
+        
+        yield f"data: {json.dumps({'type': 'start', 'total': total_items})}\n\n"
+        
+        for item in homework_items:
+            homework_id = item.get('homework_id')
+            completed += 1
+            
+            try:
+                base_effect = None
+                
+                # 获取基准效果
+                if item.get('matched_dataset'):
+                    ds_data = StorageService.load_dataset(item['matched_dataset'])
+                    if ds_data:
+                        page_key = str(item.get('page_num'))
+                        base_effect = ds_data.get('base_effects', {}).get(page_key, [])
+                
+                if not base_effect:
+                    book_name = item.get('book_name', '') or item.get('homework_name', '')
+                    page_num = item.get('page_num')
+                    if book_name and page_num:
+                        import re
+                        safe_name = re.sub(r'[<>:"/\\|?*]', '_', book_name)
+                        baseline_filename = f"{safe_name}_{page_num}.json"
+                        baseline_data = StorageService.load_baseline_effect(baseline_filename)
+                        if baseline_data:
+                            base_effect = baseline_data.get('base_effect', [])
+                
+                homework_result = []
+                try:
+                    homework_result = json.loads(item.get('homework_result', '[]'))
+                except:
+                    pass
+                
+                if base_effect and homework_result:
+                    # 构建评估项目列表
+                    eval_items = []
+                    hw_dict = {}
+                    for i, hw_item in enumerate(homework_result):
+                        temp_idx = hw_item.get('tempIndex', i)
+                        hw_dict[int(temp_idx)] = hw_item
+                    
+                    for i, base_item in enumerate(base_effect):
+                        base_temp_idx = base_item.get('tempIndex', i)
+                        if base_temp_idx is not None:
+                            base_temp_idx = int(base_temp_idx)
+                        else:
+                            base_temp_idx = i
+                        
+                        hw_item = hw_dict.get(base_temp_idx, {})
+                        
+                        eval_items.append({
+                            'index': str(base_item.get('index', i + 1)),
+                            'standard_answer': str(base_item.get('answer', '') or base_item.get('mainAnswer', '')),
+                            'base_user_answer': str(base_item.get('userAnswer', '')),
+                            'base_correct': get_correct_value(base_item),
+                            'ai_user_answer': str(hw_item.get('userAnswer', '')),
+                            'ai_correct': get_correct_value(hw_item)
+                        })
+                    
+                    # 执行语义评估
+                    semantic_result = SemanticEvalService.evaluate_batch(
+                        subject=subject,
+                        question_type=question_type,
+                        items=eval_items,
+                        eval_model=eval_model
+                    )
+                    
+                    item['semantic_evaluation'] = semantic_result
+                    all_semantic_results.extend(semantic_result.get('results', []))
+                    
+                    yield f"data: {json.dumps({'type': 'progress', 'homework_id': homework_id, 'completed': completed, 'total': total_items, 'summary': semantic_result.get('summary', {})})}\n\n"
+                else:
+                    yield f"data: {json.dumps({'type': 'skip', 'homework_id': homework_id, 'completed': completed, 'total': total_items, 'reason': '缺少基准效果或批改结果'})}\n\n"
+                    
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                yield f"data: {json.dumps({'type': 'error', 'homework_id': homework_id, 'completed': completed, 'total': total_items, 'error': str(e)})}\n\n"
+        
+        # 生成整体汇总报告
+        if all_semantic_results:
+            overall_summary = SemanticEvalService._generate_summary(all_semantic_results)
+            task_data['semantic_report'] = {
+                'summary': overall_summary,
+                'total_questions': len(all_semantic_results),
+                'eval_model': eval_model,
+                'subject': subject,
+                'question_type': question_type
+            }
+        
+        task_data['semantic_evaluated'] = True
+        StorageService.save_batch_task(task_id, task_data)
+        
+        yield f"data: {json.dumps({'type': 'complete', 'summary': task_data.get('semantic_report', {}).get('summary', {})})}\n\n"
+    
+    return Response(generate(), mimetype='text/event-stream')
+
+
+@batch_evaluation_bp.route('/tasks/<task_id>/semantic-report', methods=['GET'])
+def get_semantic_report(task_id):
+    """获取语义评估报告"""
+    task_data = StorageService.load_batch_task(task_id)
+    if not task_data:
+        return jsonify({'success': False, 'error': '任务不存在'})
+    
+    if not task_data.get('semantic_evaluated'):
+        return jsonify({'success': False, 'error': '该任务尚未进行语义评估'})
+    
+    semantic_report = task_data.get('semantic_report', {})
+    
+    # 收集所有作业的语义评估详情
+    homework_details = []
+    for item in task_data.get('homework_items', []):
+        if item.get('semantic_evaluation'):
+            homework_details.append({
+                'homework_id': item.get('homework_id'),
+                'book_name': item.get('book_name', ''),
+                'page_num': item.get('page_num'),
+                'results': item['semantic_evaluation'].get('results', []),
+                'summary': item['semantic_evaluation'].get('summary', {})
+            })
+    
+    return jsonify({
+        'success': True,
+        'data': {
+            'overall_summary': semantic_report.get('summary', {}),
+            'eval_model': semantic_report.get('eval_model', ''),
+            'subject': semantic_report.get('subject', ''),
+            'question_type': semantic_report.get('question_type', ''),
+            'total_questions': semantic_report.get('total_questions', 0),
+            'homework_details': homework_details
+        }
+    })
+
+
+@batch_evaluation_bp.route('/evaluate-single-semantic', methods=['POST'])
+def evaluate_single_semantic():
+    """
+    单题语义评估 API
+    用于前端实时评估单道题目
+    """
+    config = ConfigService.load_config()
+    if not config.get('deepseek_api_key'):
+        return jsonify({'success': False, 'error': '请先配置 DeepSeek API Key'})
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': '请求数据为空'})
+    
+    try:
+        result = SemanticEvalService.evaluate_single(
+            subject=data.get('subject', '数学'),
+            question_type=data.get('question_type', '客观题'),
+            index=data.get('index', '1'),
+            standard_answer=data.get('standard_answer', ''),
+            base_user_answer=data.get('base_user_answer', ''),
+            base_correct=data.get('base_correct', ''),
+            ai_user_answer=data.get('ai_user_answer', ''),
+            ai_correct=data.get('ai_correct', ''),
+            eval_model=data.get('eval_model', 'deepseek-v3.2')
+        )
+        
+        return jsonify({'success': True, 'data': result})
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})

@@ -1159,3 +1159,444 @@ body {
     border-color: #1d1d1f;
     color: #1d1d1f;
 }
+
+
+/* ========== 视图切换标签 ========== */
+.view-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 16px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 4px;
+    border: 1px solid #e5e5e5;
+}
+
+.view-tab {
+    flex: 1;
+    padding: 10px 20px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: #86868b;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.view-tab:hover {
+    color: #1d1d1f;
+    background: #f5f5f7;
+}
+
+.view-tab.active {
+    background: #1d1d1f;
+    color: #fff;
+}
+
+/* ========== 数据集概览视图 ========== */
+.dataset-overview {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    height: calc(100% - 60px);
+    display: flex;
+    flex-direction: column;
+}
+
+.overview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.overview-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.overview-stats {
+    display: flex;
+    gap: 16px;
+}
+
+.overview-stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #86868b;
+}
+
+.overview-stat-value {
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.overview-stat-correct {
+    color: #28a745;
+}
+
+.overview-stat-wrong {
+    color: #dc3545;
+}
+
+/* 概览筛选区 */
+.overview-filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.overview-filters input,
+.overview-filters select {
+    padding: 8px 12px;
+    border: 1px solid #d2d2d7;
+    border-radius: 8px;
+    font-size: 13px;
+    background: #fff;
+}
+
+.overview-filters input {
+    flex: 1;
+    max-width: 300px;
+}
+
+.overview-filters input:focus,
+.overview-filters select:focus {
+    outline: none;
+    border-color: #1d1d1f;
+}
+
+/* 概览表格 */
+.overview-table-container {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+}
+
+.overview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.overview-table th,
+.overview-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.overview-table th {
+    background: #f5f5f7;
+    font-weight: 500;
+    color: #86868b;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.overview-table td {
+    color: #1d1d1f;
+}
+
+.overview-table tr:hover {
+    background: #f9f9f9;
+}
+
+.overview-table .status-correct {
+    color: #28a745;
+    font-weight: 500;
+}
+
+.overview-table .status-wrong {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+/* 概览表格内编辑 */
+.overview-table .edit-cell {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.overview-table .edit-cell input {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid #d2d2d7;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.overview-table .edit-cell input:focus {
+    outline: none;
+    border-color: #1d1d1f;
+}
+
+.overview-table .btn-inline {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.overview-table .btn-inline-edit {
+    background: #f5f5f7;
+    color: #1d1d1f;
+}
+
+.overview-table .btn-inline-edit:hover {
+    background: #e5e5e5;
+}
+
+.overview-table .btn-inline-save {
+    background: #28a745;
+    color: #fff;
+}
+
+.overview-table .btn-inline-save:hover {
+    background: #218838;
+}
+
+.overview-table .btn-inline-cancel {
+    background: #dc3545;
+    color: #fff;
+}
+
+.overview-table .btn-inline-cancel:hover {
+    background: #c82333;
+}
+
+.overview-table .btn-inline-delete {
+    background: #fff;
+    color: #dc3545;
+    border: 1px solid #dc3545;
+}
+
+.overview-table .btn-inline-delete:hover {
+    background: #ffeef0;
+}
+
+/* 数据集标签 */
+.dataset-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #e3f2fd;
+    color: #1565c0;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* 概览分页 */
+.overview-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.overview-pagination .page-btn {
+    padding: 6px 12px;
+    border: 1px solid #d2d2d7;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.overview-pagination .page-btn:hover {
+    border-color: #1d1d1f;
+}
+
+.overview-pagination .page-btn.active {
+    background: #1d1d1f;
+    color: #fff;
+    border-color: #1d1d1f;
+}
+
+.overview-pagination .page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.overview-pagination .page-info {
+    font-size: 13px;
+    color: #86868b;
+}
+
+
+/* ========== 数据集概览首页样式 ========== */
+
+/* 概览统计卡片 */
+.overview-stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.overview-stat-card {
+    background: #f5f5f7;
+    border-radius: 10px;
+    padding: 12px 20px;
+    text-align: center;
+    min-width: 80px;
+}
+
+.overview-stat-num {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1d1d1f;
+    line-height: 1.2;
+}
+
+.overview-stat-label {
+    font-size: 12px;
+    color: #86868b;
+    margin-top: 2px;
+}
+
+/* 学科分组 */
+.overview-subject-group {
+    margin-bottom: 24px;
+}
+
+.overview-subject-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.overview-subject-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #1d1d1f;
+    color: #fff;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.overview-subject-count {
+    font-size: 13px;
+    color: #86868b;
+}
+
+/* 书本卡片网格 */
+.overview-book-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+.overview-book-card {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.overview-book-card:hover {
+    border-color: #1d1d1f;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.overview-book-header {
+    min-height: 44px;
+}
+
+.overview-book-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d1d1f;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* 书本统计 */
+.overview-book-stats {
+    display: flex;
+    gap: 0;
+    background: #f9f9f9;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.overview-book-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 10px 8px;
+    border-right: 1px solid #e5e5e5;
+}
+
+.overview-book-stat:last-child {
+    border-right: none;
+}
+
+.overview-book-stat .stat-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.overview-book-stat .stat-label {
+    font-size: 11px;
+    color: #86868b;
+    margin-top: 2px;
+}
+
+/* 页码信息 */
+.overview-book-pages {
+    font-size: 12px;
+    color: #86868b;
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+    padding-top: 8px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.overview-book-pages .pages-label {
+    color: #86868b;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.overview-book-pages .pages-list {
+    color: #424245;
+    word-break: break-all;
+}
+
+/* 概览书本列表容器 */
+.overview-book-list {
+    flex: 1;
+    overflow-y: auto;
+}

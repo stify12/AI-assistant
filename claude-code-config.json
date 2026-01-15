@@ -1,0 +1,9 @@
+{
+  "apiKey": "6bf9f3fb162e405a86b83062d3a7c9e2.XIfIjw6nr2799kxe",
+  "apiUrl": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+  "model": "glm-4",
+  "provider": "zhipu",
+  "temperature": 0.7,
+  "maxTokens": 4096,
+  "timeout": 60000
+}

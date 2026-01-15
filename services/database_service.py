@@ -13,13 +13,28 @@ from .config_service import ConfigService
 class DatabaseService:
     """数据库服务类 - 原业务数据库"""
     
+    # 配置缓存
+    _config_cache = None
+    _config_cache_time = 0
+    _CONFIG_CACHE_TTL = 60  # 配置缓存60秒
+    
+    @staticmethod
+    def _get_cached_config():
+        """获取缓存的数据库配置"""
+        import time
+        now = time.time()
+        if DatabaseService._config_cache is None or (now - DatabaseService._config_cache_time) > DatabaseService._CONFIG_CACHE_TTL:
+            config = ConfigService.load_config()
+            DatabaseService._config_cache = config.get('mysql', {})
+            DatabaseService._config_cache_time = now
+        return DatabaseService._config_cache
+    
     @staticmethod
     def get_connection():
         """获取原业务数据库连接"""
         import pymysql
         
-        config = ConfigService.load_config()
-        mysql_config = config.get('mysql', {})
+        mysql_config = DatabaseService._get_cached_config()
         
         return pymysql.connect(
             host=mysql_config.get('host', '47.113.230.78'),
@@ -84,13 +99,28 @@ class DatabaseService:
 class AppDatabaseService:
     """应用数据库服务类 - 平台自有数据库"""
     
+    # 配置缓存
+    _config_cache = None
+    _config_cache_time = 0
+    _CONFIG_CACHE_TTL = 60  # 配置缓存60秒
+    
+    @staticmethod
+    def _get_cached_config():
+        """获取缓存的数据库配置"""
+        import time
+        now = time.time()
+        if AppDatabaseService._config_cache is None or (now - AppDatabaseService._config_cache_time) > AppDatabaseService._CONFIG_CACHE_TTL:
+            config = ConfigService.load_config()
+            AppDatabaseService._config_cache = config.get('app_mysql', {})
+            AppDatabaseService._config_cache_time = now
+        return AppDatabaseService._config_cache
+    
     @staticmethod
     def get_connection():
         """获取应用数据库连接"""
         import pymysql
         
-        config = ConfigService.load_config()
-        mysql_config = config.get('app_mysql', {})
+        mysql_config = AppDatabaseService._get_cached_config()
         
         return pymysql.connect(
             host=mysql_config.get('host', '47.82.64.147'),

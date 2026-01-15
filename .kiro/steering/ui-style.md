@@ -44,12 +44,29 @@
 
 ### 按钮
 ```css
-/* 深色主题 */
-.btn { padding: 10px 16px; border-radius: 9999px; font-size: 14px; font-weight: 500; }
+/* 所有按钮字体颜色统一为黑色 */
+.btn { 
+    padding: 10px 16px; 
+    border-radius: 9999px; 
+    font-size: 14px; 
+    font-weight: 500; 
+    color: #1d1d1f;  /* 黑色字体 */
+}
 
 /* 浅色主题 */
-.btn-primary { background: #1d1d1f; color: #fff; border-radius: 8px; }
-.btn-secondary { background: #f5f5f7; border: 1px solid #d2d2d7; }
+.btn-primary { 
+    background: #1d1d1f; 
+    color: #1d1d1f;  /* 黑色字体 */
+    border-radius: 8px; 
+}
+.btn-secondary { 
+    background: #f5f5f7; 
+    border: 1px solid #d2d2d7; 
+    color: #1d1d1f;  /* 黑色字体 */
+}
+
+/* 注意: 所有按钮（包括 .btn-primary, .btn-secondary, .btn-warning, .btn-danger 等）
+   字体颜色都应为黑色 #1d1d1f，不使用白色字体 */
 ```
 
 ### 卡片

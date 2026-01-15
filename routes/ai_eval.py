@@ -10,6 +10,7 @@ from flask import Blueprint, request, jsonify
 
 from services.config_service import ConfigService
 from services.llm_service import LLMService
+from services.semantic_eval_service import SemanticEvalService
 from utils.text_utils import remove_think_tags, extract_json_from_text
 
 ai_eval_bp = Blueprint('ai_eval', __name__)
@@ -331,3 +332,219 @@ def quantify_eval():
         },
         'generated_at': datetime.now().isoformat()
     })
+
+
+
+# ========== 语义级评估 API（新增）==========
+
+@ai_eval_bp.route('/api/ai-eval/semantic', methods=['POST'])
+def semantic_eval_single():
+    """
+    单题语义评估
+    对比基准效果和 AI 批改结果，进行语义级分析
+    """
+    config = ConfigService.load_config()
+    if not config.get('deepseek_api_key'):
+        return jsonify({'error': '请先配置 DeepSeek API Key 以使用语义评估功能'}), 400
+    
+    data = request.json
+    
+    # 必填参数
+    subject = data.get('subject', '通用')
+    question_type = data.get('question_type', '客观题')
+    index = data.get('index', '1')
+    standard_answer = data.get('standard_answer', '')
+    base_user_answer = data.get('base_user_answer', '')
+    base_correct = data.get('base_correct', '')
+    ai_user_answer = data.get('ai_user_answer', '')
+    ai_correct = data.get('ai_correct', '')
+    eval_model = data.get('eval_model', 'deepseek-v3.2')
+    
+    try:
+        result = SemanticEvalService.evaluate_single(
+            subject=subject,
+            question_type=question_type,
+            index=index,
+            standard_answer=standard_answer,
+            base_user_answer=base_user_answer,
+            base_correct=base_correct,
+            ai_user_answer=ai_user_answer,
+            ai_correct=ai_correct,
+            eval_model=eval_model
+        )
+        
+        result['generated_at'] = datetime.now().isoformat()
+        result['source'] = 'semantic_eval'
+        
+        return jsonify(result)
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@ai_eval_bp.route('/api/ai-eval/semantic-batch', methods=['POST'])
+def semantic_eval_batch():
+    """
+    批量语义评估
+    对多道题目进行语义级分析，并生成汇总报告
+    """
+    config = ConfigService.load_config()
+    if not config.get('deepseek_api_key'):
+        return jsonify({'error': '请先配置 DeepSeek API Key 以使用语义评估功能'}), 400
+    
+    data = request.json
+    
+    subject = data.get('subject', '通用')
+    question_type = data.get('question_type', '客观题')
+    items = data.get('items', [])
+    eval_model = data.get('eval_model', 'deepseek-v3.2')
+    batch_size = data.get('batch_size', 10)
+    
+    if not items:
+        return jsonify({'error': '请提供评估题目列表'}), 400
+    
+    try:
+        result = SemanticEvalService.evaluate_batch(
+            subject=subject,
+            question_type=question_type,
+            items=items,
+            eval_model=eval_model,
+            batch_size=batch_size
+        )
+        
+        result['generated_at'] = datetime.now().isoformat()
+        result['source'] = 'semantic_eval_batch'
+        result['total_items'] = len(items)
+        
+        return jsonify(result)
+    
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@ai_eval_bp.route('/api/ai-eval/report', methods=['POST'])
+def generate_eval_report():
+    """
+    生成评估报告
+    根据逐题评估结果生成整体分析报告
+    """
+    config = ConfigService.load_config()
+    
+    data = request.json
+    evaluation_results = data.get('evaluation_results', [])
+    use_llm = data.get('use_llm', False)
+    eval_model = data.get('eval_model', 'deepseek-v3.2')
+    
+    if not evaluation_results:
+        return jsonify({'error': '请提供评估结果列表'}), 400
+    
+    try:
+        if use_llm and config.get('deepseek_api_key'):
+            summary = SemanticEvalService.generate_llm_summary(
+                evaluation_results,
+                eval_model=eval_model
+            )
+        else:
+            summary = SemanticEvalService._generate_summary(evaluation_results)
+        
+        summary['generated_at'] = datetime.now().isoformat()
+        summary['source'] = 'eval_report'
+        
+        return jsonify(summary)
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@ai_eval_bp.route('/api/ai-eval/compare-with-base', methods=['POST'])
+def compare_with_base_effect():
+    """
+    与基准效果对比评估
+    接收基准效果和 AI 批改结果，进行完整的语义级对比分析
+    """
+    config = ConfigService.load_config()
+    if not config.get('deepseek_api_key'):
+        return jsonify({'error': '请先配置 DeepSeek API Key 以使用语义评估功能'}), 400
+    
+    data = request.json
+    
+    subject = data.get('subject', '通用')
+    question_type = data.get('question_type', '客观题')
+    base_effects = data.get('base_effects', [])  # 基准效果列表
+    ai_results = data.get('ai_results', [])      # AI 批改结果列表
+    eval_model = data.get('eval_model', 'deepseek-v3.2')
+    
+    if not base_effects or not ai_results:
+        return jsonify({'error': '请提供基准效果和 AI 批改结果'}), 400
+    
+    # 构建评估项目列表
+    items = []
+    
+    # 按 tempIndex 或 index 匹配
+    ai_dict = {}
+    for ai_item in ai_results:
+        temp_idx = ai_item.get('tempIndex')
+        if temp_idx is not None:
+            ai_dict[int(temp_idx)] = ai_item
+        idx = ai_item.get('index')
+        if idx:
+            ai_dict[f'idx_{idx}'] = ai_item
+    
+    for i, base_item in enumerate(base_effects):
+        temp_idx = base_item.get('tempIndex', i)
+        idx = base_item.get('index', str(i + 1))
+        
+        # 查找对应的 AI 结果
+        ai_item = ai_dict.get(int(temp_idx) if temp_idx is not None else i)
+        if not ai_item:
+            ai_item = ai_dict.get(f'idx_{idx}', {})
+        
+        # 获取 correct 值
+        def get_correct(item):
+            if not item:
+                return ''
+            correct = item.get('correct', '')
+            if isinstance(correct, bool):
+                return 'yes' if correct else 'no'
+            if isinstance(correct, str):
+                val = correct.lower().strip()
+                if val in ('yes', 'true', '1'):
+                    return 'yes'
+                elif val in ('no', 'false', '0'):
+                    return 'no'
+            # 检查 isRight 字段
+            is_right = item.get('isRight')
+            if is_right is not None:
+                if isinstance(is_right, bool):
+                    return 'yes' if is_right else 'no'
+            return str(correct).lower() if correct else ''
+        
+        items.append({
+            'index': str(idx),
+            'standard_answer': str(base_item.get('answer', '') or base_item.get('mainAnswer', '')),
+            'base_user_answer': str(base_item.get('userAnswer', '')),
+            'base_correct': get_correct(base_item),
+            'ai_user_answer': str(ai_item.get('userAnswer', '')) if ai_item else '',
+            'ai_correct': get_correct(ai_item) if ai_item else ''
+        })
+    
+    try:
+        result = SemanticEvalService.evaluate_batch(
+            subject=subject,
+            question_type=question_type,
+            items=items,
+            eval_model=eval_model
+        )
+        
+        result['generated_at'] = datetime.now().isoformat()
+        result['source'] = 'compare_with_base'
+        result['total_items'] = len(items)
+        
+        return jsonify(result)
+    
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500

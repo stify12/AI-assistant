@@ -100,15 +100,16 @@ body {
     font-size: 14px;
     cursor: pointer;
     transition: all 0.2s;
+    color: #1d1d1f;
 }
 
 .btn-primary {
-    background: #1d1d1f;
-    color: #fff;
+    background: #e5e5e5;
+    color: #1d1d1f;
 }
 
 .btn-primary:hover {
-    background: #424245;
+    background: #d5d5d5;
 }
 
 .btn-secondary {
@@ -456,6 +457,83 @@ body {
 
 .filter-row .form-group {
     flex: 1;
+}
+
+/* 作业任务筛选 */
+.task-filter-section {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.task-filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.task-filter-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #86868b;
+}
+
+#hwTaskList {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+#hwTaskList .task-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: #f5f5f7;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+#hwTaskList .task-item:hover {
+    border-color: #d2d2d7;
+}
+
+#hwTaskList .task-item.active {
+    background: #1d1d1f;
+    color: #fff;
+}
+
+#hwTaskList .task-item.active .task-name {
+    color: #fff;
+}
+
+#hwTaskList .task-item.active .task-count {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+}
+
+#hwTaskList .task-name {
+    font-size: 13px;
+    color: #1d1d1f;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 8px;
+}
+
+#hwTaskList .task-count {
+    font-size: 11px;
+    padding: 2px 8px;
+    background: #e5e5e5;
+    border-radius: 10px;
+    color: #666;
+    flex-shrink: 0;
 }
 
 /* 选择信息 */

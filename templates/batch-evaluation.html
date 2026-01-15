@@ -149,7 +149,7 @@
                 <div class="filter-row">
                     <div class="form-group">
                         <label>学科</label>
-                        <select id="hwSubjectFilter" onchange="loadHomeworkForTask()">
+                        <select id="hwSubjectFilter" onchange="onSubjectFilterChange()">
                             <option value="">全部学科</option>
                             <option value="0">英语</option>
                             <option value="1">语文</option>
@@ -159,7 +159,7 @@
                     </div>
                     <div class="form-group">
                         <label>时间范围</label>
-                        <select id="hwTimeFilter" onchange="loadHomeworkForTask()">
+                        <select id="hwTimeFilter" onchange="onTimeFilterChange()">
                             <option value="1">最近1小时</option>
                             <option value="3">最近3小时</option>
                             <option value="6">最近6小时</option>
@@ -170,6 +170,20 @@
                         </select>
                     </div>
                 </div>
+                
+                <!-- 作业任务筛选 -->
+                <div class="task-filter-section">
+                    <div class="task-filter-header">
+                        <span class="task-filter-label">按作业任务筛选</span>
+                        <button class="btn btn-small btn-secondary" onclick="loadHomeworkTasksForFilter()">刷新任务</button>
+                    </div>
+                    <div class="task-list" id="hwTaskList">
+                        <div class="task-item active" data-task-id="" onclick="selectHomeworkTask(this, '')">
+                            <span class="task-name">全部作业</span>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="selection-info">
                     <span>已选择 <strong id="selectedCount">0</strong> 个作业</span>
                     <button class="btn btn-small" onclick="selectAllHomework()">全选</button>
