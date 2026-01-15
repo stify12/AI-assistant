@@ -375,7 +375,7 @@ function showCompareMode() {
                 <div class="compare-mode-panel">
                     <div class="compare-header">
                         <h3>AI批改结果</h3>
-                        <button class="btn-small" onclick="exitCompareMode()">退出比对</button>
+                        <button class="btn-exit-compare" onclick="exitCompareMode()">退出比对 (ESC)</button>
                     </div>
                     <div class="filter-btns-compare">
                         <button class="filter-btn active" data-filter="all" onclick="filterQuestionType('all')">全部</button>
@@ -414,6 +414,24 @@ function showCompareMode() {
     
     // 初始化拖拽功能
     initResizeHandle();
+    
+    // 确保滚动条在最上方 - 使用setTimeout确保DOM渲染完成
+    setTimeout(() => {
+        const compareTableWrap = document.getElementById('compareTableWrap');
+        const compareImageWrap = document.querySelector('.compare-image-wrap');
+        if (compareTableWrap) compareTableWrap.scrollTop = 0;
+        if (compareImageWrap) compareImageWrap.scrollTop = 0;
+    }, 50);
+    
+    // 添加ESC键监听
+    document.addEventListener('keydown', handleEscKey);
+}
+
+// ========== ESC键退出比对模式 ==========
+function handleEscKey(e) {
+    if (e.key === 'Escape' && originalMainLayoutHtml) {
+        exitCompareMode();
+    }
 }
 
 // ========== 初始化拖拽分隔条 ==========
@@ -485,15 +503,32 @@ function updateImageScale() {
 
 // ========== 退出比对模式 ==========
 function exitCompareMode() {
+    // 移除ESC键监听
+    document.removeEventListener('keydown', handleEscKey);
+    
     // 恢复原始布局
     if (originalMainLayoutHtml) {
         const mainLayout = document.querySelector('.main-layout');
         mainLayout.innerHTML = originalMainLayoutHtml;
         originalMainLayoutHtml = null;
         
-        // 重新渲染当前选中的作业详情
+        // 重新初始化页面状态
         if (selectedHomework) {
-            renderHomeworkDetail(selectedHomework);
+            // 重新显示选中数据详情
+            document.getElementById('selectedDataSection').style.display = 'block';
+            document.getElementById('emptyRightPanel').style.display = 'none';
+            document.getElementById('baseEffectSection').style.display = 'block';
+            document.getElementById('evaluateSection').style.display = 'block';
+            document.getElementById('aiResultSection').style.display = 'block';
+            
+            // 重新渲染数据
+            renderSelectedData();
+            renderQuestionCards();
+            
+            // 如果有评估结果，重新显示
+            if (evaluationResult) {
+                document.getElementById('resultSection').style.display = 'block';
+            }
         }
     }
 }

@@ -51,8 +51,8 @@ body {
 
 /* 左右面板 */
 .left-panel {
-    width: 320px;
-    min-width: 280px;
+    width: 360px;
+    min-width: 320px;
     background: #fff;
     border-right: 1px solid #e5e5e5;
     overflow-y: auto;
@@ -2190,4 +2190,41 @@ body {
     background: #1d1d1f;
     border-color: #1d1d1f;
     color: #fff;
+}
+
+
+/* ========== 图表点击定位功能样式 ========== */
+
+/* 高频错误图表可点击提示 */
+#errorTrendChart {
+    cursor: pointer;
+}
+
+/* 错误卡片高亮样式 */
+.error-card.highlighted {
+    border: 2px solid #1d1d1f;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: card-highlight-pulse 0.8s ease-out;
+}
+
+@keyframes card-highlight-pulse {
+    0% { 
+        transform: scale(1.02);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    }
+    100% { 
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+}
+
+/* 高亮显示的题目行 */
+.full-data-table tr.highlighted {
+    background: #fff3e0 !important;
+    animation: highlight-pulse 1s ease-out;
+}
+
+@keyframes highlight-pulse {
+    0% { background: #ffcc80; }
+    100% { background: #fff3e0; }
 }

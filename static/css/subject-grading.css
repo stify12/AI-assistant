@@ -282,8 +282,9 @@
 /* ========== 比对模式 ========== */
 .compare-layout {
     display: flex;
-    height: calc(100vh - 60px);
+    height: calc(100vh - 56px);
     width: 100%;
+    margin-top: 56px;
 }
 
 .compare-left {
@@ -292,6 +293,8 @@
     overflow: hidden;
     background: #fff;
     border-right: 1px solid #e5e5e5;
+    display: flex;
+    flex-direction: column;
 }
 
 .compare-right {
@@ -299,6 +302,8 @@
     min-width: 300px;
     overflow: hidden;
     background: #fafafa;
+    display: flex;
+    flex-direction: column;
 }
 
 .resize-handle {
@@ -334,16 +339,18 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    padding: 0;
+    overflow: hidden;
 }
 
 .compare-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
-    padding-bottom: 14px;
+    padding: 16px 20px;
     border-bottom: 1px solid #e5e5e5;
+    background: #fff;
+    flex-shrink: 0;
 }
 
 .compare-header h3 {
@@ -351,6 +358,31 @@
     font-weight: 600;
     color: #1d1d1f;
     margin: 0;
+}
+
+/* 退出比对按钮 - 醒目样式 */
+.btn-exit-compare {
+    padding: 8px 20px;
+    background: #1d1d1f;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-exit-compare:hover {
+    background: #ef4444;
+    transform: scale(1.02);
+}
+
+.btn-exit-compare:active {
+    transform: scale(0.98);
 }
 
 .zoom-controls {
@@ -373,14 +405,16 @@
 .filter-btns-compare {
     display: flex;
     gap: 8px;
-    margin-bottom: 16px;
+    padding: 12px 20px;
+    background: #f9f9f9;
+    border-bottom: 1px solid #e5e5e5;
+    flex-shrink: 0;
 }
 
 .compare-table-wrap {
     flex: 1;
     overflow-y: auto;
-    border: 1px solid #e5e5e5;
-    border-radius: 8px;
+    background: #fff;
 }
 
 .compare-image-wrap {
@@ -388,8 +422,11 @@
     overflow-y: auto;
     text-align: center;
     background: #f9f9f9;
-    border-radius: 8px;
     padding: 20px;
+}
+
+.compare-image-panel .compare-header {
+    background: #fafafa;
 }
 
 .compare-image-wrap img {

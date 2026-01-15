@@ -51,7 +51,8 @@
         "list_network_requests",
         "get_network_request",
         "select_page",
-        "list_pages"
+        "list_pages",
+        "evaluate_script"
       ]
     }
   }

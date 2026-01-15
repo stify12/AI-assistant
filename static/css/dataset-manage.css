@@ -953,6 +953,45 @@ body {
     font-size: 13px;
 }
 
+/* 识别失败的项目样式 */
+.recognize-item-error {
+    border: 1px solid #f5c6cb;
+    background: #fff8f8;
+}
+
+.recognize-item-error .recognize-item-header {
+    background: #ffeef0;
+}
+
+/* 识别状态汇总提示 */
+.recognize-summary {
+    display: flex;
+    gap: 16px;
+    padding: 12px 16px;
+    background: #f5f5f7;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
+.recognize-summary-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.recognize-summary-item.success {
+    color: #1e7e34;
+}
+
+.recognize-summary-item.error {
+    color: #dc3545;
+}
+
+.recognize-summary-item.pending {
+    color: #86868b;
+}
+
 
 /* 编辑数据集弹窗 */
 .edit-modal {

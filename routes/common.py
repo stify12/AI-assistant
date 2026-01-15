@@ -23,11 +23,6 @@ def index():
     return render_template('index.html')
 
 
-@common_bp.route('/compare')
-def compare():
-    return render_template('compare.html')
-
-
 @common_bp.route('/subject-grading')
 def subject_grading():
     return render_template('subject-grading.html')
@@ -256,88 +251,6 @@ def save_parallel_result():
     SessionService.save_session(session_id, session_data, user_id=user_id)
     return jsonify({'success': True})
 
-
-# ========== 模板下载 ==========
-
-@common_bp.route('/api/download-template')
-def download_template():
-    """下载批量对比Excel模板 - 模型+批次+JSON数组格式"""
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "批量对比模板"
-    
-    # 样式
-    header_font = Font(bold=True, size=12, color="FFFFFF")
-    header_fill = PatternFill(start_color="1D6F8C", end_color="1D6F8C", fill_type="solid")
-    border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
-    center_align = Alignment(horizontal='center', vertical='center')
-    left_align = Alignment(horizontal='left', vertical='top', wrap_text=True)
-    
-    # 表头：模型 | 批次名称 | JSON数组
-    headers = ['模型', '批次名称', 'JSON数组（直接粘贴完整JSON）']
-    for col, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=header)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.border = border
-        cell.alignment = center_align
-    
-    # 示例JSON数据
-    example_json = '''[
-  {
-    "answer": "",
-    "correct": "yes",
-    "index": "17",
-    "mainAnswer": "①√抬起 ③√朋友",
-    "tempIndex": 0,
-    "userAnswer": ""
-  },
-  {
-    "answer": "",
-    "correct": "yes",
-    "index": "18",
-    "mainAnswer": "《祖父的园子》，《呼兰河传》",
-    "tempIndex": 1,
-    "userAnswer": "呼兰河传；生死场"
-  },
-  {
-    "answer": "①",
-    "correct": "no",
-    "index": "20",
-    "mainAnswer": "①",
-    "tempIndex": 4,
-    "userAnswer": "②"
-  }
-]'''
-    
-    # 示例数据
-    example_data = [
-        ['1.6vision', '批次1', example_json],
-        ['1.7vision', '批次2', example_json],
-    ]
-    for row_idx, row_data in enumerate(example_data, 2):
-        for col_idx, value in enumerate(row_data, 1):
-            cell = ws.cell(row=row_idx, column=col_idx, value=value)
-            cell.border = border
-            cell.alignment = center_align if col_idx <= 2 else left_align
-    
-    # 设置列宽
-    ws.column_dimensions['A'].width = 15
-    ws.column_dimensions['B'].width = 15
-    ws.column_dimensions['C'].width = 80
-    
-    # 设置行高
-    ws.row_dimensions[1].height = 25
-    ws.row_dimensions[2].height = 200
-    ws.row_dimensions[3].height = 200
-    
-    # 保存到内存
-    output = io.BytesIO()
-    wb.save(output)
-    output.seek(0)
-    
-    return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                     as_attachment=True, download_name='batch_compare_template.xlsx')
 
 
 # ========== 学科配置 API ==========

@@ -1028,15 +1028,15 @@ def batch_tasks():
             subject_name = ''
             if subject_id is not None:
                 subject_map = {
+                    0: '英语',
                     1: '语文',
                     2: '数学',
-                    3: '英语',
-                    4: '物理',
-                    5: '化学',
-                    6: '生物',
-                    7: '政治',
-                    8: '历史',
-                    9: '地理'
+                    3: '物理',
+                    4: '化学',
+                    5: '生物',
+                    6: '政治',
+                    7: '历史',
+                    8: '地理'
                 }
                 subject_name = subject_map.get(subject_id, f'学科{subject_id}')
             
@@ -2033,6 +2033,193 @@ def export_batch_excel(task_id):
         as_attachment=True,
         download_name=f'batch_evaluation_{task_id}.xlsx'
     )
+
+
+# ========== AI分析报告 API ==========
+
+@batch_evaluation_bp.route('/tasks/<task_id>/ai-report', methods=['POST'])
+def generate_ai_report(task_id):
+    """生成AI分析报告"""
+    from services.llm_service import LLMService
+    from routes.auth import get_current_user_id
+    
+    task_data = StorageService.load_batch_task(task_id)
+    if not task_data:
+        return jsonify({'success': False, 'error': '任务不存在'})
+    
+    try:
+        # 收集所有评估结果 - 使用 homework_items 和 evaluation 字段
+        eval_results = []
+        total_questions = 0
+        total_correct = 0
+        error_distribution = {}
+        all_errors = []
+        
+        for hw in task_data.get('homework_items', []):
+            if hw.get('status') == 'completed' and hw.get('evaluation'):
+                result = hw['evaluation']
+                # 注意：do_evaluation 返回的是 total_questions 和 correct_count
+                hw_total = result.get('total_questions', 0) or result.get('total', 0)
+                hw_correct = result.get('correct_count', 0) or result.get('correct', 0)
+                total_questions += hw_total
+                total_correct += hw_correct
+                
+                # 汇总错误分布 - 优先从 error_distribution 获取，否则从 errors 列表统计
+                hw_error_dist = result.get('error_distribution') or {}
+                if hw_error_dist:
+                    for err_type, count in hw_error_dist.items():
+                        error_distribution[err_type] = error_distribution.get(err_type, 0) + count
+                else:
+                    # 从 errors 列表统计
+                    for err in result.get('errors', []):
+                        err_type = err.get('error_type', '未知错误')
+                        error_distribution[err_type] = error_distribution.get(err_type, 0) + 1
+                
+                # 收集错误示例
+                all_errors.extend(result.get('errors', [])[:2])
+                
+                eval_results.append({
+                    'homework_id': hw.get('homework_id'),
+                    'book_name': hw.get('book_name', ''),
+                    'page_num': hw.get('page_num'),
+                    'total': hw_total,
+                    'correct': hw_correct,
+                    'accuracy': result.get('accuracy', 0),
+                    'error_count': result.get('error_count', hw_total - hw_correct)
+                })
+        
+        if not eval_results:
+            return jsonify({'success': False, 'error': '没有可用的评估结果，请先执行批量评估'})
+        
+        # 获取用户配置的模型
+        user_id = get_current_user_id()
+        config = ConfigService.load_config(user_id=user_id)
+        eval_model = config.get('eval_model', 'deepseek-v3.2')
+        
+        # 构建 LLM 提示词
+        overall_accuracy = total_correct / total_questions if total_questions > 0 else 0
+        
+        # 简化错误示例
+        error_examples = []
+        for err in all_errors[:5]:
+            error_examples.append({
+                'type': err.get('error_type', ''),
+                'base': err.get('base_effect', {}),
+                'ai': err.get('ai_result', {})
+            })
+        
+        prompt = f"""请分析以下 AI 批改效果评估数据，生成分析报告：
+
+【总体数据】
+- 总题目数: {total_questions}
+- 正确题目数: {total_correct}
+- 错误题目数: {total_questions - total_correct}
+- 总体准确率: {overall_accuracy * 100:.1f}%
+
+【错误分布】
+{json.dumps(error_distribution, ensure_ascii=False, indent=2)}
+
+【错误示例】
+{json.dumps(error_examples, ensure_ascii=False, indent=2)[:3000]}
+
+【各作业概览】
+{json.dumps(eval_results, ensure_ascii=False, indent=2)[:2000]}
+
+请按以下 JSON 格式输出分析报告：
+{{
+  "overview": {{
+    "total": {total_questions},
+    "passed": {total_correct},
+    "failed": {total_questions - total_correct},
+    "pass_rate": {round(overall_accuracy * 100, 1)}
+  }},
+  "capability_scores": {{
+    "recognition": 识别能力评分0到100,
+    "judgment": 判断能力评分0到100,
+    "overall": 综合评分0到100
+  }},
+  "top_issues": [
+    {{"issue": "问题描述", "count": 出现次数}}
+  ],
+  "recommendations": ["改进建议1", "改进建议2"],
+  "conclusion": "整体结论2到3句话"
+}}"""
+
+        system_prompt = "你是 AI 批改效果分析师，请根据评估数据生成分析报告。严格按照要求的 JSON 格式输出，不要输出其他内容。"
+        
+        llm_result = LLMService.call_deepseek(
+            prompt,
+            system_prompt=system_prompt,
+            model=eval_model,
+            timeout=90
+        )
+        
+        if llm_result.get('error'):
+            # LLM 调用失败，使用本地汇总
+            report = _generate_local_summary(total_questions, total_correct, error_distribution)
+        else:
+            parsed = LLMService.parse_json_response(llm_result.get('content', ''))
+            if parsed:
+                report = parsed
+                report['generated_by'] = 'llm'
+            else:
+                report = _generate_local_summary(total_questions, total_correct, error_distribution)
+        
+        # 保存到任务数据
+        if 'overall_report' not in task_data or task_data['overall_report'] is None:
+            task_data['overall_report'] = {}
+        task_data['overall_report']['ai_analysis'] = report
+        StorageService.save_batch_task(task_id, task_data)
+        
+        return jsonify({
+            'success': True,
+            'report': report
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)})
+
+
+def _generate_local_summary(total_questions, total_correct, error_distribution):
+    """生成本地汇总报告（不调用 LLM）"""
+    accuracy = total_correct / total_questions if total_questions > 0 else 0
+    
+    # 识别主要问题
+    top_issues = []
+    for err_type, count in sorted(error_distribution.items(), key=lambda x: -x[1]):
+        if count > 0:
+            top_issues.append({'issue': err_type, 'count': count})
+    
+    # 生成建议
+    recommendations = []
+    if error_distribution.get('识别错误-判断正确', 0) > 0:
+        recommendations.append('优化 OCR 识别模型，提高文字识别准确率')
+    if error_distribution.get('识别正确-判断错误', 0) > 0:
+        recommendations.append('优化判断逻辑，改进答案比对算法')
+    if error_distribution.get('AI识别幻觉', 0) > 0:
+        recommendations.append('加强幻觉检测，避免 AI 脑补答案')
+    if not recommendations:
+        recommendations.append('整体表现良好，继续保持')
+    
+    return {
+        'overview': {
+            'total': total_questions,
+            'passed': total_correct,
+            'failed': total_questions - total_correct,
+            'pass_rate': round(accuracy * 100, 1)
+        },
+        'capability_scores': {
+            'recognition': round(accuracy * 100, 1),
+            'judgment': round(accuracy * 100, 1),
+            'overall': round(accuracy * 100, 1)
+        },
+        'top_issues': top_issues[:5],
+        'recommendations': recommendations,
+        'conclusion': f'AI 批改表现{"较差" if accuracy < 0.6 else "一般" if accuracy < 0.8 else "良好" if accuracy < 0.95 else "优秀"}，通过率 {accuracy * 100:.1f}%。{"需要重点优化。" if accuracy < 0.8 else ""}',
+        'generated_by': 'local'
+    }
 
 
 # ========== 并行AI评估 API ==========

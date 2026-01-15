@@ -471,19 +471,22 @@ function renderRecognizePreview() {
         const result = recognizeResults[page];
         
         // 判断状态
-        let status, statusText;
+        let status, statusText, statusActions = '';
         if (result?.status === 'recognizing') {
             status = 'recognizing';
             statusText = '识别中...';
-        } else if (result?.success) {
+        } else if (result?.success && result?.data && result.data.length > 0) {
             status = 'success';
             statusText = '识别成功';
+            statusActions = `<button class="btn btn-small btn-text" onclick="retryRecognize(${page})">重新识别</button>`;
         } else if (result && !result.success) {
             status = 'error';
             statusText = '识别失败';
+            statusActions = `<button class="btn btn-small btn-primary" onclick="retryRecognize(${page})">重新识别</button>`;
         } else {
             status = 'pending';
             statusText = '待识别';
+            statusActions = `<button class="btn btn-small btn-text" onclick="retryRecognize(${page})">单独识别</button>`;
         }
         
         let dataHtml = '';
@@ -528,17 +531,20 @@ function renderRecognizePreview() {
             
             dataHtml = `
                 <textarea class="recognize-textarea" id="recognizeData_${page}" 
-                          placeholder="点击"开始识别"自动识别，或手动输入JSON数组"
+                          placeholder="点击"重新识别"自动识别，或手动输入JSON数组"
                           onchange="updateRecognizeData(${page}, this.value)"></textarea>
                 ${errorMsg}
             `;
         }
         
         return `
-            <div class="recognize-item">
+            <div class="recognize-item ${status === 'error' ? 'recognize-item-error' : ''}">
                 <div class="recognize-item-header">
                     <span class="recognize-item-title">第 ${page} 页</span>
-                    <span class="recognize-status ${status}">${statusText}</span>
+                    <div class="recognize-item-actions">
+                        ${statusActions}
+                        <span class="recognize-status ${status}">${statusText}</span>
+                    </div>
                 </div>
                 <div class="recognize-preview">
                     <img class="recognize-image" src="${hw.pic_url || '/static/images/no-image.png'}" 
@@ -748,7 +754,8 @@ async function recognizePage(page) {
         } else {
             recognizeResults[page] = {
                 success: false,
-                error: data.error || '识别失败'
+                error: data.error || '识别失败',
+                raw_preview: data.raw_preview || ''
             };
         }
     } catch (e) {
@@ -763,42 +770,91 @@ async function recognizePage(page) {
     checkCanSave();
 }
 
+// 重新识别单个页码
+async function retryRecognize(page) {
+    if (!selectedHomework[page]) {
+        alert('未找到该页码的作业图片');
+        return;
+    }
+    
+    // 设置为识别中状态
+    recognizeResults[page] = { status: 'recognizing' };
+    renderRecognizePreview();
+    
+    // 执行识别
+    await recognizePage(page);
+}
+
 function checkCanSave() {
     const pages = Object.keys(selectedHomework).map(Number);
-    let canSave = pages.length > 0;
+    let successCount = 0;
+    let failCount = 0;
+    let pendingCount = 0;
     
     for (const page of pages) {
         const result = recognizeResults[page];
-        if (!result || !result.success || !result.data || result.data.length === 0) {
-            canSave = false;
-            break;
+        if (result?.status === 'recognizing') {
+            pendingCount++;
+        } else if (result?.success && result?.data && result.data.length > 0) {
+            successCount++;
+        } else if (result && !result.success) {
+            failCount++;
+        } else {
+            pendingCount++;
         }
     }
     
-    document.getElementById('saveSection').style.display = canSave ? 'block' : 'none';
+    // 只要有成功识别的页码就可以保存
+    const canSave = successCount > 0;
+    const saveSection = document.getElementById('saveSection');
+    
+    if (canSave) {
+        saveSection.style.display = 'block';
+        // 更新保存按钮文案，显示成功/失败数量
+        const saveBtn = saveSection.querySelector('.btn-primary');
+        if (failCount > 0) {
+            saveBtn.innerHTML = `保存数据集 (${successCount}/${pages.length} 页成功)`;
+        } else {
+            saveBtn.innerHTML = '保存数据集';
+        }
+    } else {
+        saveSection.style.display = 'none';
+    }
 }
 
 // ========== 保存数据集 ==========
 async function saveDataset() {
-    const pages = Object.keys(selectedHomework).map(Number).sort((a, b) => a - b);
+    const allPages = Object.keys(selectedHomework).map(Number).sort((a, b) => a - b);
     
-    if (pages.length === 0) {
+    if (allPages.length === 0) {
         alert('请先选择作业图片并完成识别');
         return;
     }
     
-    // 构建基准效果数据
+    // 只收集识别成功的页码
+    const successPages = [];
     const baseEffects = {};
-    for (const page of pages) {
+    
+    for (const page of allPages) {
         const result = recognizeResults[page];
-        if (result && result.success && result.data) {
+        if (result && result.success && result.data && result.data.length > 0) {
+            successPages.push(page);
             baseEffects[page] = result.data;
         }
     }
     
-    if (Object.keys(baseEffects).length === 0) {
-        alert('没有有效的基准效果数据');
+    if (successPages.length === 0) {
+        alert('没有识别成功的页码，无法保存数据集');
         return;
+    }
+    
+    // 如果有失败的页码，提示用户确认
+    const failedPages = allPages.filter(p => !successPages.includes(p));
+    if (failedPages.length > 0) {
+        const confirmMsg = `有 ${failedPages.length} 个页码识别失败（第 ${failedPages.join(', ')} 页），是否只保存成功的 ${successPages.length} 个页码？\n\n点击"确定"保存成功的页码，点击"取消"返回继续处理失败的页码。`;
+        if (!confirm(confirmMsg)) {
+            return;
+        }
     }
     
     showLoading('保存数据集...');
@@ -806,7 +862,7 @@ async function saveDataset() {
     try {
         // 为每个页码的基准效果添加题目类型信息
         const enrichedBaseEffects = {};
-        for (const page of pages) {
+        for (const page of successPages) {
             const effects = baseEffects[page];
             if (effects && effects.length > 0) {
                 try {
@@ -839,14 +895,18 @@ async function saveDataset() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 book_id: selectedBook.book_id,
-                pages: pages,
+                pages: successPages,
                 base_effects: enrichedBaseEffects
             })
         });
         const data = await res.json();
         
         if (data.success) {
-            alert('数据集保存成功！');
+            let msg = '数据集保存成功！';
+            if (failedPages.length > 0) {
+                msg += `\n\n已保存 ${successPages.length} 个页码，跳过了 ${failedPages.length} 个识别失败的页码。`;
+            }
+            alert(msg);
             // 重新加载数据集列表
             const datasetsRes = await fetch(`/api/batch/datasets?book_id=${selectedBook.book_id}`);
             const datasetsData = await datasetsRes.json();

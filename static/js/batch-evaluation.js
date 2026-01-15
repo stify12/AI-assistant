@@ -542,6 +542,9 @@ function renderOverallCharts(report) {
             .sort((a, b) => b[1].total - a[1].total)
             .slice(0, 5);
         
+        // 保存到全局变量供点击事件使用
+        window.topErrorQuestions = sortedQuestions;
+        
         if (sortedQuestions.length > 0) {
             // 生成标签：第X题(PY)
             const labels = sortedQuestions.map(([, info]) => `第${info.index}题(P${info.page})`);
@@ -574,6 +577,16 @@ function renderOverallCharts(report) {
                 data: { labels, datasets },
                 options: {
                     responsive: true,
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const dataIndex = elements[0].index;
+                            const questionInfo = window.topErrorQuestions[dataIndex];
+                            if (questionInfo) {
+                                const [, info] = questionInfo;
+                                jumpToErrorCard(info.page, info.index);
+                            }
+                        }
+                    },
                     scales: {
                         y: { 
                             beginAtZero: true,
@@ -598,7 +611,7 @@ function renderOverallCharts(report) {
                                 afterTitle: (items) => {
                                     const idx = items[0].dataIndex;
                                     const total = sortedQuestions[idx][1].total;
-                                    return `总错误: ${total}次`;
+                                    return `总错误: ${total}次 (点击定位)`;
                                 },
                                 label: ctx => ctx.parsed.y > 0 ? `${ctx.dataset.label}: ${ctx.parsed.y}次` : null
                             }
@@ -1641,7 +1654,7 @@ function renderEvalDetail(detail) {
                     const severityClass = getSeverityClass(severity);
                     
                     return `
-                        <div class="error-card">
+                        <div class="error-card" data-page="${detail.page_num || ''}" data-index="${err.index || ''}">
                             <div class="error-card-header">
                                 <div class="error-card-title">
                                     <span class="error-index">题${err.index || '-'}</span>
@@ -2881,4 +2894,65 @@ function checkTaskNeedsReset() {
     }
     
     return false;
+}
+
+
+// ========== 从图表跳转到错误卡片 ==========
+function jumpToErrorCard(pageNum, questionIndex) {
+    // 首先需要找到对应页码的作业并展开详情
+    if (!selectedTask || !selectedTask.homework_items) {
+        console.log('没有选中的任务');
+        return;
+    }
+    
+    // 查找匹配页码的作业
+    const targetHomework = selectedTask.homework_items.find(item => 
+        String(item.page_num) === String(pageNum) && item.status === 'completed'
+    );
+    
+    if (!targetHomework) {
+        // 如果没有找到精确匹配，尝试在抽屉中查找错误卡片
+        const errorCards = document.querySelectorAll('.error-card');
+        for (const card of errorCards) {
+            const cardPage = card.dataset.page;
+            const cardIndex = card.dataset.index;
+            if (String(cardPage) === String(pageNum) && String(cardIndex) === String(questionIndex)) {
+                // 移除其他卡片的高亮
+                errorCards.forEach(c => c.classList.remove('highlighted'));
+                // 高亮目标卡片
+                card.classList.add('highlighted');
+                // 滚动到卡片
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+        }
+        console.log('未找到匹配的作业:', pageNum, questionIndex);
+        return;
+    }
+    
+    // 打开作业详情抽屉
+    showHomeworkDetail(targetHomework.homework_id).then(() => {
+        // 等待抽屉渲染完成后查找错误卡片
+        setTimeout(() => {
+            const errorCards = document.querySelectorAll('.error-card');
+            let targetCard = null;
+            
+            for (const card of errorCards) {
+                const cardIndex = card.dataset.index;
+                if (String(cardIndex) === String(questionIndex)) {
+                    targetCard = card;
+                    break;
+                }
+            }
+            
+            if (targetCard) {
+                // 移除其他卡片的高亮
+                errorCards.forEach(c => c.classList.remove('highlighted'));
+                // 高亮目标卡片
+                targetCard.classList.add('highlighted');
+                // 滚动到卡片
+                targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 300);
+    });
 }
