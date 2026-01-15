@@ -827,7 +827,7 @@ def enrich_base_effects_with_types():
 def get_homework_tasks():
     """获取作业任务列表（按hw_publish_id分组）"""
     subject_id = request.args.get('subject_id', type=int)
-    hours = request.args.get('hours', 168, type=int)  # 默认7天
+    hours = request.args.get('hours', 6, type=int)  # 默认6小时
     
     try:
         # 添加超时保护，限制查询时间范围
@@ -879,7 +879,7 @@ def get_homework_tasks():
 def get_batch_homework():
     """获取可用于批量评估的作业列表"""
     subject_id = request.args.get('subject_id', type=int)
-    hours = request.args.get('hours', 24, type=int)
+    hours = request.args.get('hours', 6, type=int)  # 默认6小时
     hw_publish_id = request.args.get('hw_publish_id', type=int)
     
     try:

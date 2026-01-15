@@ -354,6 +354,17 @@ Response:
   ]
 }
 
+GET /api/batch/homework
+Query Parameters:
+  - subject_id: 学科ID (可选)
+  - hours: 时间范围，默认6小时
+  - hw_publish_id: 作业任务ID (可选)
+
+GET /api/batch/homework-tasks
+Query Parameters:
+  - subject_id: 学科ID (可选)
+  - hours: 时间范围，默认6小时
+
 POST /api/batch/tasks
 Body:
 {
