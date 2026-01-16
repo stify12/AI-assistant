@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell.exe:*)",
+      "Bash(dir:*)",
+      "Bash(powershell:*)",
+      "WebSearch",
+      "Bash(nc:*)",
+      "Bash(cd:*)",
+      "Bash(del:*)",
+      "Bash(ssh:*)"
+    ]
+  }
+}

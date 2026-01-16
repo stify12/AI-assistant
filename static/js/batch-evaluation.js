@@ -129,7 +129,6 @@ function renderTaskList() {
         <div class="task-item ${selectedTask?.task_id === task.task_id ? 'selected' : ''}">
             <div class="task-item-content" onclick="selectTask('${task.task_id}')">
                 <div class="task-item-title">
-                    ${task.subject_name ? `<span class="subject-tag">${escapeHtml(task.subject_name)}</span>` : ''}
                     ${escapeHtml(task.name)}
                     <span class="task-item-status status-${task.status}">${getStatusText(task.status)}</span>
                 </div>
@@ -281,40 +280,18 @@ function renderOverallReport(report) {
     // 渲染可视化图表
     renderOverallCharts(report);
     
-    // 题目类型分类统计
+    // 题目类型分类统计 (选择题、客观填空题、非选择题)
     let detailHtml = '';
     const byType = report.by_question_type || {};
     if (Object.keys(byType).length > 0) {
-        const objective = byType.objective || {};
-        const subjective = byType.subjective || {};
         const choice = byType.choice || {};
-        const nonChoice = byType.non_choice || {};
+        const objectiveFill = byType.objective_fill || {};
+        const other = byType.other || {};
         
         detailHtml += `
             <div class="list-header">题目类型分类统计</div>
             <div class="type-stats-grid">
-                <div class="type-stats-section">
-                    <div class="type-stats-title">主观/客观题</div>
-                    <table class="stats-table">
-                        <thead><tr><th>类型</th><th>总数</th><th>正确</th><th>准确率</th></tr></thead>
-                        <tbody>
-                            <tr>
-                                <td>客观题</td>
-                                <td>${objective.total || 0}</td>
-                                <td>${objective.correct || 0}</td>
-                                <td>${objective.total > 0 ? ((objective.accuracy || 0) * 100).toFixed(1) + '%' : '-'}</td>
-                            </tr>
-                            <tr>
-                                <td>主观题</td>
-                                <td>${subjective.total || 0}</td>
-                                <td>${subjective.correct || 0}</td>
-                                <td>${subjective.total > 0 ? ((subjective.accuracy || 0) * 100).toFixed(1) + '%' : '-'}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="type-stats-section">
-                    <div class="type-stats-title">选择/非选择题</div>
+                <div class="type-stats-section" style="width: 100%;">
                     <table class="stats-table">
                         <thead><tr><th>类型</th><th>总数</th><th>正确</th><th>准确率</th></tr></thead>
                         <tbody>
@@ -325,10 +302,16 @@ function renderOverallReport(report) {
                                 <td>${choice.total > 0 ? ((choice.accuracy || 0) * 100).toFixed(1) + '%' : '-'}</td>
                             </tr>
                             <tr>
+                                <td>客观填空题</td>
+                                <td>${objectiveFill.total || 0}</td>
+                                <td>${objectiveFill.correct || 0}</td>
+                                <td>${objectiveFill.total > 0 ? ((objectiveFill.accuracy || 0) * 100).toFixed(1) + '%' : '-'}</td>
+                            </tr>
+                            <tr>
                                 <td>非选择题</td>
-                                <td>${nonChoice.total || 0}</td>
-                                <td>${nonChoice.correct || 0}</td>
-                                <td>${nonChoice.total > 0 ? ((nonChoice.accuracy || 0) * 100).toFixed(1) + '%' : '-'}</td>
+                                <td>${other.total || 0}</td>
+                                <td>${other.correct || 0}</td>
+                                <td>${other.total > 0 ? ((other.accuracy || 0) * 100).toFixed(1) + '%' : '-'}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -437,35 +420,29 @@ function renderOverallCharts(report) {
         }
     }
     
-    // 2. 题型准确率对比柱状图
+    // 2. 题型准确率对比柱状图 (选择题、客观填空题、非选择题)
     const byType = report.by_question_type || {};
-    const objective = byType.objective || {};
-    const subjective = byType.subjective || {};
     const choice = byType.choice || {};
-    const nonChoice = byType.non_choice || {};
+    const objectiveFill = byType.objective_fill || {};
+    const other = byType.other || {};
     
     const typeLabels = [];
     const typeData = [];
     const typeColors = [];
     
-    if (objective.total > 0) {
-        typeLabels.push('客观题');
-        typeData.push((objective.accuracy || 0) * 100);
-        typeColors.push('#3b82f6');
-    }
-    if (subjective.total > 0) {
-        typeLabels.push('主观题');
-        typeData.push((subjective.accuracy || 0) * 100);
-        typeColors.push('#8b5cf6');
-    }
     if (choice.total > 0) {
         typeLabels.push('选择题');
         typeData.push((choice.accuracy || 0) * 100);
+        typeColors.push('#3b82f6');
+    }
+    if (objectiveFill.total > 0) {
+        typeLabels.push('客观填空题');
+        typeData.push((objectiveFill.accuracy || 0) * 100);
         typeColors.push('#10b981');
     }
-    if (nonChoice.total > 0) {
+    if (other.total > 0) {
         typeLabels.push('非选择题');
-        typeData.push((nonChoice.accuracy || 0) * 100);
+        typeData.push((other.accuracy || 0) * 100);
         typeColors.push('#f59e0b');
     }
     
@@ -645,17 +622,20 @@ function renderOverallCharts(report) {
     // 4. 评估指标雷达图
     const accuracy = (report.overall_accuracy || 0) * 100;
     const completeness = report.total_questions > 0 ? 100 : 0;
-    const objectiveAcc = objective.total > 0 ? (objective.accuracy || 0) * 100 : accuracy;
-    const choiceAcc = choice.total > 0 ? (choice.accuracy || 0) * 100 : accuracy;
+    const radarByType = report.by_question_type || {};
+    const radarChoice = radarByType.choice || {};
+    const radarObjFill = radarByType.objective_fill || {};
+    const choiceAcc = radarChoice.total > 0 ? (radarChoice.accuracy || 0) * 100 : accuracy;
+    const objFillAcc = radarObjFill.total > 0 ? (radarObjFill.accuracy || 0) * 100 : accuracy;
     const consistency = completedItems.length > 1 ? calculateConsistency(completedItems) : accuracy;
     
     batchChartInstances.metricsRadar = new Chart(document.getElementById('metricsRadarChart'), {
         type: 'radar',
         data: {
-            labels: ['总体准确率', '客观题准确率', '选择题准确率', '一致性', '完整性'],
+            labels: ['总体准确率', '选择题准确率', '客观填空准确率', '一致性', '完整性'],
             datasets: [{
                 label: '评估指标',
-                data: [accuracy, objectiveAcc, choiceAcc, consistency, completeness],
+                data: [accuracy, choiceAcc, objFillAcc, consistency, completeness],
                 backgroundColor: 'rgba(59, 130, 246, 0.2)',
                 borderColor: '#3b82f6',
                 pointBackgroundColor: '#3b82f6',

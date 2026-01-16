@@ -1,0 +1,32 @@
+{
+  "mcpServers": {
+    "zpsmart": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-mysql"
+      ],
+      "env": {
+        "MYSQL_HOST": "47.113.230.78",
+        "MYSQL_PORT": "3306",
+        "MYSQL_USER": "zpsmart",
+        "MYSQL_PASSWORD": "rootyouerkj!",
+        "MYSQL_DATABASE": "zpsmart"
+      }
+    },
+    "aiuser": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-mysql"
+      ],
+      "env": {
+        "MYSQL_HOST": "47.82.64.147",
+        "MYSQL_PORT": "3306",
+        "MYSQL_USER": "aiuser",
+        "MYSQL_PASSWORD": "123456",
+        "MYSQL_DATABASE": "aiuser"
+      }
+    }
+  }
+}

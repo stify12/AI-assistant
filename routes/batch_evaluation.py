@@ -87,6 +87,7 @@ def classify_question_type(question_data):
         {
             "is_objective": bool,  # 是否客观题
             "is_choice": bool,     # 是否选择题
+            "is_fill": bool,       # 是否填空题 (bvalue=4)
             "choice_type": str     # "single" | "multiple" | None
         }
     """
@@ -94,6 +95,7 @@ def classify_question_type(question_data):
         return {
             'is_objective': False,
             'is_choice': False,
+            'is_fill': False,
             'choice_type': None
         }
     
@@ -104,6 +106,9 @@ def classify_question_type(question_data):
     # 方式2：检查 type 字段（数据集格式）
     # type: "choice" 在数据集中表示客观题（需要批改的题目），不是选择题
     type_field = question_data.get('type', '')
+    
+    # 判断是否为填空题 (bvalue=4)
+    is_fill = bvalue == '4'
     
     # 判断是否为选择题
     is_choice = False
@@ -161,6 +166,7 @@ def classify_question_type(question_data):
     return {
         'is_objective': is_objective,
         'is_choice': is_choice,
+        'is_fill': is_fill,
         'choice_type': choice_type
     }
 
@@ -1364,12 +1370,11 @@ def batch_evaluate(task_id):
         
         overall_accuracy = total_correct / total_questions if total_questions > 0 else 0
         
-        # 汇总所有作业的题目类型统计
+        # 汇总所有作业的题目类型统计: 选择题、客观填空题、非选择题
         aggregated_type_stats = {
-            'objective': {'total': 0, 'correct': 0, 'accuracy': 0},
-            'subjective': {'total': 0, 'correct': 0, 'accuracy': 0},
             'choice': {'total': 0, 'correct': 0, 'accuracy': 0},
-            'non_choice': {'total': 0, 'correct': 0, 'accuracy': 0}
+            'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0},
+            'other': {'total': 0, 'correct': 0, 'accuracy': 0}
         }
         
         for item in homework_items:
@@ -1426,12 +1431,11 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         'AI识别幻觉': 0
     }
     
-    # 题目类型分类统计
+    # 题目类型分类统计: 选择题、客观填空题、非选择题
     type_stats = {
-        'objective': {'total': 0, 'correct': 0, 'accuracy': 0},
-        'subjective': {'total': 0, 'correct': 0, 'accuracy': 0},
-        'choice': {'total': 0, 'correct': 0, 'accuracy': 0},
-        'non_choice': {'total': 0, 'correct': 0, 'accuracy': 0}
+        'choice': {'total': 0, 'correct': 0, 'accuracy': 0},           # 选择题
+        'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0},   # 客观填空题 (客观+非选择)
+        'other': {'total': 0, 'correct': 0, 'accuracy': 0}             # 非选择题 (主观+非选择)
     }
     
     # 如果启用AI比对
@@ -1464,16 +1468,16 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         # 获取题目类型分类
         question_category = classify_question_type(base_item)
         
-        # 更新题目类型统计 - 总数
-        if question_category['is_objective']:
-            type_stats['objective']['total'] += 1
-        else:
-            type_stats['subjective']['total'] += 1
-        
+        # 更新题目类型统计 - 总数 (选择题、客观填空题、非选择题)
+        # 选择题: is_choice=true
+        # 客观填空题: is_objective=true 且 is_fill=true (bvalue=4)
+        # 非选择题: 其他所有题目
         if question_category['is_choice']:
             type_stats['choice']['total'] += 1
+        elif question_category['is_objective'] and question_category['is_fill']:
+            type_stats['objective_fill']['total'] += 1
         else:
-            type_stats['non_choice']['total'] += 1
+            type_stats['other']['total'] += 1
         
         # 基准效果的标准答案：优先取 answer，没有则取 mainAnswer
         base_answer = str(base_item.get('answer', '') or base_item.get('mainAnswer', '')).strip()
@@ -1551,16 +1555,13 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         
         if is_match:
             correct_count += 1
-            # 更新题目类型统计 - 正确数
-            if question_category['is_objective']:
-                type_stats['objective']['correct'] += 1
-            else:
-                type_stats['subjective']['correct'] += 1
-            
+            # 更新题目类型统计 - 正确数 (选择题、客观填空题、非选择题)
             if question_category['is_choice']:
                 type_stats['choice']['correct'] += 1
+            elif question_category['is_objective'] and question_category['is_fill']:
+                type_stats['objective_fill']['correct'] += 1
             else:
-                type_stats['non_choice']['correct'] += 1
+                type_stats['other']['correct'] += 1
             
             # 格式差异虽然计入正确，但仍记录到分布中
             if error_type == '格式差异':
@@ -1711,12 +1712,11 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
         'AI识别幻觉': 0
     }
     
-    # 题目类型分类统计
+    # 题目类型分类统计: 选择题、客观填空题、非选择题
     type_stats = {
-        'objective': {'total': 0, 'correct': 0, 'accuracy': 0},
-        'subjective': {'total': 0, 'correct': 0, 'accuracy': 0},
-        'choice': {'total': 0, 'correct': 0, 'accuracy': 0},
-        'non_choice': {'total': 0, 'correct': 0, 'accuracy': 0}
+        'choice': {'total': 0, 'correct': 0, 'accuracy': 0},           # 选择题
+        'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0},   # 客观填空题 (客观+非选择)
+        'other': {'total': 0, 'correct': 0, 'accuracy': 0}             # 非选择题 (主观+非选择)
     }
     
     # 错误类型映射
@@ -1756,16 +1756,13 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
         # 获取题目类型分类
         question_category = classify_question_type(base_item)
         
-        # 更新题目类型统计 - 总数
-        if question_category['is_objective']:
-            type_stats['objective']['total'] += 1
-        else:
-            type_stats['subjective']['total'] += 1
-        
+        # 更新题目类型统计 - 总数 (选择题、客观填空题、非选择题)
         if question_category['is_choice']:
             type_stats['choice']['total'] += 1
+        elif question_category['is_objective'] and question_category['is_fill']:
+            type_stats['objective_fill']['total'] += 1
         else:
-            type_stats['non_choice']['total'] += 1
+            type_stats['other']['total'] += 1
         
         # 获取语义评估结果
         sem_result = result_dict.get(idx, {})
@@ -1780,16 +1777,13 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
         
         if is_correct:
             correct_count += 1
-            # 更新题目类型统计 - 正确数
-            if question_category['is_objective']:
-                type_stats['objective']['correct'] += 1
-            else:
-                type_stats['subjective']['correct'] += 1
-            
+            # 更新题目类型统计 - 正确数 (选择题、客观填空题、非选择题)
             if question_category['is_choice']:
                 type_stats['choice']['correct'] += 1
+            elif question_category['is_objective'] and question_category['is_fill']:
+                type_stats['objective_fill']['correct'] += 1
             else:
-                type_stats['non_choice']['correct'] += 1
+                type_stats['other']['correct'] += 1
         else:
             # 映射错误类型
             error_type = error_type_map.get(error_type_raw, '识别错误-判断错误')
@@ -1893,11 +1887,10 @@ def export_batch_excel(task_id):
     overall = task_data.get('overall_report', {})
     by_question_type = overall.get('by_question_type', {})
     
-    # 获取题目类型统计数据
-    objective_stats = by_question_type.get('objective', {})
-    subjective_stats = by_question_type.get('subjective', {})
+    # 获取题目类型统计数据 (选择题、客观填空题、非选择题)
     choice_stats = by_question_type.get('choice', {})
-    non_choice_stats = by_question_type.get('non_choice', {})
+    objective_fill_stats = by_question_type.get('objective_fill', {})
+    other_stats = by_question_type.get('other', {})
     
     overview_data = [
         ['任务名称', task_data.get('name', '')],
@@ -1909,19 +1902,17 @@ def export_batch_excel(task_id):
         ['总体准确率', f"{(overall.get('overall_accuracy', 0) * 100):.1f}%"],
         ['', ''],  # 空行
         ['题目类型分类统计', ''],
-        ['客观题总数', objective_stats.get('total', 0)],
-        ['客观题正确数', objective_stats.get('correct', 0)],
-        ['客观题准确率', f"{(objective_stats.get('accuracy', 0) * 100):.1f}%"],
-        ['主观题总数', subjective_stats.get('total', 0)],
-        ['主观题正确数', subjective_stats.get('correct', 0)],
-        ['主观题准确率', f"{(subjective_stats.get('accuracy', 0) * 100):.1f}%"],
-        ['', ''],  # 空行
         ['选择题总数', choice_stats.get('total', 0)],
         ['选择题正确数', choice_stats.get('correct', 0)],
         ['选择题准确率', f"{(choice_stats.get('accuracy', 0) * 100):.1f}%"],
-        ['非选择题总数', non_choice_stats.get('total', 0)],
-        ['非选择题正确数', non_choice_stats.get('correct', 0)],
-        ['非选择题准确率', f"{(non_choice_stats.get('accuracy', 0) * 100):.1f}%"]
+        ['', ''],  # 空行
+        ['客观填空题总数', objective_fill_stats.get('total', 0)],
+        ['客观填空题正确数', objective_fill_stats.get('correct', 0)],
+        ['客观填空题准确率', f"{(objective_fill_stats.get('accuracy', 0) * 100):.1f}%"],
+        ['', ''],  # 空行
+        ['非选择题总数', other_stats.get('total', 0)],
+        ['非选择题正确数', other_stats.get('correct', 0)],
+        ['非选择题准确率', f"{(other_stats.get('accuracy', 0) * 100):.1f}%"]
     ]
     
     for row_idx, (label, value) in enumerate(overview_data, 1):
@@ -1931,7 +1922,7 @@ def export_batch_excel(task_id):
     # 作业明细工作表 - 添加题目类型统计列
     ws2 = wb.create_sheet("作业明细")
     headers = ['序号', '书本', '页码', '学生', '准确率', '正确数', '错误数', 
-               '客观题准确率', '主观题准确率', '选择题准确率', '非选择题准确率', '状态']
+               '选择题准确率', '客观填空题准确率', '非选择题准确率', '状态']
     for col, header in enumerate(headers, 1):
         cell = ws2.cell(row=1, column=col, value=header)
         cell.font = header_font
@@ -1950,22 +1941,20 @@ def export_batch_excel(task_id):
         ws2.cell(row=row_idx, column=6, value=eval_data.get('correct_count', 0))
         ws2.cell(row=row_idx, column=7, value=eval_data.get('error_count', 0))
         
-        # 题目类型准确率
-        obj_acc = item_by_type.get('objective', {}).get('accuracy', 0)
-        subj_acc = item_by_type.get('subjective', {}).get('accuracy', 0)
+        # 题目类型准确率 (选择题、客观填空题、非选择题)
         choice_acc = item_by_type.get('choice', {}).get('accuracy', 0)
-        non_choice_acc = item_by_type.get('non_choice', {}).get('accuracy', 0)
+        obj_fill_acc = item_by_type.get('objective_fill', {}).get('accuracy', 0)
+        other_acc = item_by_type.get('other', {}).get('accuracy', 0)
         
-        ws2.cell(row=row_idx, column=8, value=f"{(obj_acc * 100):.1f}%" if item_by_type.get('objective', {}).get('total', 0) > 0 else '-')
-        ws2.cell(row=row_idx, column=9, value=f"{(subj_acc * 100):.1f}%" if item_by_type.get('subjective', {}).get('total', 0) > 0 else '-')
-        ws2.cell(row=row_idx, column=10, value=f"{(choice_acc * 100):.1f}%" if item_by_type.get('choice', {}).get('total', 0) > 0 else '-')
-        ws2.cell(row=row_idx, column=11, value=f"{(non_choice_acc * 100):.1f}%" if item_by_type.get('non_choice', {}).get('total', 0) > 0 else '-')
-        ws2.cell(row=row_idx, column=12, value=item.get('status', ''))
+        ws2.cell(row=row_idx, column=8, value=f"{(choice_acc * 100):.1f}%" if item_by_type.get('choice', {}).get('total', 0) > 0 else '-')
+        ws2.cell(row=row_idx, column=9, value=f"{(obj_fill_acc * 100):.1f}%" if item_by_type.get('objective_fill', {}).get('total', 0) > 0 else '-')
+        ws2.cell(row=row_idx, column=10, value=f"{(other_acc * 100):.1f}%" if item_by_type.get('other', {}).get('total', 0) > 0 else '-')
+        ws2.cell(row=row_idx, column=11, value=item.get('status', ''))
     
     # 题目明细工作表 - 添加题目类型标注
     ws3 = wb.create_sheet("题目明细")
     detail_headers = ['作业ID', '书本', '页码', '学生', '题号', '基准答案', 'AI答案', 
-                      '是否正确', '错误类型', '是否客观题', '是否选择题', '选择题类型']
+                      '是否正确', '错误类型', '题型分类']
     for col, header in enumerate(detail_headers, 1):
         cell = ws3.cell(row=1, column=col, value=header)
         cell.font = header_font
@@ -1996,6 +1985,14 @@ def export_batch_excel(task_id):
             # 获取题目类型分类
             question_category = classify_question_type(q)
             
+            # 确定题型分类 (选择题、客观填空题、非选择题)
+            if question_category['is_choice']:
+                type_text = '选择题'
+            elif question_category['is_objective'] and question_category['is_fill']:
+                type_text = '客观填空题'
+            else:
+                type_text = '非选择题'
+            
             ws3.cell(row=detail_row, column=1, value=item.get('homework_id', ''))
             ws3.cell(row=detail_row, column=2, value=item.get('book_name', ''))
             ws3.cell(row=detail_row, column=3, value=item.get('page_num', ''))
@@ -2011,15 +2008,7 @@ def export_batch_excel(task_id):
             
             ws3.cell(row=detail_row, column=8, value='正确' if is_correct else '错误')
             ws3.cell(row=detail_row, column=9, value=error_info.get('error_type', '') if error_info else '')
-            ws3.cell(row=detail_row, column=10, value='是' if question_category['is_objective'] else '否')
-            ws3.cell(row=detail_row, column=11, value='是' if question_category['is_choice'] else '否')
-            
-            choice_type_text = ''
-            if question_category['choice_type'] == 'single':
-                choice_type_text = '单选'
-            elif question_category['choice_type'] == 'multiple':
-                choice_type_text = '多选'
-            ws3.cell(row=detail_row, column=12, value=choice_type_text)
+            ws3.cell(row=detail_row, column=10, value=type_text)
             
             detail_row += 1
     
@@ -2341,12 +2330,11 @@ def batch_ai_evaluate(task_id):
         
         overall_accuracy = total_correct / total_questions if total_questions > 0 else 0
         
-        # 汇总所有作业的题目类型统计
+        # 汇总所有作业的题目类型统计: 选择题、客观填空题、非选择题
         aggregated_type_stats = {
-            'objective': {'total': 0, 'correct': 0, 'accuracy': 0},
-            'subjective': {'total': 0, 'correct': 0, 'accuracy': 0},
             'choice': {'total': 0, 'correct': 0, 'accuracy': 0},
-            'non_choice': {'total': 0, 'correct': 0, 'accuracy': 0}
+            'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0},
+            'other': {'total': 0, 'correct': 0, 'accuracy': 0}
         }
         
         for item in homework_items:
