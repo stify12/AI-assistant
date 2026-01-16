@@ -283,6 +283,8 @@ function renderOverallReport(report) {
     // 题目类型分类统计 (选择题、客观填空题、非选择题)
     let detailHtml = '';
     const byType = report.by_question_type || {};
+    const byCombined = report.by_combined || {};
+    
     if (Object.keys(byType).length > 0) {
         const choice = byType.choice || {};
         const objectiveFill = byType.objective_fill || {};
@@ -290,8 +292,8 @@ function renderOverallReport(report) {
         
         detailHtml += `
             <div class="list-header">题目类型分类统计</div>
-            <div class="type-stats-grid">
-                <div class="type-stats-section" style="width: 100%;">
+            <div class="type-stats-grid" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                <div class="type-stats-section" style="flex: 1; min-width: 280px;">
                     <table class="stats-table">
                         <thead><tr><th>类型</th><th>总数</th><th>正确</th><th>准确率</th></tr></thead>
                         <tbody>
@@ -316,8 +318,40 @@ function renderOverallReport(report) {
                         </tbody>
                     </table>
                 </div>
+                <div class="type-stats-section" style="flex: 1; min-width: 280px; background: #f9f9fb; border-radius: 8px; padding: 12px;">
+                    <div style="font-size: 13px; color: #86868b; margin-bottom: 8px;">自定义筛选</div>
+                    <div class="filter-row" style="display: flex; gap: 8px; margin-bottom: 12px;">
+                        <select id="filterObjective" style="flex: 1; padding: 8px 12px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; background: #fff;">
+                            <option value="objective">客观题</option>
+                            <option value="subjective">主观题</option>
+                        </select>
+                        <select id="filterBvalue" style="flex: 1; padding: 8px 12px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; background: #fff;">
+                            <option value="1">单选</option>
+                            <option value="3">判断</option>
+                            <option value="2">多选</option>
+                            <option value="4">填空</option>
+                            <option value="5">解答</option>
+                        </select>
+                    </div>
+                    <div id="filteredStatsResult" style="background: #fff; border-radius: 8px; padding: 16px; text-align: center;">
+                        <div id="filteredTypeName" style="font-size: 14px; color: #1d1d1f; font-weight: 500; margin-bottom: 8px;">客观单选</div>
+                        <div style="display: flex; justify-content: space-around;">
+                            <div>
+                                <div style="font-size: 24px; font-weight: 600; color: #1d1d1f;" id="filteredAccuracy">-</div>
+                                <div style="font-size: 12px; color: #86868b;">准确率</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 18px; font-weight: 500; color: #1d1d1f;"><span id="filteredCorrect">0</span>/<span id="filteredTotal">0</span></div>
+                                <div style="font-size: 12px; color: #86868b;">正确/总数</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
+        
+        // 保存组合统计数据供筛选使用
+        window.combinedStatsData = byCombined;
     }
     
     // 按书本统计
@@ -339,6 +373,31 @@ function renderOverallReport(report) {
         `;
     }
     document.getElementById('statsDetail').innerHTML = detailHtml;
+    
+    // 绑定筛选事件
+    if (Object.keys(byType).length > 0) {
+        const filterObjective = document.getElementById('filterObjective');
+        const filterBvalue = document.getElementById('filterBvalue');
+        if (filterObjective && filterBvalue) {
+            const updateFilteredStats = () => {
+                const objType = filterObjective.value;
+                const bvalue = filterBvalue.value;
+                const key = `${objType}_${bvalue}`;
+                const stats = window.combinedStatsData?.[key] || { total: 0, correct: 0, accuracy: 0, name: '-' };
+                const bvalueNames = { '1': '单选', '2': '多选', '3': '判断', '4': '填空', '5': '解答' };
+                const typeName = (objType === 'objective' ? '客观' : '主观') + bvalueNames[bvalue];
+                
+                document.getElementById('filteredTypeName').textContent = typeName;
+                document.getElementById('filteredAccuracy').textContent = stats.total > 0 ? ((stats.accuracy || 0) * 100).toFixed(1) + '%' : '-';
+                document.getElementById('filteredCorrect').textContent = stats.correct || 0;
+                document.getElementById('filteredTotal').textContent = stats.total || 0;
+            };
+            filterObjective.addEventListener('change', updateFilteredStats);
+            filterBvalue.addEventListener('change', updateFilteredStats);
+            // 初始化显示默认值 (客观单选)
+            updateFilteredStats();
+        }
+    }
 }
 
 // ========== 图表实例 ==========

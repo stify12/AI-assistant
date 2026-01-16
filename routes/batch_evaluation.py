@@ -1377,13 +1377,49 @@ def batch_evaluate(task_id):
             'other': {'total': 0, 'correct': 0, 'accuracy': 0}
         }
         
+        # 汇总bvalue细分统计
+        aggregated_bvalue_stats = {
+            '1': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '单选'},
+            '2': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '多选'},
+            '3': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '判断'},
+            '4': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '填空'},
+            '5': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '解答'}
+        }
+        
+        # 汇总组合统计
+        aggregated_combined_stats = {
+            'objective_1': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观单选'},
+            'objective_2': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观多选'},
+            'objective_3': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观判断'},
+            'objective_4': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观填空'},
+            'objective_5': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观解答'},
+            'subjective_1': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观单选'},
+            'subjective_2': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观多选'},
+            'subjective_3': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观判断'},
+            'subjective_4': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观填空'},
+            'subjective_5': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观解答'}
+        }
+        
         for item in homework_items:
             evaluation = item.get('evaluation', {})
             by_type = evaluation.get('by_question_type', {})
+            by_bvalue = evaluation.get('by_bvalue', {})
+            by_combined = evaluation.get('by_combined', {})
+            
             for key in aggregated_type_stats:
                 if key in by_type:
                     aggregated_type_stats[key]['total'] += by_type[key].get('total', 0)
                     aggregated_type_stats[key]['correct'] += by_type[key].get('correct', 0)
+            
+            for key in aggregated_bvalue_stats:
+                if key in by_bvalue:
+                    aggregated_bvalue_stats[key]['total'] += by_bvalue[key].get('total', 0)
+                    aggregated_bvalue_stats[key]['correct'] += by_bvalue[key].get('correct', 0)
+            
+            for key in aggregated_combined_stats:
+                if key in by_combined:
+                    aggregated_combined_stats[key]['total'] += by_combined[key].get('total', 0)
+                    aggregated_combined_stats[key]['correct'] += by_combined[key].get('correct', 0)
         
         # 计算汇总准确率
         for key in aggregated_type_stats:
@@ -1391,18 +1427,30 @@ def batch_evaluate(task_id):
             correct = aggregated_type_stats[key]['correct']
             aggregated_type_stats[key]['accuracy'] = correct / total_count if total_count > 0 else 0
         
+        for key in aggregated_bvalue_stats:
+            total_count = aggregated_bvalue_stats[key]['total']
+            correct = aggregated_bvalue_stats[key]['correct']
+            aggregated_bvalue_stats[key]['accuracy'] = correct / total_count if total_count > 0 else 0
+        
+        for key in aggregated_combined_stats:
+            total_count = aggregated_combined_stats[key]['total']
+            correct = aggregated_combined_stats[key]['correct']
+            aggregated_combined_stats[key]['accuracy'] = correct / total_count if total_count > 0 else 0
+        
         task_data['status'] = 'completed'
         task_data['overall_report'] = {
             'overall_accuracy': overall_accuracy,
             'total_homework': len(homework_items),
             'total_questions': total_questions,
             'correct_questions': total_correct,
-            'by_question_type': aggregated_type_stats
+            'by_question_type': aggregated_type_stats,
+            'by_bvalue': aggregated_bvalue_stats,
+            'by_combined': aggregated_combined_stats
         }
         
         StorageService.save_batch_task(task_id, task_data)
         
-        yield f"data: {json.dumps({'type': 'complete', 'overall_accuracy': overall_accuracy, 'by_question_type': aggregated_type_stats})}\n\n"
+        yield f"data: {json.dumps({'type': 'complete', 'overall_accuracy': overall_accuracy, 'by_question_type': aggregated_type_stats, 'by_combined': aggregated_combined_stats})}\n\n"
     
     return Response(generate(), mimetype='text/event-stream')
 
@@ -1438,6 +1486,29 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         'other': {'total': 0, 'correct': 0, 'accuracy': 0}             # 非选择题 (主观+非选择)
     }
     
+    # 按bvalue细分统计 (1=单选, 2=多选, 3=判断, 4=填空, 5=解答)
+    bvalue_stats = {
+        '1': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '单选'},
+        '2': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '多选'},
+        '3': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '判断'},
+        '4': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '填空'},
+        '5': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '解答'}
+    }
+    
+    # 按主观/客观 + bvalue 组合统计
+    combined_stats = {
+        'objective_1': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观单选'},
+        'objective_2': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观多选'},
+        'objective_3': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观判断'},
+        'objective_4': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观填空'},
+        'objective_5': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观解答'},
+        'subjective_1': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观单选'},
+        'subjective_2': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观多选'},
+        'subjective_3': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观判断'},
+        'subjective_4': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观填空'},
+        'subjective_5': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观解答'}
+    }
+    
     # 如果启用AI比对
     if use_ai_compare:
         ai_result = do_ai_compare_batch(base_effect, homework_result, user_id=user_id)
@@ -1467,6 +1538,8 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         
         # 获取题目类型分类
         question_category = classify_question_type(base_item)
+        bvalue = str(base_item.get('bvalue', ''))
+        is_objective = question_category['is_objective']
         
         # 更新题目类型统计 - 总数 (选择题、客观填空题、非选择题)
         # 选择题: is_choice=true
@@ -1478,6 +1551,16 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
             type_stats['objective_fill']['total'] += 1
         else:
             type_stats['other']['total'] += 1
+        
+        # 更新bvalue细分统计 - 总数
+        if bvalue in bvalue_stats:
+            bvalue_stats[bvalue]['total'] += 1
+        
+        # 更新组合统计 - 总数
+        obj_key = 'objective' if is_objective else 'subjective'
+        combined_key = f'{obj_key}_{bvalue}'
+        if combined_key in combined_stats:
+            combined_stats[combined_key]['total'] += 1
         
         # 基准效果的标准答案：优先取 answer，没有则取 mainAnswer
         base_answer = str(base_item.get('answer', '') or base_item.get('mainAnswer', '')).strip()
@@ -1563,6 +1646,14 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
             else:
                 type_stats['other']['correct'] += 1
             
+            # 更新bvalue细分统计 - 正确数
+            if bvalue in bvalue_stats:
+                bvalue_stats[bvalue]['correct'] += 1
+            
+            # 更新组合统计 - 正确数
+            if combined_key in combined_stats:
+                combined_stats[combined_key]['correct'] += 1
+            
             # 格式差异虽然计入正确，但仍记录到分布中
             if error_type == '格式差异':
                 error_distribution[error_type] = error_distribution.get(error_type, 0) + 1
@@ -1605,6 +1696,18 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         correct = type_stats[key]['correct']
         type_stats[key]['accuracy'] = correct / total_count if total_count > 0 else 0
     
+    # 计算bvalue细分准确率
+    for key in bvalue_stats:
+        total_count = bvalue_stats[key]['total']
+        correct = bvalue_stats[key]['correct']
+        bvalue_stats[key]['accuracy'] = correct / total_count if total_count > 0 else 0
+    
+    # 计算组合统计准确率
+    for key in combined_stats:
+        total_count = combined_stats[key]['total']
+        correct = combined_stats[key]['correct']
+        combined_stats[key]['accuracy'] = correct / total_count if total_count > 0 else 0
+    
     accuracy = correct_count / total if total > 0 else 0
     
     # 计算真正的精确率、召回率、F1
@@ -1632,7 +1735,9 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         'error_count': total - correct_count,
         'errors': errors,
         'error_distribution': error_distribution,
-        'by_question_type': type_stats
+        'by_question_type': type_stats,
+        'by_bvalue': bvalue_stats,
+        'by_combined': combined_stats
     }
 
 
@@ -1719,6 +1824,29 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
         'other': {'total': 0, 'correct': 0, 'accuracy': 0}             # 非选择题 (主观+非选择)
     }
     
+    # 按bvalue细分统计 (1=单选, 2=多选, 3=判断, 4=填空, 5=解答)
+    bvalue_stats = {
+        '1': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '单选'},
+        '2': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '多选'},
+        '3': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '判断'},
+        '4': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '填空'},
+        '5': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '解答'}
+    }
+    
+    # 按主观/客观 + bvalue 组合统计
+    combined_stats = {
+        'objective_1': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观单选'},
+        'objective_2': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观多选'},
+        'objective_3': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观判断'},
+        'objective_4': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观填空'},
+        'objective_5': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观解答'},
+        'subjective_1': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观单选'},
+        'subjective_2': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观多选'},
+        'subjective_3': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观判断'},
+        'subjective_4': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观填空'},
+        'subjective_5': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观解答'}
+    }
+    
     # 错误类型映射
     error_type_map = {
         '完全正确': None,
@@ -1755,6 +1883,8 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
         
         # 获取题目类型分类
         question_category = classify_question_type(base_item)
+        bvalue = str(base_item.get('bvalue', ''))
+        is_objective = question_category['is_objective']
         
         # 更新题目类型统计 - 总数 (选择题、客观填空题、非选择题)
         if question_category['is_choice']:
@@ -1763,6 +1893,16 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
             type_stats['objective_fill']['total'] += 1
         else:
             type_stats['other']['total'] += 1
+        
+        # 更新bvalue细分统计 - 总数
+        if bvalue in bvalue_stats:
+            bvalue_stats[bvalue]['total'] += 1
+        
+        # 更新组合统计 - 总数
+        obj_key = 'objective' if is_objective else 'subjective'
+        combined_key = f'{obj_key}_{bvalue}'
+        if combined_key in combined_stats:
+            combined_stats[combined_key]['total'] += 1
         
         # 获取语义评估结果
         sem_result = result_dict.get(idx, {})
@@ -1784,6 +1924,14 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
                 type_stats['objective_fill']['correct'] += 1
             else:
                 type_stats['other']['correct'] += 1
+            
+            # 更新bvalue细分统计 - 正确数
+            if bvalue in bvalue_stats:
+                bvalue_stats[bvalue]['correct'] += 1
+            
+            # 更新组合统计 - 正确数
+            if combined_key in combined_stats:
+                combined_stats[combined_key]['correct'] += 1
         else:
             # 映射错误类型
             error_type = error_type_map.get(error_type_raw, '识别错误-判断错误')
@@ -1828,6 +1976,18 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
         correct = type_stats[key]['correct']
         type_stats[key]['accuracy'] = correct / total_count if total_count > 0 else 0
     
+    # 计算bvalue细分准确率
+    for key in bvalue_stats:
+        total_count = bvalue_stats[key]['total']
+        correct = bvalue_stats[key]['correct']
+        bvalue_stats[key]['accuracy'] = correct / total_count if total_count > 0 else 0
+    
+    # 计算组合统计准确率
+    for key in combined_stats:
+        total_count = combined_stats[key]['total']
+        correct = combined_stats[key]['correct']
+        combined_stats[key]['accuracy'] = correct / total_count if total_count > 0 else 0
+    
     accuracy = correct_count / total if total > 0 else 0
     
     # 计算精确率、召回率、F1
@@ -1860,6 +2020,8 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
         'errors': errors,
         'error_distribution': error_distribution,
         'by_question_type': type_stats,
+        'by_bvalue': bvalue_stats,
+        'by_combined': combined_stats,
         'ai_compared': True,
         'semantic_evaluated': True,
         'capability_scores': capability_scores,
@@ -2337,19 +2499,65 @@ def batch_ai_evaluate(task_id):
             'other': {'total': 0, 'correct': 0, 'accuracy': 0}
         }
         
+        # 汇总bvalue细分统计
+        aggregated_bvalue_stats = {
+            '1': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '单选'},
+            '2': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '多选'},
+            '3': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '判断'},
+            '4': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '填空'},
+            '5': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '解答'}
+        }
+        
+        # 汇总组合统计
+        aggregated_combined_stats = {
+            'objective_1': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观单选'},
+            'objective_2': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观多选'},
+            'objective_3': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观判断'},
+            'objective_4': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观填空'},
+            'objective_5': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '客观解答'},
+            'subjective_1': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观单选'},
+            'subjective_2': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观多选'},
+            'subjective_3': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观判断'},
+            'subjective_4': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观填空'},
+            'subjective_5': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观解答'}
+        }
+        
         for item in homework_items:
             evaluation = item.get('evaluation', {})
             by_type = evaluation.get('by_question_type', {})
+            by_bvalue = evaluation.get('by_bvalue', {})
+            by_combined = evaluation.get('by_combined', {})
+            
             for key in aggregated_type_stats:
                 if key in by_type:
                     aggregated_type_stats[key]['total'] += by_type[key].get('total', 0)
                     aggregated_type_stats[key]['correct'] += by_type[key].get('correct', 0)
+            
+            for key in aggregated_bvalue_stats:
+                if key in by_bvalue:
+                    aggregated_bvalue_stats[key]['total'] += by_bvalue[key].get('total', 0)
+                    aggregated_bvalue_stats[key]['correct'] += by_bvalue[key].get('correct', 0)
+            
+            for key in aggregated_combined_stats:
+                if key in by_combined:
+                    aggregated_combined_stats[key]['total'] += by_combined[key].get('total', 0)
+                    aggregated_combined_stats[key]['correct'] += by_combined[key].get('correct', 0)
         
         # 计算汇总准确率
         for key in aggregated_type_stats:
             total_count = aggregated_type_stats[key]['total']
             correct = aggregated_type_stats[key]['correct']
             aggregated_type_stats[key]['accuracy'] = correct / total_count if total_count > 0 else 0
+        
+        for key in aggregated_bvalue_stats:
+            total_count = aggregated_bvalue_stats[key]['total']
+            correct = aggregated_bvalue_stats[key]['correct']
+            aggregated_bvalue_stats[key]['accuracy'] = correct / total_count if total_count > 0 else 0
+        
+        for key in aggregated_combined_stats:
+            total_count = aggregated_combined_stats[key]['total']
+            correct = aggregated_combined_stats[key]['correct']
+            aggregated_combined_stats[key]['accuracy'] = correct / total_count if total_count > 0 else 0
         
         task_data['status'] = 'completed'
         task_data['overall_report'] = {
@@ -2358,12 +2566,14 @@ def batch_ai_evaluate(task_id):
             'total_questions': total_questions,
             'correct_questions': total_correct,
             'ai_evaluated': True,
-            'by_question_type': aggregated_type_stats
+            'by_question_type': aggregated_type_stats,
+            'by_bvalue': aggregated_bvalue_stats,
+            'by_combined': aggregated_combined_stats
         }
         
         StorageService.save_batch_task(task_id, task_data)
         
-        yield f"data: {json.dumps({'type': 'complete', 'overall_accuracy': overall_accuracy, 'total_questions': total_questions, 'correct_questions': total_correct, 'by_question_type': aggregated_type_stats})}\n\n"
+        yield f"data: {json.dumps({'type': 'complete', 'overall_accuracy': overall_accuracy, 'total_questions': total_questions, 'correct_questions': total_correct, 'by_question_type': aggregated_type_stats, 'by_combined': aggregated_combined_stats})}\n\n"
     
     return Response(generate(), mimetype='text/event-stream')
 
