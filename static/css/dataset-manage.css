@@ -2124,3 +2124,233 @@ body {
 .recognize-table-v2 .col-tempindex input {
     text-align: center;
 }
+
+
+/* ========== 编辑弹窗页面操作区样式 ========== */
+
+/* 页面操作区 */
+.edit-page-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 16px;
+    background: #f9f9f9;
+    border-bottom: 1px solid #e5e5e5;
+    margin-bottom: 12px;
+}
+
+/* 图片预览区 */
+.page-image-preview {
+    width: 120px;
+    height: 80px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #e5e5e5;
+    background: #fff;
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+}
+
+.page-image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s ease;
+}
+
+.page-image-preview:hover img {
+    transform: scale(1.05);
+}
+
+.no-image-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f5f7;
+    color: #999;
+    font-size: 12px;
+}
+
+/* 操作按钮区 */
+.page-action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.page-action-buttons .btn {
+    padding: 8px 16px;
+    font-size: 13px;
+}
+
+.page-action-buttons .btn-danger {
+    background: #fff;
+    color: #d73a49;
+    border: 1px solid #d73a49;
+}
+
+.page-action-buttons .btn-danger:hover {
+    background: #ffeef0;
+}
+
+/* ========== 重新识别面板样式 ========== */
+
+.re-recognize-panel {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    margin: 0 0 16px 0;
+    overflow: hidden;
+}
+
+.re-recognize-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f9f9f9;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.re-recognize-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1d1d1f;
+}
+
+.re-recognize-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.re-recognize-controls select {
+    padding: 6px 10px;
+    border: 1px solid #d2d2d7;
+    border-radius: 6px;
+    font-size: 12px;
+    background: #fff;
+}
+
+/* 图片选择网格 */
+.re-recognize-images {
+    padding: 16px;
+    max-height: 300px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+}
+
+.re-recognize-images .empty-state {
+    grid-column: 1 / -1;
+    padding: 40px;
+    text-align: center;
+}
+
+/* 图片选择卡片 */
+.re-recognize-image-card {
+    border: 2px solid #e5e5e5;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    background: #fff;
+}
+
+.re-recognize-image-card:hover {
+    border-color: #1d1d1f;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.re-recognize-image-card.selected {
+    border-color: #1565c0;
+    box-shadow: 0 0 0 2px rgba(21, 101, 192, 0.2);
+}
+
+.re-recognize-image-card img {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    display: block;
+}
+
+.re-recognize-image-info {
+    padding: 8px;
+    font-size: 11px;
+    color: #666;
+    background: #f9f9f9;
+    border-top: 1px solid #e5e5e5;
+}
+
+.re-recognize-image-info .student-name {
+    font-weight: 500;
+    color: #1d1d1f;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.re-recognize-image-info .image-meta {
+    color: #999;
+    font-size: 10px;
+}
+
+/* 重新识别面板底部 */
+.re-recognize-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 12px 16px;
+    background: #f9f9f9;
+    border-top: 1px solid #e5e5e5;
+}
+
+/* 识别中状态 */
+.re-recognize-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    gap: 12px;
+}
+
+.re-recognize-loading .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #e5e5e5;
+    border-top-color: #1565c0;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.re-recognize-loading .loading-text {
+    font-size: 13px;
+    color: #666;
+}
+
+/* 编辑弹窗内容区调整 */
+.edit-modal-body {
+    max-height: calc(80vh - 120px);
+    overflow-y: auto;
+}
+
+/* 删除确认样式 */
+.delete-confirm-text {
+    font-size: 14px;
+    color: #1d1d1f;
+    margin-bottom: 8px;
+}
+
+.delete-confirm-warning {
+    font-size: 12px;
+    color: #d73a49;
+    background: #ffeef0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-top: 8px;
+}

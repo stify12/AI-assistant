@@ -1033,6 +1033,18 @@ function selectHomeworkTask(element, taskId) {
     loadHomeworkForTask();
 }
 
+// ========== 过滤已选作业（只保留当前列表中存在的） ==========
+function filterSelectedHomework() {
+    const currentIds = new Set(homeworkForTask.map(hw => hw.id));
+    const toRemove = [];
+    selectedHomeworkIds.forEach(id => {
+        if (!currentIds.has(id)) {
+            toRemove.push(id);
+        }
+    });
+    toRemove.forEach(id => selectedHomeworkIds.delete(id));
+}
+
 // ========== 学科筛选变化 ==========
 function onSubjectFilterChange() {
     currentHwTaskId = '';
@@ -1077,8 +1089,12 @@ function renderHomeworkSelectList() {
     const container = document.getElementById('homeworkSelectList');
     if (homeworkForTask.length === 0) {
         container.innerHTML = '<div class="empty-state"><div class="empty-state-text">暂无可选作业</div></div>';
+        updateSelectedCount();
         return;
     }
+    
+    // 过滤已选作业，只保留当前列表中存在的
+    filterSelectedHomework();
     
     container.innerHTML = homeworkForTask.map(hw => `
         <div class="homework-select-item ${selectedHomeworkIds.has(hw.id) ? 'selected' : ''}" 

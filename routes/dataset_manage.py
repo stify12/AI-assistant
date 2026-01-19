@@ -267,6 +267,68 @@ def build_dynamic_prompt(data_value_items, subject_id=0):
     return prompt
 
 
+@dataset_manage_bp.route('/api/dataset/page-image-info', methods=['GET'])
+def get_page_image_info():
+    """获取指定页码的图片信息（用于编辑弹窗显示图片预览）"""
+    book_id = request.args.get('book_id')
+    page_num = request.args.get('page_num', type=int)
+    
+    if not book_id or page_num is None:
+        return jsonify({'success': False, 'error': '缺少必要参数'})
+    
+    try:
+        # 查询该页码最近的一条有图片的作业记录
+        sql = """
+            SELECT h.id, h.pic_path, h.create_time
+            FROM zp_homework h
+            LEFT JOIN zp_homework_publish p ON h.hw_publish_id = p.id
+            WHERE h.status = 3 
+              AND p.book_id = %s
+              AND h.page_num = %s
+              AND h.pic_path IS NOT NULL
+              AND h.pic_path != ''
+            ORDER BY h.create_time DESC
+            LIMIT 1
+        """
+        
+        row = DatabaseService.execute_one(sql, (book_id, page_num))
+        
+        if not row:
+            return jsonify({
+                'success': True, 
+                'data': {
+                    'page': page_num,
+                    'pic_url': None,
+                    'homework_id': None,
+                    'has_image': False
+                }
+            })
+        
+        config = ConfigService.load_config()
+        pic_base_url = config.get('pic_base_url', '')
+        
+        pic_path = row.get('pic_path', '')
+        if pic_path.startswith('http'):
+            pic_url = pic_path
+        else:
+            pic_url = f"{pic_base_url}{pic_path}" if pic_path and pic_base_url else ''
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'page': page_num,
+                'pic_url': pic_url,
+                'pic_path': pic_path,
+                'homework_id': str(row['id']),
+                'has_image': True
+            }
+        })
+    
+    except Exception as e:
+        print(f"[PageImageInfo] Error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+
 @dataset_manage_bp.route('/api/dataset/recognize', methods=['POST'])
 def dataset_recognize():
     """识别作业图片的基准效果 - 使用动态提示词"""

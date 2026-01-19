@@ -1199,10 +1199,20 @@ async function exportDataset(datasetId) {
 let editingDataset = null;
 let editingData = {};  // 按页码存储编辑中的数据
 let currentEditPage = null;
+let pageImageUrls = {};  // 每个页码对应的图片信息
+let reRecognizeImages = [];  // 重新识别可用的图片列表
+let selectedReRecognizeImage = null;  // 选中用于重新识别的图片
+let deletedPages = [];  // 记录已删除的页码
 
 // 打开编辑弹窗
 async function editDataset(datasetId) {
     showLoading('加载数据集详情...');
+    
+    // 重置状态
+    pageImageUrls = {};
+    reRecognizeImages = [];
+    selectedReRecognizeImage = null;
+    deletedPages = [];
     
     try {
         const res = await fetch(`/api/batch/datasets/${datasetId}`);
@@ -1217,6 +1227,12 @@ async function editDataset(datasetId) {
         editingDataset = data.data;
         editingData = JSON.parse(JSON.stringify(editingDataset.base_effects || {}));
         
+        // 显示页面操作区
+        document.getElementById('editPageActions').style.display = 'flex';
+        
+        // 隐藏重新识别面板
+        document.getElementById('reRecognizePanel').style.display = 'none';
+        
         // 渲染页码标签
         renderEditPageTabs();
         
@@ -1226,6 +1242,8 @@ async function editDataset(datasetId) {
             selectEditPage(pages[0]);
         } else {
             document.getElementById('editTableBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">暂无数据</td></tr>';
+            // 隐藏页面操作区
+            document.getElementById('editPageActions').style.display = 'none';
         }
         
         // 显示弹窗
@@ -1245,6 +1263,11 @@ function hideEditModal(event) {
     editingDataset = null;
     editingData = {};
     currentEditPage = null;
+    pageImageUrls = {};
+    reRecognizeImages = [];
+    selectedReRecognizeImage = null;
+    deletedPages = [];
+    hideReRecognizePanel();
 }
 
 // 渲染页码标签
@@ -1259,10 +1282,50 @@ function renderEditPageTabs() {
 }
 
 // 选择编辑页码
-function selectEditPage(page) {
+async function selectEditPage(page) {
     currentEditPage = page;
     renderEditPageTabs();
     renderEditTable();
+    
+    // 加载并显示当前页的图片预览
+    await loadPageImagePreview(page);
+    
+    // 隐藏重新识别面板
+    hideReRecognizePanel();
+}
+
+// 加载页面图片预览
+async function loadPageImagePreview(page) {
+    const previewImg = document.getElementById('pagePreviewImg');
+    const noImagePlaceholder = document.getElementById('noImagePlaceholder');
+    
+    if (!editingDataset || !editingDataset.book_id) {
+        previewImg.style.display = 'none';
+        noImagePlaceholder.style.display = 'flex';
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/dataset/page-image-info?book_id=${editingDataset.book_id}&page_num=${page}`);
+        const data = await res.json();
+        
+        if (data.success && data.data && data.data.has_image && data.data.pic_url) {
+            previewImg.src = data.data.pic_url;
+            previewImg.style.display = 'block';
+            noImagePlaceholder.style.display = 'none';
+            
+            // 保存图片信息供重新识别使用
+            pageImageUrls[page] = data.data;
+        } else {
+            previewImg.style.display = 'none';
+            noImagePlaceholder.style.display = 'flex';
+            pageImageUrls[page] = null;
+        }
+    } catch (e) {
+        console.error('加载页面图片失败:', e);
+        previewImg.style.display = 'none';
+        noImagePlaceholder.style.display = 'flex';
+    }
 }
 
 // 渲染编辑表格
@@ -1339,6 +1402,216 @@ function addEditRow() {
     container.scrollTop = container.scrollHeight;
 }
 
+// ========== 重新识别功能 ==========
+
+// 显示重新识别面板
+function showReRecognizePanel() {
+    if (!currentEditPage) {
+        alert('请先选择页码');
+        return;
+    }
+    
+    document.getElementById('reRecognizePanel').style.display = 'block';
+    selectedReRecognizeImage = null;
+    document.getElementById('startReRecognizeBtn').disabled = true;
+    
+    // 加载可用图片
+    loadReRecognizeImages();
+}
+
+// 隐藏重新识别面板
+function hideReRecognizePanel() {
+    const panel = document.getElementById('reRecognizePanel');
+    if (panel) {
+        panel.style.display = 'none';
+    }
+    selectedReRecognizeImage = null;
+    reRecognizeImages = [];
+}
+
+// 加载重新识别可用的图片
+async function loadReRecognizeImages() {
+    if (!editingDataset || !currentEditPage) return;
+    
+    const container = document.getElementById('reRecognizeImages');
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载中...</div></div>';
+    
+    const hours = document.getElementById('reRecognizeTimeRange').value;
+    
+    try {
+        const res = await fetch(`/api/dataset/available-homework?book_id=${editingDataset.book_id}&page_num=${currentEditPage}&hours=${hours}`);
+        const data = await res.json();
+        
+        if (data.success && data.data && data.data.length > 0) {
+            reRecognizeImages = data.data;
+            renderReRecognizeImages();
+        } else {
+            container.innerHTML = '<div class="empty-state"><div class="empty-state-text">暂无可用的作业图片，请调整时间范围</div></div>';
+            reRecognizeImages = [];
+        }
+    } catch (e) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载失败: ' + e.message + '</div></div>';
+        reRecognizeImages = [];
+    }
+}
+
+// 渲染重新识别图片列表
+function renderReRecognizeImages() {
+    const container = document.getElementById('reRecognizeImages');
+    
+    if (reRecognizeImages.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">暂无可用的作业图片</div></div>';
+        return;
+    }
+    
+    container.innerHTML = reRecognizeImages.map((img, idx) => `
+        <div class="re-recognize-image-card ${selectedReRecognizeImage?.id === img.id ? 'selected' : ''}" 
+             onclick="selectReRecognizeImage(${idx})">
+            <img src="${img.pic_url || '/static/images/no-image.png'}" alt="作业图片" 
+                 onerror="this.src='/static/images/no-image.png'">
+            <div class="re-recognize-image-info">
+                <div class="student-name">${escapeHtml(img.student_name || img.student_id || '未知学生')}</div>
+                <div class="image-meta">ID: ${img.id} | ${formatTime(img.create_time)}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// 选择重新识别的图片
+function selectReRecognizeImage(idx) {
+    const img = reRecognizeImages[idx];
+    if (!img) return;
+    
+    if (selectedReRecognizeImage?.id === img.id) {
+        // 取消选择
+        selectedReRecognizeImage = null;
+    } else {
+        selectedReRecognizeImage = img;
+    }
+    
+    renderReRecognizeImages();
+    document.getElementById('startReRecognizeBtn').disabled = !selectedReRecognizeImage;
+}
+
+// 开始重新识别
+async function startReRecognize() {
+    if (!selectedReRecognizeImage || !currentEditPage) {
+        alert('请先选择一张图片');
+        return;
+    }
+    
+    const container = document.getElementById('reRecognizeImages');
+    container.innerHTML = `
+        <div class="re-recognize-loading">
+            <div class="spinner"></div>
+            <div class="loading-text">正在识别中，请稍候...</div>
+        </div>
+    `;
+    
+    document.getElementById('startReRecognizeBtn').disabled = true;
+    
+    try {
+        const res = await fetch('/api/dataset/recognize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                homework_id: selectedReRecognizeImage.id,
+                pic_path: selectedReRecognizeImage.pic_path,
+                subject_id: editingDataset.subject_id || selectedBook?.subject_id || 0
+            })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success && data.data && data.data.length > 0) {
+            // 更新当前页的数据
+            editingData[currentEditPage] = data.data;
+            
+            // 更新图片信息
+            pageImageUrls[currentEditPage] = {
+                pic_url: selectedReRecognizeImage.pic_url,
+                homework_id: selectedReRecognizeImage.id,
+                has_image: true
+            };
+            
+            // 更新图片预览
+            const previewImg = document.getElementById('pagePreviewImg');
+            const noImagePlaceholder = document.getElementById('noImagePlaceholder');
+            previewImg.src = selectedReRecognizeImage.pic_url;
+            previewImg.style.display = 'block';
+            noImagePlaceholder.style.display = 'none';
+            
+            // 隐藏重新识别面板
+            hideReRecognizePanel();
+            
+            // 重新渲染表格
+            renderEditTable();
+            
+            alert(`识别成功！共识别 ${data.data.length} 道题目`);
+        } else {
+            alert('识别失败: ' + (data.error || '无法解析识别结果'));
+            renderReRecognizeImages();
+        }
+    } catch (e) {
+        alert('识别失败: ' + e.message);
+        renderReRecognizeImages();
+    }
+    
+    document.getElementById('startReRecognizeBtn').disabled = !selectedReRecognizeImage;
+}
+
+// ========== 删除页面功能 ==========
+
+// 确认删除页面
+function confirmDeletePage() {
+    if (!currentEditPage) {
+        alert('请先选择页码');
+        return;
+    }
+    
+    const pages = Object.keys(editingData).map(Number).sort((a, b) => a - b);
+    
+    if (pages.length === 1) {
+        // 最后一页，需要二次确认
+        if (confirm(`确定要删除第 ${currentEditPage} 页吗？\n\n这是数据集的最后一页，删除后整个数据集将被删除。`)) {
+            executeDeletePage(currentEditPage);
+        }
+    } else {
+        if (confirm(`确定要删除第 ${currentEditPage} 页吗？\n\n删除后该页的所有数据将被移除。`)) {
+            executeDeletePage(currentEditPage);
+        }
+    }
+}
+
+// 执行删除页面
+function executeDeletePage(page) {
+    // 从编辑数据中删除该页
+    delete editingData[page];
+    
+    // 记录已删除的页码
+    if (!deletedPages.includes(page)) {
+        deletedPages.push(page);
+    }
+    
+    // 获取剩余页码
+    const remainingPages = Object.keys(editingData).map(Number).sort((a, b) => a - b);
+    
+    if (remainingPages.length === 0) {
+        // 没有剩余页码，提示用户保存将删除整个数据集
+        alert('所有页面已删除，保存后将删除整个数据集。');
+        currentEditPage = null;
+        renderEditPageTabs();
+        document.getElementById('editTableBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">所有页面已删除</td></tr>';
+        
+        // 隐藏页面操作区
+        document.getElementById('editPageActions').style.display = 'none';
+    } else {
+        // 切换到下一个可用页码
+        const nextPage = remainingPages.find(p => p > page) || remainingPages[0];
+        selectEditPage(nextPage);
+    }
+}
+
 // 保存编辑的数据集
 async function saveEditDataset() {
     if (!editingDataset) {
@@ -1346,29 +1619,57 @@ async function saveEditDataset() {
         return;
     }
     
+    // 检查是否所有页面都被删除
+    const remainingPages = Object.keys(editingData).filter(p => editingData[p] && editingData[p].length > 0);
+    
+    if (remainingPages.length === 0) {
+        // 所有页面都被删除，确认删除整个数据集
+        if (!confirm('所有页面已删除，确定要删除整个数据集吗？')) {
+            return;
+        }
+    }
+    
     showLoading('保存修改...');
     
     try {
+        // 构建更新数据，将删除的页码设置为空数组
+        const updateEffects = { ...editingData };
+        
+        // 将已删除的页码标记为空数组（后端会处理删除）
+        for (const page of deletedPages) {
+            updateEffects[page] = [];
+        }
+        
         const res = await fetch(`/api/batch/datasets/${editingDataset.dataset_id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                base_effects: editingData
+                base_effects: updateEffects
             })
         });
         const data = await res.json();
         
         if (data.success) {
-            alert('保存成功！');
+            if (data.deleted) {
+                // 整个数据集被删除
+                alert('数据集已删除');
+            } else {
+                alert('保存成功！');
+            }
             hideEditModal();
             
             // 重新加载数据集列表
-            const datasetsRes = await fetch(`/api/batch/datasets?book_id=${selectedBook.book_id}`);
-            const datasetsData = await datasetsRes.json();
-            if (datasetsData.success) {
-                datasetList = datasetsData.data || [];
+            if (selectedBook && selectedBook.book_id) {
+                const datasetsRes = await fetch(`/api/batch/datasets?book_id=${selectedBook.book_id}`);
+                const datasetsData = await datasetsRes.json();
+                if (datasetsData.success) {
+                    datasetList = datasetsData.data || [];
+                }
+                renderBookDetail();
             }
-            renderBookDetail();
+            
+            // 刷新概览
+            loadDatasetOverview();
         } else {
             alert('保存失败: ' + (data.error || '未知错误'));
         }

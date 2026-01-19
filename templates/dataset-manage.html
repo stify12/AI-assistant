@@ -204,6 +204,43 @@
             </div>
             <div class="edit-modal-body">
                 <div class="edit-page-tabs" id="editPageTabs"></div>
+                
+                <!-- 页面操作区 -->
+                <div class="edit-page-actions" id="editPageActions">
+                    <div class="page-image-preview" id="pageImagePreview">
+                        <img id="pagePreviewImg" src="" alt="页面图片" onclick="showImageModal(this.src)">
+                        <div class="no-image-placeholder" id="noImagePlaceholder" style="display:none;">
+                            <span>无图片</span>
+                        </div>
+                    </div>
+                    <div class="page-action-buttons">
+                        <button class="btn btn-secondary" onclick="showReRecognizePanel()">重新识别</button>
+                        <button class="btn btn-danger" onclick="confirmDeletePage()">删除此页</button>
+                    </div>
+                </div>
+                
+                <!-- 重新识别面板 -->
+                <div class="re-recognize-panel" id="reRecognizePanel" style="display:none;">
+                    <div class="re-recognize-header">
+                        <span class="re-recognize-title">选择作业图片进行重新识别</span>
+                        <div class="re-recognize-controls">
+                            <select id="reRecognizeTimeRange" onchange="loadReRecognizeImages()">
+                                <option value="24">最近24小时</option>
+                                <option value="72">最近3天</option>
+                                <option value="168">最近7天</option>
+                            </select>
+                            <button class="btn btn-small btn-text" onclick="loadReRecognizeImages()">刷新</button>
+                        </div>
+                    </div>
+                    <div class="re-recognize-images" id="reRecognizeImages">
+                        <div class="empty-state"><div class="empty-state-text">加载中...</div></div>
+                    </div>
+                    <div class="re-recognize-footer">
+                        <button class="btn btn-secondary" onclick="hideReRecognizePanel()">取消</button>
+                        <button class="btn btn-primary" id="startReRecognizeBtn" onclick="startReRecognize()" disabled>开始识别</button>
+                    </div>
+                </div>
+                
                 <div class="edit-table-container" id="editTableContainer">
                     <table class="edit-table" id="editTable">
                         <thead>

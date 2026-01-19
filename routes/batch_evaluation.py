@@ -744,6 +744,17 @@ def dataset_detail(dataset_id):
             
             update_data = request.get_json()
             
+            # 检查是否需要删除页码
+            delete_pages = update_data.get('delete_pages', [])
+            if delete_pages:
+                existing_effects = data.get('base_effects', {})
+                for page in delete_pages:
+                    page_str = str(page)
+                    if page_str in existing_effects:
+                        del existing_effects[page_str]
+                        print(f"[UpdateDataset] Deleted page {page_str} from dataset {dataset_id}")
+                data['base_effects'] = existing_effects
+            
             # 更新页码列表
             if 'pages' in update_data:
                 # 合并新旧页码，去重并排序
@@ -756,6 +767,19 @@ def dataset_detail(dataset_id):
                 # 合并基准效果，而不是完全覆盖
                 existing_effects = data.get('base_effects', {})
                 new_effects = update_data['base_effects']
+                
+                # 处理删除页码的情况：如果某页的 effects 为 null 或空数组，则删除该页
+                pages_to_delete = []
+                for page_key, effects in new_effects.items():
+                    if effects is None or (isinstance(effects, list) and len(effects) == 0):
+                        pages_to_delete.append(str(page_key))
+                    
+                # 删除标记为删除的页码
+                for page_str in pages_to_delete:
+                    if page_str in existing_effects:
+                        del existing_effects[page_str]
+                        print(f"[UpdateDataset] Deleted page {page_str} (empty effects) from dataset {dataset_id}")
+                    del new_effects[page_str]
                 
                 # 只对实际变化的页码执行 enrich 操作（优化性能）
                 book_id = data.get('book_id')
@@ -774,24 +798,29 @@ def dataset_detail(dataset_id):
                         existing_effects[str(page_key)] = effects
                 
                 data['base_effects'] = existing_effects
-                
-                # 更新页码列表（确保包含所有有基准效果的页码）
-                all_pages = set(int(p) for p in existing_effects.keys())
-                if 'pages' in data:
-                    all_pages |= set(int(p) for p in data['pages'])
-                data['pages'] = sorted(all_pages)
-                
-                # 更新题目数量
-                question_count = 0
-                for page_data in data['base_effects'].values():
-                    if isinstance(page_data, list):
-                        question_count += len(page_data)
-                data['question_count'] = question_count
+            
+            # 更新页码列表（基于实际有数据的页码）
+            existing_effects = data.get('base_effects', {})
+            all_pages = set(int(p) for p in existing_effects.keys() if existing_effects.get(p))
+            data['pages'] = sorted(all_pages)
+            
+            # 更新题目数量
+            question_count = 0
+            for page_data in data['base_effects'].values():
+                if isinstance(page_data, list):
+                    question_count += len(page_data)
+            data['question_count'] = question_count
+            
+            # 如果所有页面都被删除，删除整个数据集
+            if len(data['pages']) == 0:
+                StorageService.delete_dataset(dataset_id)
+                print(f"[UpdateDataset] Deleted entire dataset {dataset_id} (no pages left)")
+                return jsonify({'success': True, 'deleted': True, 'message': '数据集已删除（所有页面已移除）'})
             
             data['updated_at'] = datetime.now().isoformat()
             StorageService.save_dataset(dataset_id, data)
             
-            print(f"[UpdateDataset] Updated dataset {dataset_id}, pages={data.get('pages')}")
+            print(f"[UpdateDataset] Updated dataset {dataset_id}, pages={data.get('pages')}, question_count={question_count}")
             return jsonify({'success': True, 'data': data})
         except Exception as e:
             import traceback
