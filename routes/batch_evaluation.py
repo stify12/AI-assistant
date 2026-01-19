@@ -26,6 +26,32 @@ BATCH_TASKS_DIR = 'batch_tasks'
 
 # ========== 辅助函数 ==========
 
+def normalize_index(index_str):
+    """
+    标准化题号，统一中英文符号
+    - 中文括号 （） -> 英文括号 ()
+    - 中文逗号 ， -> 英文逗号 ,
+    - 中文句号 。 -> 英文句号 .
+    - 去除多余空格
+    
+    Args:
+        index_str: 原始题号字符串
+        
+    Returns:
+        标准化后的题号字符串
+    """
+    if not index_str:
+        return ''
+    s = str(index_str)
+    # 中文括号转英文
+    s = s.replace('（', '(').replace('）', ')')
+    # 中文标点转英文
+    s = s.replace('，', ',').replace('。', '.').replace('：', ':')
+    # 去除空格
+    s = s.replace(' ', '')
+    return s
+
+
 def flatten_homework_result(homework_result):
     """
     展开 homework_result 中的嵌套 children 结构为扁平数组
@@ -1304,8 +1330,8 @@ def get_homework_detail(task_id, homework_id):
         # 先展开 homework_result 的 children 结构
         flat_homework = flatten_homework_result(homework_result)
         
-        # 构建多种索引方式的字典（使用展开后的数据）
-        hw_dict_by_index = {str(item.get('index', '')): item for item in flat_homework}
+        # 构建多种索引方式的字典（使用展开后的数据，标准化题号）
+        hw_dict_by_index = {normalize_index(item.get('index', '')): item for item in flat_homework}
         hw_dict_by_tempindex = {}
         for i, item in enumerate(flat_homework):
             temp_idx = item.get('tempIndex')
@@ -1316,6 +1342,8 @@ def get_homework_detail(task_id, homework_id):
         
         for i, base_item in enumerate(base_effect):
             idx = str(base_item.get('index', ''))
+            # 标准化基准效果的题号
+            normalized_idx = normalize_index(idx)
             # 基准效果的tempIndex，如果没有则使用循环索引
             base_temp_idx = base_item.get('tempIndex')
             if base_temp_idx is not None:
@@ -1325,11 +1353,11 @@ def get_homework_detail(task_id, homework_id):
             
             # 根据学科选择匹配方式
             if is_chinese:
-                # 语文: 仅按题号(index)匹配
-                hw_item = hw_dict_by_index.get(idx)
+                # 语文: 仅按题号(index)匹配，使用标准化后的题号
+                hw_item = hw_dict_by_index.get(normalized_idx)
             else:
                 # 其他学科: 优先按index匹配，其次按tempIndex匹配
-                hw_item = hw_dict_by_index.get(idx)
+                hw_item = hw_dict_by_index.get(normalized_idx)
                 if not hw_item:
                     hw_item = hw_dict_by_tempindex.get(base_temp_idx)
             
@@ -1616,11 +1644,11 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
     is_chinese = subject_id == 1
     
     # 构建索引字典（使用展开后的数据）
-    hw_dict_by_index = {}  # 按题号索引
+    hw_dict_by_index = {}  # 按题号索引（标准化后）
     hw_dict_by_tempindex = {}  # 按tempIndex索引
     for i, item in enumerate(flat_homework):
-        # 按题号索引
-        item_idx = str(item.get('index', ''))
+        # 按题号索引（标准化中英文符号）
+        item_idx = normalize_index(item.get('index', ''))
         if item_idx:
             hw_dict_by_index[item_idx] = item
         # 按tempIndex索引
@@ -1632,6 +1660,8 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
     
     for i, base_item in enumerate(base_effect):
         idx = str(base_item.get('index', ''))
+        # 标准化基准效果的题号
+        normalized_idx = normalize_index(idx)
         # 基准效果的tempIndex，如果没有则使用循环索引
         base_temp_idx = base_item.get('tempIndex')
         if base_temp_idx is not None:
@@ -1641,8 +1671,8 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         
         # 根据学科选择匹配方式
         if is_chinese:
-            # 语文: 按题号(index)匹配
-            hw_item = hw_dict_by_index.get(idx)
+            # 语文: 按题号(index)匹配，使用标准化后的题号
+            hw_item = hw_dict_by_index.get(normalized_idx)
         else:
             # 其他学科: 按tempIndex匹配
             hw_item = hw_dict_by_tempindex.get(base_temp_idx)
