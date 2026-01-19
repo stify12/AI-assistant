@@ -294,11 +294,64 @@ function renderTaskDetail() {
     // 作业列表
     renderHomeworkList(selectedTask.homework_items || []);
     
-    // AI报告
+    // AI报告 - 显示已保存的报告
     if (selectedTask.overall_report?.ai_analysis) {
         document.getElementById('aiReport').style.display = 'block';
-        document.getElementById('aiReportContent').textContent = 
-            selectedTask.overall_report.ai_analysis.summary || '';
+        const report = selectedTask.overall_report.ai_analysis;
+        
+        // 构建报告内容 - 兼容新旧字段名
+        let html = '';
+        
+        // 总体概览
+        const overview = report.overview || {};
+        if (overview.total) {
+            html += `<div style="margin-bottom: 12px;">
+                <strong>总体概览：</strong>
+                总题目 ${overview.total} 题，正确 ${overview.passed} 题，错误 ${overview.failed} 题，准确率 ${overview.pass_rate}%
+            </div>`;
+        }
+        
+        // 能力评分
+        const scores = report.capability_scores || {};
+        if (scores.overall !== undefined) {
+            html += `<div style="margin-bottom: 12px;">
+                <strong>能力评分：</strong>
+                识别能力 ${scores.recognition || 0}分 | 判断能力 ${scores.judgment || 0}分 | 综合评分 ${scores.overall || 0}分
+            </div>`;
+        }
+        
+        // 主要问题
+        const topIssues = report.top_issues || [];
+        if (topIssues.length > 0) {
+            html += `<div style="margin-bottom: 12px;">
+                <strong>主要问题：</strong><br>
+                ${topIssues.map(i => `- ${escapeHtml(i.issue || '')}：${i.count || 0}次`).join('<br>')}
+            </div>`;
+        }
+        
+        // 改进建议
+        const recommendations = report.recommendations || report.suggestions || [];
+        if (recommendations.length > 0) {
+            html += `<div style="margin-bottom: 12px;">
+                <strong>改进建议：</strong><br>
+                ${recommendations.map(s => '- ' + escapeHtml(s)).join('<br>')}
+            </div>`;
+        }
+        
+        // 总体结论
+        const conclusion = report.conclusion || report.summary || '';
+        if (conclusion) {
+            html += `<div>
+                <strong>总体结论：</strong>${escapeHtml(conclusion)}
+            </div>`;
+        }
+        
+        // 如果没有任何内容，显示原始数据
+        if (!html) {
+            html = `<pre style="white-space: pre-wrap; font-size: 13px;">${escapeHtml(JSON.stringify(report, null, 2))}</pre>`;
+        }
+        
+        document.getElementById('aiReportContent').innerHTML = html;
     } else {
         document.getElementById('aiReport').style.display = 'none';
     }
@@ -2251,11 +2304,60 @@ async function generateAIReport() {
         if (data.success) {
             document.getElementById('aiReport').style.display = 'block';
             const report = data.report || {};
-            document.getElementById('aiReportContent').innerHTML = `
-                <strong>总结：</strong>${escapeHtml(report.summary || '')}<br><br>
-                <strong>诊断：</strong>${escapeHtml(report.diagnosis || '')}<br><br>
-                <strong>建议：</strong><br>${(report.suggestions || []).map(s => '- ' + escapeHtml(s)).join('<br>')}
-            `;
+            
+            // 构建报告内容 - 兼容新旧字段名
+            let html = '';
+            
+            // 总体概览
+            const overview = report.overview || {};
+            if (overview.total) {
+                html += `<div style="margin-bottom: 12px;">
+                    <strong>总体概览：</strong>
+                    总题目 ${overview.total} 题，正确 ${overview.passed} 题，错误 ${overview.failed} 题，准确率 ${overview.pass_rate}%
+                </div>`;
+            }
+            
+            // 能力评分
+            const scores = report.capability_scores || {};
+            if (scores.overall !== undefined) {
+                html += `<div style="margin-bottom: 12px;">
+                    <strong>能力评分：</strong>
+                    识别能力 ${scores.recognition || 0}分 | 判断能力 ${scores.judgment || 0}分 | 综合评分 ${scores.overall || 0}分
+                </div>`;
+            }
+            
+            // 主要问题
+            const topIssues = report.top_issues || [];
+            if (topIssues.length > 0) {
+                html += `<div style="margin-bottom: 12px;">
+                    <strong>主要问题：</strong><br>
+                    ${topIssues.map(i => `- ${escapeHtml(i.issue || '')}：${i.count || 0}次`).join('<br>')}
+                </div>`;
+            }
+            
+            // 改进建议
+            const recommendations = report.recommendations || report.suggestions || [];
+            if (recommendations.length > 0) {
+                html += `<div style="margin-bottom: 12px;">
+                    <strong>改进建议：</strong><br>
+                    ${recommendations.map(s => '- ' + escapeHtml(s)).join('<br>')}
+                </div>`;
+            }
+            
+            // 总体结论
+            const conclusion = report.conclusion || report.summary || '';
+            if (conclusion) {
+                html += `<div>
+                    <strong>总体结论：</strong>${escapeHtml(conclusion)}
+                </div>`;
+            }
+            
+            // 如果没有任何内容，显示原始数据
+            if (!html) {
+                html = `<pre style="white-space: pre-wrap; font-size: 13px;">${escapeHtml(JSON.stringify(report, null, 2))}</pre>`;
+            }
+            
+            document.getElementById('aiReportContent').innerHTML = html;
             
             // 更新任务数据
             if (!selectedTask.overall_report) selectedTask.overall_report = {};
