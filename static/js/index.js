@@ -15,6 +15,8 @@ let extractedQuestions = [];
 let optimizedPromptText = '';
 let mcpTools = {}; // MCP工具配置
 let useTools = true; // 是否启用工具调用
+let firstPrinciplesMode = false; // 第一性原理分析模式
+let fpConversationHistory = []; // 第一性原理对话历史
 
 const VISION_MODELS = [
     'doubao-1-5-vision-pro-32k-250115',
@@ -45,6 +47,38 @@ const CHAT_MODELS = [
     'gemini-3-flash-preview-thinking',
     'deepseek-v3.2'
 ];
+
+// 第一性原理分析系统提示词
+const FIRST_PRINCIPLES_SYSTEM_PROMPT = `你是一位顶级的思考者，你的思维模型融合了物理学家（如理查德·费曼）的严谨、顶尖工程师（如埃隆·马斯克）的务实和哲学家（如亚里士多德）的深刻。你的核心能力是运用「第一性原理」来分析和解决任何问题。你不依赖类比、传统或经验，而是致力于将任何复杂问题拆解至最基本、最不容置疑的组成部分（物理定律、人性本质、数学公理等），然后从这些基石出发，重新构建解决方案。
+
+在充满不确定性和复杂性的世界里，大多数人和组织习惯于类比思维，即复制他人的做法或在现有基础上进行微小改良。这种思维方式难以带来颠覆性创新或找到问题的根本解。我们的目标是打破常规，通过回归事物最本质的原理，共同探索出一条独特的、根本性的创新路径。你的提问和分析过程，本身就是帮助用户深度思考的价值所在。
+
+你的任务是一个动态的、苏格拉底式的对话流程：
+
+1. 接收初始问题：用户会提出一个问题或需求。
+
+2. 启动提问循环：你的任务不是立即给出答案。相反，你将启动「第一性原理」分析流程，通过一系列深刻的反问，来挑战用户陈述中的每一个假设、每一个术语和每一个既定目标。
+
+3. 多轮反问：你可能会反问多次。每一轮提问都旨在剥离一层表象，直击更深层次的本质。你的问题可能包括但不限于：
+   - "我们真正想要达成的最终目标是什么？这个目标是否可以被进一步分解？"
+   - "我们认为『必须』要做某件事，这个『必须』是基于一个不可动摇的物理定律，还是仅仅是一个行业惯例或过去的假设？"
+   - "描述一下这个问题的基本组成部分有哪些？哪些是事实，哪些是我们的推断？"
+   - "如果我们从零开始，没有任何历史包袱和现有资源的限制，我们会怎么来做来解决这个问题？"
+
+4. 判断与确认：当你判断对话已经将问题分解到最基本的、不容置疑的"事实"或"公理"层面时，你需要向用户进行确认。例如："似乎已经触及了问题的核心：[概括总结出的核心原理]。基于这些基本原理，您希望我为您构建最终的结论或解决方案了吗？"
+
+5. 输出最终结论：在用户确认后，基于共同确认的第一性原理，系统地、逻辑清晰地构建并输出一个创新的、根本性的最终结论或解决方案。
+
+在整个对话过程中，你的个性应该是：
+- 冷静的探究者：语气始终保持客观、中立、不带偏见
+- 深刻的怀疑论者：对所有未经检验的假设都保持健康的怀疑
+- 谦逊的引导者：你的提问不是为了炫耀知识，而是为了引导用户进行更深层次的思考
+- 极度好奇：展现出对问题本质的强烈、纯粹的好奇心
+
+在输出最终结论时，你必须：
+- 展示推理路径：不能只给出答案，需要清晰地展示推理路径
+- 首先以列表形式列出共同确认的【第一性原理清单】（即分解出的核心事实与公理）
+- 然后展示如何一步步从这些原理推导出最终结论`;
 
 // ========== 初始化 ==========
 document.addEventListener('DOMContentLoaded', async () => {
@@ -317,6 +351,17 @@ async function sendMessage() {
     const btn = document.getElementById('sendBtn');
     btn.disabled = true;
     
+    // 清空输入
+    input.value = '';
+    input.style.height = 'auto';
+    
+    // 如果是第一性原理模式，使用专门的处理函数
+    if (firstPrinciplesMode) {
+        await sendFirstPrinciplesMessage(prompt);
+        btn.disabled = false;
+        return;
+    }
+    
     // 获取并行数量
     const parallelCount = parseInt(document.getElementById('parallelCount').value) || 1;
     
@@ -339,8 +384,6 @@ async function sendMessage() {
     
     // 清空输入
     const imageToSend = currentImage;
-    input.value = '';
-    input.style.height = 'auto';
     removeInputImage();
     
     const model = document.getElementById('currentModelSelect').value;
@@ -1692,3 +1735,433 @@ document.getElementById('loginModal')?.addEventListener('click', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
     checkAuthStatus();
 });
+
+
+// ========== 第一性原理分析模式 ==========
+function toggleFirstPrinciplesMode() {
+    firstPrinciplesMode = !firstPrinciplesMode;
+    const btn = document.getElementById('firstPrinciplesBtn');
+    const welcome = document.getElementById('chatWelcome');
+    const welcomeTitle = document.getElementById('welcomeTitle');
+    const welcomeDesc = document.getElementById('welcomeDesc');
+    const inputArea = document.querySelector('.input-area');
+    const mainWrapper = document.getElementById('mainWrapper');
+    const modelSelector = document.querySelector('.model-selector');
+    
+    if (firstPrinciplesMode) {
+        // 进入第一性原理模式
+        btn.classList.add('active');
+        mainWrapper.classList.add('first-principles-mode-active');
+        
+        // 清空当前对话，开始新的第一性原理分析
+        fpConversationHistory = [];
+        chatHistory = [];
+        currentSessionId = null;
+        
+        // 更新欢迎界面
+        welcome.style.display = '';
+        welcome.classList.add('first-principles-mode');
+        welcomeTitle.textContent = '第一性原理分析';
+        welcomeDesc.textContent = '输入你想要分析的问题或需求，我将通过苏格拉底式的对话，帮助你剥离表象、回归本质，从最基本的原理出发重新构建解决方案。';
+        
+        // 输入框居中
+        inputArea.classList.add('first-principles-centered');
+        
+        // 清空消息区域
+        document.getElementById('chatMessages').innerHTML = '';
+        
+        // 隐藏模型选择器（固定使用DeepSeek V3.2）
+        modelSelector.style.display = 'none';
+        
+        // 更新输入框placeholder
+        document.getElementById('promptInput').placeholder = '输入你想要分析的问题或需求...';
+    } else {
+        // 退出第一性原理模式
+        btn.classList.remove('active');
+        mainWrapper.classList.remove('first-principles-mode-active');
+        
+        // 恢复欢迎界面
+        welcome.classList.remove('first-principles-mode');
+        welcomeTitle.textContent = 'AI 助手';
+        welcomeDesc.textContent = '选择模型开始对话，支持图片识别与日常聊天';
+        
+        // 恢复输入框位置
+        inputArea.classList.remove('first-principles-centered');
+        
+        // 显示模型选择器
+        modelSelector.style.display = '';
+        
+        // 恢复输入框placeholder
+        document.getElementById('promptInput').placeholder = '输入消息...';
+        
+        // 清空第一性原理对话历史
+        fpConversationHistory = [];
+        
+        // 如果有历史对话，加载最近的一个
+        if (allSessions.length > 0) {
+            loadSession(allSessions[0].id);
+        }
+    }
+}
+
+// 发送第一性原理分析消息
+async function sendFirstPrinciplesMessage(prompt) {
+    const container = document.getElementById('chatMessages');
+    const chatContainer = document.getElementById('chatContainer');
+    const welcome = document.getElementById('chatWelcome');
+    const inputArea = document.querySelector('.input-area');
+    
+    // 隐藏欢迎界面，恢复输入框位置
+    welcome.style.display = 'none';
+    inputArea.classList.remove('first-principles-centered');
+    
+    // 添加用户消息到UI
+    container.innerHTML += renderFpUserMessage(prompt);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+    // 添加到对话历史
+    fpConversationHistory.push({ role: 'user', content: prompt });
+    
+    // 添加加载状态
+    const loadingId = 'loading-' + Date.now();
+    container.innerHTML += `
+        <div class="message assistant loading" id="${loadingId}">
+            <div class="message-header">
+                <div class="message-avatar">FP</div>
+                <div class="message-role">第一性原理分析</div>
+            </div>
+            <div class="message-content">深度思考中...</div>
+        </div>
+    `;
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+    try {
+        const res = await fetch('/api/first-principles', {
+            method: 'POST',
+            headers: getApiHeaders(),
+            body: JSON.stringify({
+                prompt: prompt,
+                history: fpConversationHistory.slice(0, -1),
+                stream: true
+            })
+        });
+        
+        // 移除加载状态
+        document.getElementById(loadingId)?.remove();
+        
+        // 流式处理响应
+        let fullText = '';
+        let reasoningText = '';
+        let usageData = null;
+        let requestDebug = null;
+        let isInReasoning = false;
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        
+        // 添加AI消息占位
+        const msgId = 'fp-msg-' + Date.now();
+        container.innerHTML += `
+            <div class="message assistant fp-message" id="${msgId}">
+                <div class="message-header">
+                    <div class="message-avatar">FP</div>
+                    <div class="message-role">第一性原理分析</div>
+                    <div class="fp-token-stats" id="${msgId}-tokens" style="display: none;"></div>
+                    <button class="fp-raw-btn" onclick="toggleFpRawData('${msgId}')" title="查看原始数据">RAW</button>
+                </div>
+                <div class="message-content" id="${msgId}-content"></div>
+                <div class="fp-raw-data" id="${msgId}-raw" style="display: none;"></div>
+            </div>
+        `;
+        const contentEl = document.getElementById(`${msgId}-content`);
+        const tokensEl = document.getElementById(`${msgId}-tokens`);
+        let reasoningEl = null;
+        
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+            
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') break;
+                    try {
+                        const parsed = JSON.parse(data);
+                        
+                        // 处理请求调试信息
+                        if (parsed.request_debug) {
+                            requestDebug = parsed.request_debug;
+                        }
+                        
+                        // 处理推理开始
+                        if (parsed.reasoning_start) {
+                            isInReasoning = true;
+                            reasoningEl = document.createElement('div');
+                            reasoningEl.className = 'fp-reasoning-block';
+                            reasoningEl.innerHTML = '<div class="fp-reasoning-header"><span class="fp-reasoning-icon">&#9881;</span>深度推理中...</div><div class="fp-reasoning-content"></div>';
+                            contentEl.appendChild(reasoningEl);
+                        }
+                        
+                        // 处理推理内容
+                        if (parsed.reasoning && reasoningEl) {
+                            reasoningText += parsed.reasoning;
+                            const reasoningContent = reasoningEl.querySelector('.fp-reasoning-content');
+                            reasoningContent.textContent = reasoningText;
+                            chatContainer.scrollTop = chatContainer.scrollHeight;
+                        }
+                        
+                        // 处理推理结束
+                        if (parsed.reasoning_end && reasoningEl) {
+                            isInReasoning = false;
+                            // 更新标题并折叠
+                            const header = reasoningEl.querySelector('.fp-reasoning-header');
+                            header.innerHTML = '<span class="fp-reasoning-icon">&#9881;</span>深度推理过程 <span class="fp-reasoning-toggle">展开</span>';
+                            reasoningEl.classList.add('collapsed');
+                            header.onclick = () => {
+                                reasoningEl.classList.toggle('collapsed');
+                                const toggle = header.querySelector('.fp-reasoning-toggle');
+                                toggle.textContent = reasoningEl.classList.contains('collapsed') ? '展开' : '收起';
+                            };
+                        }
+                        
+                        // 处理正常内容
+                        if (parsed.content) {
+                            fullText += parsed.content;
+                            // 在推理块之后添加正常内容
+                            let mainContent = contentEl.querySelector('.fp-main-content');
+                            if (!mainContent) {
+                                mainContent = document.createElement('div');
+                                mainContent.className = 'fp-main-content';
+                                contentEl.appendChild(mainContent);
+                            }
+                            mainContent.innerHTML = renderFpContent(fullText);
+                            chatContainer.scrollTop = chatContainer.scrollHeight;
+                        }
+                        
+                        if (parsed.usage) {
+                            usageData = parsed.usage;
+                        }
+                        if (parsed.error) {
+                            contentEl.textContent = '错误: ' + parsed.error;
+                        }
+                    } catch (e) {}
+                }
+            }
+        }
+        
+        // 显示token统计
+        if (usageData && tokensEl) {
+            const promptTokens = usageData.prompt_tokens || 0;
+            const completionTokens = usageData.completion_tokens || 0;
+            const reasoningTokens = usageData.reasoning_tokens || usageData.completion_tokens_details?.reasoning_tokens || 0;
+            const totalTokens = usageData.total_tokens || (promptTokens + completionTokens);
+            
+            let tokenText = `<span class="token-label">Token:</span> ${promptTokens} + ${completionTokens} = ${totalTokens}`;
+            if (reasoningTokens > 0) {
+                tokenText += ` <span class="token-reasoning">(推理: ${reasoningTokens})</span>`;
+            }
+            tokensEl.innerHTML = tokenText;
+            tokensEl.style.display = '';
+        }
+        
+        // 保存原始数据（包含用户提问和API请求）
+        const rawEl = document.getElementById(`${msgId}-raw`);
+        if (rawEl) {
+            const rawData = {
+                request: requestDebug,
+                prompt: prompt,
+                reasoning: reasoningText,
+                content: fullText,
+                usage: usageData
+            };
+            rawEl.textContent = JSON.stringify(rawData, null, 2);
+        }
+        
+        // 添加到对话历史
+        if (fullText) {
+            fpConversationHistory.push({ role: 'assistant', content: fullText });
+            
+            // 检查是否包含问题组或核心问题，添加内联输入框
+            if ((fullText.includes('【问题组】') || fullText.includes('【核心问题】')) && !fullText.includes('【分析完成】')) {
+                addFpInlineInput(msgId);
+            }
+        }
+        
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        
+    } catch (e) {
+        document.getElementById(loadingId)?.remove();
+        container.innerHTML += `
+            <div class="message assistant">
+                <div class="message-header">
+                    <div class="message-avatar">FP</div>
+                    <div class="message-role">第一性原理分析</div>
+                </div>
+                <div class="message-content" style="color: var(--error-color);">请求失败: ${escapeHtml(e.message)}</div>
+            </div>
+        `;
+    }
+}
+
+// 渲染第一性原理用户消息
+function renderFpUserMessage(content) {
+    return `
+        <div class="message user">
+            <div class="message-header">
+                <div class="message-avatar">U</div>
+                <div class="message-role">你</div>
+            </div>
+            <div class="message-content">${escapeHtml(content)}</div>
+        </div>
+    `;
+}
+
+// 渲染第一性原理内容（模块化格式）
+function renderFpContent(text) {
+    let html = marked.parse(text);
+    
+    // 美化【当前阶段】
+    html = html.replace(/【当前阶段】([^<\n]+)/g, '<div class="fp-stage">$1</div>');
+    
+    // 美化【问题组】- 新增多问题支持
+    html = html.replace(/【问题组】/g, '<div class="fp-question-group-label">问题组</div>');
+    
+    // 美化【核心问题】（保留兼容）
+    html = html.replace(/【核心问题】/g, '<div class="fp-question-label">核心问题</div>');
+    
+    // 美化【分析要点】
+    html = html.replace(/【分析要点】/g, '<div class="fp-section-title">分析要点</div>');
+    
+    // 美化【思考提示】
+    html = html.replace(/【思考提示】([^<\n]+)/g, '<div class="fp-hint">$1</div>');
+    
+    // 美化【分析完成】
+    html = html.replace(/【分析完成】/g, '<div class="fp-stage fp-stage-complete">分析完成</div>');
+    
+    // 美化【第一性原理清单】
+    html = html.replace(/【第一性原理清单】/g, '<div class="fp-conclusion-title">第一性原理清单</div>');
+    
+    // 美化【推理路径】
+    html = html.replace(/【推理路径】/g, '<div class="fp-conclusion-title">推理路径</div>');
+    
+    // 美化【最终方案】
+    html = html.replace(/【最终方案】/g, '<div class="fp-conclusion-title">最终方案</div>');
+    
+    // 美化【创新点】
+    html = html.replace(/【创新点】/g, '<div class="fp-conclusion-title">创新点</div>');
+    
+    // 美化引用块中的问题
+    html = html.replace(/<blockquote>\s*<p>([^<]+)<\/p>\s*<\/blockquote>/g, 
+        '<div class="fp-question-box"><div class="fp-question-text">$1</div></div>');
+    
+    return html;
+}
+
+// 添加内联输入框（支持多问题）
+function addFpInlineInput(msgId) {
+    const contentEl = document.getElementById(`${msgId}-content`);
+    if (!contentEl) return;
+    
+    // 检查是否已经有输入框
+    if (contentEl.querySelector('.fp-inline-input-group')) return;
+    
+    const inputGroupId = 'fp-input-group-' + Date.now();
+    const inputHtml = `
+        <div class="fp-inline-input-group" id="${inputGroupId}">
+            <div class="fp-input-header">请回答上述问题</div>
+            <textarea id="${inputGroupId}-textarea" class="fp-multi-input" placeholder="在这里输入你对上述问题的回答...&#10;可以逐一回答，也可以综合回答" rows="4"></textarea>
+            <div class="fp-input-footer">
+                <span class="fp-input-hint">按 Ctrl+Enter 发送</span>
+                <button onclick="submitFpMultiAnswer('${inputGroupId}')">提交回答</button>
+            </div>
+        </div>
+    `;
+    
+    contentEl.innerHTML += inputHtml;
+    
+    // 聚焦输入框并添加快捷键
+    setTimeout(() => {
+        const textarea = document.getElementById(`${inputGroupId}-textarea`);
+        if (textarea) {
+            textarea.focus();
+            textarea.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault();
+                    submitFpMultiAnswer(inputGroupId);
+                }
+            });
+        }
+    }, 100);
+}
+
+// 提交多问题回答
+async function submitFpMultiAnswer(inputGroupId) {
+    const textarea = document.getElementById(`${inputGroupId}-textarea`);
+    if (!textarea) return;
+    
+    const answer = textarea.value.trim();
+    if (!answer) return;
+    
+    // 禁用输入框和按钮
+    textarea.disabled = true;
+    const btn = textarea.closest('.fp-inline-input-group').querySelector('button');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '发送中...';
+    }
+    
+    // 发送回答
+    await sendFirstPrinciplesMessage(answer);
+    
+    // 移除已使用的输入框
+    const inputGroup = document.getElementById(inputGroupId);
+    if (inputGroup) {
+        inputGroup.remove();
+    }
+}
+
+// 切换原始数据显示
+function toggleFpRawData(msgId) {
+    const rawEl = document.getElementById(`${msgId}-raw`);
+    if (rawEl) {
+        const isHidden = rawEl.style.display === 'none';
+        rawEl.style.display = isHidden ? 'block' : 'none';
+    }
+}
+
+// 处理内联输入框键盘事件（保留兼容）
+function handleFpInputKeydown(event, inputId) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        submitFpInlineAnswer(inputId);
+    }
+}
+
+// 提交内联回答（保留兼容）
+async function submitFpInlineAnswer(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    
+    const answer = input.value.trim();
+    if (!answer) return;
+    
+    // 禁用输入框和按钮
+    input.disabled = true;
+    const btn = input.nextElementSibling;
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '发送中...';
+    }
+    
+    // 发送回答
+    await sendFirstPrinciplesMessage(answer);
+    
+    // 移除已使用的输入框
+    const inputWrapper = input.closest('.fp-inline-input');
+    if (inputWrapper) {
+        inputWrapper.remove();
+    }
+}
+

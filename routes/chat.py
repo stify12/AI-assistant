@@ -532,3 +532,238 @@ def debug_tools():
             for name, info in _mcp_server_processes.items()
         }
     })
+
+
+# ========== 第一性原理分析 API ==========
+
+# 第一性原理分析系统提示词
+FIRST_PRINCIPLES_SYSTEM_PROMPT = """# 能力与角色
+
+你是一位顶级的思考者，你的思维模型融合了物理学家（如理查德·费曼）的严谨、顶尖工程师（如埃隆·马斯克）的务实和哲学家（如亚里士多德）的深刻。你的核心能力是运用「第一性原理」来分析和解决任何问题。你不依赖类比、传统或经验，而是致力于将任何复杂问题拆解至最基本、最不容置疑的组成部分（物理定律、人性本质、数学公理等），然后从这些基石出发，重新构建解决方案。
+
+# 洞察与背景
+
+在充满不确定性和复杂性的世界里，大多数人和组织习惯于类比思维，即复制他人的做法或在现有基础上进行微小改良。这种思维方式难以带来颠覆性创新或找到问题的根本解。我们的目标是打破常规，通过回归事物最本质的原理，共同探索出一条独特的、根本性的创新路径。你的提问和分析过程，本身就是帮助用户深度思考的价值所在。
+
+# 陈述任务
+
+你的任务是一个动态的、苏格拉底式的对话流程，具体如下：
+
+1. **接收初始问题**：用户会提出一个【问题或需求】。
+
+2. **启动提问循环**：你的任务不是立即给出答案。相反，你将启动「第一性原理」分析流程，通过一系列深刻的反问，来挑战用户陈述中的每一个假设、每一个术语和每一个既定目标。
+
+3. **多轮反问**：你可能会反问多次。每一轮提问都旨在剥离一层表象，直击更深层次的本质。你的问题可能包括但不限于：
+   - "我们真正想要达成的最终目标是什么？这个目标是否可以被进一步分解？"
+   - "我们认为『必须』要做某件事，这个『必须』是基于一个不可动摇的物理定律，还是仅仅是一个行业惯例或过去的假设？"
+   - "描述一下这个问题的基本组成部分有哪些？哪些是事实，哪些是我们的推断？"
+   - "如果我们从零开始，没有任何历史包袱和现有资源的限制，我们会怎么来做来解决这个问题？"
+
+4. **判断与确认**：当你判断对话已经将问题分解到最基本的、不容置疑的"事实"或"公理"层面时，你需要向用户进行确认。例如："似乎已经触及了问题的核心：[概括总结出的核心原理]。基于这些基本原理，您希望我为您构建最终的结论或解决方案了吗？"
+
+5. **输出最终结论**：在用户确认后，基于共同确认的第一性原理，系统地、逻辑清晰地构建并输出一个创新的、根本性的最终结论或解决方案。
+
+# 个性
+
+在整个对话过程中，你的个性应该是：
+- **冷静的探究者**：语气始终保持客观、中立、不带偏见
+- **深刻的怀疑论者**：对所有未经检验的假设都保持健康的怀疑
+- **谦逊的引导者**：你的提问不是为了炫耀知识，而是为了引导用户进行更深层次的思考
+- **极度好奇**：展现出对问题本质的强烈、纯粹的好奇心
+
+# 实验与探索
+
+在输出【最终结论】时，你必须进行以下探索，以确保结论的严谨性和可追溯性：
+
+**展示推理路径**：你不能只给出答案。你需要清晰地展示你的推理路径。首先以列表形式列出我们共同确认的【第一性原理清单】（即我们分解出的核心事实与公理），然后展示你是如何一步步从这些原理推导出你的最终结论的。这种透明的推理过程至关重要。
+
+# 输出格式要求
+
+为了便于阅读和交互，请使用以下模块化格式输出：
+
+## 当进行提问时，使用：
+
+【当前阶段】探索层级 X（X为1-5的数字，表示分析深度）
+
+【分析要点】
+- 对用户回答的关键洞察
+- 发现的隐含假设或值得深挖的点
+
+【问题组】
+1. 问题1（关于目标/动机）
+2. 问题2（关于假设/约束）
+3. 问题3（关于本质/原理）
+（每轮必须提出2-4个相关联的问题，从不同角度探索）
+
+【思考提示】简短的思考方向提示，帮助用户更好地回答上述问题
+
+## 当给出最终结论时，使用：
+
+【分析完成】
+
+【第一性原理清单】
+1. 原理1
+2. 原理2
+3. ...
+
+【推理路径】
+步骤1 → 步骤2 → 步骤3 → 结论
+
+【最终方案】
+具体的解决方案内容
+
+【创新点】
+- 创新点1
+- 创新点2
+
+# 重要规则
+
+- 每轮必须提出2-4个问题，绝对不能只问1个问题
+- 问题要具体、可回答，避免过于抽象
+- 问题之间要有逻辑关联，形成追问链条
+- 保持对话推进感，不要原地打转
+- 通过3-5轮对话逐步深入到问题本质"""
+
+
+@chat_bp.route('/api/first-principles', methods=['POST'])
+def first_principles_analysis():
+    """第一性原理分析API - 使用DeepSeek V3.2模型"""
+    user_id = get_current_user_id()
+    
+    data = request.json
+    prompt = data.get('prompt', '')
+    history = data.get('history', [])
+    stream = data.get('stream', True)
+    
+    if not prompt:
+        return jsonify({'error': '请输入问题或需求'}), 400
+    
+    config = ConfigService.load_config(user_id=user_id)
+    api_key = config.get('deepseek_api_key', '')
+    
+    if not api_key:
+        return jsonify({'error': '请先配置 DeepSeek API Key'}), 400
+    
+    api_url = 'https://api.deepseek.com/chat/completions'
+    
+    # 构建消息列表 - deepseek-reasoner不支持system角色
+    messages = []
+    
+    # 添加历史对话
+    for i, msg in enumerate(history):
+        messages.append({
+            'role': msg.get('role', 'user'),
+            'content': msg.get('content', '')
+        })
+    
+    # 只有第一轮（无历史）时合并提示词
+    if len(history) == 0:
+        combined_prompt = f"""请按照以下角色和规则来回答：
+
+{FIRST_PRINCIPLES_SYSTEM_PROMPT}
+
+---
+
+用户问题：{prompt}"""
+        messages.append({'role': 'user', 'content': combined_prompt})
+    else:
+        messages.append({'role': 'user', 'content': prompt})
+    
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {api_key}'
+    }
+    
+    # deepseek-reasoner不支持temperature参数
+    payload = {
+        'model': 'deepseek-reasoner',
+        'messages': messages,
+        'stream': stream,
+        'max_tokens': 8192
+    }
+    
+    # 保存请求内容用于调试（不包含API key）
+    request_debug = {
+        'model': payload['model'],
+        'messages': payload['messages'],
+        'stream': payload['stream'],
+        'max_tokens': payload['max_tokens']
+    }
+    
+    if stream:
+        def generate():
+            # 先发送请求内容用于调试
+            yield f"data: {json.dumps({'request_debug': request_debug})}\n\n"
+            
+            try:
+                response = requests.post(api_url, json=payload, headers=headers, timeout=300, stream=True)
+                
+                reasoning_started = False
+                
+                for line in response.iter_lines():
+                    if line:
+                        line_str = line.decode('utf-8')
+                        # 调试：打印原始响应
+                        print(f"[FP Debug] Raw line: {line_str[:200]}")
+                        
+                        if line_str.startswith('data: '):
+                            data_str = line_str[6:]
+                            if data_str == '[DONE]':
+                                yield f"data: [DONE]\n\n"
+                                break
+                            try:
+                                chunk = json.loads(data_str)
+                                # 调试：打印解析后的chunk
+                                print(f"[FP Debug] Chunk keys: {chunk.keys() if isinstance(chunk, dict) else 'not dict'}")
+                                
+                                if 'choices' in chunk and len(chunk['choices']) > 0:
+                                    delta = chunk['choices'][0].get('delta', {})
+                                    # 调试：打印delta内容
+                                    print(f"[FP Debug] Delta: {delta}")
+                                    
+                                    # 处理推理内容 (reasoning_content)
+                                    reasoning_content = delta.get('reasoning_content', '')
+                                    if reasoning_content:
+                                        if not reasoning_started:
+                                            reasoning_started = True
+                                            yield f"data: {json.dumps({'reasoning_start': True})}\n\n"
+                                        yield f"data: {json.dumps({'reasoning': reasoning_content})}\n\n"
+                                    
+                                    # 处理正常内容
+                                    content = delta.get('content', '')
+                                    if content:
+                                        if reasoning_started:
+                                            reasoning_started = False
+                                            yield f"data: {json.dumps({'reasoning_end': True})}\n\n"
+                                        yield f"data: {json.dumps({'content': content})}\n\n"
+                                    
+                                    # 检查是否结束
+                                    if chunk['choices'][0].get('finish_reason'):
+                                        if reasoning_started:
+                                            yield f"data: {json.dumps({'reasoning_end': True})}\n\n"
+                                        usage = chunk.get('usage', {})
+                                        yield f"data: {json.dumps({'done': True, 'usage': usage})}\n\n"
+                            except json.JSONDecodeError:
+                                pass
+            except Exception as e:
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        
+        return Response(generate(), mimetype='text/event-stream')
+    else:
+        try:
+            response = requests.post(api_url, json=payload, headers=headers, timeout=180)
+            result = response.json()
+            
+            if 'error' in result:
+                return jsonify({'error': result['error'].get('message', '请求失败')}), 500
+            
+            if 'choices' in result:
+                content = result['choices'][0]['message'].get('content', '')
+                return jsonify({
+                    'content': content,
+                    'usage': result.get('usage', {})
+                })
+            
+            return jsonify({'error': '未获取到响应'}), 500
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
