@@ -123,102 +123,71 @@ def get_correct_value(item):
 
 def classify_question_type(question_data):
     """
-    根据题目数据判断题目类型
+    根据题目数据判断题目类型（三类互不包含）
     
-    支持多种数据格式：
-    1. questionType + bvalue 格式（数据库原始格式）
-       - bvalue: 1=单选, 2=多选, 3=判断, 4=填空, 5=解答
-    2. type 字段格式（数据集格式）
-       - type: "choice" 表示客观题（需要批改的题目）
-    3. 根据答案内容智能判断选择题（单个字母A-H视为选择题）
+    分类规则：
+    1. 选择题: bvalue=1(单选)、2(多选)、3(判断)
+    2. 客观填空题: questionType='objective' 且 bvalue='4'
+       - 如果有children，大题本身不计入，只统计children
+    3. 主观题: 其他所有（bvalue=5解答题，或无bvalue等）
     
     Args:
         question_data: 题目数据
         
     Returns:
         {
-            "is_objective": bool,  # 是否客观题
-            "is_choice": bool,     # 是否选择题
-            "is_fill": bool,       # 是否填空题 (bvalue=4)
-            "choice_type": str     # "single" | "multiple" | None
+            "is_choice": bool,       # 是否选择题（含判断题）
+            "is_fill": bool,         # 是否客观填空题
+            "is_subjective": bool,   # 是否主观题
+            "is_parent": bool,       # 是否大题（有children，不参与统计）
+            "choice_type": str       # "single" | "multiple" | "judge" | None
         }
     """
     if not question_data:
         return {
-            'is_objective': False,
             'is_choice': False,
             'is_fill': False,
+            'is_subjective': True,
+            'is_parent': False,
             'choice_type': None
         }
     
-    # 方式1：检查 questionType 和 bvalue 字段（数据库原始格式）
-    question_type = question_data.get('questionType', '')
     bvalue = str(question_data.get('bvalue', ''))
+    question_type = question_data.get('questionType', '')
+    children = question_data.get('children', [])
     
-    # 方式2：检查 type 字段（数据集格式）
-    # type: "choice" 在数据集中表示客观题（需要批改的题目），不是选择题
-    type_field = question_data.get('type', '')
+    # 判断是否为大题（有children）- 大题本身不参与统计
+    is_parent = bool(children and len(children) > 0)
+    if is_parent:
+        return {
+            'is_choice': False,
+            'is_fill': False,
+            'is_subjective': False,
+            'is_parent': True,
+            'choice_type': None
+        }
     
-    # 判断是否为填空题 (bvalue=4)
-    is_fill = bvalue == '4'
-    
-    # 判断是否为选择题
-    is_choice = False
+    # 选择题: bvalue=1(单选)、2(多选)、3(判断)
+    is_choice = bvalue in ('1', '2', '3')
     choice_type = None
+    if bvalue == '1':
+        choice_type = 'single'
+    elif bvalue == '2':
+        choice_type = 'multiple'
+    elif bvalue == '3':
+        choice_type = 'judge'
     
-    # 优先使用 bvalue 判断（最可靠）
-    # bvalue: 1=单选, 2=多选, 3=判断, 4=填空, 5=解答
-    if bvalue in ('1', '2'):
-        is_choice = True
-        choice_type = 'single' if bvalue == '1' else 'multiple'
-    else:
-        # 方式3：根据答案内容智能判断选择题
-        # 只有当答案是单个或多个大写字母A-H时才视为选择题
-        answer = str(question_data.get('answer', '') or question_data.get('mainAnswer', '')).strip().upper()
-        user_answer = str(question_data.get('userAnswer', '')).strip().upper()
-        
-        # 检查答案是否为选择题格式（单个字母A-H，或多个字母如AB、ABC）
-        def is_choice_answer(ans):
-            if not ans:
-                return False, None
-            # 去除空格
-            ans_clean = ans.replace(' ', '')
-            # 检查是否全部是A-H的字母，且长度不超过4（避免误判）
-            if ans_clean and len(ans_clean) <= 4 and all(c in 'ABCDEFGH' for c in ans_clean):
-                if len(ans_clean) == 1:
-                    return True, 'single'
-                else:
-                    return True, 'multiple'
-            return False, None
-        
-        # 优先检查标准答案，其次检查用户答案
-        is_choice_ans, choice_type_ans = is_choice_answer(answer)
-        if is_choice_ans:
-            is_choice = True
-            choice_type = choice_type_ans
-        else:
-            is_choice_user, choice_type_user = is_choice_answer(user_answer)
-            if is_choice_user:
-                is_choice = True
-                choice_type = choice_type_user
+    # 客观填空题: questionType='objective' 且 bvalue='4'
+    is_fill = (question_type == 'objective' and bvalue == '4')
     
-    # 判断是否为客观题
-    # 客观题条件（满足任一即可）：
-    # 1. questionType === "objective"
-    # 2. bvalue 为 1/2/3/4（选择/判断/填空）
-    # 3. type === "choice"（数据集格式，表示客观题）
-    # 4. 是选择题
-    is_objective = (
-        question_type == 'objective' or 
-        bvalue in ('1', '2', '3', '4') or 
-        type_field == 'choice' or
-        is_choice
-    )
+    # 主观题: 非选择题且非客观填空题
+    is_subjective = not is_choice and not is_fill
     
     return {
-        'is_objective': is_objective,
         'is_choice': is_choice,
         'is_fill': is_fill,
+        'is_subjective': is_subjective,
+        'is_parent': is_parent,
         'choice_type': choice_type
     }
 
@@ -1524,11 +1493,11 @@ def batch_evaluate(task_id):
         
         overall_accuracy = total_correct / total_questions if total_questions > 0 else 0
         
-        # 汇总所有作业的题目类型统计: 选择题、客观填空题、非选择题
+        # 汇总所有作业的题目类型统计: 选择题、客观填空题、主观题
         aggregated_type_stats = {
             'choice': {'total': 0, 'correct': 0, 'accuracy': 0},
             'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0},
-            'other': {'total': 0, 'correct': 0, 'accuracy': 0}
+            'subjective': {'total': 0, 'correct': 0, 'accuracy': 0}
         }
         
         # 汇总bvalue细分统计
@@ -1636,11 +1605,11 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         'AI识别幻觉': 0
     }
     
-    # 题目类型分类统计: 选择题、客观填空题、非选择题
+    # 题目类型分类统计: 选择题、客观填空题、主观题（三类互不包含）
     type_stats = {
-        'choice': {'total': 0, 'correct': 0, 'accuracy': 0},           # 选择题
-        'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0},   # 客观填空题 (客观+非选择)
-        'other': {'total': 0, 'correct': 0, 'accuracy': 0}             # 非选择题 (主观+非选择)
+        'choice': {'total': 0, 'correct': 0, 'accuracy': 0},           # 选择题 (bvalue=1,2,3)
+        'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0},   # 客观填空题 (questionType=objective且bvalue=4)
+        'subjective': {'total': 0, 'correct': 0, 'accuracy': 0}        # 主观题 (其他)
     }
     
     # 按bvalue细分统计 (1=单选, 2=多选, 3=判断, 4=填空, 5=解答)
@@ -1715,25 +1684,30 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         # 获取题目类型分类
         question_category = classify_question_type(base_item)
         bvalue = str(base_item.get('bvalue', ''))
-        is_objective = question_category['is_objective']
         
-        # 更新题目类型统计 - 总数 (选择题、客观填空题、非选择题)
-        # 选择题: is_choice=true
-        # 客观填空题: is_objective=true 且 is_fill=true (bvalue=4)
-        # 非选择题: 其他所有题目
+        # 跳过大题（有children的题目不参与统计）
+        if question_category['is_parent']:
+            continue
+        
+        # 更新题目类型统计 - 总数 (选择题、客观填空题、主观题，三类互不包含)
         if question_category['is_choice']:
             type_stats['choice']['total'] += 1
-        elif question_category['is_objective'] and question_category['is_fill']:
+        elif question_category['is_fill']:
             type_stats['objective_fill']['total'] += 1
-        else:
-            type_stats['other']['total'] += 1
+        elif question_category['is_subjective']:
+            type_stats['subjective']['total'] += 1
         
         # 更新bvalue细分统计 - 总数
         if bvalue in bvalue_stats:
             bvalue_stats[bvalue]['total'] += 1
         
-        # 更新组合统计 - 总数
-        obj_key = 'objective' if is_objective else 'subjective'
+        # 更新组合统计 - 总数（基于新分类）
+        if question_category['is_choice']:
+            obj_key = 'objective'
+        elif question_category['is_fill']:
+            obj_key = 'objective'
+        else:
+            obj_key = 'subjective'
         combined_key = f'{obj_key}_{bvalue}'
         if combined_key in combined_stats:
             combined_stats[combined_key]['total'] += 1
@@ -1812,13 +1786,13 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         
         if is_match:
             correct_count += 1
-            # 更新题目类型统计 - 正确数 (选择题、客观填空题、非选择题)
+            # 更新题目类型统计 - 正确数 (选择题、客观填空题、主观题)
             if question_category['is_choice']:
                 type_stats['choice']['correct'] += 1
-            elif question_category['is_objective'] and question_category['is_fill']:
+            elif question_category['is_fill']:
                 type_stats['objective_fill']['correct'] += 1
-            else:
-                type_stats['other']['correct'] += 1
+            elif question_category['is_subjective']:
+                type_stats['subjective']['correct'] += 1
             
             # 更新bvalue细分统计 - 正确数
             if bvalue in bvalue_stats:
@@ -1994,11 +1968,11 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
         'AI识别幻觉': 0
     }
     
-    # 题目类型分类统计: 选择题、客观填空题、非选择题
+    # 题目类型分类统计: 选择题、客观填空题、主观题（三类互不包含）
     type_stats = {
-        'choice': {'total': 0, 'correct': 0, 'accuracy': 0},           # 选择题
-        'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0},   # 客观填空题 (客观+非选择)
-        'other': {'total': 0, 'correct': 0, 'accuracy': 0}             # 非选择题 (主观+非选择)
+        'choice': {'total': 0, 'correct': 0, 'accuracy': 0},           # 选择题 (bvalue=1,2,3)
+        'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0},   # 客观填空题 (questionType=objective且bvalue=4)
+        'subjective': {'total': 0, 'correct': 0, 'accuracy': 0}        # 主观题 (其他)
     }
     
     # 按bvalue细分统计 (1=单选, 2=多选, 3=判断, 4=填空, 5=解答)
@@ -2064,22 +2038,28 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
         # 获取题目类型分类
         question_category = classify_question_type(base_item)
         bvalue = str(base_item.get('bvalue', ''))
-        is_objective = question_category['is_objective']
         
-        # 更新题目类型统计 - 总数 (选择题、客观填空题、非选择题)
+        # 跳过大题（有children的题目不参与统计）
+        if question_category['is_parent']:
+            continue
+        
+        # 更新题目类型统计 - 总数 (选择题、客观填空题、主观题)
         if question_category['is_choice']:
             type_stats['choice']['total'] += 1
-        elif question_category['is_objective'] and question_category['is_fill']:
+        elif question_category['is_fill']:
             type_stats['objective_fill']['total'] += 1
-        else:
-            type_stats['other']['total'] += 1
+        elif question_category['is_subjective']:
+            type_stats['subjective']['total'] += 1
         
         # 更新bvalue细分统计 - 总数
         if bvalue in bvalue_stats:
             bvalue_stats[bvalue]['total'] += 1
         
-        # 更新组合统计 - 总数
-        obj_key = 'objective' if is_objective else 'subjective'
+        # 更新组合统计 - 总数（基于新分类）
+        if question_category['is_choice'] or question_category['is_fill']:
+            obj_key = 'objective'
+        else:
+            obj_key = 'subjective'
         combined_key = f'{obj_key}_{bvalue}'
         if combined_key in combined_stats:
             combined_stats[combined_key]['total'] += 1
@@ -2097,13 +2077,13 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
         
         if is_correct:
             correct_count += 1
-            # 更新题目类型统计 - 正确数 (选择题、客观填空题、非选择题)
+            # 更新题目类型统计 - 正确数 (选择题、客观填空题、主观题)
             if question_category['is_choice']:
                 type_stats['choice']['correct'] += 1
-            elif question_category['is_objective'] and question_category['is_fill']:
+            elif question_category['is_fill']:
                 type_stats['objective_fill']['correct'] += 1
-            else:
-                type_stats['other']['correct'] += 1
+            elif question_category['is_subjective']:
+                type_stats['subjective']['correct'] += 1
             
             # 更新bvalue细分统计 - 正确数
             if bvalue in bvalue_stats:
@@ -2212,7 +2192,12 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
 
 @batch_evaluation_bp.route('/tasks/<task_id>/export', methods=['GET'])
 def export_batch_excel(task_id):
-    """导出Excel报告"""
+    """导出Excel报告 - 增强版，包含可视化图表和详细总结"""
+    from openpyxl.chart import PieChart, BarChart, RadarChart, Reference
+    from openpyxl.chart.label import DataLabelList
+    from openpyxl.utils import get_column_letter
+    from openpyxl.styles import Alignment, Font as XlFont, PatternFill as XlFill
+    
     task_data = StorageService.load_batch_task(task_id)
     if not task_data:
         return jsonify({'success': False, 'error': '任务不存在'})
@@ -2223,55 +2208,428 @@ def export_batch_excel(task_id):
     header_fill = PatternFill(start_color="1D1D1F", end_color="1D1D1F", fill_type="solid")
     border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
     
-    ws1 = wb.active
-    ws1.title = "总体概览"
+    # 样式定义
+    title_font = Font(bold=True, size=16, color="1D1D1F")
+    subtitle_font = Font(bold=True, size=14, color="1D1D1F")
+    section_font = Font(bold=True, size=12, color="1D1D1F")
+    highlight_fill = PatternFill(start_color="E3F9E5", end_color="E3F9E5", fill_type="solid")
+    warning_fill = PatternFill(start_color="FFF3E0", end_color="FFF3E0", fill_type="solid")
+    error_fill = PatternFill(start_color="FFEEF0", end_color="FFEEF0", fill_type="solid")
+    center_align = Alignment(horizontal='center', vertical='center')
     
     overall = task_data.get('overall_report', {})
     by_question_type = overall.get('by_question_type', {})
+    homework_items = task_data.get('homework_items', [])
     
-    # 获取题目类型统计数据 (选择题、客观填空题、非选择题)
+    # 获取题目类型统计数据
     choice_stats = by_question_type.get('choice', {})
     objective_fill_stats = by_question_type.get('objective_fill', {})
-    other_stats = by_question_type.get('other', {})
+    subjective_stats = by_question_type.get('subjective', {})
     
-    overview_data = [
-        ['任务名称', task_data.get('name', '')],
-        ['创建时间', task_data.get('created_at', '')],
-        ['状态', task_data.get('status', '')],
-        ['总作业数', overall.get('total_homework', 0)],
-        ['总题目数', overall.get('total_questions', 0)],
-        ['正确题目数', overall.get('correct_questions', 0)],
-        ['总体准确率', f"{(overall.get('overall_accuracy', 0) * 100):.1f}%"],
-        ['', ''],  # 空行
-        ['题目类型分类统计', ''],
-        ['选择题总数', choice_stats.get('total', 0)],
-        ['选择题正确数', choice_stats.get('correct', 0)],
-        ['选择题准确率', f"{(choice_stats.get('accuracy', 0) * 100):.1f}%"],
-        ['', ''],  # 空行
-        ['客观填空题总数', objective_fill_stats.get('total', 0)],
-        ['客观填空题正确数', objective_fill_stats.get('correct', 0)],
-        ['客观填空题准确率', f"{(objective_fill_stats.get('accuracy', 0) * 100):.1f}%"],
-        ['', ''],  # 空行
-        ['非选择题总数', other_stats.get('total', 0)],
-        ['非选择题正确数', other_stats.get('correct', 0)],
-        ['非选择题准确率', f"{(other_stats.get('accuracy', 0) * 100):.1f}%"]
+    # ========== 1. 评估总结表 (Summary) ==========
+    ws1 = wb.active
+    ws1.title = "评估总结"
+    ws1.column_dimensions['A'].width = 25
+    ws1.column_dimensions['B'].width = 20
+    ws1.column_dimensions['C'].width = 20
+    ws1.column_dimensions['D'].width = 20
+    ws1.column_dimensions['E'].width = 20
+    
+    # 标题
+    ws1.merge_cells('A1:E1')
+    ws1['A1'] = "AI批改效果评估报告"
+    ws1['A1'].font = title_font
+    ws1['A1'].alignment = center_align
+    ws1.row_dimensions[1].height = 30
+    
+    # 基本信息
+    ws1['A3'] = "任务名称"
+    ws1['B3'] = task_data.get('name', '')
+    ws1['A4'] = "创建时间"
+    ws1['B4'] = task_data.get('created_at', '')
+    ws1['A5'] = "评估状态"
+    ws1['B5'] = '已完成' if task_data.get('status') == 'completed' else task_data.get('status', '')
+    ws1['A6'] = "测试条件"
+    ws1['B6'] = task_data.get('test_condition_name', '-')
+    
+    for row in range(3, 7):
+        ws1[f'A{row}'].font = section_font
+    
+    # 核心指标
+    ws1['A8'] = "核心评估指标"
+    ws1['A8'].font = subtitle_font
+    ws1.merge_cells('A8:E8')
+    
+    metrics_headers = ['指标', '数值', '说明']
+    for col, h in enumerate(metrics_headers, 1):
+        cell = ws1.cell(row=9, column=col, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.border = border
+    
+    accuracy = overall.get('overall_accuracy', 0)
+    total_q = overall.get('total_questions', 0)
+    correct_q = overall.get('correct_questions', 0)
+    error_q = total_q - correct_q
+    
+    metrics_data = [
+        ['总体准确率', f"{accuracy * 100:.1f}%", '正确题目数/总题目数'],
+        ['总作业数', overall.get('total_homework', 0), '参与评估的作业数量'],
+        ['总题目数', total_q, '所有作业的题目总数'],
+        ['正确题目数', correct_q, 'AI批改与基准一致的题目'],
+        ['错误题目数', error_q, 'AI批改与基准不一致的题目'],
     ]
     
-    for row_idx, (label, value) in enumerate(overview_data, 1):
-        ws1.cell(row=row_idx, column=1, value=label).font = Font(bold=True)
-        ws1.cell(row=row_idx, column=2, value=value)
+    for row_idx, (label, value, desc) in enumerate(metrics_data, 10):
+        ws1.cell(row=row_idx, column=1, value=label).border = border
+        cell = ws1.cell(row=row_idx, column=2, value=value)
+        cell.border = border
+        cell.alignment = center_align
+        if row_idx == 10:  # 准确率行高亮
+            cell.fill = highlight_fill if accuracy >= 0.9 else warning_fill if accuracy >= 0.7 else error_fill
+        ws1.cell(row=row_idx, column=3, value=desc).border = border
     
-    # 作业明细工作表 - 添加题目类型统计列
+    # 题型分类统计
+    ws1['A16'] = "题型分类统计"
+    ws1['A16'].font = subtitle_font
+    ws1.merge_cells('A16:E16')
+    
+    type_headers = ['题型', '总数', '正确数', '错误数', '准确率']
+    for col, h in enumerate(type_headers, 1):
+        cell = ws1.cell(row=17, column=col, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.border = border
+    
+    type_data = [
+        ['选择题', choice_stats.get('total', 0), choice_stats.get('correct', 0), 
+         choice_stats.get('total', 0) - choice_stats.get('correct', 0), choice_stats.get('accuracy', 0)],
+        ['客观填空题', objective_fill_stats.get('total', 0), objective_fill_stats.get('correct', 0),
+         objective_fill_stats.get('total', 0) - objective_fill_stats.get('correct', 0), objective_fill_stats.get('accuracy', 0)],
+        ['主观题', subjective_stats.get('total', 0), subjective_stats.get('correct', 0),
+         subjective_stats.get('total', 0) - subjective_stats.get('correct', 0), subjective_stats.get('accuracy', 0)],
+    ]
+    
+    for row_idx, row_data in enumerate(type_data, 18):
+        for col_idx, val in enumerate(row_data, 1):
+            cell = ws1.cell(row=row_idx, column=col_idx)
+            if col_idx == 5:  # 准确率列
+                cell.value = f"{val * 100:.1f}%" if row_data[1] > 0 else '-'
+            else:
+                cell.value = val
+            cell.border = border
+            if col_idx > 1:
+                cell.alignment = center_align
+    
+    # ========== 2. 错误分析表 (Error Analysis) ==========
+    ws_err = wb.create_sheet("错误分析")
+    ws_err.column_dimensions['A'].width = 25
+    ws_err.column_dimensions['B'].width = 15
+    ws_err.column_dimensions['C'].width = 15
+    ws_err.column_dimensions['D'].width = 40
+    
+    # 统计错误类型分布
+    error_distribution = {}
+    all_errors = []
+    page_error_count = {}  # 按页码统计错误
+    question_error_count = {}  # 按题号统计错误
+    
+    for item in homework_items:
+        if item.get('status') == 'completed' and item.get('evaluation'):
+            errors = item['evaluation'].get('errors', [])
+            page_num = str(item.get('page_num', '?'))
+            
+            for err in errors:
+                err_type = err.get('error_type', '未分类')
+                error_distribution[err_type] = error_distribution.get(err_type, 0) + 1
+                
+                # 按页码统计
+                page_error_count[page_num] = page_error_count.get(page_num, 0) + 1
+                
+                # 按题号统计
+                q_idx = err.get('index', '?')
+                q_key = f"P{page_num}-{q_idx}"
+                question_error_count[q_key] = question_error_count.get(q_key, 0) + 1
+                
+                all_errors.append({
+                    'page': page_num,
+                    'index': q_idx,
+                    'type': err_type,
+                    'explanation': err.get('explanation', ''),
+                    'book': item.get('book_name', ''),
+                    'student': item.get('student_name', '')
+                })
+    
+    # 错误类型分布表
+    ws_err['A1'] = "错误类型分布"
+    ws_err['A1'].font = subtitle_font
+    ws_err.merge_cells('A1:D1')
+    
+    err_headers = ['错误类型', '数量', '占比', '说明']
+    for col, h in enumerate(err_headers, 1):
+        cell = ws_err.cell(row=2, column=col, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.border = border
+    
+    total_errors = sum(error_distribution.values()) or 1
+    error_type_desc = {
+        '识别错误-判断正确': '用户答案识别不准确，但最终判断结果正确',
+        '识别错误-判断错误': '用户答案识别不准确，且判断结果错误',
+        '识别正确-判断错误': '用户答案识别正确，但判断结果错误',
+        '缺失题目': 'AI批改结果中缺少该题目',
+        'AI识别幻觉': 'AI将错误答案识别为标准答案',
+        '格式差异': '答案格式不一致但内容相同'
+    }
+    
+    sorted_errors = sorted(error_distribution.items(), key=lambda x: -x[1])
+    for row_idx, (err_type, count) in enumerate(sorted_errors, 3):
+        ws_err.cell(row=row_idx, column=1, value=err_type).border = border
+        ws_err.cell(row=row_idx, column=2, value=count).border = border
+        ws_err.cell(row=row_idx, column=3, value=f"{count/total_errors*100:.1f}%").border = border
+        ws_err.cell(row=row_idx, column=4, value=error_type_desc.get(err_type, '')).border = border
+    
+    # 错误类型饼图数据区域 (用于图表)
+    chart_start_row = len(sorted_errors) + 5
+    ws_err.cell(row=chart_start_row, column=1, value="图表数据区")
+    ws_err.cell(row=chart_start_row, column=1).font = section_font
+    
+    for row_idx, (err_type, count) in enumerate(sorted_errors, chart_start_row + 1):
+        ws_err.cell(row=row_idx, column=1, value=err_type)
+        ws_err.cell(row=row_idx, column=2, value=count)
+    
+    # 创建错误类型饼图
+    if sorted_errors:
+        pie = PieChart()
+        pie.title = "错误类型分布"
+        labels = Reference(ws_err, min_col=1, min_row=chart_start_row+1, max_row=chart_start_row+len(sorted_errors))
+        data = Reference(ws_err, min_col=2, min_row=chart_start_row, max_row=chart_start_row+len(sorted_errors))
+        pie.add_data(data, titles_from_data=True)
+        pie.set_categories(labels)
+        pie.width = 15
+        pie.height = 10
+        pie.dataLabels = DataLabelList()
+        pie.dataLabels.showPercent = True
+        pie.dataLabels.showVal = True
+        ws_err.add_chart(pie, "F2")
+    
+    # 高频错误题目 TOP10
+    top_error_row = chart_start_row + len(sorted_errors) + 3
+    ws_err.cell(row=top_error_row, column=1, value="高频错误题目 TOP10")
+    ws_err.cell(row=top_error_row, column=1).font = subtitle_font
+    ws_err.merge_cells(f'A{top_error_row}:D{top_error_row}')
+    
+    top_q_headers = ['题目', '错误次数', '占比']
+    for col, h in enumerate(top_q_headers, 1):
+        cell = ws_err.cell(row=top_error_row+1, column=col, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.border = border
+    
+    sorted_questions = sorted(question_error_count.items(), key=lambda x: -x[1])[:10]
+    for row_idx, (q_key, count) in enumerate(sorted_questions, top_error_row+2):
+        ws_err.cell(row=row_idx, column=1, value=q_key).border = border
+        ws_err.cell(row=row_idx, column=2, value=count).border = border
+        ws_err.cell(row=row_idx, column=3, value=f"{count/total_errors*100:.1f}%").border = border
+    
+    # 高频错误题目柱状图
+    if sorted_questions:
+        bar_data_start = top_error_row + 2
+        bar = BarChart()
+        bar.title = "高频错误题目 TOP10"
+        bar.type = "col"
+        bar.style = 10
+        data = Reference(ws_err, min_col=2, min_row=bar_data_start-1, max_row=bar_data_start+len(sorted_questions)-1)
+        cats = Reference(ws_err, min_col=1, min_row=bar_data_start, max_row=bar_data_start+len(sorted_questions)-1)
+        bar.add_data(data, titles_from_data=True)
+        bar.set_categories(cats)
+        bar.width = 15
+        bar.height = 10
+        bar.shape = 4
+        ws_err.add_chart(bar, "F18")
+    
+    # ========== 3. 可视化图表表 (Charts) ==========
+    ws_chart = wb.create_sheet("可视化图表")
+    ws_chart.column_dimensions['A'].width = 20
+    ws_chart.column_dimensions['B'].width = 15
+    ws_chart.column_dimensions['C'].width = 15
+    ws_chart.column_dimensions['D'].width = 15
+    ws_chart.column_dimensions['E'].width = 15
+    
+    # 题型准确率对比数据
+    ws_chart['A1'] = "题型准确率对比"
+    ws_chart['A1'].font = subtitle_font
+    
+    type_chart_headers = ['题型', '准确率%', '总数', '正确数']
+    for col, h in enumerate(type_chart_headers, 1):
+        cell = ws_chart.cell(row=2, column=col, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.border = border
+    
+    type_chart_data = [
+        ['选择题', choice_stats.get('accuracy', 0) * 100, choice_stats.get('total', 0), choice_stats.get('correct', 0)],
+        ['客观填空题', objective_fill_stats.get('accuracy', 0) * 100, objective_fill_stats.get('total', 0), objective_fill_stats.get('correct', 0)],
+        ['主观题', subjective_stats.get('accuracy', 0) * 100, subjective_stats.get('total', 0), subjective_stats.get('correct', 0)],
+    ]
+    
+    for row_idx, row_data in enumerate(type_chart_data, 3):
+        for col_idx, val in enumerate(row_data, 1):
+            cell = ws_chart.cell(row=row_idx, column=col_idx, value=val)
+            cell.border = border
+    
+    # 题型准确率柱状图
+    bar2 = BarChart()
+    bar2.title = "题型准确率对比"
+    bar2.type = "col"
+    bar2.style = 10
+    data2 = Reference(ws_chart, min_col=2, min_row=2, max_row=5)
+    cats2 = Reference(ws_chart, min_col=1, min_row=3, max_row=5)
+    bar2.add_data(data2, titles_from_data=True)
+    bar2.set_categories(cats2)
+    bar2.width = 12
+    bar2.height = 8
+    bar2.y_axis.scaling.max = 100
+    bar2.y_axis.title = "准确率 %"
+    ws_chart.add_chart(bar2, "F1")
+    
+    # 按页码错误分布
+    ws_chart['A8'] = "按页码错误分布"
+    ws_chart['A8'].font = subtitle_font
+    
+    page_headers = ['页码', '错误数']
+    for col, h in enumerate(page_headers, 1):
+        cell = ws_chart.cell(row=9, column=col, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.border = border
+    
+    sorted_pages = sorted(page_error_count.items(), key=lambda x: int(x[0]) if x[0].isdigit() else 999)
+    for row_idx, (page, count) in enumerate(sorted_pages, 10):
+        ws_chart.cell(row=row_idx, column=1, value=f"第{page}页").border = border
+        ws_chart.cell(row=row_idx, column=2, value=count).border = border
+    
+    # 页码错误柱状图
+    if sorted_pages:
+        bar3 = BarChart()
+        bar3.title = "按页码错误分布"
+        bar3.type = "col"
+        bar3.style = 11
+        data3 = Reference(ws_chart, min_col=2, min_row=9, max_row=9+len(sorted_pages))
+        cats3 = Reference(ws_chart, min_col=1, min_row=10, max_row=9+len(sorted_pages))
+        bar3.add_data(data3, titles_from_data=True)
+        bar3.set_categories(cats3)
+        bar3.width = 12
+        bar3.height = 8
+        ws_chart.add_chart(bar3, "F15")
+    
+    # 正确/错误对比饼图数据
+    pie_row = 10 + len(sorted_pages) + 2
+    ws_chart.cell(row=pie_row, column=1, value="正确/错误分布")
+    ws_chart.cell(row=pie_row, column=1).font = subtitle_font
+    
+    ws_chart.cell(row=pie_row+1, column=1, value="类别")
+    ws_chart.cell(row=pie_row+1, column=2, value="数量")
+    ws_chart.cell(row=pie_row+2, column=1, value="正确")
+    ws_chart.cell(row=pie_row+2, column=2, value=correct_q)
+    ws_chart.cell(row=pie_row+3, column=1, value="错误")
+    ws_chart.cell(row=pie_row+3, column=2, value=error_q)
+    
+    pie2 = PieChart()
+    pie2.title = "正确/错误分布"
+    labels2 = Reference(ws_chart, min_col=1, min_row=pie_row+2, max_row=pie_row+3)
+    data_pie2 = Reference(ws_chart, min_col=2, min_row=pie_row+1, max_row=pie_row+3)
+    pie2.add_data(data_pie2, titles_from_data=True)
+    pie2.set_categories(labels2)
+    pie2.width = 10
+    pie2.height = 8
+    pie2.dataLabels = DataLabelList()
+    pie2.dataLabels.showPercent = True
+    pie2.dataLabels.showVal = True
+    ws_chart.add_chart(pie2, "F30")
+    
+    # 评估指标雷达图数据
+    radar_row = pie_row + 6
+    ws_chart.cell(row=radar_row, column=1, value="评估指标雷达图数据")
+    ws_chart.cell(row=radar_row, column=1).font = subtitle_font
+    
+    radar_headers = ['指标', '得分']
+    for col, h in enumerate(radar_headers, 1):
+        cell = ws_chart.cell(row=radar_row+1, column=col, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+    
+    choice_acc = choice_stats.get('accuracy', 0) * 100 if choice_stats.get('total', 0) > 0 else accuracy * 100
+    fill_acc = objective_fill_stats.get('accuracy', 0) * 100 if objective_fill_stats.get('total', 0) > 0 else accuracy * 100
+    
+    radar_data = [
+        ['总体准确率', accuracy * 100],
+        ['选择题准确率', choice_acc],
+        ['填空题准确率', fill_acc],
+        ['完整性', 100 if total_q > 0 else 0],
+        ['一致性', accuracy * 100],
+    ]
+    
+    for row_idx, (label, val) in enumerate(radar_data, radar_row+2):
+        ws_chart.cell(row=row_idx, column=1, value=label)
+        ws_chart.cell(row=row_idx, column=2, value=round(val, 1))
+    
+    # 创建雷达图
+    radar = RadarChart()
+    radar.title = "评估指标雷达图"
+    radar.type = "filled"
+    radar_labels = Reference(ws_chart, min_col=1, min_row=radar_row+2, max_row=radar_row+6)
+    radar_values = Reference(ws_chart, min_col=2, min_row=radar_row+1, max_row=radar_row+6)
+    radar.add_data(radar_values, titles_from_data=True)
+    radar.set_categories(radar_labels)
+    radar.width = 12
+    radar.height = 10
+    ws_chart.add_chart(radar, "F45")
+    
+    # 按书本统计柱状图
+    by_book = overall.get('by_book', {})
+    if by_book:
+        book_row = radar_row + 10
+        ws_chart.cell(row=book_row, column=1, value="按书本准确率统计")
+        ws_chart.cell(row=book_row, column=1).font = subtitle_font
+        
+        book_headers = ['书本', '准确率%', '作业数']
+        for col, h in enumerate(book_headers, 1):
+            cell = ws_chart.cell(row=book_row+1, column=col, value=h)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.border = border
+        
+        for row_idx, (book_id, book_data) in enumerate(by_book.items(), book_row+2):
+            ws_chart.cell(row=row_idx, column=1, value=book_data.get('book_name', book_id)[:15]).border = border
+            ws_chart.cell(row=row_idx, column=2, value=round(book_data.get('accuracy', 0) * 100, 1)).border = border
+            ws_chart.cell(row=row_idx, column=3, value=book_data.get('homework_count', 0)).border = border
+        
+        if len(by_book) > 0:
+            bar4 = BarChart()
+            bar4.title = "按书本准确率统计"
+            bar4.type = "col"
+            bar4.style = 12
+            data4 = Reference(ws_chart, min_col=2, min_row=book_row+1, max_row=book_row+1+len(by_book))
+            cats4 = Reference(ws_chart, min_col=1, min_row=book_row+2, max_row=book_row+1+len(by_book))
+            bar4.add_data(data4, titles_from_data=True)
+            bar4.set_categories(cats4)
+            bar4.width = 12
+            bar4.height = 8
+            bar4.y_axis.scaling.max = 100
+            ws_chart.add_chart(bar4, "F60")
+    
+    # ========== 4. 作业明细表 ==========
     ws2 = wb.create_sheet("作业明细")
     headers = ['序号', '书本', '页码', '学生', '准确率', '正确数', '错误数', 
-               '选择题准确率', '客观填空题准确率', '非选择题准确率', '状态']
+               '选择题准确率', '客观填空题准确率', '主观题准确率', '状态']
     for col, header in enumerate(headers, 1):
         cell = ws2.cell(row=1, column=col, value=header)
         cell.font = header_font
         cell.fill = header_fill
         cell.border = border
     
-    for row_idx, item in enumerate(task_data.get('homework_items', []), 2):
+    for row_idx, item in enumerate(homework_items, 2):
         eval_data = item.get('evaluation', {})
         item_by_type = eval_data.get('by_question_type', {})
         
@@ -2279,24 +2637,35 @@ def export_batch_excel(task_id):
         ws2.cell(row=row_idx, column=2, value=item.get('book_name', ''))
         ws2.cell(row=row_idx, column=3, value=item.get('page_num', ''))
         ws2.cell(row=row_idx, column=4, value=item.get('student_name', ''))
-        ws2.cell(row=row_idx, column=5, value=f"{(item.get('accuracy', 0) * 100):.1f}%")
+        
+        item_acc = item.get('accuracy', 0)
+        acc_cell = ws2.cell(row=row_idx, column=5, value=f"{item_acc * 100:.1f}%")
+        if item_acc >= 0.9:
+            acc_cell.fill = highlight_fill
+        elif item_acc < 0.7:
+            acc_cell.fill = error_fill
+        
         ws2.cell(row=row_idx, column=6, value=eval_data.get('correct_count', 0))
         ws2.cell(row=row_idx, column=7, value=eval_data.get('error_count', 0))
         
-        # 题目类型准确率 (选择题、客观填空题、非选择题)
+        # 题目类型准确率
         choice_acc = item_by_type.get('choice', {}).get('accuracy', 0)
         obj_fill_acc = item_by_type.get('objective_fill', {}).get('accuracy', 0)
         other_acc = item_by_type.get('other', {}).get('accuracy', 0)
         
-        ws2.cell(row=row_idx, column=8, value=f"{(choice_acc * 100):.1f}%" if item_by_type.get('choice', {}).get('total', 0) > 0 else '-')
-        ws2.cell(row=row_idx, column=9, value=f"{(obj_fill_acc * 100):.1f}%" if item_by_type.get('objective_fill', {}).get('total', 0) > 0 else '-')
-        ws2.cell(row=row_idx, column=10, value=f"{(other_acc * 100):.1f}%" if item_by_type.get('other', {}).get('total', 0) > 0 else '-')
-        ws2.cell(row=row_idx, column=11, value=item.get('status', ''))
+        ws2.cell(row=row_idx, column=8, value=f"{choice_acc * 100:.1f}%" if item_by_type.get('choice', {}).get('total', 0) > 0 else '-')
+        ws2.cell(row=row_idx, column=9, value=f"{obj_fill_acc * 100:.1f}%" if item_by_type.get('objective_fill', {}).get('total', 0) > 0 else '-')
+        ws2.cell(row=row_idx, column=10, value=f"{other_acc * 100:.1f}%" if item_by_type.get('other', {}).get('total', 0) > 0 else '-')
+        ws2.cell(row=row_idx, column=11, value='已完成' if item.get('status') == 'completed' else item.get('status', ''))
     
-    # 题目明细工作表 - 添加题目类型标注
+    # 设置列宽
+    for col in range(1, 12):
+        ws2.column_dimensions[get_column_letter(col)].width = 15
+    
+    # ========== 5. 题目明细表 ==========
     ws3 = wb.create_sheet("题目明细")
     detail_headers = ['作业ID', '书本', '页码', '学生', '题号', '基准答案', 'AI答案', 
-                      '是否正确', '错误类型', '题型分类']
+                      '是否正确', '错误类型', '题型分类', '错误说明']
     for col, header in enumerate(detail_headers, 1):
         cell = ws3.cell(row=1, column=col, value=header)
         cell.font = header_font
@@ -2304,11 +2673,11 @@ def export_batch_excel(task_id):
         cell.border = border
     
     detail_row = 2
-    for item in task_data.get('homework_items', []):
+    for item in homework_items:
         eval_data = item.get('evaluation', {})
         errors = eval_data.get('errors', [])
         
-        # 获取基准效果数据用于显示所有题目
+        # 获取基准效果数据
         base_effect = []
         if item.get('matched_dataset'):
             ds_data = StorageService.load_dataset(item['matched_dataset'])
@@ -2327,13 +2696,14 @@ def export_batch_excel(task_id):
             # 获取题目类型分类
             question_category = classify_question_type(q)
             
-            # 确定题型分类 (选择题、客观填空题、非选择题)
             if question_category['is_choice']:
                 type_text = '选择题'
-            elif question_category['is_objective'] and question_category['is_fill']:
+            elif question_category['is_fill']:
                 type_text = '客观填空题'
+            elif question_category['is_subjective']:
+                type_text = '主观题'
             else:
-                type_text = '非选择题'
+                type_text = '未分类'
             
             ws3.cell(row=detail_row, column=1, value=item.get('homework_id', ''))
             ws3.cell(row=detail_row, column=2, value=item.get('book_name', ''))
@@ -2348,21 +2718,119 @@ def export_batch_excel(task_id):
             else:
                 ws3.cell(row=detail_row, column=7, value=q.get('userAnswer', ''))
             
-            ws3.cell(row=detail_row, column=8, value='正确' if is_correct else '错误')
+            correct_cell = ws3.cell(row=detail_row, column=8, value='正确' if is_correct else '错误')
+            if not is_correct:
+                correct_cell.fill = error_fill
+            
             ws3.cell(row=detail_row, column=9, value=error_info.get('error_type', '') if error_info else '')
             ws3.cell(row=detail_row, column=10, value=type_text)
+            ws3.cell(row=detail_row, column=11, value=error_info.get('explanation', '') if error_info else '')
             
             detail_row += 1
+    
+    # 设置列宽
+    col_widths = [15, 20, 8, 12, 8, 20, 20, 10, 18, 12, 40]
+    for col, width in enumerate(col_widths, 1):
+        ws3.column_dimensions[get_column_letter(col)].width = width
+    
+    # ========== 6. 错误详情表 ==========
+    ws_detail = wb.create_sheet("错误详情")
+    err_detail_headers = ['序号', '书本', '页码', '题号', '错误类型', '基准用户答案', 'AI识别答案', 
+                          '基准判断', 'AI判断', '详细说明']
+    for col, header in enumerate(err_detail_headers, 1):
+        cell = ws_detail.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.border = border
+    
+    for row_idx, err in enumerate(all_errors, 2):
+        ws_detail.cell(row=row_idx, column=1, value=row_idx - 1)
+        ws_detail.cell(row=row_idx, column=2, value=err.get('book', ''))
+        ws_detail.cell(row=row_idx, column=3, value=err.get('page', ''))
+        ws_detail.cell(row=row_idx, column=4, value=err.get('index', ''))
+        
+        err_type_cell = ws_detail.cell(row=row_idx, column=5, value=err.get('type', ''))
+        # 根据错误类型设置颜色
+        if '幻觉' in err.get('type', ''):
+            err_type_cell.fill = PatternFill(start_color="E3F2FD", end_color="E3F2FD", fill_type="solid")
+        elif '判断错误' in err.get('type', ''):
+            err_type_cell.fill = error_fill
+        elif '识别错误' in err.get('type', ''):
+            err_type_cell.fill = warning_fill
+        
+        ws_detail.cell(row=row_idx, column=6, value='')  # 基准用户答案
+        ws_detail.cell(row=row_idx, column=7, value='')  # AI识别答案
+        ws_detail.cell(row=row_idx, column=8, value='')  # 基准判断
+        ws_detail.cell(row=row_idx, column=9, value='')  # AI判断
+        ws_detail.cell(row=row_idx, column=10, value=err.get('explanation', ''))
+    
+    # 设置列宽
+    err_col_widths = [8, 20, 8, 8, 18, 15, 15, 10, 10, 50]
+    for col, width in enumerate(err_col_widths, 1):
+        ws_detail.column_dimensions[get_column_letter(col)].width = width
+    
+    # ========== 7. AI分析报告表 ==========
+    ai_analysis = overall.get('ai_analysis', {})
+    if ai_analysis:
+        ws_ai = wb.create_sheet("AI分析报告")
+        ws_ai.column_dimensions['A'].width = 25
+        ws_ai.column_dimensions['B'].width = 50
+        
+        ws_ai['A1'] = "AI智能分析报告"
+        ws_ai['A1'].font = title_font
+        ws_ai.merge_cells('A1:B1')
+        
+        # 能力评分
+        ws_ai['A3'] = "能力评分"
+        ws_ai['A3'].font = subtitle_font
+        
+        scores = ai_analysis.get('capability_scores', {})
+        ws_ai['A4'] = "识别能力"
+        ws_ai['B4'] = f"{scores.get('recognition', 0)}分"
+        ws_ai['A5'] = "判断能力"
+        ws_ai['B5'] = f"{scores.get('judgment', 0)}分"
+        ws_ai['A6'] = "综合评分"
+        ws_ai['B6'] = f"{scores.get('overall', 0)}分"
+        
+        # 主要问题
+        ws_ai['A8'] = "主要问题"
+        ws_ai['A8'].font = subtitle_font
+        
+        top_issues = ai_analysis.get('top_issues', [])
+        for row_idx, issue in enumerate(top_issues, 9):
+            ws_ai.cell(row=row_idx, column=1, value=issue.get('issue', ''))
+            ws_ai.cell(row=row_idx, column=2, value=f"出现 {issue.get('count', 0)} 次")
+        
+        # 改进建议
+        rec_row = 9 + len(top_issues) + 1
+        ws_ai.cell(row=rec_row, column=1, value="改进建议")
+        ws_ai.cell(row=rec_row, column=1).font = subtitle_font
+        
+        recommendations = ai_analysis.get('recommendations', [])
+        for row_idx, rec in enumerate(recommendations, rec_row + 1):
+            ws_ai.cell(row=row_idx, column=1, value=f"{row_idx - rec_row}.")
+            ws_ai.cell(row=row_idx, column=2, value=rec)
+        
+        # 结论
+        conclusion_row = rec_row + len(recommendations) + 2
+        ws_ai.cell(row=conclusion_row, column=1, value="总体结论")
+        ws_ai.cell(row=conclusion_row, column=1).font = subtitle_font
+        ws_ai.cell(row=conclusion_row + 1, column=1, value=ai_analysis.get('conclusion', ''))
+        ws_ai.merge_cells(f'A{conclusion_row + 1}:B{conclusion_row + 1}')
     
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)
     
+    # 生成文件名
+    task_name = task_data.get('name', task_id)[:20].replace(' ', '_')
+    filename = f'batch_eval_{task_name}_{datetime.now().strftime("%Y%m%d_%H%M")}.xlsx'
+    
     return send_file(
         output,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         as_attachment=True,
-        download_name=f'batch_evaluation_{task_id}.xlsx'
+        download_name=filename
     )
 
 
@@ -2675,11 +3143,11 @@ def batch_ai_evaluate(task_id):
         
         overall_accuracy = total_correct / total_questions if total_questions > 0 else 0
         
-        # 汇总所有作业的题目类型统计: 选择题、客观填空题、非选择题
+        # 汇总所有作业的题目类型统计: 选择题、客观填空题、主观题
         aggregated_type_stats = {
             'choice': {'total': 0, 'correct': 0, 'accuracy': 0},
             'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0},
-            'other': {'total': 0, 'correct': 0, 'accuracy': 0}
+            'subjective': {'total': 0, 'correct': 0, 'accuracy': 0}
         }
         
         # 汇总bvalue细分统计
