@@ -12,7 +12,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Border, Side
 
 from services.config_service import ConfigService
-from services.database_service import DatabaseService
+from services.database_service import DatabaseService, AppDatabaseService
 from services.storage_service import StorageService
 from services.llm_service import LLMService
 from services.semantic_eval_service import SemanticEvalService
@@ -25,6 +25,32 @@ BATCH_TASKS_DIR = 'batch_tasks'
 
 
 # ========== 辅助函数 ==========
+
+def flatten_homework_result(homework_result):
+    """
+    展开 homework_result 中的嵌套 children 结构为扁平数组
+    
+    Args:
+        homework_result: AI批改结果列表（可能包含children嵌套结构）
+        
+    Returns:
+        扁平化后的题目列表，每个小题一条记录
+    """
+    if not homework_result:
+        return []
+    
+    flattened = []
+    for item in homework_result:
+        children = item.get('children', [])
+        if children and len(children) > 0:
+            # 有子题时，只取子题（父题是汇总，不参与匹配）
+            for child in children:
+                flattened.append(child)
+        else:
+            # 无子题，直接加入
+            flattened.append(item)
+    return flattened
+
 
 def get_correct_value(item):
     """
@@ -407,6 +433,44 @@ def classify_error(base_item, hw_item):
             severity = 'high'
     
     return is_match, error_type, explanation, severity
+
+
+# ========== 测试条件 API ==========
+
+@batch_evaluation_bp.route('/test-conditions', methods=['GET'])
+def get_test_conditions():
+    """获取测试条件列表"""
+    try:
+        sql = "SELECT id, name, description, is_system FROM test_conditions ORDER BY is_system DESC, id ASC"
+        rows = AppDatabaseService.execute_query(sql)
+        return jsonify({'success': True, 'data': rows or []})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@batch_evaluation_bp.route('/test-conditions', methods=['POST'])
+def create_test_condition():
+    """创建自定义测试条件"""
+    data = request.json
+    name = data.get('name', '').strip()
+    
+    if not name:
+        return jsonify({'success': False, 'error': '测试条件名称不能为空'})
+    
+    try:
+        # 检查是否已存在
+        check_sql = "SELECT id FROM test_conditions WHERE name = %s"
+        existing = AppDatabaseService.execute_query(check_sql, (name,))
+        if existing:
+            return jsonify({'success': False, 'error': '该测试条件已存在'})
+        
+        # 插入新条件
+        insert_sql = "INSERT INTO test_conditions (name, description, is_system) VALUES (%s, %s, 0)"
+        new_id = AppDatabaseService.execute_insert(insert_sql, (name, data.get('description', '')))
+        
+        return jsonify({'success': True, 'data': {'id': new_id, 'name': name}})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 
 # ========== 图书和页码 API ==========
@@ -975,6 +1039,7 @@ def batch_tasks():
     if request.method == 'GET':
         # 获取筛选参数
         subject_id = request.args.get('subject_id', type=int)
+        test_condition_id = request.args.get('test_condition_id', type=int)
         
         try:
             tasks = []
@@ -987,12 +1052,19 @@ def batch_tasks():
                     if subject_id is not None and task_subject_id != subject_id:
                         continue
                     
+                    # 测试条件筛选
+                    task_test_condition_id = data.get('test_condition_id')
+                    if test_condition_id is not None and task_test_condition_id != test_condition_id:
+                        continue
+                    
                     overall_report = data.get('overall_report') or {}
                     tasks.append({
                         'task_id': data.get('task_id'),
                         'name': data.get('name', ''),
                         'subject_id': task_subject_id,
                         'subject_name': data.get('subject_name', ''),
+                        'test_condition_id': task_test_condition_id,
+                        'test_condition_name': data.get('test_condition_name', ''),
                         'status': data.get('status', 'pending'),
                         'homework_count': len(data.get('homework_items', [])),
                         'overall_accuracy': overall_report.get('overall_accuracy', 0),
@@ -1011,6 +1083,8 @@ def batch_tasks():
         data = request.json
         name = data.get('name', '')
         subject_id = data.get('subject_id')
+        test_condition_id = data.get('test_condition_id')
+        test_condition_name = data.get('test_condition_name', '')
         homework_ids = data.get('homework_ids', [])
         
         if not homework_ids:
@@ -1110,6 +1184,8 @@ def batch_tasks():
                 'name': name,
                 'subject_id': subject_id,
                 'subject_name': subject_name,
+                'test_condition_id': test_condition_id,
+                'test_condition_name': test_condition_name,
                 'status': 'pending',
                 'homework_items': homework_items,
                 'overall_report': None,
@@ -1152,6 +1228,9 @@ def get_homework_detail(task_id, homework_id):
         if not task_data:
             return jsonify({'success': False, 'error': '任务不存在'})
         
+        # 获取任务的学科ID
+        task_subject_id = task_data.get('subject_id')
+        is_chinese = task_subject_id == 1  # 语文学科
         # 查找对应的作业
         homework_item = None
         for item in task_data.get('homework_items', []):
@@ -1222,10 +1301,13 @@ def get_homework_detail(task_id, homework_id):
         # 构建详细的错误信息
         detailed_errors = []
         
-        # 构建多种索引方式的字典
-        hw_dict_by_index = {str(item.get('index', '')): item for item in homework_result}
+        # 先展开 homework_result 的 children 结构
+        flat_homework = flatten_homework_result(homework_result)
+        
+        # 构建多种索引方式的字典（使用展开后的数据）
+        hw_dict_by_index = {str(item.get('index', '')): item for item in flat_homework}
         hw_dict_by_tempindex = {}
-        for i, item in enumerate(homework_result):
+        for i, item in enumerate(flat_homework):
             temp_idx = item.get('tempIndex')
             if temp_idx is not None:
                 hw_dict_by_tempindex[int(temp_idx)] = item
@@ -1241,10 +1323,15 @@ def get_homework_detail(task_id, homework_id):
             else:
                 base_temp_idx = i
             
-            # 优先按index匹配，其次按tempIndex匹配
-            hw_item = hw_dict_by_index.get(idx)
-            if not hw_item:
-                hw_item = hw_dict_by_tempindex.get(base_temp_idx)
+            # 根据学科选择匹配方式
+            if is_chinese:
+                # 语文: 仅按题号(index)匹配
+                hw_item = hw_dict_by_index.get(idx)
+            else:
+                # 其他学科: 优先按index匹配，其次按tempIndex匹配
+                hw_item = hw_dict_by_index.get(idx)
+                if not hw_item:
+                    hw_item = hw_dict_by_tempindex.get(base_temp_idx)
             
             is_match, error_type, explanation, severity = classify_error(base_item, hw_item)
             
@@ -1308,6 +1395,9 @@ def batch_evaluate(task_id):
     if not task_data:
         return jsonify({'success': False, 'error': '任务不存在'})
     
+    # 获取任务的学科ID
+    task_subject_id = task_data.get('subject_id')
+    
     def generate():
         task_data['status'] = 'running'
         homework_items = task_data.get('homework_items', [])
@@ -1349,7 +1439,8 @@ def batch_evaluate(task_id):
                     pass
                 
                 if base_effect and homework_result:
-                    evaluation = do_evaluation(base_effect, homework_result)
+                    # 传递学科ID，语文(2)使用题号匹配
+                    evaluation = do_evaluation(base_effect, homework_result, subject_id=task_subject_id)
                     item['accuracy'] = evaluation['accuracy']
                     item['evaluation'] = evaluation
                     item['status'] = 'completed'
@@ -1455,9 +1546,11 @@ def batch_evaluate(task_id):
     return Response(generate(), mimetype='text/event-stream')
 
 
-def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=None):
+def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=None, subject_id=None):
     """
-    执行评估计算 - 全部按tempIndex匹配
+    执行评估计算
+    - 语文(subject_id=1): 按题号(index)匹配
+    - 其他学科: 按tempIndex匹配
     支持本地计算和AI模型比对
     包含题目类型分类统计
     
@@ -1466,6 +1559,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         homework_result: AI批改结果
         use_ai_compare: 是否使用AI比对
         user_id: 用户ID，用于加载用户API配置
+        subject_id: 学科ID，语文(1)使用题号匹配
     """
     total = len(base_effect)
     correct_count = 0
@@ -1515,9 +1609,21 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         if ai_result:
             return ai_result
     
-    # 构建tempIndex索引字典
-    hw_dict_by_tempindex = {}
-    for i, item in enumerate(homework_result):
+    # 先展开 homework_result 的 children 结构
+    flat_homework = flatten_homework_result(homework_result)
+    
+    # 判断是否是语文学科 (subject_id=1)，语文使用题号匹配
+    is_chinese = subject_id == 1
+    
+    # 构建索引字典（使用展开后的数据）
+    hw_dict_by_index = {}  # 按题号索引
+    hw_dict_by_tempindex = {}  # 按tempIndex索引
+    for i, item in enumerate(flat_homework):
+        # 按题号索引
+        item_idx = str(item.get('index', ''))
+        if item_idx:
+            hw_dict_by_index[item_idx] = item
+        # 按tempIndex索引
         temp_idx = item.get('tempIndex')
         if temp_idx is not None:
             hw_dict_by_tempindex[int(temp_idx)] = item
@@ -1533,8 +1639,13 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         else:
             base_temp_idx = i
         
-        # 全部按tempIndex匹配
-        hw_item = hw_dict_by_tempindex.get(base_temp_idx)
+        # 根据学科选择匹配方式
+        if is_chinese:
+            # 语文: 按题号(index)匹配
+            hw_item = hw_dict_by_index.get(idx)
+        else:
+            # 其他学科: 按tempIndex匹配
+            hw_item = hw_dict_by_tempindex.get(base_temp_idx)
         
         # 获取题目类型分类
         question_category = classify_question_type(base_item)
@@ -1754,10 +1865,13 @@ def do_ai_compare_batch(base_effect, homework_result, user_id=None):
         return None
     
     try:
+        # 先展开 homework_result 的 children 结构
+        flat_homework = flatten_homework_result(homework_result)
+        
         # 构建评估项目列表
         items = []
         hw_dict = {}
-        for i, hw_item in enumerate(homework_result):
+        for i, hw_item in enumerate(flat_homework):
             temp_idx = hw_item.get('tempIndex', i)
             hw_dict[int(temp_idx)] = hw_item
         
@@ -1858,9 +1972,12 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
         'AI幻觉': 'AI识别幻觉'
     }
     
-    # 构建索引字典
+    # 先展开 homework_result 的 children 结构
+    flat_homework = flatten_homework_result(homework_result)
+    
+    # 构建索引字典（使用展开后的数据）
     hw_dict = {}
-    for i, hw_item in enumerate(homework_result):
+    for i, hw_item in enumerate(flat_homework):
         temp_idx = hw_item.get('tempIndex', i)
         hw_dict[int(temp_idx)] = hw_item
         idx = str(hw_item.get('index', ''))
@@ -2389,6 +2506,9 @@ def batch_ai_evaluate(task_id):
     user_id = get_current_user_id()
     print(f"[AI Evaluate] 用户ID: {user_id}")
     
+    # 获取任务的学科ID
+    task_subject_id = task_data.get('subject_id')
+    
     # 获取并行数
     data = request.get_json() or {}
     max_workers = min(data.get('parallel', 8), 16)  # 默认8个并行，最多16个
@@ -2436,11 +2556,11 @@ def batch_ai_evaluate(task_id):
                     pass
                 
                 if base_effect and homework_result:
-                    # 使用AI比对，传递user_id
-                    evaluation = do_evaluation(base_effect, homework_result, use_ai_compare=True, user_id=user_id)
+                    # 使用AI比对，传递user_id和subject_id
+                    evaluation = do_evaluation(base_effect, homework_result, use_ai_compare=True, user_id=user_id, subject_id=task_subject_id)
                     if not evaluation:
                         # AI比对失败，回退到本地计算
-                        evaluation = do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=user_id)
+                        evaluation = do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=user_id, subject_id=task_subject_id)
                     
                     return {
                         'homework_id': homework_id,
@@ -2745,10 +2865,13 @@ def semantic_evaluate_task(task_id):
                     pass
                 
                 if base_effect and homework_result:
+                    # 先展开 homework_result 的 children 结构
+                    flat_homework = flatten_homework_result(homework_result)
+                    
                     # 构建评估项目列表
                     eval_items = []
                     hw_dict = {}
-                    for i, hw_item in enumerate(homework_result):
+                    for i, hw_item in enumerate(flat_homework):
                         temp_idx = hw_item.get('tempIndex', i)
                         hw_dict[int(temp_idx)] = hw_item
                     
