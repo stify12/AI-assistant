@@ -19,6 +19,32 @@ subject_grading_bp = Blueprint('subject_grading', __name__)
 
 # ========== 辅助函数 ==========
 
+def flatten_homework_result(homework_result):
+    """
+    展开 homework_result 中的嵌套 children 结构为扁平数组
+    
+    Args:
+        homework_result: AI批改结果列表（可能包含children嵌套结构）
+        
+    Returns:
+        扁平化后的题目列表，每个小题一条记录
+    """
+    if not homework_result:
+        return []
+    
+    flattened = []
+    for item in homework_result:
+        children = item.get('children', [])
+        if children and len(children) > 0:
+            # 有子题时，只取子题（父题是汇总，不参与匹配）
+            for child in children:
+                flattened.append(child)
+        else:
+            # 无子题，直接加入
+            flattened.append(item)
+    return flattened
+
+
 def get_correct_value(item):
     """
     获取判断结果字段值，兼容多种格式：
@@ -531,9 +557,12 @@ def do_local_evaluation(base_effect, homework_result):
         '基准数据不完整': 0
     }
     
-    # 构建tempIndex索引字典
+    # 先展开 homework_result 的 children 结构
+    flat_homework = flatten_homework_result(homework_result)
+    
+    # 构建tempIndex索引字典（使用展开后的数据）
     hw_dict_by_tempindex = {}
-    for i, item in enumerate(homework_result):
+    for i, item in enumerate(flat_homework):
         temp_idx = item.get('tempIndex')
         if temp_idx is not None:
             hw_dict_by_tempindex[int(temp_idx)] = item

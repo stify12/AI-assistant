@@ -371,6 +371,25 @@ CREATE TABLE `export_records` (
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================
+-- 17. 测试条件表
+-- =====================================================
+DROP TABLE IF EXISTS `test_conditions`;
+CREATE TABLE `test_conditions` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `name` VARCHAR(100) NOT NULL COMMENT '测试条件名称',
+  `description` VARCHAR(255) DEFAULT NULL COMMENT '描述',
+  `is_system` TINYINT(1) DEFAULT 0 COMMENT '是否系统预设',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测试条件表';
+
+-- 插入预设测试条件
+INSERT INTO `test_conditions` (`name`, `description`, `is_system`) VALUES
+('单份作业评估', '评估单个学生的作业批改效果', 1),
+('模拟全班提交', '模拟全班学生同时提交作业的场景', 1);
+
+-- =====================================================
 -- 完成提示
 -- =====================================================
 -- 数据库表创建完成！

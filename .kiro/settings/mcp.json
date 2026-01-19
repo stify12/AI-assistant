@@ -52,7 +52,9 @@
         "get_network_request",
         "select_page",
         "list_pages",
-        "evaluate_script"
+        "evaluate_script",
+        "close_page",
+        "press_key"
       ]
     }
   }

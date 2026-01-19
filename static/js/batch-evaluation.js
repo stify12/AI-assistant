@@ -15,6 +15,9 @@ let selectedPages = new Set();
 let pageBaseEffects = {};
 let currentHwTaskId = ''; // 当前选中的作业任务ID
 let hwTaskList = []; // 作业任务列表
+let testConditions = []; // 测试条件列表
+let selectedConditionId = null; // 新建任务时选中的测试条件ID
+let selectedConditionName = ''; // 新建任务时选中的测试条件名称
 
 // 学科名称映射
 const SUBJECT_NAMES = {
@@ -26,26 +29,66 @@ const SUBJECT_NAMES = {
 
 // ========== 初始化 ==========
 document.addEventListener('DOMContentLoaded', () => {
-    loadTaskList();
+    loadTestConditions().then(() => {
+        loadTaskList();
+    });
     loadBookList();
 });
 
 // ========== 任务列表学科筛选 ==========
 let currentSubjectFilter = '';
+let currentConditionFilter = '';
+
+// 加载测试条件列表
+async function loadTestConditions() {
+    try {
+        const res = await fetch('/api/batch/test-conditions');
+        const data = await res.json();
+        if (data.success) {
+            testConditions = data.data || [];
+            renderConditionFilters();
+        }
+    } catch (e) {
+        console.error('加载测试条件失败:', e);
+    }
+}
+
+// 渲染测试条件下拉选项
+function renderConditionFilters() {
+    // 任务列表筛选下拉
+    const taskFilter = document.getElementById('taskConditionFilter');
+    if (taskFilter) {
+        taskFilter.innerHTML = '<option value="">全部条件</option>' + 
+            testConditions.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    }
+    
+    // 新建任务下拉
+    const hwSelect = document.getElementById('hwConditionSelect');
+    if (hwSelect) {
+        hwSelect.innerHTML = '<option value="">请选择测试条件</option>' + 
+            testConditions.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('') +
+            '<option value="__add_new__">+ 添加新条件</option>';
+    }
+}
+
+// 任务列表筛选变化
+function onTaskFilterChange() {
+    currentSubjectFilter = document.getElementById('taskSubjectFilter')?.value || '';
+    currentConditionFilter = document.getElementById('taskConditionFilter')?.value || '';
+    loadTaskList(currentSubjectFilter || null, currentConditionFilter || null);
+}
 
 function filterBySubject(subjectId) {
     currentSubjectFilter = subjectId;
-    // 更新按钮状态
-    document.querySelectorAll('.subject-filter-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.value === subjectId);
-    });
-    loadTaskList(subjectId || null);
+    // 更新下拉选择
+    const select = document.getElementById('taskSubjectFilter');
+    if (select) select.value = subjectId;
+    loadTaskList(subjectId || null, currentConditionFilter || null);
 }
 
 // 兼容旧函数名
 function onTaskSubjectFilterChange() {
-    const subjectId = currentSubjectFilter;
-    loadTaskList(subjectId || null);
+    onTaskFilterChange();
 }
 
 // ========== 返回导航 ==========
@@ -96,11 +139,18 @@ function hideDrawer() {
 }
 
 // ========== 任务管理 ==========
-async function loadTaskList(subjectId = null) {
+async function loadTaskList(subjectId = null, conditionId = null) {
     try {
         let url = '/api/batch/tasks';
+        const params = [];
         if (subjectId !== null && subjectId !== '') {
-            url += `?subject_id=${subjectId}`;
+            params.push(`subject_id=${subjectId}`);
+        }
+        if (conditionId !== null && conditionId !== '') {
+            params.push(`test_condition_id=${conditionId}`);
+        }
+        if (params.length > 0) {
+            url += '?' + params.join('&');
         }
         const res = await fetch(url);
         const data = await res.json();
@@ -134,6 +184,7 @@ function renderTaskList() {
                 </div>
                 <div class="task-item-meta">
                     ${task.homework_count || 0} 个作业 | 
+                    ${task.test_condition_name ? task.test_condition_name + ' | ' : ''}
                     ${task.status === 'completed' ? `准确率: ${(task.overall_accuracy * 100).toFixed(1)}% | ` : ''}
                     ${formatTime(task.created_at)}
                 </div>
@@ -812,9 +863,90 @@ function showCreateTaskModal() {
     document.getElementById('taskNameInput').placeholder = '留空则自动生成：学科-月/日';
     selectedHomeworkIds.clear();
     currentHwTaskId = '';
+    selectedConditionId = null;
+    selectedConditionName = '';
+    
+    // 重置测试条件选择
+    const conditionSelect = document.getElementById('hwConditionSelect');
+    if (conditionSelect) conditionSelect.value = '';
+    const addRow = document.getElementById('conditionAddRow');
+    if (addRow) addRow.style.display = 'none';
+    
+    // 刷新测试条件列表
+    renderConditionFilters();
+    
     loadHomeworkTasksForFilter();
     loadHomeworkForTask();
     showModal('createTaskModal');
+}
+
+// ========== 测试条件选择变化 ==========
+function onConditionSelectChange() {
+    const select = document.getElementById('hwConditionSelect');
+    const addRow = document.getElementById('conditionAddRow');
+    
+    if (select.value === '__add_new__') {
+        // 显示添加新条件输入框
+        addRow.style.display = 'flex';
+        document.getElementById('newConditionInput').focus();
+        selectedConditionId = null;
+        selectedConditionName = '';
+    } else {
+        addRow.style.display = 'none';
+        selectedConditionId = select.value ? parseInt(select.value) : null;
+        // 获取选中的条件名称
+        const selectedOption = select.options[select.selectedIndex];
+        selectedConditionName = selectedOption && select.value ? selectedOption.text : '';
+    }
+}
+
+// 保存新测试条件
+async function saveNewCondition() {
+    const input = document.getElementById('newConditionInput');
+    const name = input.value.trim();
+    
+    if (!name) {
+        alert('请输入测试条件名称');
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/batch/test-conditions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            // 添加到列表并选中
+            testConditions.push({ id: data.data.id, name: name, is_system: 0 });
+            renderConditionFilters();
+            
+            // 选中新添加的条件
+            const select = document.getElementById('hwConditionSelect');
+            select.value = data.data.id;
+            selectedConditionId = data.data.id;
+            selectedConditionName = name;
+            
+            // 隐藏输入框
+            document.getElementById('conditionAddRow').style.display = 'none';
+            input.value = '';
+        } else {
+            alert('保存失败: ' + (data.error || '未知错误'));
+        }
+    } catch (e) {
+        alert('保存失败: ' + e.message);
+    }
+}
+
+// 取消添加新条件
+function cancelAddCondition() {
+    document.getElementById('conditionAddRow').style.display = 'none';
+    document.getElementById('newConditionInput').value = '';
+    document.getElementById('hwConditionSelect').value = '';
+    selectedConditionId = null;
+    selectedConditionName = '';
 }
 
 // ========== 学科筛选变化时更新任务名称 ==========
@@ -1007,6 +1139,8 @@ async function createTask() {
             body: JSON.stringify({
                 name: name,
                 subject_id: subjectId ? parseInt(subjectId) : null,
+                test_condition_id: selectedConditionId,
+                test_condition_name: selectedConditionName,
                 homework_ids: Array.from(selectedHomeworkIds)
             })
         });
@@ -1744,72 +1878,302 @@ function renderEvalDetail(detail) {
     const baseEffect = detail.base_effect || [];
     const aiResult = detail.ai_result || [];
     
+    // 展开AI结果中的children结构
+    const flattenAiResult = flattenHomeworkResult(aiResult);
+    const totalAiQuestions = countTotalQuestions(aiResult);
+    
     if (baseEffect.length > 0 || aiResult.length > 0) {
         html += `
-            <div class="list-header" style="margin-top: 24px;">完整数据对比</div>
-            <div class="data-tables-container">
-                <div class="data-table-section">
-                    <div class="data-table-title">
-                        <span class="title-icon base-icon">基</span>
-                        基准效果数据 (${baseEffect.length}题)
-                        <button class="btn btn-small btn-copy" onclick="copyToClipboard('baseEffectData')">复制JSON</button>
-                    </div>
-                    <div class="data-table-wrap">
-                        <table class="full-data-table">
-                            <thead>
-                                <tr>
-                                    <th>题号</th>
-                                    <th>用户答案</th>
-                                    <th>判断</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${baseEffect.map(item => `
-                                    <tr>
-                                        <td class="index-cell">${escapeHtml(String(item.index || '-'))}</td>
-                                        <td class="answer-cell">${escapeHtml(item.userAnswer || '-')}</td>
-                                        <td class="correct-cell"><span class="${item.correct === 'yes' || item.isRight === true ? 'text-success' : 'text-error'}">${item.correct || (item.isRight ? 'yes' : 'no') || '-'}</span></td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                    <pre class="json-data" id="baseEffectData" style="display:none;">${JSON.stringify(baseEffect, null, 2)}</pre>
+            <div class="list-header" style="margin-top: 24px;">
+                完整数据对比
+                <div class="view-toggle-btns">
+                    <button class="btn btn-small view-toggle-btn active" onclick="toggleDataView('table')">表格视图</button>
+                    <button class="btn btn-small view-toggle-btn" onclick="toggleDataView('compare')">逐题对比</button>
                 </div>
-                
-                <div class="data-table-section">
-                    <div class="data-table-title">
-                        <span class="title-icon ai-icon">AI</span>
-                        AI批改结果数据 (${aiResult.length}题)
-                        <button class="btn btn-small btn-copy" onclick="copyToClipboard('aiResultData')">复制JSON</button>
-                    </div>
-                    <div class="data-table-wrap">
-                        <table class="full-data-table">
-                            <thead>
-                                <tr>
-                                    <th>题号</th>
-                                    <th>用户答案</th>
-                                    <th>判断</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${aiResult.map(item => `
+            </div>
+            
+            <!-- 表格视图 -->
+            <div class="data-view-container" id="tableView">
+                <div class="data-tables-container">
+                    <div class="data-table-section">
+                        <div class="data-table-title">
+                            <span class="title-icon base-icon">基</span>
+                            基准效果数据 (${baseEffect.length}题)
+                            <button class="btn btn-small btn-toggle-json" onclick="toggleJsonView('baseEffect')">切换JSON</button>
+                        </div>
+                        <div class="data-table-wrap" id="baseEffectTableWrap">
+                            <table class="full-data-table">
+                                <thead>
                                     <tr>
-                                        <td class="index-cell">${escapeHtml(String(item.index || '-'))}</td>
-                                        <td class="answer-cell">${escapeHtml(item.userAnswer || '-')}</td>
-                                        <td class="correct-cell"><span class="${item.correct === 'yes' || item.isRight === true ? 'text-success' : 'text-error'}">${item.correct || (item.isRight ? 'yes' : 'no') || '-'}</span></td>
+                                        <th>题号</th>
+                                        <th>用户答案</th>
+                                        <th>标准答案</th>
+                                        <th>判断</th>
                                     </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    ${baseEffect.map(item => `
+                                        <tr>
+                                            <td class="index-cell">${escapeHtml(String(item.index || '-'))}</td>
+                                            <td class="answer-cell">${escapeHtml(item.userAnswer || '-')}</td>
+                                            <td class="answer-cell muted">${escapeHtml(item.answer || item.mainAnswer || '-')}</td>
+                                            <td class="correct-cell"><span class="${getCorrectClass(item)}">${getCorrectText(item)}</span></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="json-view-wrap" id="baseEffectJsonWrap" style="display:none;">
+                            <pre class="json-data-display">${JSON.stringify(baseEffect, null, 2)}</pre>
+                        </div>
                     </div>
-                    <pre class="json-data" id="aiResultData" style="display:none;">${JSON.stringify(aiResult, null, 2)}</pre>
+                    
+                    <div class="data-table-section">
+                        <div class="data-table-title">
+                            <span class="title-icon ai-icon">AI</span>
+                            AI批改结果数据 (${totalAiQuestions}题)
+                            <button class="btn btn-small btn-toggle-json" onclick="toggleJsonView('aiResult')">切换JSON</button>
+                        </div>
+                        <div class="data-table-wrap" id="aiResultTableWrap">
+                            <table class="full-data-table ai-result-table">
+                                <thead>
+                                    <tr>
+                                        <th>题号</th>
+                                        <th>用户答案</th>
+                                        <th>标准答案</th>
+                                        <th>判断</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${renderAiResultRows(aiResult)}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="json-view-wrap" id="aiResultJsonWrap" style="display:none;">
+                            <pre class="json-data-display">${JSON.stringify(aiResult, null, 2)}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 逐题对比视图 -->
+            <div class="data-view-container" id="compareView" style="display:none;">
+                <div class="question-compare-list">
+                    ${renderQuestionCompareCards(baseEffect, flattenAiResult)}
                 </div>
             </div>
         `;
     }
     
     document.getElementById('evalDetailBody').innerHTML = html;
+}
+
+// 展开homework_result中的children结构
+function flattenHomeworkResult(result) {
+    if (!result || !Array.isArray(result)) return [];
+    const flattened = [];
+    result.forEach(item => {
+        const children = item.children || [];
+        if (children.length > 0) {
+            children.forEach(child => flattened.push(child));
+        } else {
+            flattened.push(item);
+        }
+    });
+    return flattened;
+}
+
+// 统计AI结果总题数（包括小题）
+function countTotalQuestions(result) {
+    if (!result || !Array.isArray(result)) return 0;
+    let count = 0;
+    result.forEach(item => {
+        const children = item.children || [];
+        if (children.length > 0) {
+            count += children.length;
+        } else {
+            count += 1;
+        }
+    });
+    return count;
+}
+
+// 获取判断结果的CSS类
+function getCorrectClass(item) {
+    const correct = item.correct || (item.isRight ? 'yes' : (item.isRight === false ? 'no' : ''));
+    if (correct === 'yes' || correct === true) return 'text-success';
+    if (correct === 'no' || correct === false) return 'text-error';
+    return 'text-muted';
+}
+
+// 获取判断结果文本
+function getCorrectText(item) {
+    const correct = item.correct;
+    if (correct !== undefined) return correct;
+    if (item.isRight === true) return 'yes';
+    if (item.isRight === false) return 'no';
+    return '-';
+}
+
+// 渲染AI结果表格行（直接展开显示所有小题）
+function renderAiResultRows(aiResult) {
+    if (!aiResult || !Array.isArray(aiResult)) return '<tr><td colspan="4" class="empty-cell">暂无数据</td></tr>';
+    
+    // 按索引排序
+    const sortedResult = [...aiResult].sort((a, b) => {
+        const indexA = parseFloat(a.index) || 0;
+        const indexB = parseFloat(b.index) || 0;
+        return indexA - indexB;
+    });
+    
+    let html = '';
+    sortedResult.forEach(item => {
+        const children = item.children || [];
+        const hasChildren = children.length > 0;
+        
+        if (hasChildren) {
+            // 有小题时，显示父题作为分组标题，然后直接展示所有小题
+            html += `
+                <tr class="parent-row-header">
+                    <td colspan="4" class="parent-title-cell">
+                        <span class="parent-index">第${escapeHtml(String(item.index || '-'))}题</span>
+                        <span class="children-count">(${children.length}个小题)</span>
+                    </td>
+                </tr>
+            `;
+            // 对小题也按索引排序后渲染
+            const sortedChildren = [...children].sort((a, b) => {
+                const indexA = parseFloat(a.index) || 0;
+                const indexB = parseFloat(b.index) || 0;
+                return indexA - indexB;
+            });
+            sortedChildren.forEach((child, idx) => {
+                html += `
+                    <tr class="child-row-visible">
+                        <td class="index-cell child-index">${escapeHtml(String(child.index || `${item.index}-${idx+1}`))}</td>
+                        <td class="answer-cell">${escapeHtml(child.userAnswer || '-')}</td>
+                        <td class="answer-cell muted">${escapeHtml(child.answer || child.mainAnswer || '-')}</td>
+                        <td class="correct-cell"><span class="${getCorrectClass(child)}">${getCorrectText(child)}</span></td>
+                    </tr>
+                `;
+            });
+        } else {
+            // 无小题，直接显示
+            html += `
+                <tr>
+                    <td class="index-cell">${escapeHtml(String(item.index || '-'))}</td>
+                    <td class="answer-cell">${escapeHtml(item.userAnswer || '-')}</td>
+                    <td class="answer-cell muted">${escapeHtml(item.answer || item.mainAnswer || '-')}</td>
+                    <td class="correct-cell"><span class="${getCorrectClass(item)}">${getCorrectText(item)}</span></td>
+                </tr>
+            `;
+        }
+    });
+    
+    return html || '<tr><td colspan="4" class="empty-cell">暂无数据</td></tr>';
+}
+
+// 渲染逐题对比卡片
+function renderQuestionCompareCards(baseEffect, flatAiResult) {
+    if (!baseEffect || baseEffect.length === 0) {
+        return '<div class="empty-state"><div class="empty-state-text">暂无基准数据</div></div>';
+    }
+    
+    // 构建AI结果索引
+    const aiDict = {};
+    flatAiResult.forEach(item => {
+        const idx = String(item.index || '');
+        if (idx) aiDict[idx] = item;
+    });
+    
+    let html = '';
+    baseEffect.forEach((base, i) => {
+        const idx = String(base.index || '');
+        const ai = aiDict[idx] || null;
+        
+        // 判断是否匹配
+        const baseUser = (base.userAnswer || '').trim();
+        const aiUser = ai ? (ai.userAnswer || '').trim() : '';
+        const baseCorrect = base.correct || (base.isRight ? 'yes' : 'no');
+        const aiCorrect = ai ? (ai.correct || (ai.isRight ? 'yes' : 'no')) : '';
+        
+        const userMatch = baseUser === aiUser;
+        const correctMatch = baseCorrect === aiCorrect;
+        const isMatch = userMatch && correctMatch;
+        
+        const cardClass = !ai ? 'missing' : (isMatch ? 'match' : 'mismatch');
+        
+        html += `
+            <div class="question-compare-card ${cardClass}">
+                <div class="compare-card-header">
+                    <span class="compare-index">第${idx || (i+1)}题</span>
+                    <span class="compare-status ${cardClass}">${!ai ? '缺失' : (isMatch ? '匹配' : '不匹配')}</span>
+                </div>
+                <div class="compare-card-body">
+                    <div class="compare-row">
+                        <div class="compare-label">用户答案</div>
+                        <div class="compare-base ${!userMatch ? 'highlight' : ''}">${escapeHtml(baseUser || '-')}</div>
+                        <div class="compare-ai ${!userMatch ? 'highlight' : ''}">${escapeHtml(aiUser || '-')}</div>
+                        <div class="compare-match">${userMatch ? '<span class="match-yes">✓</span>' : '<span class="match-no">✗</span>'}</div>
+                    </div>
+                    <div class="compare-row">
+                        <div class="compare-label">标准答案</div>
+                        <div class="compare-base">${escapeHtml(base.answer || base.mainAnswer || '-')}</div>
+                        <div class="compare-ai">${ai ? escapeHtml(ai.answer || ai.mainAnswer || '-') : '-'}</div>
+                        <div class="compare-match">-</div>
+                    </div>
+                    <div class="compare-row">
+                        <div class="compare-label">判断结果</div>
+                        <div class="compare-base"><span class="${baseCorrect === 'yes' ? 'text-success' : 'text-error'}">${baseCorrect}</span></div>
+                        <div class="compare-ai"><span class="${aiCorrect === 'yes' ? 'text-success' : (aiCorrect === 'no' ? 'text-error' : '')}">${aiCorrect || '-'}</span></div>
+                        <div class="compare-match">${correctMatch ? '<span class="match-yes">✓</span>' : '<span class="match-no">✗</span>'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    return html;
+}
+
+// 切换数据视图
+function toggleDataView(view) {
+    const tableView = document.getElementById('tableView');
+    const compareView = document.getElementById('compareView');
+    const btns = document.querySelectorAll('.view-toggle-btn');
+    
+    btns.forEach(btn => btn.classList.remove('active'));
+    
+    if (view === 'table') {
+        tableView.style.display = 'block';
+        compareView.style.display = 'none';
+        btns[0].classList.add('active');
+    } else {
+        tableView.style.display = 'none';
+        compareView.style.display = 'block';
+        btns[1].classList.add('active');
+    }
+}
+
+// 切换表格/JSON视图
+function toggleJsonView(type) {
+    const tableWrap = document.getElementById(type + 'TableWrap');
+    const jsonWrap = document.getElementById(type + 'JsonWrap');
+    const btn = event.target;
+    
+    if (tableWrap && jsonWrap) {
+        if (jsonWrap.style.display === 'none') {
+            tableWrap.style.display = 'none';
+            jsonWrap.style.display = 'block';
+            btn.textContent = '切换表格';
+            btn.classList.add('active');
+        } else {
+            tableWrap.style.display = 'block';
+            jsonWrap.style.display = 'none';
+            btn.textContent = '切换JSON';
+            btn.classList.remove('active');
+        }
+    }
 }
 
 // 复制JSON到剪贴板
@@ -2373,6 +2737,9 @@ async function editBaselineData(homeworkId) {
     }
 }
 
+// 编辑基准数据的临时存储
+let baselineEditData = [];
+
 function showEditBaselineModal(homeworkDetail) {
     // 创建或获取弹窗
     let modal = document.getElementById('editBaselineModal');
@@ -2384,7 +2751,10 @@ function showEditBaselineModal(homeworkDetail) {
         document.body.appendChild(modal);
     }
     
+    // 深拷贝基准数据到临时存储
     const baseEffect = homeworkDetail.base_effect || [];
+    baselineEditData = JSON.parse(JSON.stringify(baseEffect));
+    
     const aiResult = homeworkDetail.ai_result || [];
     
     modal.innerHTML = `
@@ -2409,7 +2779,7 @@ function showEditBaselineModal(homeworkDetail) {
                     </div>
                     <div class="info-row">
                         <span class="info-label">当前基准题目数:</span>
-                        <span class="info-value">${baseEffect.length}</span>
+                        <span class="info-value" id="baselineQuestionCount">${baseEffect.length}</span>
                     </div>
                 </div>
                 
@@ -2432,10 +2802,10 @@ function showEditBaselineModal(homeworkDetail) {
                         <table class="baseline-edit-table" id="baselineEditTable">
                             <thead>
                                 <tr>
-                                    <th>题号</th>
+                                    <th style="width:80px">题号</th>
                                     <th>用户答案</th>
-                                    <th>判断结果</th>
-                                    <th>操作</th>
+                                    <th style="width:100px">判断结果</th>
+                                    <th style="width:60px">操作</th>
                                 </tr>
                             </thead>
                             <tbody id="baselineTableBody">
@@ -2449,7 +2819,7 @@ function showEditBaselineModal(homeworkDetail) {
                 <div class="baseline-tab-content" id="baselineJsonTab" style="display:none;">
                     <div class="json-edit-actions">
                         <button class="btn btn-small" onclick="formatBaselineJson()">格式化</button>
-                        <button class="btn btn-small btn-secondary" onclick="validateBaselineJson()">验证</button>
+                        <button class="btn btn-small btn-secondary" onclick="validateBaselineJson()">验证并应用</button>
                     </div>
                     <textarea id="baselineJsonEditor" rows="20" placeholder="输入基准效果JSON数组...">${JSON.stringify(baseEffect, null, 2)}</textarea>
                     <div class="json-validation-result" id="jsonValidationResult"></div>
@@ -2459,22 +2829,9 @@ function showEditBaselineModal(homeworkDetail) {
                 <div class="baseline-tab-content" id="baselineCompareTab" style="display:none;">
                     <div class="compare-view-container">
                         <div class="compare-section">
-                            <div class="compare-section-title">基准数据 (${baseEffect.length}题)</div>
-                            <div class="compare-data-table">
-                                <table class="compare-table">
-                                    <thead>
-                                        <tr><th>题号</th><th>用户答案</th><th>判断</th></tr>
-                                    </thead>
-                                    <tbody>
-                                        ${baseEffect.map(item => `
-                                            <tr>
-                                                <td>${escapeHtml(String(item.index || '-'))}</td>
-                                                <td>${escapeHtml(item.userAnswer || '-')}</td>
-                                                <td><span class="${item.correct === 'yes' ? 'text-success' : 'text-error'}">${item.correct || '-'}</span></td>
-                                            </tr>
-                                        `).join('')}
-                                    </tbody>
-                                </table>
+                            <div class="compare-section-title">基准数据 (<span id="compareBaseCount">${baseEffect.length}</span>题)</div>
+                            <div class="compare-data-table" id="compareBaseTable">
+                                <!-- 动态生成 -->
                             </div>
                         </div>
                         <div class="compare-section">
@@ -2508,6 +2865,7 @@ function showEditBaselineModal(homeworkDetail) {
     
     // 保存当前作业数据
     window.currentEditingHomework = homeworkDetail;
+    window.currentEditingAiResult = aiResult;
     
     // 渲染表格
     renderBaselineEditTable();
@@ -2517,7 +2875,7 @@ function showEditBaselineModal(homeworkDetail) {
 
 function switchBaselineTab(tabName) {
     // 更新按钮状态
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    document.querySelectorAll('.baseline-edit-tabs .tab-btn').forEach(btn => {
         btn.classList.remove('active');
     });
     event.target.classList.add('active');
@@ -2535,60 +2893,85 @@ function switchBaselineTab(tabName) {
         syncJsonFromTable();
     } else if (tabName === 'compare') {
         document.getElementById('baselineCompareTab').style.display = 'block';
+        renderCompareBaseTable();
     }
 }
 
 function renderBaselineEditTable() {
-    const homework = window.currentEditingHomework;
-    if (!homework) return;
-    
-    const baseEffect = homework.base_effect || [];
     const tbody = document.getElementById('baselineTableBody');
-    
     if (!tbody) return;
     
-    tbody.innerHTML = baseEffect.map((item, index) => `
-        <tr data-index="${index}">
+    // 按题号排序
+    const sortedData = [...baselineEditData].sort((a, b) => {
+        const indexA = parseFloat(a.index) || 0;
+        const indexB = parseFloat(b.index) || 0;
+        return indexA - indexB;
+    });
+    
+    tbody.innerHTML = sortedData.map((item, displayIndex) => {
+        // 找到原始索引
+        const originalIndex = baselineEditData.findIndex(d => d === item);
+        return `
+        <tr data-index="${originalIndex}">
             <td>
-                <input type="text" class="form-input-small" value="${escapeHtml(String(item.index || ''))}" 
-                       onchange="updateBaselineField(${index}, 'index', this.value)">
+                <input type="text" class="form-input-small baseline-index-input" 
+                       value="${escapeHtml(String(item.index || ''))}" 
+                       data-field="index" data-idx="${originalIndex}">
             </td>
             <td>
-                <input type="text" class="form-input" value="${escapeHtml(item.userAnswer || '')}" 
-                       onchange="updateBaselineField(${index}, 'userAnswer', this.value)">
+                <input type="text" class="form-input baseline-answer-input" 
+                       value="${escapeHtml(item.userAnswer || '')}" 
+                       data-field="userAnswer" data-idx="${originalIndex}">
             </td>
             <td>
-                <select class="form-select" onchange="updateBaselineField(${index}, 'correct', this.value)">
+                <select class="form-select baseline-correct-select" data-field="correct" data-idx="${originalIndex}">
                     <option value="">请选择</option>
                     <option value="yes" ${item.correct === 'yes' ? 'selected' : ''}>正确</option>
                     <option value="no" ${item.correct === 'no' ? 'selected' : ''}>错误</option>
                 </select>
             </td>
             <td>
-                <button class="btn btn-small btn-danger" onclick="removeBaselineQuestion(${index})">删除</button>
+                <button class="btn btn-small btn-danger" onclick="removeBaselineQuestion(${originalIndex})">删除</button>
             </td>
         </tr>
-    `).join('');
+    `}).join('');
+    
+    // 绑定输入事件
+    tbody.querySelectorAll('input, select').forEach(el => {
+        el.addEventListener('change', handleBaselineFieldChange);
+        el.addEventListener('input', handleBaselineFieldChange);
+    });
+    
+    updateBaselineCount();
 }
 
-function updateBaselineField(index, field, value) {
-    const homework = window.currentEditingHomework;
-    if (!homework || !homework.base_effect || index >= homework.base_effect.length) return;
+function handleBaselineFieldChange(e) {
+    const field = e.target.dataset.field;
+    const idx = parseInt(e.target.dataset.idx, 10);
+    const value = e.target.value;
     
-    homework.base_effect[index][field] = value;
+    if (idx >= 0 && idx < baselineEditData.length) {
+        baselineEditData[idx][field] = value;
+    }
+}
+
+function updateBaselineCount() {
+    const countEl = document.getElementById('baselineQuestionCount');
+    if (countEl) {
+        countEl.textContent = baselineEditData.length;
+    }
 }
 
 function addBaselineQuestion() {
-    const homework = window.currentEditingHomework;
-    if (!homework) return;
+    // 计算新题号
+    let maxIndex = 0;
+    baselineEditData.forEach(item => {
+        const idx = parseFloat(item.index) || 0;
+        if (idx > maxIndex) maxIndex = idx;
+    });
     
-    if (!homework.base_effect) {
-        homework.base_effect = [];
-    }
-    
-    const newIndex = homework.base_effect.length + 1;
-    homework.base_effect.push({
-        index: String(newIndex),
+    baselineEditData.push({
+        index: String(Math.floor(maxIndex) + 1),
         userAnswer: '',
         correct: ''
     });
@@ -2597,20 +2980,16 @@ function addBaselineQuestion() {
 }
 
 function removeBaselineQuestion(index) {
-    const homework = window.currentEditingHomework;
-    if (!homework || !homework.base_effect || index >= homework.base_effect.length) return;
+    if (index < 0 || index >= baselineEditData.length) return;
     
     if (confirm('确定要删除这道题吗？')) {
-        homework.base_effect.splice(index, 1);
+        baselineEditData.splice(index, 1);
         renderBaselineEditTable();
     }
 }
 
 function autoFillFromAI() {
-    const homework = window.currentEditingHomework;
-    if (!homework) return;
-    
-    const aiResult = homework.ai_result || [];
+    const aiResult = window.currentEditingAiResult || [];
     if (aiResult.length === 0) {
         alert('没有AI批改结果可以填充');
         return;
@@ -2620,36 +2999,72 @@ function autoFillFromAI() {
         return;
     }
     
-    homework.base_effect = aiResult.map(item => ({
-        index: String(item.index || ''),
-        userAnswer: item.userAnswer || '',
-        correct: item.correct || ''
-    }));
+    // 展开AI结果中的children
+    baselineEditData = [];
+    aiResult.forEach(item => {
+        const children = item.children || [];
+        if (children.length > 0) {
+            children.forEach(child => {
+                baselineEditData.push({
+                    index: String(child.index || ''),
+                    userAnswer: child.userAnswer || '',
+                    correct: child.correct || ''
+                });
+            });
+        } else {
+            baselineEditData.push({
+                index: String(item.index || ''),
+                userAnswer: item.userAnswer || '',
+                correct: item.correct || ''
+            });
+        }
+    });
     
     renderBaselineEditTable();
     alert('已从AI批改结果填充基准数据');
 }
 
 function clearAllBaseline() {
-    const homework = window.currentEditingHomework;
-    if (!homework) return;
-    
     if (!confirm('确定要清空所有基准数据吗？')) {
         return;
     }
     
-    homework.base_effect = [];
+    baselineEditData = [];
     renderBaselineEditTable();
 }
 
 function syncJsonFromTable() {
-    const homework = window.currentEditingHomework;
-    if (!homework) return;
-    
     const jsonEditor = document.getElementById('baselineJsonEditor');
     if (jsonEditor) {
-        jsonEditor.value = JSON.stringify(homework.base_effect || [], null, 2);
+        jsonEditor.value = JSON.stringify(baselineEditData, null, 2);
     }
+}
+
+function renderCompareBaseTable() {
+    const container = document.getElementById('compareBaseTable');
+    const countEl = document.getElementById('compareBaseCount');
+    if (!container) return;
+    
+    if (countEl) {
+        countEl.textContent = baselineEditData.length;
+    }
+    
+    container.innerHTML = `
+        <table class="compare-table">
+            <thead>
+                <tr><th>题号</th><th>用户答案</th><th>判断</th></tr>
+            </thead>
+            <tbody>
+                ${baselineEditData.map(item => `
+                    <tr>
+                        <td>${escapeHtml(String(item.index || '-'))}</td>
+                        <td>${escapeHtml(item.userAnswer || '-')}</td>
+                        <td><span class="${item.correct === 'yes' ? 'text-success' : 'text-error'}">${item.correct || '-'}</span></td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
 }
 
 function formatBaselineJson() {
@@ -2660,10 +3075,10 @@ function formatBaselineJson() {
         const parsed = JSON.parse(jsonEditor.value);
         jsonEditor.value = JSON.stringify(parsed, null, 2);
         document.getElementById('jsonValidationResult').innerHTML = 
-            '<span style="color: #10b981;">✓ JSON格式正确</span>';
+            '<span style="color: #10b981;">JSON格式正确</span>';
     } catch (e) {
         document.getElementById('jsonValidationResult').innerHTML = 
-            '<span style="color: #ef4444;">✗ JSON格式错误: ' + escapeHtml(e.message) + '</span>';
+            '<span style="color: #ef4444;">JSON格式错误: ' + escapeHtml(e.message) + '</span>';
     }
 }
 
@@ -2692,17 +3107,15 @@ function validateBaselineJson() {
         }
         
         document.getElementById('jsonValidationResult').innerHTML = 
-            `<span style="color: #10b981;">✓ JSON格式正确，包含${parsed.length}道题目</span>`;
+            `<span style="color: #10b981;">JSON格式正确，包含${parsed.length}道题目，已应用到编辑数据</span>`;
         
-        // 更新内存中的数据
-        const homework = window.currentEditingHomework;
-        if (homework) {
-            homework.base_effect = parsed;
-        }
+        // 更新临时存储的数据
+        baselineEditData = parsed;
+        updateBaselineCount();
         
     } catch (e) {
         document.getElementById('jsonValidationResult').innerHTML = 
-            '<span style="color: #ef4444;">✗ ' + escapeHtml(e.message) + '</span>';
+            '<span style="color: #ef4444;">' + escapeHtml(e.message) + '</span>';
     }
 }
 
@@ -2714,13 +3127,13 @@ async function saveBaselineData(homeworkId) {
     }
     
     // 如果当前在JSON编辑模式，先验证并同步数据
-    const activeTab = document.querySelector('.tab-btn.active');
+    const activeTab = document.querySelector('.baseline-edit-tabs .tab-btn.active');
     if (activeTab && activeTab.textContent.includes('JSON')) {
         const jsonEditor = document.getElementById('baselineJsonEditor');
         if (jsonEditor) {
             try {
                 const parsed = JSON.parse(jsonEditor.value);
-                homework.base_effect = parsed;
+                baselineEditData = parsed;
             } catch (e) {
                 alert('JSON格式错误，请先修正: ' + e.message);
                 return;
@@ -2728,7 +3141,8 @@ async function saveBaselineData(homeworkId) {
         }
     }
     
-    const baseEffect = homework.base_effect || [];
+    // 使用临时存储的数据
+    const baseEffect = baselineEditData || [];
     
     if (baseEffect.length === 0) {
         if (!confirm('基准数据为空，确定要保存吗？')) {

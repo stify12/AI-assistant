@@ -10,6 +10,7 @@ let selectedPages = new Set();
 let availableHomework = {};  // 按页码分组的可用作业
 let selectedHomework = {};   // 每个页码选中的作业
 let recognizeResults = {};   // 识别结果
+let currentView = 'overview';  // 当前视图: 'overview' 或 'detail'
 
 const SUBJECT_NAMES = {
     0: '英语', 1: '语文', 2: '数学', 3: '物理', 4: '化学', 5: '生物', 6: '地理'
@@ -172,6 +173,7 @@ async function selectBook(bookId, subjectId) {
         renderBookDetail();
         
         // 隐藏概览，显示详情
+        currentView = 'detail';
         document.getElementById('datasetOverview').style.display = 'none';
         document.getElementById('addDatasetPanel').style.display = 'none';
         document.getElementById('bookDetail').style.display = 'block';
@@ -560,35 +562,37 @@ function renderRecognizePreview() {
 
 function renderResultTable(page, data) {
     return `
-        <table class="recognize-table">
+        <div class="result-table-header">
+            <button class="btn btn-small btn-secondary" onclick="showEffectCorrection(${page})">效果矫正</button>
+        </div>
+        <table class="recognize-table recognize-table-v2">
             <thead>
                 <tr>
-                    <th style="width:60px;">题号</th>
-                    <th>学生答案</th>
-                    <th style="width:80px;">是否正确</th>
-                    <th style="width:100px;">题目类型</th>
-                    <th style="width:50px;">操作</th>
+                    <th class="col-index">题号</th>
+                    <th class="col-answer">标准答案</th>
+                    <th class="col-user-answer">学生答案</th>
+                    <th class="col-correct">是否正确</th>
+                    <th class="col-tempindex">tempIndex</th>
+                    <th class="col-action">操作</th>
                 </tr>
             </thead>
             <tbody id="resultTableBody_${page}">
                 ${data.map((item, idx) => `
                     <tr data-idx="${idx}">
-                        <td><input type="text" value="${escapeHtml(item.index || '')}" onchange="updateTableCell(${page}, ${idx}, 'index', this.value)"></td>
-                        <td><textarea class="answer-textarea" onchange="updateTableCell(${page}, ${idx}, 'userAnswer', this.value)">${escapeHtml(item.userAnswer || '')}</textarea></td>
-                        <td>
+                        <td class="col-index"><span class="index-text">${escapeHtml(item.index || '')}</span></td>
+                        <td class="col-answer"><div class="standard-answer-box">${escapeHtml(item.answer || '-')}</div></td>
+                        <td class="col-user-answer"><textarea class="answer-textarea" onchange="updateTableCell(${page}, ${idx}, 'userAnswer', this.value)">${escapeHtml(item.userAnswer || '')}</textarea></td>
+                        <td class="col-correct">
                             <select onchange="updateTableCell(${page}, ${idx}, 'correct', this.value)">
                                 <option value="yes" ${item.correct === 'yes' ? 'selected' : ''}>正确</option>
                                 <option value="no" ${item.correct === 'no' || item.correct !== 'yes' ? 'selected' : ''}>错误</option>
                             </select>
                         </td>
-                        <td>
-                            <select onchange="updateTableCell(${page}, ${idx}, 'type', this.value)">
-                                <option value="choice" ${item.type === 'choice' ? 'selected' : ''}>选择题</option>
-                                <option value="fill" ${item.type === 'fill' ? 'selected' : ''}>填空题</option>
-                                <option value="subjective" ${item.type === 'subjective' ? 'selected' : ''}>主观题</option>
-                            </select>
+                        <td class="col-tempindex">
+                            <input type="number" value="${item.tempIndex !== undefined ? item.tempIndex : ''}" 
+                                   onchange="updateTableCell(${page}, ${idx}, 'tempIndex', parseInt(this.value))">
                         </td>
-                        <td><button class="btn-delete-row" onclick="deleteTableRow(${page}, ${idx})">x</button></td>
+                        <td class="col-action"><button class="btn-delete-row" onclick="deleteTableRow(${page}, ${idx})">x</button></td>
                     </tr>
                 `).join('')}
             </tbody>
@@ -711,6 +715,10 @@ async function startRecognize() {
 async function recognizePage(page) {
     const hw = selectedHomework[page];
     
+    // 创建 AbortController 用于超时控制
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 300000); // 5分钟超时
+    
     try {
         const res = await fetch('/api/dataset/recognize', {
             method: 'POST',
@@ -719,8 +727,11 @@ async function recognizePage(page) {
                 homework_id: hw.id,
                 pic_path: hw.pic_path,
                 subject_id: selectedBook.subject_id
-            })
+            }),
+            signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
         
         // 检查响应状态
         if (!res.ok) {
@@ -732,7 +743,7 @@ async function recognizePage(page) {
                 errorMsg = data.error || errorMsg;
             } else {
                 // 返回的是HTML或其他非JSON内容
-                errorMsg = `服务器错误 (${res.status})，请检查后端日志`;
+                errorMsg = `服务器错误 (${res.status})，请稍后重试`;
             }
             
             recognizeResults[page] = {
@@ -759,9 +770,20 @@ async function recognizePage(page) {
             };
         }
     } catch (e) {
+        clearTimeout(timeoutId);
+        
+        let errorMsg = '请求失败';
+        if (e.name === 'AbortError') {
+            errorMsg = '请求超时，AI模型响应时间过长，请点击"重新识别"重试';
+        } else if (e.message.includes('NetworkError') || e.message.includes('fetch')) {
+            errorMsg = '网络连接失败，请检查网络后重试';
+        } else {
+            errorMsg = `请求失败: ${e.message}`;
+        }
+        
         recognizeResults[page] = {
             success: false,
-            error: `请求失败: ${e.message}`
+            error: errorMsg
         };
     }
     
@@ -1478,6 +1500,7 @@ async function goToBookDetail(bookId, subjectId) {
 function backToOverview() {
     selectedBook = null;
     datasetList = [];
+    currentView = 'overview';
     
     // 重置左侧选中状态
     renderBooks();
@@ -1491,3 +1514,207 @@ function backToOverview() {
     loadDatasetOverview();
 }
 
+
+
+// ========== 效果矫正功能 ==========
+let correctionModal = null;
+let correctionPage = null;
+let aiResultData = null;
+
+// 显示效果矫正弹窗
+async function showEffectCorrection(page) {
+    correctionPage = page;
+    const hw = selectedHomework[page];
+    
+    if (!hw) {
+        alert('未找到该页码的作业信息');
+        return;
+    }
+    
+    showLoading('加载AI批改结果...');
+    
+    try {
+        // 获取AI批改结果
+        const res = await fetch(`/api/dataset/homework-result/${hw.id}`);
+        const data = await res.json();
+        
+        if (!data.success) {
+            alert('获取AI批改结果失败: ' + (data.error || '未知错误'));
+            hideLoading();
+            return;
+        }
+        
+        aiResultData = data.data.homework_result || [];
+        
+        // 渲染效果矫正弹窗
+        renderCorrectionModal(page);
+        
+    } catch (e) {
+        alert('获取AI批改结果失败: ' + e.message);
+    }
+    
+    hideLoading();
+}
+
+// 渲染效果矫正弹窗
+function renderCorrectionModal(page) {
+    const baseEffects = recognizeResults[page]?.data || [];
+    
+    // 创建弹窗HTML
+    const modalHtml = `
+        <div class="correction-modal show" id="correctionModal" onclick="hideCorrectionModal(event)">
+            <div class="correction-modal-content" onclick="event.stopPropagation()">
+                <div class="correction-modal-header">
+                    <h3>效果矫正 - 第 ${page} 页</h3>
+                    <button class="close-btn" onclick="hideCorrectionModal()">x</button>
+                </div>
+                <div class="correction-modal-body">
+                    <div class="correction-split">
+                        <div class="correction-left">
+                            <div class="correction-panel-title">基准效果 (可编辑)</div>
+                            <div class="correction-table-wrap">
+                                <table class="correction-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="col-index">题号</th>
+                                            <th>手写答案</th>
+                                            <th class="col-tempindex">tempIndex</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="correctionBaseBody">
+                                        ${baseEffects.map((item, idx) => `
+                                            <tr data-idx="${idx}" class="${getMatchClass(item.tempIndex, aiResultData)}">
+                                                <td class="col-index">
+                                                    <input type="text" class="correction-input index-input" value="${escapeHtml(item.index || '')}" 
+                                                           onchange="updateCorrectionCell(${idx}, 'index', this.value)">
+                                                </td>
+                                                <td>
+                                                    <textarea class="correction-textarea" 
+                                                              onchange="updateCorrectionCell(${idx}, 'userAnswer', this.value)">${escapeHtml(item.userAnswer || '')}</textarea>
+                                                </td>
+                                                <td class="col-tempindex">
+                                                    <input type="number" class="correction-input tempindex-input" 
+                                                           value="${item.tempIndex !== undefined ? item.tempIndex : ''}" 
+                                                           onchange="updateCorrectionCell(${idx}, 'tempIndex', parseInt(this.value))">
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="correction-actions">
+                                <button class="btn-add-row" onclick="addCorrectionRow()">+ 添加题目</button>
+                            </div>
+                        </div>
+                        <div class="correction-right">
+                            <div class="correction-panel-title">AI批改结果 (只读)</div>
+                            <div class="correction-table-wrap">
+                                <table class="correction-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="col-index">题号</th>
+                                            <th>手写答案</th>
+                                            <th class="col-tempindex">tempIndex</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="correctionAiBody">
+                                        ${aiResultData.map((item, idx) => `
+                                            <tr data-idx="${idx}" class="${getMatchClass(item.tempIndex, baseEffects)}">
+                                                <td class="col-index">${escapeHtml(item.index || '')}</td>
+                                                <td class="ai-answer-cell">${escapeHtml(item.userAnswer || '')}</td>
+                                                <td class="col-tempindex tempindex-cell">${item.tempIndex !== undefined ? item.tempIndex : '-'}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="correction-modal-footer">
+                    <div class="correction-stats">
+                        <span class="stat-matched">匹配: ${countMatched(baseEffects, aiResultData)} 题</span>
+                        <span class="stat-unmatched">未匹配: ${countUnmatched(baseEffects, aiResultData)} 题</span>
+                    </div>
+                    <div class="correction-buttons">
+                        <button class="btn btn-secondary" onclick="hideCorrectionModal()">取消</button>
+                        <button class="btn btn-primary" onclick="saveCorrectionChanges()">保存修改</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 移除旧弹窗
+    const oldModal = document.getElementById('correctionModal');
+    if (oldModal) oldModal.remove();
+    
+    // 添加新弹窗
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+// 获取匹配状态的CSS类
+function getMatchClass(tempIndex, compareData) {
+    if (tempIndex === undefined || tempIndex === null) return 'row-warning';
+    const found = compareData.find(item => item.tempIndex === tempIndex);
+    return found ? 'row-matched' : 'row-unmatched';
+}
+
+// 统计匹配数量
+function countMatched(baseEffects, aiResults) {
+    const aiTempIndexes = new Set(aiResults.map(item => item.tempIndex).filter(t => t !== undefined));
+    return baseEffects.filter(item => item.tempIndex !== undefined && aiTempIndexes.has(item.tempIndex)).length;
+}
+
+// 统计未匹配数量
+function countUnmatched(baseEffects, aiResults) {
+    const aiTempIndexes = new Set(aiResults.map(item => item.tempIndex).filter(t => t !== undefined));
+    return baseEffects.filter(item => item.tempIndex === undefined || !aiTempIndexes.has(item.tempIndex)).length;
+}
+
+// 更新矫正单元格
+function updateCorrectionCell(idx, field, value) {
+    if (recognizeResults[correctionPage] && recognizeResults[correctionPage].data && recognizeResults[correctionPage].data[idx]) {
+        recognizeResults[correctionPage].data[idx][field] = value;
+        // 重新渲染以更新匹配状态
+        renderCorrectionModal(correctionPage);
+    }
+}
+
+// 添加矫正行
+function addCorrectionRow() {
+    if (!correctionPage || !recognizeResults[correctionPage]) return;
+    
+    const data = recognizeResults[correctionPage].data || [];
+    const lastItem = data[data.length - 1];
+    const newIndex = lastItem ? (parseInt(lastItem.index) + 1).toString() : '1';
+    const newTempIndex = lastItem && lastItem.tempIndex !== undefined ? lastItem.tempIndex + 1 : 0;
+    
+    data.push({
+        index: newIndex,
+        userAnswer: '',
+        correct: 'yes',
+        tempIndex: newTempIndex
+    });
+    
+    recognizeResults[correctionPage].data = data;
+    renderCorrectionModal(correctionPage);
+}
+
+// 保存矫正修改
+function saveCorrectionChanges() {
+    // 数据已经实时更新到 recognizeResults 中
+    hideCorrectionModal();
+    // 重新渲染识别结果表格
+    renderRecognizePreview();
+    checkCanSave();
+}
+
+// 隐藏效果矫正弹窗
+function hideCorrectionModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    const modal = document.getElementById('correctionModal');
+    if (modal) modal.remove();
+    correctionPage = null;
+    aiResultData = null;
+}

@@ -41,13 +41,24 @@
                         <div class="section-title">评估任务</div>
                         <button class="btn btn-primary" onclick="showCreateTaskModal()">新建任务</button>
                     </div>
-                    <!-- 学科筛选按钮组 -->
-                    <div class="subject-filter-group" id="subjectFilterGroup">
-                        <button class="subject-filter-btn active" data-value="" onclick="filterBySubject('')">全部</button>
-                        <button class="subject-filter-btn" data-value="0" onclick="filterBySubject('0')">英语</button>
-                        <button class="subject-filter-btn" data-value="1" onclick="filterBySubject('1')">语文</button>
-                        <button class="subject-filter-btn" data-value="2" onclick="filterBySubject('2')">数学</button>
-                        <button class="subject-filter-btn" data-value="3" onclick="filterBySubject('3')">物理</button>
+                    <!-- 学科筛选下拉 + 测试条件筛选 -->
+                    <div class="filter-row" style="margin-bottom: 12px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label>学科筛选</label>
+                            <select id="taskSubjectFilter" onchange="onTaskFilterChange()">
+                                <option value="">全部学科</option>
+                                <option value="0">英语</option>
+                                <option value="1">语文</option>
+                                <option value="2">数学</option>
+                                <option value="3">物理</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>测试条件</label>
+                            <select id="taskConditionFilter" onchange="onTaskFilterChange()">
+                                <option value="">全部条件</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="task-list" id="taskList">
                         <div class="empty-state">
@@ -165,6 +176,19 @@
                             <option value="2">数学</option>
                             <option value="3">物理</option>
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label>测试条件</label>
+                        <div class="condition-select-wrapper">
+                            <select id="hwConditionSelect" onchange="onConditionSelectChange()">
+                                <option value="">请选择测试条件</option>
+                            </select>
+                            <div class="condition-add-row" id="conditionAddRow" style="display: none;">
+                                <input type="text" id="newConditionInput" placeholder="输入新测试条件名称">
+                                <button class="btn btn-small btn-primary" onclick="saveNewCondition()">保存</button>
+                                <button class="btn btn-small btn-secondary" onclick="cancelAddCondition()">取消</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>时间范围</label>

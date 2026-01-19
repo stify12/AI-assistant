@@ -19,6 +19,65 @@ def dataset_manage_page():
     return render_template('dataset-manage.html')
 
 
+@dataset_manage_bp.route('/api/dataset/homework-result/<homework_id>', methods=['GET'])
+def get_homework_result(homework_id):
+    """获取指定作业的AI批改结果（homework_result），用于效果矫正对比"""
+    try:
+        sql = """
+            SELECT h.id, h.homework_result, h.data_value, h.pic_path
+            FROM zp_homework h
+            WHERE h.id = %s
+        """
+        row = DatabaseService.execute_one(sql, (homework_id,))
+        
+        if not row:
+            return jsonify({'success': False, 'error': '未找到作业记录'})
+        
+        # 解析 homework_result
+        homework_result = []
+        try:
+            homework_result = json.loads(row.get('homework_result', '[]') or '[]')
+        except:
+            pass
+        
+        # 展开 children 结构
+        flattened = []
+        for item in homework_result:
+            children = item.get('children', [])
+            if children and len(children) > 0:
+                # 有子题，只添加子题
+                for child in children:
+                    flattened.append({
+                        'index': child.get('index', ''),
+                        'tempIndex': child.get('tempIndex'),
+                        'userAnswer': child.get('userAnswer', ''),
+                        'correct': child.get('correct', ''),
+                        'answer': child.get('answer', '') or child.get('mainAnswer', '')
+                    })
+            else:
+                # 无子题，添加本题
+                flattened.append({
+                    'index': item.get('index', ''),
+                    'tempIndex': item.get('tempIndex'),
+                    'userAnswer': item.get('userAnswer', ''),
+                    'correct': item.get('correct', ''),
+                    'answer': item.get('answer', '') or item.get('mainAnswer', '')
+                })
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'homework_id': homework_id,
+                'homework_result': flattened,
+                'raw_result': homework_result  # 原始数据供调试
+            }
+        })
+    
+    except Exception as e:
+        print(f"[GetHomeworkResult] Error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+
 @dataset_manage_bp.route('/api/dataset/available-homework', methods=['GET'])
 def get_dataset_available_homework():
     """获取指定页码的可用作业图片列表"""
@@ -90,6 +149,29 @@ def get_dataset_available_homework():
         return jsonify({'success': False, 'error': str(e)})
 
 
+def flatten_data_value_items(data_value_items):
+    """
+    展开 data_value 中的嵌套 children 结构为扁平数组
+    
+    Args:
+        data_value_items: 从 zp_homework.data_value 解析的题目列表（可能包含children）
+        
+    Returns:
+        扁平化后的题目列表，每个小题一条记录
+    """
+    flattened = []
+    for item in data_value_items:
+        children = item.get('children', [])
+        if children and len(children) > 0:
+            # 有子题时，只取子题（父题是汇总，不参与识别）
+            for child in children:
+                flattened.append(child)
+        else:
+            # 无子题，直接加入
+            flattened.append(item)
+    return flattened
+
+
 def build_dynamic_prompt(data_value_items, subject_id=0):
     """
     根据 data_value 构建动态提示词
@@ -101,6 +183,9 @@ def build_dynamic_prompt(data_value_items, subject_id=0):
     Returns:
         动态提示词字符串
     """
+    # 先展开 children 结构
+    flat_items = flatten_data_value_items(data_value_items)
+    
     # 题目类型映射
     bvalue_map = {
         '1': '单选题',
@@ -121,17 +206,20 @@ def build_dynamic_prompt(data_value_items, subject_id=0):
     }
     subject_name = subject_map.get(subject_id, '通用')
     
-    # 构建题目信息数组
+    # 构建题目信息数组（按小题粒度）
     questions_info = []
-    for item in data_value_items:
+    for item in flat_items:
         content = item.get('content', '')
         # content 取前15个字符
         content_short = content[:15] if content else ''
         
+        # 标准答案：优先取 jans，没有则取 answer 或 mainAnswer
+        answer = item.get('jans', '') or item.get('answer', '') or item.get('mainAnswer', '')
+        
         questions_info.append({
             'index': item.get('index', ''),
             'tempIndex': item.get('tempIndex', 0),
-            'answer': item.get('jans', '').strip(),  # 标准答案，去除首尾空格
+            'answer': str(answer).strip(),  # 标准答案，去除首尾空格
             'type': bvalue_map.get(str(item.get('bvalue', '4')), '填空题'),
             'questionType': item.get('questionType', 'objective'),
             'content': content_short
@@ -269,6 +357,14 @@ def dataset_recognize():
         if base_effect and isinstance(base_effect, list) and len(base_effect) > 0:
             print(f"[DatasetRecognize] Extracted {len(base_effect)} items")
             
+            # 构建 data_value 的 tempIndex 映射，用于获取 questionType 和 bvalue
+            flat_data_value = flatten_data_value_items(data_value_items) if data_value_items else []
+            data_value_map = {}
+            for dv_item in flat_data_value:
+                temp_idx = dv_item.get('tempIndex')
+                if temp_idx is not None:
+                    data_value_map[int(temp_idx)] = dv_item
+            
             # 转换字段格式，保持与 homework_result 一致
             formatted_data = []
             for item in base_effect:
@@ -278,15 +374,31 @@ def dataset_recognize():
                 
                 # 标准化答案处理
                 user_answer = str(item.get('userAnswer', '')).strip()
-                answer = str(item.get('answer', '')).strip()
+                temp_idx = item.get('tempIndex', 0)
+                
+                # 从 data_value 中获取正确的标准答案、questionType 和 bvalue
+                dv_item = data_value_map.get(int(temp_idx), {})
+                question_type = dv_item.get('questionType', 'objective')
+                bvalue = str(dv_item.get('bvalue', '4'))
+                
+                # 标准答案优先从 data_value 获取，确保准确性
+                # 优先级: jans > answer > mainAnswer > AI返回的answer
+                answer = (
+                    dv_item.get('jans', '') or 
+                    dv_item.get('answer', '') or 
+                    dv_item.get('mainAnswer', '') or 
+                    str(item.get('answer', '')).strip()
+                )
+                answer = str(answer).strip()
                 
                 formatted_data.append({
                     'index': str(item.get('index', '')),
-                    'tempIndex': item.get('tempIndex', 0),
+                    'tempIndex': temp_idx,
                     'userAnswer': user_answer,
                     'answer': answer,
                     'correct': correct_val,
-                    'type': 'choice'
+                    'questionType': question_type,
+                    'bvalue': bvalue
                 })
             
             return jsonify({'success': True, 'data': formatted_data})

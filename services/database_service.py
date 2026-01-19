@@ -30,21 +30,35 @@ class DatabaseService:
         return DatabaseService._config_cache
     
     @staticmethod
-    def get_connection():
-        """获取原业务数据库连接"""
+    def get_connection(retries=3):
+        """获取原业务数据库连接，带重试机制"""
         import pymysql
+        import time
         
         mysql_config = DatabaseService._get_cached_config()
         
-        return pymysql.connect(
-            host=mysql_config.get('host', '47.113.230.78'),
-            port=mysql_config.get('port', 3306),
-            user=mysql_config.get('user', 'zpsmart'),
-            password=mysql_config.get('password', 'rootyouerkj!'),
-            database=mysql_config.get('database', 'zpsmart'),
-            charset='utf8mb4',
-            cursorclass=pymysql.cursors.DictCursor
-        )
+        last_error = None
+        for attempt in range(retries):
+            try:
+                return pymysql.connect(
+                    host=mysql_config.get('host', '47.113.230.78'),
+                    port=mysql_config.get('port', 3306),
+                    user=mysql_config.get('user', 'zpsmart'),
+                    password=mysql_config.get('password', 'rootyouerkj!'),
+                    database=mysql_config.get('database', 'zpsmart'),
+                    charset='utf8mb4',
+                    cursorclass=pymysql.cursors.DictCursor,
+                    connect_timeout=30,
+                    read_timeout=60,
+                    write_timeout=60
+                )
+            except Exception as e:
+                last_error = e
+                print(f"[MySQL] Connection attempt {attempt + 1} failed: {str(e)}")
+                if attempt < retries - 1:
+                    time.sleep(1)
+        
+        raise last_error
     
     @staticmethod
     def execute_query(sql, params=None):
@@ -266,14 +280,34 @@ class AppDatabaseService:
     def get_baseline_effects_by_page(dataset_id, page_num):
         """获取指定页码的基准效果，返回格式化的列表"""
         rows = AppDatabaseService.get_baseline_effects(dataset_id, page_num)
-        return [{
-            'index': row['question_index'],
-            'tempIndex': row['temp_index'],
-            'type': row['question_type'],
-            'answer': row['answer'],
-            'userAnswer': row['user_answer'],
-            'correct': row['is_correct']
-        } for row in rows]
+        result = []
+        for row in rows:
+            item = {
+                'index': row['question_index'],
+                'tempIndex': row['temp_index'],
+                'type': row['question_type'],
+                'answer': row['answer'],
+                'userAnswer': row['user_answer'],
+                'correct': row['is_correct']
+            }
+            # 解析 extra_data 获取 questionType 和 bvalue
+            extra_data = row.get('extra_data')
+            if extra_data:
+                try:
+                    if isinstance(extra_data, str):
+                        extra = json.loads(extra_data)
+                    else:
+                        extra = extra_data
+                    item['questionType'] = extra.get('questionType', 'objective')
+                    item['bvalue'] = extra.get('bvalue', '4')
+                except:
+                    item['questionType'] = 'objective'
+                    item['bvalue'] = '4'
+            else:
+                item['questionType'] = 'objective'
+                item['bvalue'] = '4'
+            result.append(item)
+        return result
     
     @staticmethod
     def save_baseline_effects(dataset_id, page_num, effects):
