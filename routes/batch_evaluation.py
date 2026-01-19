@@ -436,17 +436,15 @@ def classify_error(base_item, hw_item):
         elif user_match and correct_match:
             is_match = True
         elif user_match and not correct_match:
-            # 检查是否只是格式差异
+            # 用户答案识别正确，但判断结果不同
+            # 这是"识别正确-判断错误"，格式差异只是次要问题
+            is_match = False
+            error_type = '识别正确-判断错误'
             if has_format_diff(base_user, hw_user):
-                is_match = False
-                error_type = '格式差异'
-                explanation = f'识别内容相同但格式不同'
-                severity = 'low'
+                explanation = f'识别正确（有格式差异）但判断错误：基准={base_correct}，AI={hw_correct}'
             else:
-                is_match = False
-                error_type = '识别正确-判断错误'
                 explanation = f'识别正确但判断错误：基准={base_correct}，AI={hw_correct}'
-                severity = 'high'
+            severity = 'high'
         elif not user_match and correct_match:
             is_match = False
             error_type = '识别错误-判断正确'
@@ -759,13 +757,21 @@ def dataset_detail(dataset_id):
                 existing_effects = data.get('base_effects', {})
                 new_effects = update_data['base_effects']
                 
-                # 为更新的基准效果添加题目类型信息
+                # 只对实际变化的页码执行 enrich 操作（优化性能）
                 book_id = data.get('book_id')
-                enriched_new_effects = enrich_base_effects_with_question_types(book_id, new_effects)
+                changed_pages = {}
+                for page_key, effects in new_effects.items():
+                    page_str = str(page_key)
+                    # 检查是否有实际变化
+                    existing = existing_effects.get(page_str, [])
+                    if effects != existing:
+                        changed_pages[page_str] = effects
                 
-                # 合并：新的覆盖旧的，保留未更新的页码
-                for page_key, effects in enriched_new_effects.items():
-                    existing_effects[str(page_key)] = effects
+                # 只对变化的页码执行 enrich（避免大量数据库查询）
+                if changed_pages:
+                    enriched_changed = enrich_base_effects_with_question_types(book_id, changed_pages)
+                    for page_key, effects in enriched_changed.items():
+                        existing_effects[str(page_key)] = effects
                 
                 data['base_effects'] = existing_effects
                 
@@ -1755,17 +1761,15 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
             elif user_match and correct_match:
                 is_match = True
             elif user_match and not correct_match:
-                # 检查是否只是格式差异 - 格式差异不算错误，计入正确
+                # 用户答案识别正确，但判断结果不同
+                # 这是"识别正确-判断错误"，格式差异只是次要问题
+                is_match = False
+                error_type = '识别正确-判断错误'
                 if has_format_diff(base_user, hw_user):
-                    is_match = True  # 格式差异不算错误
-                    error_type = '格式差异'
-                    explanation = f'识别内容相同但格式不同'
-                    severity = 'low'
+                    explanation = f'识别正确（有格式差异）但判断错误：基准={base_correct}，AI={hw_correct}'
                 else:
-                    is_match = False
-                    error_type = '识别正确-判断错误'
                     explanation = f'识别正确但判断错误：基准={base_correct}，AI={hw_correct}'
-                    severity = 'high'
+                severity = 'high'
             elif not user_match and correct_match:
                 is_match = False
                 error_type = '识别错误-判断正确'
