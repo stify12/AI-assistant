@@ -239,6 +239,7 @@ const DetailedAnalysis = {
             '识别错误-判断正确': 'info',
             '识别错误-判断错误': 'error',
             '识别正确-判断错误': 'warning',
+            '识别题干-判断正确': 'stem',
             '格式差异': 'success',
             '缺失题目': 'default',
             'AI识别幻觉': 'purple',

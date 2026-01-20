@@ -291,6 +291,14 @@ function renderTaskDetail() {
         document.getElementById('overallReport').style.display = 'none';
     }
     
+    // 英语作文评分展示（仅当有作文数据时显示）
+    if (selectedTask.essay_data && selectedTask.essay_data.has_essay) {
+        renderEssayScores(selectedTask.essay_data);
+    } else {
+        const essaySection = document.getElementById('essayScoreSection');
+        if (essaySection) essaySection.style.display = 'none';
+    }
+    
     // 作业列表
     renderHomeworkList(selectedTask.homework_items || []);
     
@@ -357,9 +365,62 @@ function renderTaskDetail() {
     }
 }
 
+// ========== 渲染测试条件信息 ==========
+function renderTestConditionsInfo() {
+    const container = document.getElementById('testConditionsInfo');
+    if (!container || !selectedTask) {
+        if (container) container.style.display = 'none';
+        return;
+    }
+    
+    const testConditionName = selectedTask.test_condition_name || '';
+    const subjectName = selectedTask.subject_name || '';
+    const homeworkItems = selectedTask.homework_items || [];
+    
+    // 统计学生数和作业数
+    const studentIds = new Set();
+    homeworkItems.forEach(item => {
+        if (item.student_id) {
+            studentIds.add(item.student_id);
+        }
+    });
+    const studentCount = studentIds.size;
+    const homeworkCount = homeworkItems.length;
+    const avgHomework = studentCount > 0 ? (homeworkCount / studentCount).toFixed(1) : 0;
+    
+    // 构建显示内容
+    let infoItems = [];
+    
+    if (testConditionName) {
+        infoItems.push(`<span class="condition-tag">${escapeHtml(testConditionName)}</span>`);
+    }
+    if (subjectName) {
+        infoItems.push(`<span class="info-item">${escapeHtml(subjectName)}</span>`);
+    }
+    if (studentCount > 0) {
+        infoItems.push(`<span class="info-item"><strong>${studentCount}</strong> 个学生</span>`);
+        infoItems.push(`<span class="info-item">每人 <strong>${avgHomework}</strong> 份作业</span>`);
+    }
+    
+    if (infoItems.length > 0) {
+        container.innerHTML = `
+            <div class="conditions-row">
+                <span class="conditions-label">测试条件:</span>
+                ${infoItems.join('<span class="info-divider">|</span>')}
+            </div>
+        `;
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
+    }
+}
+
 
 function renderOverallReport(report) {
     document.getElementById('overallReport').style.display = 'block';
+    
+    // 渲染测试条件信息
+    renderTestConditionsInfo();
     
     const statsHtml = `
         <div class="stat-card highlight">
@@ -384,7 +445,7 @@ function renderOverallReport(report) {
     // 渲染可视化图表
     renderOverallCharts(report);
     
-    // 题目类型分类统计 (选择题、客观填空题、非选择题)
+    // 题目类型分类统计 (选择题、客观填空题、主观题)
     let detailHtml = '';
     const byType = report.by_question_type || {};
     const byCombined = report.by_combined || {};
@@ -392,7 +453,7 @@ function renderOverallReport(report) {
     if (Object.keys(byType).length > 0) {
         const choice = byType.choice || {};
         const objectiveFill = byType.objective_fill || {};
-        const other = byType.other || {};
+        const subjective = byType.subjective || {};
         
         detailHtml += `
             <div class="list-header">题目类型分类统计</div>
@@ -414,10 +475,10 @@ function renderOverallReport(report) {
                                 <td>${objectiveFill.total > 0 ? ((objectiveFill.accuracy || 0) * 100).toFixed(1) + '%' : '-'}</td>
                             </tr>
                             <tr>
-                                <td>非选择题</td>
-                                <td>${other.total || 0}</td>
-                                <td>${other.correct || 0}</td>
-                                <td>${other.total > 0 ? ((other.accuracy || 0) * 100).toFixed(1) + '%' : '-'}</td>
+                                <td>主观题</td>
+                                <td>${subjective.total || 0}</td>
+                                <td>${subjective.correct || 0}</td>
+                                <td>${subjective.total > 0 ? ((subjective.accuracy || 0) * 100).toFixed(1) + '%' : '-'}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -534,6 +595,7 @@ function renderOverallCharts(report) {
             '识别错误-判断正确': '#3b82f6',
             '识别错误-判断错误': '#ef4444',
             '识别正确-判断错误': '#f59e0b',
+            '识别题干-判断正确': '#06b6d4',
             '格式差异': '#10b981',
             '缺失题目': '#6b7280',
             'AI识别幻觉': '#8b5cf6'
@@ -553,6 +615,13 @@ function renderOverallCharts(report) {
             },
             options: {
                 responsive: true,
+                onClick: (event, elements) => {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const errorType = errorLabels[index];
+                        showErrorTypeDetail(errorType);
+                    }
+                },
                 plugins: {
                     legend: { 
                         position: 'bottom',
@@ -564,7 +633,7 @@ function renderOverallCharts(report) {
                                 const value = context.parsed || 0;
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                 const percentage = ((value / total) * 100).toFixed(1);
-                                return `${context.label}: ${value}题 (${percentage}%)`;
+                                return `${context.label}: ${value}题 (${percentage}%) - 点击查看详情`;
                             }
                         }
                     }
@@ -583,11 +652,11 @@ function renderOverallCharts(report) {
         }
     }
     
-    // 2. 题型准确率对比柱状图 (选择题、客观填空题、非选择题)
+    // 2. 题型准确率对比柱状图 (选择题、客观填空题、主观题)
     const byType = report.by_question_type || {};
     const choice = byType.choice || {};
     const objectiveFill = byType.objective_fill || {};
-    const other = byType.other || {};
+    const subjective = byType.subjective || {};
     
     const typeLabels = [];
     const typeData = [];
@@ -603,9 +672,9 @@ function renderOverallCharts(report) {
         typeData.push((objectiveFill.accuracy || 0) * 100);
         typeColors.push('#10b981');
     }
-    if (other.total > 0) {
-        typeLabels.push('非选择题');
-        typeData.push((other.accuracy || 0) * 100);
+    if (subjective.total > 0) {
+        typeLabels.push('主观题');
+        typeData.push((subjective.accuracy || 0) * 100);
         typeColors.push('#f59e0b');
     }
     
@@ -694,6 +763,7 @@ function renderOverallCharts(report) {
                 { key: '识别错误-判断正确', color: '#3b82f6' },
                 { key: '识别错误-判断错误', color: '#ef4444' },
                 { key: '识别正确-判断错误', color: '#f59e0b' },
+                { key: '识别题干-判断正确', color: '#06b6d4' },
                 { key: '格式差异', color: '#10b981' },
                 { key: '缺失题目', color: '#6b7280' },
                 { key: 'AI识别幻觉', color: '#8b5cf6' }
@@ -839,6 +909,7 @@ function aggregateErrorDistribution() {
         '识别错误-判断正确': 0,
         '识别错误-判断错误': 0,
         '识别正确-判断错误': 0,
+        '识别题干-判断正确': 0,
         '格式差异': 0,
         '缺失题目': 0,
         'AI识别幻觉': 0
@@ -858,6 +929,252 @@ function aggregateErrorDistribution() {
     return dist;
 }
 
+// ========== 英语作文评分图表实例 ==========
+let essayChartInstance = null;
+
+// ========== 渲染英语作文评分 ==========
+function renderEssayScores(essayData) {
+    let section = document.getElementById('essayScoreSection');
+    
+    // 如果section不存在，动态创建
+    if (!section) {
+        const overallReport = document.getElementById('overallReport');
+        if (overallReport) {
+            section = document.createElement('div');
+            section.id = 'essayScoreSection';
+            section.className = 'section';
+            section.style.marginTop = '16px';
+            overallReport.parentNode.insertBefore(section, overallReport.nextSibling);
+        } else {
+            return;
+        }
+    }
+    
+    if (!essayData || !essayData.has_essay) {
+        section.style.display = 'none';
+        return;
+    }
+    
+    section.style.display = 'block';
+    const stats = essayData.stats || {};
+    const essays = essayData.essays || [];
+    
+    // 计算标准差
+    const scores = essays.map(e => e.score);
+    const avg = stats.avg_score || 0;
+    const variance = scores.length > 0 ? scores.reduce((sum, s) => sum + Math.pow(s - avg, 2), 0) / scores.length : 0;
+    const stdDev = Math.sqrt(variance).toFixed(2);
+    
+    // 构建HTML - 简洁布局
+    let html = `
+        <div class="section-header" style="margin-bottom: 12px;">
+            <h3 class="section-title" style="font-size: 15px; margin: 0;">英语作文评分统计</h3>
+        </div>
+        <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+            <div class="stats-grid" style="grid-template-columns: repeat(5, 1fr); gap: 8px; flex: 1;">
+                <div class="stat-card highlight" style="padding: 12px;">
+                    <div class="stat-value" style="font-size: 20px;">${stats.avg_score || 0}</div>
+                    <div class="stat-label" style="font-size: 11px;">平均分</div>
+                </div>
+                <div class="stat-card" style="padding: 12px;">
+                    <div class="stat-value" style="font-size: 20px;">${stats.max_score || 0}</div>
+                    <div class="stat-label" style="font-size: 11px;">最高分</div>
+                </div>
+                <div class="stat-card" style="padding: 12px;">
+                    <div class="stat-value" style="font-size: 20px;">${stats.min_score || 0}</div>
+                    <div class="stat-label" style="font-size: 11px;">最低分</div>
+                </div>
+                <div class="stat-card" style="padding: 12px;">
+                    <div class="stat-value" style="font-size: 20px;">${stdDev}</div>
+                    <div class="stat-label" style="font-size: 11px;">标准差</div>
+                </div>
+                <div class="stat-card" style="padding: 12px;">
+                    <div class="stat-value" style="font-size: 20px;">${essays.length}</div>
+                    <div class="stat-label" style="font-size: 11px;">作文数</div>
+                </div>
+            </div>
+        </div>
+        <div style="background: #f9f9fb; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+            <div style="font-size: 13px; font-weight: 500; color: #1d1d1f; margin-bottom: 8px;">得分分布</div>
+            <canvas id="essayScoreChart" height="120"></canvas>
+        </div>
+        <div class="list-header" style="font-size: 14px;">作文详情列表 (${essays.length}篇)</div>
+        <div class="essay-list" style="max-height: 300px; overflow-y: auto;">
+            ${essays.map((essay, idx) => `
+                <div class="essay-item">
+                    <div class="essay-header">
+                        <div class="essay-student">${essay.student_name || '学生' + (idx + 1)}</div>
+                        <div class="essay-score" style="color: ${getScoreColor(essay.score)};">${essay.score}分</div>
+                    </div>
+                    <div class="essay-content">
+                        <div class="essay-eval"><span class="essay-label">综合评价：</span>${escapeHtml(essay.evaluation || '-')}</div>
+                        <div class="essay-suggest"><span class="essay-label">改进建议：</span>${escapeHtml(essay.suggestions || '-')}</div>
+                    </div>
+                    <div class="essay-toggle">
+                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="toggleEssayRaw(this)">查看原文</button>
+                        <div class="essay-raw">${escapeHtml(essay.raw || '')}</div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    section.innerHTML = html;
+    
+    // 渲染得分分布图表
+    renderEssayScoreChart(essays);
+}
+
+// 获取分数对应的颜色
+function getScoreColor(score) {
+    if (score >= 12) return '#1e7e34';
+    if (score >= 9) return '#1565c0';
+    if (score >= 6) return '#e65100';
+    return '#d73a49';
+}
+
+// 切换显示原文
+function toggleEssayRaw(btn) {
+    const rawDiv = btn.nextElementSibling;
+    if (rawDiv.style.display === 'none') {
+        rawDiv.style.display = 'block';
+        btn.textContent = '收起原文';
+    } else {
+        rawDiv.style.display = 'none';
+        btn.textContent = '查看原文';
+    }
+}
+
+// 渲染得分分布图表 - 只显示有数据的分数
+function renderEssayScoreChart(essays) {
+    const scoreCanvas = document.getElementById('essayScoreChart');
+    if (!scoreCanvas) return;
+    
+    // 销毁旧图表
+    if (essayChartInstance) { essayChartInstance.destroy(); essayChartInstance = null; }
+    
+    const scores = essays.map(e => e.score);
+    const total = scores.length;
+    
+    // 统计每个分数的数量（精确到0.5分）
+    const buckets = {};
+    scores.forEach(s => {
+        const key = s.toFixed(1);
+        buckets[key] = (buckets[key] || 0) + 1;
+    });
+    
+    // 只保留有数据的分数，按分数排序
+    const sortedKeys = Object.keys(buckets).sort((a, b) => parseFloat(a) - parseFloat(b));
+    const labels = sortedKeys;
+    const data = sortedKeys.map(k => buckets[k]);
+    
+    if (labels.length === 0) return;
+    
+    // 找出众数（标准分数）- 最多人得分的分数
+    let modeScore = sortedKeys[0];
+    let maxCount = 0;
+    sortedKeys.forEach(k => {
+        if (buckets[k] > maxCount) {
+            maxCount = buckets[k];
+            modeScore = k;
+        }
+    });
+    const modeScoreValue = parseFloat(modeScore);
+    
+    // 计算累积分布：低于各分数的学生比例
+    let cumulative = 0;
+    const cumulativeData = sortedKeys.map(k => {
+        // 低于当前分数的比例（不含当前分数）
+        const ratio = (cumulative / total) * 100;
+        cumulative += buckets[k];
+        return ratio.toFixed(1);
+    });
+    
+    // 根据分数设置颜色
+    const colors = labels.map(k => {
+        const s = parseFloat(k);
+        if (s >= 12) return '#10b981';
+        if (s >= 9) return '#3b82f6';
+        if (s >= 6) return '#f59e0b';
+        return '#ef4444';
+    });
+    
+    // 标准分数点用橙色，其他用紫色
+    const pointColors = labels.map(k => k === modeScore ? '#f59e0b' : '#8b5cf6');
+    const pointRadius = labels.map(k => k === modeScore ? 8 : 4);
+    
+    essayChartInstance = new Chart(scoreCanvas, {
+        type: 'bar',
+        data: {
+            labels: labels.map(l => l === modeScore ? l + '分(标准)' : l + '分'),
+            datasets: [
+                { 
+                    type: 'bar',
+                    label: '人数',
+                    data: data, 
+                    backgroundColor: colors, 
+                    borderRadius: 4,
+                    yAxisID: 'y',
+                    order: 2  // 柱状图在下层
+                },
+                {
+                    type: 'line',
+                    label: '低于该分数比例',
+                    data: cumulativeData,
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: pointRadius,
+                    pointBackgroundColor: pointColors,
+                    pointBorderColor: pointColors,
+                    fill: false,
+                    tension: 0.3,
+                    yAxisID: 'y1',
+                    order: 1  // 折线图在上层
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { 
+                legend: { 
+                    display: true, 
+                    position: 'bottom',
+                    labels: { font: { size: 11 }, color: '#1d1d1f', boxWidth: 12 }
+                },
+                tooltip: {
+                    callbacks: {
+                        afterBody: function(context) {
+                            const idx = context[0].dataIndex;
+                            const score = sortedKeys[idx];
+                            if (score === modeScore) {
+                                return '(标准分数 - 最多人得分)';
+                            }
+                            return '';
+                        }
+                    }
+                }
+            },
+            scales: { 
+                y: { 
+                    beginAtZero: true, 
+                    ticks: { stepSize: 1 },
+                    title: { display: true, text: '人数', font: { size: 11 }, color: '#666' }
+                },
+                y1: {
+                    position: 'right',
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { callback: v => v + '%' },
+                    title: { display: true, text: '低于该分数比例', font: { size: 11 }, color: '#8b5cf6' },
+                    grid: { drawOnChartArea: false }
+                }
+            }
+        }
+    });
+}
+
 function renderHomeworkList(items) {
     const container = document.getElementById('homeworkList');
     if (!items || items.length === 0) {
@@ -870,6 +1187,10 @@ function renderHomeworkList(items) {
         const matchStatus = item.matched_dataset ? 
             '<span class="match-status matched">已匹配</span>' : 
             '<span class="match-status unmatched">未匹配</span>';
+        
+        // 处理图片路径
+        const picPath = item.pic_path || '';
+        const hasImage = picPath && picPath.length > 0;
         
         return `
             <div class="homework-item">
@@ -885,6 +1206,7 @@ function renderHomeworkList(items) {
                     </div>
                 </div>
                 <div class="homework-item-actions">
+                    ${hasImage ? `<button class="btn btn-small btn-view" onclick="event.stopPropagation(); viewHomeworkImage('${escapeHtml(picPath)}', '${escapeHtml(item.student_name || item.student_id || '-')}')" title="查看作业图片">查看</button>` : ''}
                     <button class="btn btn-small btn-secondary" onclick="event.stopPropagation(); editBaselineData('${item.homework_id}')" title="编辑基准数据">
                         编辑
                     </button>
@@ -895,6 +1217,72 @@ function renderHomeworkList(items) {
             </div>
         `;
     }).join('');
+}
+
+// 查看作业图片 - 非模态浮动窗口
+function viewHomeworkImage(picPath, studentName) {
+    // 创建或获取图片浮窗
+    let floatWin = document.getElementById('homeworkImageFloat');
+    if (!floatWin) {
+        floatWin = document.createElement('div');
+        floatWin.id = 'homeworkImageFloat';
+        floatWin.className = 'homework-image-float';
+        floatWin.innerHTML = `
+            <div class="float-header" onmousedown="startDragFloat(event)">
+                <span id="imageFloatTitle">作业图片</span>
+                <button class="float-close" onclick="closeImageFloat()">&times;</button>
+            </div>
+            <div class="float-body">
+                <img id="homeworkImageView" src="" alt="作业图片" />
+            </div>
+        `;
+        document.body.appendChild(floatWin);
+    }
+    
+    // 设置标题和图片
+    document.getElementById('imageFloatTitle').textContent = `${studentName} 的作业`;
+    const imgEl = document.getElementById('homeworkImageView');
+    imgEl.src = picPath;
+    imgEl.onerror = function() {
+        this.src = '';
+        this.alt = '图片加载失败';
+        this.style.display = 'none';
+        this.parentElement.innerHTML = '<div style="padding: 40px; text-align: center; color: #86868b;">图片加载失败</div>';
+    };
+    imgEl.style.display = 'block';
+    
+    floatWin.style.display = 'block';
+}
+
+function closeImageFloat() {
+    const floatWin = document.getElementById('homeworkImageFloat');
+    if (floatWin) floatWin.style.display = 'none';
+}
+
+// 拖拽浮窗
+let isDragging = false;
+let dragOffsetX = 0, dragOffsetY = 0;
+
+function startDragFloat(e) {
+    const floatWin = document.getElementById('homeworkImageFloat');
+    isDragging = true;
+    dragOffsetX = e.clientX - floatWin.offsetLeft;
+    dragOffsetY = e.clientY - floatWin.offsetTop;
+    document.addEventListener('mousemove', dragFloat);
+    document.addEventListener('mouseup', stopDragFloat);
+}
+
+function dragFloat(e) {
+    if (!isDragging) return;
+    const floatWin = document.getElementById('homeworkImageFloat');
+    floatWin.style.left = (e.clientX - dragOffsetX) + 'px';
+    floatWin.style.top = (e.clientY - dragOffsetY) + 'px';
+}
+
+function stopDragFloat() {
+    isDragging = false;
+    document.removeEventListener('mousemove', dragFloat);
+    document.removeEventListener('mouseup', stopDragFloat);
 }
 
 function getHomeworkStatusText(status) {
@@ -1063,14 +1451,20 @@ function renderHwTaskList() {
         html += hwTaskList.map(task => `
             <div class="task-item ${currentHwTaskId == task.hw_publish_id ? 'active' : ''}" 
                  data-task-id="${task.hw_publish_id}" 
+                 data-student-count="${task.student_count || 0}"
+                 data-homework-count="${task.homework_count || 0}"
+                 data-avg-homework="${task.avg_homework_per_student || 0}"
                  onclick="selectHomeworkTask(this, '${task.hw_publish_id}')">
                 <span class="task-name">${escapeHtml(task.task_name || '未命名任务')}</span>
-                <span class="task-count">${task.homework_count || 0}</span>
+                <span class="task-count">${task.student_count || 0}人/${task.homework_count || 0}份</span>
             </div>
         `).join('');
     }
     
     container.innerHTML = html;
+    
+    // 清空统计信息
+    updateTaskStatsInfo(null);
 }
 
 // ========== 选择作业任务 ==========
@@ -1082,8 +1476,40 @@ function selectHomeworkTask(element, taskId) {
         item.classList.toggle('active', item.dataset.taskId === taskId);
     });
     
+    // 更新统计信息
+    if (taskId && element) {
+        const studentCount = parseInt(element.dataset.studentCount) || 0;
+        const homeworkCount = parseInt(element.dataset.homeworkCount) || 0;
+        const avgHomework = parseFloat(element.dataset.avgHomework) || 0;
+        updateTaskStatsInfo({ studentCount, homeworkCount, avgHomework });
+    } else {
+        updateTaskStatsInfo(null);
+    }
+    
     // 重新加载作业列表
     loadHomeworkForTask();
+}
+
+// ========== 更新任务统计信息 ==========
+function updateTaskStatsInfo(stats) {
+    const container = document.getElementById('taskStatsInfo');
+    if (!container) return;
+    
+    if (stats && stats.studentCount > 0) {
+        container.innerHTML = `
+            <div class="task-stats-info">
+                <span class="stats-item"><strong>${stats.studentCount}</strong> 个学生</span>
+                <span class="stats-divider">|</span>
+                <span class="stats-item">共 <strong>${stats.homeworkCount}</strong> 份作业</span>
+                <span class="stats-divider">|</span>
+                <span class="stats-item">平均每人 <strong>${stats.avgHomework}</strong> 份</span>
+            </div>
+        `;
+        container.style.display = 'block';
+    } else {
+        container.innerHTML = '';
+        container.style.display = 'none';
+    }
 }
 
 // ========== 过滤已选作业（只保留当前列表中存在的） ==========
@@ -1540,9 +1966,6 @@ function renderAiEvalResult(evaluation) {
     if (!container || !content) return;
     
     const accuracy = ((evaluation.accuracy || 0) * 100).toFixed(1);
-    const precision = ((evaluation.precision || evaluation.accuracy || 0) * 100).toFixed(1);
-    const recall = ((evaluation.recall || evaluation.accuracy || 0) * 100).toFixed(1);
-    const f1Score = ((evaluation.f1_score || evaluation.accuracy || 0) * 100).toFixed(1);
     
     let html = `
         <div class="stats-grid" style="margin-bottom: 16px;">
@@ -1551,36 +1974,49 @@ function renderAiEvalResult(evaluation) {
                 <div class="stat-label">准确率</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">${precision}%</div>
-                <div class="stat-label">精确率</div>
+                <div class="stat-value">${evaluation.total_questions || 0}</div>
+                <div class="stat-label">总题数</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value">${recall}%</div>
-                <div class="stat-label">召回率</div>
+            <div class="stat-card success">
+                <div class="stat-value">${evaluation.correct_count || 0}</div>
+                <div class="stat-label">正确数</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value">${f1Score}%</div>
-                <div class="stat-label">F1值</div>
+            <div class="stat-card error">
+                <div class="stat-value">${evaluation.error_count || 0}</div>
+                <div class="stat-label">错误数</div>
             </div>
         </div>
     `;
     
-    // 错误列表
+    // 错误列表（包含识别题干的情况）
     const errors = evaluation.errors || [];
     if (errors.length > 0) {
+        // 区分真正的错误和识别题干
+        const realErrors = errors.filter(e => e.error_type !== '识别题干-判断正确');
+        const stemRecognitions = errors.filter(e => e.error_type === '识别题干-判断正确');
+        
+        let listTitle = '错误题目';
+        if (realErrors.length > 0 && stemRecognitions.length > 0) {
+            listTitle = `错误题目 (${realErrors.length}题) + 识别题干 (${stemRecognitions.length}题)`;
+        } else if (stemRecognitions.length > 0) {
+            listTitle = `识别题干 (${stemRecognitions.length}题)`;
+        } else {
+            listTitle = `错误题目 (${realErrors.length}题)`;
+        }
+        
         html += `
-            <div class="list-header">错误题目 (${errors.length}题)</div>
+            <div class="list-header">${listTitle}</div>
             <div class="error-list">
                 ${errors.slice(0, 10).map(err => `
-                    <div class="error-item">
+                    <div class="error-item ${err.error_type === '识别题干-判断正确' ? 'stem-recognition' : ''}">
                         <div class="error-index">题${err.index || '-'}</div>
                         <div class="error-detail">
-                            <div><span class="label">错误类型:</span> <span class="tag ${getErrorTypeClass(err.error_type)}">${escapeHtml(err.error_type || '-')}</span></div>
+                            <div><span class="label">类型:</span> <span class="tag ${getErrorTypeClass(err.error_type)}">${escapeHtml(err.error_type || '-')}</span></div>
                             <div><span class="label">说明:</span> ${escapeHtml(err.explanation || '-')}</div>
                         </div>
                     </div>
                 `).join('')}
-                ${errors.length > 10 ? `<div class="more-errors">还有 ${errors.length - 10} 个错误...</div>` : ''}
+                ${errors.length > 10 ? `<div class="more-errors">还有 ${errors.length - 10} 个...</div>` : ''}
             </div>
         `;
     } else {
@@ -1812,32 +2248,12 @@ function renderEvalDetail(detail) {
     
     // 计算各项指标
     const accuracy = ((evaluation.accuracy || 0) * 100).toFixed(1);
-    const precision = ((evaluation.precision || evaluation.accuracy || 0) * 100).toFixed(1);
-    const recall = ((evaluation.recall || evaluation.accuracy || 0) * 100).toFixed(1);
-    const f1Score = ((evaluation.f1_score || evaluation.accuracy || 0) * 100).toFixed(1);
-    const hallucinationRate = ((evaluation.hallucination_rate || 0) * 100).toFixed(1);
     
     let html = `
         <div class="stats-grid">
             <div class="stat-card highlight">
                 <div class="stat-value">${accuracy}%</div>
                 <div class="stat-label">准确率</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">${precision}%</div>
-                <div class="stat-label">精确率</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">${recall}%</div>
-                <div class="stat-label">召回率</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">${f1Score}%</div>
-                <div class="stat-label">F1值</div>
-            </div>
-            <div class="stat-card warning">
-                <div class="stat-value">${hallucinationRate}%</div>
-                <div class="stat-label">幻觉率</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value">${evaluation.total_questions || 0}</div>
@@ -1867,6 +2283,7 @@ function renderEvalDetail(detail) {
                             '识别错误-判断正确': '#3b82f6',
                             '识别错误-判断错误': '#ef4444',
                             '识别正确-判断错误': '#f59e0b',
+                            '识别题干-判断正确': '#06b6d4',
                             '格式差异': '#10b981',
                             '缺失题目': '#6b7280',
                             'AI识别幻觉': '#8b5cf6'
@@ -2270,6 +2687,7 @@ function getErrorTypeClass(errorType) {
         '识别错误-判断正确': 'tag-info',
         '识别错误-判断错误': 'tag-error',
         '识别正确-判断错误': 'tag-warning',
+        '识别题干-判断正确': 'tag-stem',
         '格式差异': 'tag-success',
         '缺失题目': 'tag-default',
         'AI识别幻觉': 'tag-purple',
@@ -2288,6 +2706,120 @@ function getSeverityClass(severity) {
         '低': 'low'
     };
     return map[severity] || 'medium';
+}
+
+// ========== 错误类型详情弹窗 ==========
+function showErrorTypeDetail(errorType) {
+    if (!selectedTask || !selectedTask.homework_items) return;
+    
+    // 收集该错误类型的所有题目
+    const errorItems = [];
+    const colorMap = {
+        '识别错误-判断正确': '#3b82f6',
+        '识别错误-判断错误': '#ef4444',
+        '识别正确-判断错误': '#f59e0b',
+        '识别题干-判断正确': '#06b6d4',
+        '格式差异': '#10b981',
+        '缺失题目': '#6b7280',
+        'AI识别幻觉': '#8b5cf6'
+    };
+    const typeColor = colorMap[errorType] || '#6b7280';
+    
+    selectedTask.homework_items.forEach(item => {
+        if (item.status !== 'completed') return;
+        const errors = item.evaluation?.errors || [];
+        errors.forEach(err => {
+            if (err.error_type === errorType) {
+                errorItems.push({
+                    pageNum: item.page_num || '?',
+                    homeworkId: item.homework_id,
+                    index: err.index || '-',
+                    baseUser: err.base_effect?.userAnswer || '-',
+                    aiUser: err.ai_result?.userAnswer || '-',
+                    baseCorrect: err.base_effect?.correct || '-',
+                    aiCorrect: err.ai_result?.correct || '-',
+                    explanation: err.explanation || '-'
+                });
+            }
+        });
+    });
+    
+    if (errorItems.length === 0) {
+        alert(`没有找到"${errorType}"类型的错误`);
+        return;
+    }
+    
+    // 创建弹窗
+    const modal = document.createElement('div');
+    modal.className = 'error-detail-modal';
+    modal.innerHTML = `
+        <div class="error-detail-overlay" onclick="closeErrorDetailModal()"></div>
+        <div class="error-detail-content">
+            <div class="error-detail-header">
+                <div class="error-detail-title">
+                    <span class="error-type-dot" style="background: ${typeColor}"></span>
+                    ${escapeHtml(errorType)}
+                    <span class="error-count">${errorItems.length}题</span>
+                </div>
+                <button class="error-detail-close" onclick="closeErrorDetailModal()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="error-detail-body">
+                <table class="error-detail-table">
+                    <thead>
+                        <tr>
+                            <th>页码</th>
+                            <th>题号</th>
+                            <th>基准答案</th>
+                            <th>AI识别</th>
+                            <th>基准判断</th>
+                            <th>AI判断</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${errorItems.map(item => `
+                            <tr>
+                                <td class="cell-page">P${item.pageNum}</td>
+                                <td class="cell-index">${escapeHtml(item.index)}</td>
+                                <td class="cell-answer" title="${escapeHtml(item.baseUser)}">${escapeHtml(truncateText(item.baseUser, 20))}</td>
+                                <td class="cell-answer" title="${escapeHtml(item.aiUser)}">${escapeHtml(truncateText(item.aiUser, 20))}</td>
+                                <td class="cell-correct ${item.baseCorrect === 'yes' ? 'correct-yes' : 'correct-no'}">${item.baseCorrect}</td>
+                                <td class="cell-correct ${item.aiCorrect === 'yes' ? 'correct-yes' : 'correct-no'}">${item.aiCorrect}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // 添加ESC关闭
+    document.addEventListener('keydown', handleModalEsc);
+}
+
+function closeErrorDetailModal() {
+    const modal = document.querySelector('.error-detail-modal');
+    if (modal) {
+        modal.remove();
+    }
+    document.removeEventListener('keydown', handleModalEsc);
+}
+
+function handleModalEsc(e) {
+    if (e.key === 'Escape') {
+        closeErrorDetailModal();
+    }
+}
+
+function truncateText(text, maxLen) {
+    if (!text) return '';
+    text = String(text);
+    return text.length > maxLen ? text.substring(0, maxLen) + '...' : text;
 }
 
 // ========== AI报告 ==========

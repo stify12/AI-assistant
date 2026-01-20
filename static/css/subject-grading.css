@@ -1048,6 +1048,12 @@
     border: 1px solid #bfdbfe;
 }
 
+.tag-stem {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #7dd3fc;
+}
+
 .tag-default {
     background: #f5f5f5;
     color: #666;

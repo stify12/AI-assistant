@@ -513,10 +513,9 @@ def convert_ai_compare_to_evaluation(compare_results, base_effect, homework_resu
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0
     f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
     
-    # 计算幻觉率
+    # 计算幻觉率（幻觉数 / 总题目数）
     hallucination_count = error_distribution.get('AI识别幻觉', 0)
-    wrong_answers_count = sum(1 for b in base_effect if str(b.get('correct', '')).lower() == 'no')
-    hallucination_rate = hallucination_count / wrong_answers_count if wrong_answers_count > 0 else 0
+    hallucination_rate = hallucination_count / total if total > 0 else 0
     
     # 按严重程度统计
     severity_distribution = {
@@ -706,10 +705,9 @@ def do_local_evaluation(base_effect, homework_result):
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0
     f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
     
-    # 计算幻觉率
+    # 计算幻觉率（幻觉数 / 总题目数）
     hallucination_count = error_distribution.get('AI识别幻觉', 0)
-    wrong_answers_count = sum(1 for b in base_effect if str(b.get('correct', '')).lower() == 'no')
-    hallucination_rate = hallucination_count / wrong_answers_count if wrong_answers_count > 0 else 0
+    hallucination_rate = hallucination_count / total if total > 0 else 0
     
     return {
         'accuracy': accuracy,

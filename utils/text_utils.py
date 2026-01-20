@@ -56,13 +56,13 @@ def normalize_answer(text):
         '$', '%', '^', '&', '`'
     ]
     for punct in punctuation_to_remove:
-        text = text.replace(punct, ' ')
+        text = text.replace(punct, '')
     
     # 7. 移除序号标记周围的多余空格（如 ① ② 等）
     text = re.sub(r'\s*([①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮])\s*', r'\1', text)
     
-    # 8. 将所有连续空白字符统一为单个空格
-    text = re.sub(r'\s+', ' ', text).strip()
+    # 8. 移除所有空白字符（空格、换行等不影响答案语义）
+    text = re.sub(r'\s+', '', text)
     
     return text
 

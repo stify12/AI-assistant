@@ -26,6 +26,266 @@ BATCH_TASKS_DIR = 'batch_tasks'
 
 # ========== 辅助函数 ==========
 
+def parse_essay_feedback(main_answer):
+    """
+    解析英语作文的AI批改反馈
+    从 mainAnswer 字段提取结构化数据：参考得分、综合评价、针对性改进建议
+    
+    Args:
+        main_answer: AI批改返回的 mainAnswer 字符串
+        
+    Returns:
+        {
+            'score': float,           # 参考得分
+            'evaluation': str,        # 综合评价
+            'suggestions': str,       # 针对性改进建议
+            'raw': str               # 原始内容
+        }
+    """
+    import re
+    
+    if not main_answer:
+        return None
+    
+    result = {
+        'score': None,
+        'evaluation': '',
+        'suggestions': '',
+        'raw': main_answer
+    }
+    
+    # 提取参考得分 - 支持多种格式
+    score_patterns = [
+        r'参考得分[：:]\s*([\d.]+)',
+        r'得分[：:]\s*([\d.]+)',
+        r'分数[：:]\s*([\d.]+)',
+        r'Score[：:]\s*([\d.]+)',
+    ]
+    for pattern in score_patterns:
+        match = re.search(pattern, main_answer)
+        if match:
+            try:
+                result['score'] = float(match.group(1))
+                break
+            except:
+                pass
+    
+    # 提取综合评价
+    eval_patterns = [
+        r'综合评价[：:]\s*(.+?)(?=针对性改进建议|改进建议|建议|$)',
+        r'评价[：:]\s*(.+?)(?=针对性改进建议|改进建议|建议|$)',
+    ]
+    for pattern in eval_patterns:
+        match = re.search(pattern, main_answer, re.DOTALL)
+        if match:
+            result['evaluation'] = match.group(1).strip()
+            break
+    
+    # 提取改进建议
+    suggestion_patterns = [
+        r'针对性改进建议[：:]\s*(.+?)$',
+        r'改进建议[：:]\s*(.+?)$',
+        r'建议[：:]\s*(.+?)$',
+    ]
+    for pattern in suggestion_patterns:
+        match = re.search(pattern, main_answer, re.DOTALL)
+        if match:
+            result['suggestions'] = match.group(1).strip()
+            break
+    
+    return result
+
+
+def check_has_essay(data_value_str, subject_id):
+    """
+    检查是否包含英语作文题目
+    条件：subject_id=0（英语）且 data_value 中有 bvalue=8 的题目
+    
+    Args:
+        data_value_str: zp_homework.data_value JSON字符串
+        subject_id: 学科ID
+        
+    Returns:
+        bool: 是否包含英语作文
+    """
+    if subject_id != 0:
+        return False
+    
+    if not data_value_str:
+        return False
+    
+    try:
+        data_value = json.loads(data_value_str) if isinstance(data_value_str, str) else data_value_str
+        if not isinstance(data_value, list):
+            return False
+        
+        for item in data_value:
+            if str(item.get('bvalue', '')) == '8':
+                return True
+            # 检查 children
+            children = item.get('children', [])
+            for child in children:
+                if str(child.get('bvalue', '')) == '8':
+                    return True
+        return False
+    except:
+        return False
+
+
+def extract_essay_scores(homework_items, subject_id):
+    """
+    从作业列表中提取英语作文评分数据
+    
+    判断逻辑：
+    1. subject_id=0（英语）
+    2. homework_result 中的 mainAnswer 包含"参考得分"关键词
+    
+    Args:
+        homework_items: 作业项列表
+        subject_id: 学科ID
+        
+    Returns:
+        {
+            'has_essay': bool,
+            'essays': [...],
+            'stats': {...}
+        }
+    """
+    if subject_id != 0:
+        return {'has_essay': False, 'essays': [], 'stats': None}
+    
+    essays = []
+    scores = []
+    
+    for item in homework_items:
+        homework_result_str = item.get('homework_result', '[]')
+        try:
+            homework_result = json.loads(homework_result_str) if isinstance(homework_result_str, str) else homework_result_str
+        except:
+            continue
+        
+        if not isinstance(homework_result, list):
+            continue
+        
+        # 遍历所有题目，查找包含"参考得分"的 mainAnswer（作文评分）
+        for q in homework_result:
+            main_answer = q.get('mainAnswer', '')
+            # 检查 mainAnswer 是否包含评分信息
+            if main_answer and '参考得分' in main_answer:
+                parsed = parse_essay_feedback(main_answer)
+                if parsed and parsed.get('score') is not None:
+                    essays.append({
+                        'homework_id': item.get('homework_id'),
+                        'student_id': item.get('student_id', ''),
+                        'student_name': item.get('student_name', ''),
+                        'index': q.get('index', ''),
+                        'score': parsed['score'],
+                        'evaluation': parsed['evaluation'],
+                        'suggestions': parsed['suggestions'],
+                        'raw': parsed['raw']
+                    })
+                    scores.append(parsed['score'])
+            
+            # 检查 children
+            children = q.get('children', [])
+            for child in children:
+                child_main_answer = child.get('mainAnswer', '')
+                if child_main_answer and '参考得分' in child_main_answer:
+                    parsed = parse_essay_feedback(child_main_answer)
+                    if parsed and parsed.get('score') is not None:
+                        essays.append({
+                            'homework_id': item.get('homework_id'),
+                            'student_id': item.get('student_id', ''),
+                            'student_name': item.get('student_name', ''),
+                            'index': child.get('index', ''),
+                            'score': parsed['score'],
+                            'evaluation': parsed['evaluation'],
+                            'suggestions': parsed['suggestions'],
+                            'raw': parsed['raw']
+                        })
+                        scores.append(parsed['score'])
+    
+    if not essays:
+        return {'has_essay': False, 'essays': [], 'stats': None}
+    
+    # 计算统计数据
+    avg_score = sum(scores) / len(scores) if scores else 0
+    max_score = max(scores) if scores else 0
+    min_score = min(scores) if scores else 0
+    
+    # 得分分布（按1分区间）
+    score_distribution = {}
+    for s in scores:
+        bucket = int(s)  # 向下取整到整数区间
+        key = f'{bucket}-{bucket+1}'
+        score_distribution[key] = score_distribution.get(key, 0) + 1
+    
+    return {
+        'has_essay': True,
+        'essays': essays,
+        'stats': {
+            'count': len(essays),
+            'avg_score': round(avg_score, 2),
+            'max_score': max_score,
+            'min_score': min_score,
+            'score_distribution': score_distribution
+        }
+    }
+
+
+def is_stem_recognition(base_user, hw_user):
+    """
+    检测是否是"识别题干"的情况
+    即AI识别的内容包含了基准答案的所有词，只是多了一些题干内容（连接词）
+    
+    判断逻辑（按词匹配）：
+    1. 将答案拆分成词
+    2. AI答案的词数必须比基准答案多
+    3. 基准答案的所有词都必须按顺序出现在AI答案中
+    
+    例如：
+    - 基准: "气态 液态 蒸气 沸腾" → ["气态", "液态", "蒸气", "沸腾"]
+    - AI: "气态 变为 液态 蒸气 和 沸腾" → ["气态", "变为", "液态", "蒸气", "和", "沸腾"]
+    - 结果: 识别题干（4个基准词都按顺序出现）
+    
+    - 基准: "36 > 能" → ["36", ">", "能"]
+    - AI: "36 > 不能" → ["36", ">", "不能"]
+    - 结果: 识别错误（"能" ≠ "不能"）
+    """
+    if not base_user or not hw_user:
+        return False
+    
+    import re
+    
+    def extract_words(text):
+        """提取文本中的词（按空格、标点分割）"""
+        # 移除常见标点，但保留有意义的符号如 > < = 
+        text = str(text).strip()
+        # 用空格和中英文标点分割
+        words = re.split(r'[\s，。、；：！？""''（）【】《》\-\.,;:!?\'"()\[\]{}]+', text)
+        # 过滤空字符串
+        return [w for w in words if w]
+    
+    base_words = extract_words(base_user)
+    hw_words = extract_words(hw_user)
+    
+    if not base_words or not hw_words:
+        return False
+    
+    # AI答案的词数必须比基准答案多
+    if len(hw_words) <= len(base_words):
+        return False
+    
+    # 检查基准答案的所有词是否按顺序出现在AI答案中
+    base_idx = 0
+    for hw_word in hw_words:
+        if base_idx < len(base_words) and hw_word == base_words[base_idx]:
+            base_idx += 1
+    
+    # 如果基准答案的所有词都按顺序出现了，说明是识别题干
+    return base_idx == len(base_words)
+
+
 def normalize_index(index_str):
     """
     标准化题号，统一中英文符号
@@ -415,10 +675,17 @@ def classify_error(base_item, hw_item):
                 explanation = f'识别正确但判断错误：基准={base_correct}，AI={hw_correct}'
             severity = 'high'
         elif not user_match and correct_match:
-            is_match = False
-            error_type = '识别错误-判断正确'
-            explanation = f'识别不准确但判断结果正确：基准="{base_user}"，AI="{hw_user}"'
-            severity = 'medium'
+            # 检测是否是"识别题干"的情况
+            if is_stem_recognition(base_user, hw_user):
+                is_match = True  # 不计入错误
+                error_type = '识别题干-判断正确'
+                explanation = f'AI多识别了题干内容，但判断正确：基准="{base_user}"，AI="{hw_user}"'
+                severity = 'low'
+            else:
+                is_match = False
+                error_type = '识别错误-判断正确'
+                explanation = f'识别不准确但判断结果正确：基准="{base_user}"，AI="{hw_user}"'
+                severity = 'medium'
         else:
             is_match = False
             error_type = '识别错误-判断错误'
@@ -937,6 +1204,7 @@ def get_homework_tasks():
         sql = """
             SELECT p.id AS hw_publish_id, p.content AS task_name, 
                    COUNT(h.id) AS homework_count,
+                   COUNT(DISTINCT h.student_id) AS student_count,
                    MAX(h.create_time) AS latest_time
             FROM zp_homework_publish p
             INNER JOIN zp_homework h ON h.hw_publish_id = p.id
@@ -959,10 +1227,17 @@ def get_homework_tasks():
         
         tasks = []
         for row in rows:
+            homework_count = row.get('homework_count', 0)
+            student_count = row.get('student_count', 0)
+            # 计算每个学生平均作业数
+            avg_homework_per_student = round(homework_count / student_count, 1) if student_count > 0 else 0
+            
             tasks.append({
                 'hw_publish_id': row['hw_publish_id'],
                 'task_name': row.get('task_name', ''),
-                'homework_count': row.get('homework_count', 0),
+                'homework_count': homework_count,
+                'student_count': student_count,
+                'avg_homework_per_student': avg_homework_per_student,
                 'latest_time': row['latest_time'].isoformat() if row.get('latest_time') else None
             })
         
@@ -1238,6 +1513,15 @@ def batch_task_detail(task_id):
             data = StorageService.load_batch_task(task_id)
             if not data:
                 return jsonify({'success': False, 'error': '任务不存在'})
+            
+            # 检查是否有英语作文，提取作文评分数据
+            subject_id = data.get('subject_id')
+            homework_items = data.get('homework_items', [])
+            essay_data = extract_essay_scores(homework_items, subject_id)
+            
+            # 将作文数据添加到返回结果中
+            data['essay_data'] = essay_data
+            
             return jsonify({'success': True, 'data': data})
         except Exception as e:
             return jsonify({'success': False, 'error': str(e)})
@@ -1331,7 +1615,7 @@ def get_homework_detail(task_id, homework_id):
         # 构建详细的错误信息
         detailed_errors = []
         
-        # 先展开 homework_result 的 children 结构
+        # 展开 homework_result 的 children 结构为扁平数组
         flat_homework = flatten_homework_result(homework_result)
         
         # 构建多种索引方式的字典（使用展开后的数据，标准化题号）
@@ -1355,15 +1639,10 @@ def get_homework_detail(task_id, homework_id):
             else:
                 base_temp_idx = i
             
-            # 根据学科选择匹配方式
-            if is_chinese:
-                # 语文: 仅按题号(index)匹配，使用标准化后的题号
-                hw_item = hw_dict_by_index.get(normalized_idx)
-            else:
-                # 其他学科: 优先按index匹配，其次按tempIndex匹配
-                hw_item = hw_dict_by_index.get(normalized_idx)
-                if not hw_item:
-                    hw_item = hw_dict_by_tempindex.get(base_temp_idx)
+            # 匹配方式：优先按题号(index)匹配，其次按tempIndex匹配
+            hw_item = hw_dict_by_index.get(normalized_idx)
+            if not hw_item:
+                hw_item = hw_dict_by_tempindex.get(base_temp_idx)
             
             is_match, error_type, explanation, severity = classify_error(base_item, hw_item)
             
@@ -1489,6 +1768,7 @@ def batch_evaluate(task_id):
             except Exception as e:
                 item['status'] = 'failed'
                 item['error'] = str(e)
+                item['evaluation'] = {'accuracy': 0, 'total_questions': 0, 'correct_count': 0, 'error_count': 0, 'errors': [], 'by_question_type': {}, 'by_bvalue': {}, 'by_combined': {}}
                 yield f"data: {json.dumps({'type': 'error', 'homework_id': homework_id, 'error': str(e)})}\n\n"
         
         overall_accuracy = total_correct / total_questions if total_questions > 0 else 0
@@ -1524,10 +1804,10 @@ def batch_evaluate(task_id):
         }
         
         for item in homework_items:
-            evaluation = item.get('evaluation', {})
-            by_type = evaluation.get('by_question_type', {})
-            by_bvalue = evaluation.get('by_bvalue', {})
-            by_combined = evaluation.get('by_combined', {})
+            evaluation = item.get('evaluation') or {}
+            by_type = evaluation.get('by_question_type') or {}
+            by_bvalue = evaluation.get('by_bvalue') or {}
+            by_combined = evaluation.get('by_combined') or {}
             
             for key in aggregated_type_stats:
                 if key in by_type:
@@ -1600,6 +1880,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         '识别错误-判断正确': 0,
         '识别错误-判断错误': 0,
         '识别正确-判断错误': 0,
+        '识别题干-判断正确': 0,
         '格式差异': 0,
         '缺失题目': 0,
         'AI识别幻觉': 0
@@ -1641,7 +1922,8 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         if ai_result:
             return ai_result
     
-    # 先展开 homework_result 的 children 结构
+    # 展开 homework_result 的 children 结构为扁平数组
+    # AI批改结果可能有嵌套的children（如大题包含小题），需要展开后按题号匹配
     flat_homework = flatten_homework_result(homework_result)
     
     # 判断是否是语文学科 (subject_id=1)，语文使用题号匹配
@@ -1673,12 +1955,10 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         else:
             base_temp_idx = i
         
-        # 根据学科选择匹配方式
-        if is_chinese:
-            # 语文: 按题号(index)匹配，使用标准化后的题号
-            hw_item = hw_dict_by_index.get(normalized_idx)
-        else:
-            # 其他学科: 按tempIndex匹配
+        # 匹配方式：优先按题号(index)匹配，其次按tempIndex匹配
+        # 因为基准效果可能是小题格式（如例3(1)），需要按题号匹配
+        hw_item = hw_dict_by_index.get(normalized_idx)
+        if not hw_item:
             hw_item = hw_dict_by_tempindex.get(base_temp_idx)
         
         # 获取题目类型分类
@@ -1774,10 +2054,17 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
                     explanation = f'识别正确但判断错误：基准={base_correct}，AI={hw_correct}'
                 severity = 'high'
             elif not user_match and correct_match:
-                is_match = False
-                error_type = '识别错误-判断正确'
-                explanation = f'识别不准确但判断结果正确：基准="{base_user}"，AI="{hw_user}"'
-                severity = 'medium'
+                # 检测是否是"识别题干"的情况
+                if is_stem_recognition(base_user, hw_user):
+                    is_match = True  # 不计入错误
+                    error_type = '识别题干-判断正确'
+                    explanation = f'AI多识别了题干内容，但判断正确：基准="{base_user}"，AI="{hw_user}"'
+                    severity = 'low'
+                else:
+                    is_match = False
+                    error_type = '识别错误-判断正确'
+                    explanation = f'识别不准确但判断结果正确：基准="{base_user}"，AI="{hw_user}"'
+                    severity = 'medium'
             else:
                 is_match = False
                 error_type = '识别错误-判断错误'
@@ -1802,9 +2089,37 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
             if combined_key in combined_stats:
                 combined_stats[combined_key]['correct'] += 1
             
-            # 格式差异虽然计入正确，但仍记录到分布中
-            if error_type == '格式差异':
+            # 格式差异和识别题干虽然计入正确，但仍记录到分布和详情中
+            if error_type in ('格式差异', '识别题干-判断正确'):
                 error_distribution[error_type] = error_distribution.get(error_type, 0) + 1
+                # 识别题干也要记录到详情中展示
+                if error_type == '识别题干-判断正确':
+                    recognition_match = normalize_answer(base_user) == normalize_answer(hw_user) if base_user or hw_user else None
+                    judgment_match = base_correct == hw_correct if base_correct and hw_correct else None
+                    errors.append({
+                        'index': idx,
+                        'base_effect': {
+                            'answer': base_answer,
+                            'userAnswer': base_user,
+                            'correct': base_correct if base_correct else '-'
+                        },
+                        'ai_result': {
+                            'answer': hw_answer,
+                            'userAnswer': hw_user,
+                            'correct': hw_correct if hw_correct else '-'
+                        },
+                        'error_type': error_type,
+                        'explanation': explanation,
+                        'severity': severity,
+                        'severity_code': severity,
+                        'analysis': {
+                            'recognition_match': recognition_match,
+                            'judgment_match': judgment_match,
+                            'is_hallucination': False
+                        },
+                        'question_category': question_category,
+                        'is_stem_recognition': True  # 标记为识别题干
+                    })
         else:
             if error_type:
                 error_distribution[error_type] = error_distribution.get(error_type, 0) + 1
@@ -1867,10 +2182,9 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0
     f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
     
-    # 计算幻觉率
+    # 计算幻觉率（幻觉数 / 总题目数）
     hallucination_count = error_distribution.get('AI识别幻觉', 0)
-    wrong_answers_count = sum(1 for b in base_effect if str(b.get('correct', '')).lower() == 'no')
-    hallucination_rate = hallucination_count / wrong_answers_count if wrong_answers_count > 0 else 0
+    hallucination_rate = hallucination_count / total if total > 0 else 0
     
     return {
         'accuracy': accuracy,
@@ -1963,6 +2277,7 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
         '识别错误-判断正确': 0,
         '识别错误-判断错误': 0,
         '识别正确-判断错误': 0,
+        '识别题干-判断正确': 0,
         '格式差异': 0,
         '缺失题目': 0,
         'AI识别幻觉': 0
@@ -2159,10 +2474,9 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0
     f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
     
-    # 计算幻觉率
+    # 计算幻觉率（幻觉数 / 总题目数）
     hallucination_count = error_distribution.get('AI识别幻觉', 0)
-    wrong_answers_count = sum(1 for b in base_effect if str(b.get('correct', '')).lower() == 'no')
-    hallucination_rate = hallucination_count / wrong_answers_count if wrong_answers_count > 0 else 0
+    hallucination_rate = hallucination_count / total if total > 0 else 0
     
     # 获取语义评估的能力评分
     semantic_summary = semantic_result.get('summary', {})
@@ -3174,10 +3488,10 @@ def batch_ai_evaluate(task_id):
         }
         
         for item in homework_items:
-            evaluation = item.get('evaluation', {})
-            by_type = evaluation.get('by_question_type', {})
-            by_bvalue = evaluation.get('by_bvalue', {})
-            by_combined = evaluation.get('by_combined', {})
+            evaluation = item.get('evaluation') or {}
+            by_type = evaluation.get('by_question_type') or {}
+            by_bvalue = evaluation.get('by_bvalue') or {}
+            by_combined = evaluation.get('by_combined') or {}
             
             for key in aggregated_type_stats:
                 if key in by_type:
