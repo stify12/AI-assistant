@@ -13,6 +13,7 @@
     <nav class="navbar">
         <div class="logo">批量评估</div>
         <div style="display:flex;gap:12px;align-items:center;">
+            <button class="btn btn-secondary" onclick="showSettingsModal()">设置</button>
             <button class="back-btn" onclick="goBack()">返回</button>
         </div>
     </nav>
@@ -192,6 +193,14 @@
                             </div>
                         </div>
                     </div>
+                    <div class="form-group" id="fuzzyThresholdGroup" style="display: none;">
+                        <label>模糊匹配阈值</label>
+                        <div class="threshold-input-wrapper">
+                            <input type="range" id="fuzzyThresholdInput" min="50" max="100" value="85" oninput="updateThresholdDisplay()">
+                            <span id="fuzzyThresholdValue">85%</span>
+                        </div>
+                        <div class="form-hint">语文主观题相似度达到此阈值视为匹配</div>
+                    </div>
                     <div class="form-group">
                         <label>时间范围</label>
                         <select id="hwTimeFilter" onchange="onTimeFilterChange()">
@@ -280,6 +289,37 @@
         </div>
     </div>
 
-    <script src="/static/js/batch-evaluation.js"></script>
+    <!-- 设置弹窗 -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>评估设置</h3>
+                <button class="close-btn" onclick="hideSettingsModal()">x</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>模糊匹配阈值（语文主观题）</label>
+                    <div class="threshold-input-wrapper">
+                        <input type="range" id="settingsFuzzyThreshold" min="50" max="100" value="85" oninput="updateSettingsThresholdDisplay()">
+                        <span id="settingsFuzzyThresholdValue">85%</span>
+                    </div>
+                    <div class="form-hint">语文主观题相似度达到此阈值视为匹配，不计入错误</div>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="settingsIgnoreIndexPrefix" checked>
+                        忽略题号前缀差异
+                    </label>
+                    <div class="form-hint">如 "(1)答案" 与 "答案" 视为相同</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideSettingsModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/batch-evaluation.js?v=2"></script>
 </body>
 </html>

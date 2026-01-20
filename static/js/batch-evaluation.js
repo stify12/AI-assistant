@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 批量评估页面 JavaScript
  */
 
@@ -19,6 +19,12 @@ let testConditions = []; // 测试条件列表
 let selectedConditionId = null; // 新建任务时选中的测试条件ID
 let selectedConditionName = ''; // 新建任务时选中的测试条件名称
 
+// 评估设置（从localStorage加载）
+let evalSettings = {
+    fuzzyThreshold: 85,
+    ignoreIndexPrefix: true
+};
+
 // 学科名称映射
 const SUBJECT_NAMES = {
     0: '英语',
@@ -29,12 +35,57 @@ const SUBJECT_NAMES = {
 
 // ========== 初始化 ==========
 document.addEventListener('DOMContentLoaded', () => {
+    loadEvalSettings();
     loadTestConditions().then(() => {
         loadTaskList();
     });
     loadBookList();
 });
 
+
+// ========== 评估设置 ==========
+function loadEvalSettings() {
+    try {
+        const saved = localStorage.getItem('batchEvalSettings');
+        if (saved) {
+            evalSettings = { ...evalSettings, ...JSON.parse(saved) };
+        }
+    } catch (e) {
+        console.error('加载设置失败:', e);
+    }
+}
+
+function saveEvalSettings() {
+    try {
+        localStorage.setItem('batchEvalSettings', JSON.stringify(evalSettings));
+    } catch (e) {
+        console.error('保存设置失败:', e);
+    }
+}
+
+function showSettingsModal() {
+    document.getElementById('settingsFuzzyThreshold').value = evalSettings.fuzzyThreshold;
+    document.getElementById('settingsFuzzyThresholdValue').textContent = evalSettings.fuzzyThreshold + '%';
+    document.getElementById('settingsIgnoreIndexPrefix').checked = evalSettings.ignoreIndexPrefix;
+    document.getElementById('settingsModal').classList.add('show');
+}
+
+function hideSettingsModal() {
+    document.getElementById('settingsModal').classList.remove('show');
+}
+
+function updateSettingsThresholdDisplay() {
+    const val = document.getElementById('settingsFuzzyThreshold').value;
+    document.getElementById('settingsFuzzyThresholdValue').textContent = val + '%';
+}
+
+function saveSettings() {
+    evalSettings.fuzzyThreshold = parseInt(document.getElementById('settingsFuzzyThreshold').value);
+    evalSettings.ignoreIndexPrefix = document.getElementById('settingsIgnoreIndexPrefix').checked;
+    saveEvalSettings();
+    hideSettingsModal();
+    alert('设置已保存，重新评估时生效');
+}
 // ========== 任务列表学科筛选 ==========
 let currentSubjectFilter = '';
 let currentConditionFilter = '';
@@ -596,6 +647,7 @@ function renderOverallCharts(report) {
             '识别错误-判断错误': '#ef4444',
             '识别正确-判断错误': '#f59e0b',
             '识别题干-判断正确': '#06b6d4',
+            '识别差异-判断正确': '#14b8a6',  // 新增：语文主观题模糊匹配
             '格式差异': '#10b981',
             '缺失题目': '#6b7280',
             'AI识别幻觉': '#8b5cf6'
@@ -764,6 +816,7 @@ function renderOverallCharts(report) {
                 { key: '识别错误-判断错误', color: '#ef4444' },
                 { key: '识别正确-判断错误', color: '#f59e0b' },
                 { key: '识别题干-判断正确', color: '#06b6d4' },
+                { key: '识别差异-判断正确', color: '#14b8a6' },  // 语文主观题模糊匹配
                 { key: '格式差异', color: '#10b981' },
                 { key: '缺失题目', color: '#6b7280' },
                 { key: 'AI识别幻觉', color: '#8b5cf6' }
@@ -910,6 +963,7 @@ function aggregateErrorDistribution() {
         '识别错误-判断错误': 0,
         '识别正确-判断错误': 0,
         '识别题干-判断正确': 0,
+        '识别差异-判断正确': 0,  // 语文主观题模糊匹配
         '格式差异': 0,
         '缺失题目': 0,
         'AI识别幻觉': 0
@@ -1395,6 +1449,22 @@ function onSubjectFilterChange() {
     updateAutoTaskName();
     loadHomeworkTasksForFilter();
     loadHomeworkForTask();
+    
+    // 语文学科显示模糊匹配阈值配置
+    const subjectId = document.getElementById('hwSubjectFilter').value;
+    const fuzzyGroup = document.getElementById('fuzzyThresholdGroup');
+    if (fuzzyGroup) {
+        fuzzyGroup.style.display = subjectId === '1' ? 'block' : 'none';
+    }
+}
+
+// 更新阈值显示
+function updateThresholdDisplay() {
+    const input = document.getElementById('fuzzyThresholdInput');
+    const display = document.getElementById('fuzzyThresholdValue');
+    if (input && display) {
+        display.textContent = input.value + '%';
+    }
 }
 
 function updateAutoTaskName() {
@@ -1626,6 +1696,15 @@ async function createTask() {
         return;
     }
     
+    // 获取模糊匹配阈值（仅语文学科）
+    let fuzzyThreshold = 0.85;
+    if (subjectId === '1') {
+        const thresholdInput = document.getElementById('fuzzyThresholdInput');
+        if (thresholdInput) {
+            fuzzyThreshold = parseInt(thresholdInput.value) / 100;
+        }
+    }
+    
     showLoading('创建任务中...');
     try {
         const res = await fetch('/api/batch/tasks', {
@@ -1636,6 +1715,7 @@ async function createTask() {
                 subject_id: subjectId ? parseInt(subjectId) : null,
                 test_condition_id: selectedConditionId,
                 test_condition_name: selectedConditionName,
+                fuzzy_threshold: fuzzyThreshold,
                 homework_ids: Array.from(selectedHomeworkIds)
             })
         });
@@ -1988,39 +2068,41 @@ function renderAiEvalResult(evaluation) {
         </div>
     `;
     
-    // 错误列表（包含识别题干的情况）
+    // 错误列表（包含识别题干和识别差异的情况）
     const errors = evaluation.errors || [];
     if (errors.length > 0) {
-        // 区分真正的错误和识别题干
-        const realErrors = errors.filter(e => e.error_type !== '识别题干-判断正确');
+        // 区分真正的错误、识别题干和识别差异（模糊匹配）
+        const realErrors = errors.filter(e => e.error_type !== '识别题干-判断正确' && e.error_type !== '识别差异-判断正确');
         const stemRecognitions = errors.filter(e => e.error_type === '识别题干-判断正确');
+        const fuzzyMatches = errors.filter(e => e.error_type === '识别差异-判断正确');
         
         let listTitle = '错误题目';
-        if (realErrors.length > 0 && stemRecognitions.length > 0) {
-            listTitle = `错误题目 (${realErrors.length}题) + 识别题干 (${stemRecognitions.length}题)`;
-        } else if (stemRecognitions.length > 0) {
-            listTitle = `识别题干 (${stemRecognitions.length}题)`;
-        } else {
-            listTitle = `错误题目 (${realErrors.length}题)`;
-        }
+        const parts = [];
+        if (realErrors.length > 0) parts.push(`错误 ${realErrors.length}题`);
+        if (stemRecognitions.length > 0) parts.push(`识别题干 ${stemRecognitions.length}题`);
+        if (fuzzyMatches.length > 0) parts.push(`识别差异 ${fuzzyMatches.length}题`);
+        listTitle = parts.join(' + ') || '错误题目';
         
         html += `
             <div class="list-header">${listTitle}</div>
             <div class="error-list">
-                ${errors.slice(0, 10).map(err => `
-                    <div class="error-item ${err.error_type === '识别题干-判断正确' ? 'stem-recognition' : ''}">
+                ${errors.slice(0, 10).map(err => {
+                    const isStemOrFuzzy = err.error_type === '识别题干-判断正确' || err.error_type === '识别差异-判断正确';
+                    const similarityText = err.similarity != null ? ` (相似度: ${(err.similarity * 100).toFixed(1)}%)` : '';
+                    return `
+                    <div class="error-item ${isStemOrFuzzy ? 'stem-recognition' : ''}">
                         <div class="error-index">题${err.index || '-'}</div>
                         <div class="error-detail">
-                            <div><span class="label">类型:</span> <span class="tag ${getErrorTypeClass(err.error_type)}">${escapeHtml(err.error_type || '-')}</span></div>
+                            <div><span class="label">类型:</span> <span class="tag ${getErrorTypeClass(err.error_type)}">${escapeHtml(err.error_type || '-')}</span>${similarityText}</div>
                             <div><span class="label">说明:</span> ${escapeHtml(err.explanation || '-')}</div>
                         </div>
                     </div>
-                `).join('')}
+                `}).join('')}
                 ${errors.length > 10 ? `<div class="more-errors">还有 ${errors.length - 10} 个...</div>` : ''}
             </div>
         `;
     } else {
-        html += '<div class="success-message">✓ 所有题目评估正确</div>';
+        html += '<div class="success-message">所有题目评估正确</div>';
     }
     
     content.innerHTML = html;
@@ -2284,6 +2366,7 @@ function renderEvalDetail(detail) {
                             '识别错误-判断错误': '#ef4444',
                             '识别正确-判断错误': '#f59e0b',
                             '识别题干-判断正确': '#06b6d4',
+                            '识别差异-判断正确': '#14b8a6',  // 语文主观题模糊匹配
                             '格式差异': '#10b981',
                             '缺失题目': '#6b7280',
                             'AI识别幻觉': '#8b5cf6'
@@ -2312,13 +2395,19 @@ function renderEvalDetail(detail) {
                     const severity = err.severity || err.severity_code || 'medium';
                     const severityClass = getSeverityClass(severity);
                     
+                    // 判断是否为不计入错误的类型（识别差异-判断正确、识别题干-判断正确、格式差异）
+                    const isNotCountedAsError = ['识别差异-判断正确', '识别题干-判断正确', '格式差异'].includes(err.error_type);
+                    const cardClass = isNotCountedAsError ? 'error-card not-counted-error' : 'error-card';
+                    const headerClass = isNotCountedAsError ? 'error-card-header fuzzy-match-header' : 'error-card-header';
+                    
                     return `
-                        <div class="error-card" data-page="${detail.page_num || ''}" data-index="${err.index || ''}">
-                            <div class="error-card-header">
+                        <div class="${cardClass}" data-page="${detail.page_num || ''}" data-index="${err.index || ''}">
+                            <div class="${headerClass}">
                                 <div class="error-card-title">
                                     <span class="error-index">题${err.index || '-'}</span>
-                                    <span class="severity-badge severity-${severityClass}">${severity === 'high' ? '高' : severity === 'low' ? '低' : '中'}</span>
+                                    ${isNotCountedAsError ? '<span class="not-counted-badge">不计入错误</span>' : `<span class="severity-badge severity-${severityClass}">${severity === 'high' ? '高' : severity === 'low' ? '低' : '中'}</span>`}
                                     <span class="tag ${errorTypeClass}">${escapeHtml(err.error_type || '-')}</span>
+                                    ${err.similarity != null ? `<span class="similarity-badge">${(err.similarity * 100).toFixed(1)}%</span>` : ''}
                                 </div>
                             </div>
                             <div class="error-card-body">
@@ -2688,6 +2777,7 @@ function getErrorTypeClass(errorType) {
         '识别错误-判断错误': 'tag-error',
         '识别正确-判断错误': 'tag-warning',
         '识别题干-判断正确': 'tag-stem',
+        '识别差异-判断正确': 'tag-fuzzy',  // 语文主观题模糊匹配
         '格式差异': 'tag-success',
         '缺失题目': 'tag-default',
         'AI识别幻觉': 'tag-purple',
@@ -2719,6 +2809,7 @@ function showErrorTypeDetail(errorType) {
         '识别错误-判断错误': '#ef4444',
         '识别正确-判断错误': '#f59e0b',
         '识别题干-判断正确': '#06b6d4',
+        '识别差异-判断正确': '#14b8a6',
         '格式差异': '#10b981',
         '缺失题目': '#6b7280',
         'AI识别幻觉': '#8b5cf6'
@@ -2738,7 +2829,10 @@ function showErrorTypeDetail(errorType) {
                     aiUser: err.ai_result?.userAnswer || '-',
                     baseCorrect: err.base_effect?.correct || '-',
                     aiCorrect: err.ai_result?.correct || '-',
-                    explanation: err.explanation || '-'
+                    explanation: err.explanation || '-',
+                    similarity: err.similarity,
+                    baseAnswer: err.base_effect?.answer || '-',
+                    aiAnswer: err.ai_result?.answer || '-'
                 });
             }
         });
@@ -2768,38 +2862,77 @@ function showErrorTypeDetail(errorType) {
                 </button>
             </div>
             <div class="error-detail-body">
-                <table class="error-detail-table">
-                    <thead>
-                        <tr>
-                            <th>页码</th>
-                            <th>题号</th>
-                            <th>基准答案</th>
-                            <th>AI识别</th>
-                            <th>基准判断</th>
-                            <th>AI判断</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${errorItems.map(item => `
-                            <tr>
-                                <td class="cell-page">P${item.pageNum}</td>
-                                <td class="cell-index">${escapeHtml(item.index)}</td>
-                                <td class="cell-answer" title="${escapeHtml(item.baseUser)}">${escapeHtml(truncateText(item.baseUser, 20))}</td>
-                                <td class="cell-answer" title="${escapeHtml(item.aiUser)}">${escapeHtml(truncateText(item.aiUser, 20))}</td>
-                                <td class="cell-correct ${item.baseCorrect === 'yes' ? 'correct-yes' : 'correct-no'}">${item.baseCorrect}</td>
-                                <td class="cell-correct ${item.aiCorrect === 'yes' ? 'correct-yes' : 'correct-no'}">${item.aiCorrect}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+                <div class="error-cards-list">
+                    ${errorItems.map((item, idx) => `
+                        <div class="error-card" data-idx="${idx}">
+                            <div class="error-card-header" onclick="toggleErrorCard(this)">
+                                <div class="error-card-summary">
+                                    <span class="error-card-page">P${item.pageNum}</span>
+                                    <span class="error-card-index">题${escapeHtml(item.index)}</span>
+                                    <span class="error-card-preview">${escapeHtml(truncateText(item.baseUser, 30))} vs ${escapeHtml(truncateText(item.aiUser, 30))}</span>
+                                    ${item.similarity != null ? `<span class="error-card-similarity">${(item.similarity * 100).toFixed(1)}%</span>` : ''}
+                                </div>
+                                <span class="error-card-toggle">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M6 9l6 6 6-6"/>
+                                    </svg>
+                                </span>
+                            </div>
+                            <div class="error-card-detail" style="display: none;">
+                                <div class="error-card-row">
+                                    <div class="error-card-label">基准用户答案</div>
+                                    <div class="error-card-value full-text">${escapeHtml(item.baseUser)}</div>
+                                </div>
+                                <div class="error-card-row">
+                                    <div class="error-card-label">AI识别答案</div>
+                                    <div class="error-card-value full-text">${escapeHtml(item.aiUser)}</div>
+                                </div>
+                                <div class="error-card-row two-col">
+                                    <div class="error-card-col">
+                                        <div class="error-card-label">基准判断</div>
+                                        <div class="error-card-value ${item.baseCorrect === 'yes' ? 'correct-yes' : 'correct-no'}">${item.baseCorrect}</div>
+                                    </div>
+                                    <div class="error-card-col">
+                                        <div class="error-card-label">AI判断</div>
+                                        <div class="error-card-value ${item.aiCorrect === 'yes' ? 'correct-yes' : 'correct-no'}">${item.aiCorrect}</div>
+                                    </div>
+                                    ${item.similarity != null ? `
+                                    <div class="error-card-col">
+                                        <div class="error-card-label">相似度</div>
+                                        <div class="error-card-value similarity-value">${(item.similarity * 100).toFixed(1)}%</div>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                                <div class="error-card-row">
+                                    <div class="error-card-label">说明</div>
+                                    <div class="error-card-value explanation">${escapeHtml(item.explanation)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
             </div>
         </div>
     `;
     
     document.body.appendChild(modal);
-    
-    // 添加ESC关闭
     document.addEventListener('keydown', handleModalEsc);
+}
+
+function toggleErrorCard(header) {
+    const card = header.closest('.error-card');
+    const detail = card.querySelector('.error-card-detail');
+    const toggle = card.querySelector('.error-card-toggle svg');
+    
+    if (detail.style.display === 'none') {
+        detail.style.display = 'block';
+        toggle.style.transform = 'rotate(180deg)';
+        card.classList.add('expanded');
+    } else {
+        detail.style.display = 'none';
+        toggle.style.transform = 'rotate(0deg)';
+        card.classList.remove('expanded');
+    }
 }
 
 function closeErrorDetailModal() {
