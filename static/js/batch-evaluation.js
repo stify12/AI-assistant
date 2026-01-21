@@ -1862,6 +1862,12 @@ async function createTask() {
     const name = document.getElementById('taskNameInput').value.trim();
     const subjectId = document.getElementById('hwSubjectFilter').value;
     
+    // 验证必须选择学科
+    if (!subjectId) {
+        alert('请先选择学科');
+        return;
+    }
+    
     if (selectedHomeworkIds.size === 0) {
         alert('请至少选择一个作业');
         return;
@@ -1883,7 +1889,7 @@ async function createTask() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 name: name,
-                subject_id: subjectId ? parseInt(subjectId) : null,
+                subject_id: parseInt(subjectId),
                 test_condition_id: selectedConditionId,
                 test_condition_name: selectedConditionName,
                 fuzzy_threshold: fuzzyThreshold,

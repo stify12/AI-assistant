@@ -338,6 +338,77 @@ def flatten_homework_result(homework_result):
     return flattened
 
 
+# 学科ID映射
+SUBJECT_MAP = {
+    0: '英语',
+    1: '语文',
+    2: '数学',
+    3: '物理',
+    4: '化学',
+    5: '生物',
+    6: '政治',
+    7: '历史',
+    8: '地理'
+}
+
+
+def infer_subject_id_from_homework(task_data):
+    """
+    从作业数据中推断学科ID
+    
+    逻辑：
+    1. 如果任务已有 subject_id，直接返回
+    2. 否则从数据库查询所有作业的 subject_id
+    3. 如果所有作业的 subject_id 相同，使用该学科并更新任务数据
+    4. 如果不一致，返回 None
+    
+    Args:
+        task_data: 任务数据字典
+        
+    Returns:
+        subject_id: 推断出的学科ID，如果无法推断则返回 None
+    """
+    # 如果任务已有 subject_id，直接返回
+    task_subject_id = task_data.get('subject_id')
+    if task_subject_id is not None:
+        return task_subject_id
+    
+    homework_items = task_data.get('homework_items', [])
+    if not homework_items:
+        return None
+    
+    # 批量查询所有作业的 subject_id
+    homework_ids = [item.get('homework_id') for item in homework_items if item.get('homework_id')]
+    if not homework_ids:
+        return None
+    
+    try:
+        placeholders = ','.join(['%s'] * len(homework_ids))
+        sql = f"SELECT DISTINCT subject_id FROM zp_homework WHERE id IN ({placeholders})"
+        results = DatabaseService.execute_query(sql, tuple(homework_ids))
+        
+        if not results:
+            return None
+        
+        # 提取所有不同的 subject_id
+        subject_ids = set(row.get('subject_id') for row in results if row.get('subject_id') is not None)
+        
+        # 如果所有作业的 subject_id 相同
+        if len(subject_ids) == 1:
+            inferred_subject_id = subject_ids.pop()
+            # 更新任务数据
+            task_data['subject_id'] = inferred_subject_id
+            task_data['subject_name'] = SUBJECT_MAP.get(inferred_subject_id, f'学科{inferred_subject_id}')
+            return inferred_subject_id
+        
+        # 如果 subject_id 不一致，返回 None
+        return None
+        
+    except Exception as e:
+        print(f"推断学科ID失败: {e}")
+        return None
+
+
 def get_correct_value(item):
     """
     获取判断结果字段值，兼容多种格式：
@@ -1491,7 +1562,7 @@ def batch_tasks():
         try:
             placeholders = ','.join(['%s'] * len(homework_ids))
             sql = f"""
-                SELECT h.id, h.student_id, h.subject_id, h.page_num, h.pic_path, h.homework_result,
+                SELECT h.id, h.hw_publish_id, h.student_id, h.subject_id, h.page_num, h.pic_path, h.homework_result,
                        p.content AS homework_name, s.name AS student_name,
                        b.id AS book_id, b.book_name AS book_name
                 FROM zp_homework h
@@ -1502,21 +1573,23 @@ def batch_tasks():
             """
             rows = DatabaseService.execute_query(sql, tuple(homework_ids))
             
+            # 如果前端没有传 subject_id，从作业数据中自动获取
+            if subject_id is None and rows:
+                subject_id = rows[0].get('subject_id')
+            
             # 获取学科名称
-            subject_name = ''
-            if subject_id is not None:
-                subject_map = {
-                    0: '英语',
-                    1: '语文',
-                    2: '数学',
-                    3: '物理',
-                    4: '化学',
-                    5: '生物',
-                    6: '政治',
-                    7: '历史',
-                    8: '地理'
-                }
-                subject_name = subject_map.get(subject_id, f'学科{subject_id}')
+            subject_map = {
+                0: '英语',
+                1: '语文',
+                2: '数学',
+                3: '物理',
+                4: '化学',
+                5: '生物',
+                6: '政治',
+                7: '历史',
+                8: '地理'
+            }
+            subject_name = subject_map.get(subject_id, f'学科{subject_id}') if subject_id is not None else ''
             
             # 如果没有提供任务名称，自动生成：学科-月/日
             if not name:
@@ -1636,8 +1709,8 @@ def get_homework_detail(task_id, homework_id):
         if not task_data:
             return jsonify({'success': False, 'error': '任务不存在'})
         
-        # 获取任务的学科ID
-        task_subject_id = task_data.get('subject_id')
+        # 获取任务的学科ID，如果没有则从作业中推断
+        task_subject_id = infer_subject_id_from_homework(task_data)
         is_chinese = task_subject_id == 1  # 语文学科
         # 查找对应的作业
         homework_item = None
@@ -1806,8 +1879,8 @@ def batch_evaluate(task_id):
     if not task_data:
         return jsonify({'success': False, 'error': '任务不存在'})
     
-    # 获取任务的学科ID
-    task_subject_id = task_data.get('subject_id')
+    # 获取任务的学科ID，如果没有则从作业中推断
+    task_subject_id = infer_subject_id_from_homework(task_data)
     
     # 获取前端传递的设置参数
     req_data = request.get_json() or {}
@@ -3533,8 +3606,8 @@ def batch_ai_evaluate(task_id):
     user_id = get_current_user_id()
     print(f"[AI Evaluate] 用户ID: {user_id}")
     
-    # 获取任务的学科ID
-    task_subject_id = task_data.get('subject_id')
+    # 获取任务的学科ID，如果没有则从作业中推断
+    task_subject_id = infer_subject_id_from_homework(task_data)
     
     # 获取并行数
     data = request.get_json() or {}
