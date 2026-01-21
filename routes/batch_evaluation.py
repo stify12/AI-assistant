@@ -610,13 +610,15 @@ def enrich_base_effects_with_question_types(book_id, base_effects):
             """
             rows = DatabaseService.execute_query(sql, (book_id, int(page_num)))
             
-            # 解析题目类型信息
+            # 解析题目类型信息（包括子题）
             type_map = {}
             if rows:
                 data_value = rows[0].get('data_value', '[]')
                 try:
                     data_items = json.loads(data_value) if data_value else []
-                    for item in data_items:
+                    
+                    def add_to_type_map(item):
+                        """递归添加题目及其子题到 type_map"""
                         temp_idx = item.get('tempIndex', 0)
                         idx = str(item.get('index', ''))
                         type_info = {
@@ -625,6 +627,12 @@ def enrich_base_effects_with_question_types(book_id, base_effects):
                         }
                         type_map[temp_idx] = type_info
                         type_map[f'idx_{idx}'] = type_info
+                        # 递归处理子题
+                        for child in item.get('children', []):
+                            add_to_type_map(child)
+                    
+                    for item in data_items:
+                        add_to_type_map(item)
                 except json.JSONDecodeError:
                     pass
             
@@ -730,8 +738,8 @@ def classify_error(base_item, hw_item, is_chinese=False, fuzzy_threshold=0.85, i
     question_category = classify_question_type(base_item)
     bvalue = str(base_item.get('bvalue', ''))
     
-    # 语文主观题使用模糊匹配（客观填空题不使用）
-    is_chinese_fuzzy = is_chinese and question_category['is_subjective']
+    # 语文非选择题使用模糊匹配（包括客观填空题和主观题）
+    is_chinese_fuzzy = is_chinese and not question_category['is_choice']
     
     if not hw_item:
         is_match = False
@@ -752,9 +760,14 @@ def classify_error(base_item, hw_item, is_chinese=False, fuzzy_threshold=0.85, i
                 fuzzy_match, similarity_value = is_fuzzy_match(base_user, hw_user, fuzzy_threshold)
                 if fuzzy_match:
                     is_match = True
-                    error_type = '识别差异-判断正确'
-                    explanation = f'模糊匹配通过（相似度{similarity_value*100:.1f}%）：基准="{base_user}"，AI="{hw_user}"'
-                    severity = 'low'
+                    # 相似度100%算作完全识别成功，不设置error_type
+                    if similarity_value >= 0.9999:
+                        error_type = None
+                        explanation = ''
+                    else:
+                        error_type = '识别差异-判断正确'
+                        explanation = f'模糊匹配通过（相似度{similarity_value*100:.1f}%）：基准="{base_user}"，AI="{hw_user}"'
+                        severity = 'low'
                 else:
                     is_match = False
                     error_type = '识别错误-判断错误'
@@ -816,9 +829,14 @@ def classify_error(base_item, hw_item, is_chinese=False, fuzzy_threshold=0.85, i
                 fuzzy_match, similarity_value = is_fuzzy_match(base_user, hw_user, fuzzy_threshold)
                 if fuzzy_match:
                     is_match = True  # 不计入错误
-                    error_type = '识别差异-判断正确'
-                    explanation = f'模糊匹配通过（相似度{similarity_value*100:.1f}%），判断正确：基准="{base_user}"，AI="{hw_user}"'
-                    severity = 'low'
+                    # 相似度100%算作完全识别成功，不设置error_type
+                    if similarity_value >= 0.9999:
+                        error_type = None
+                        explanation = ''
+                    else:
+                        error_type = '识别差异-判断正确'
+                        explanation = f'模糊匹配通过（相似度{similarity_value*100:.1f}%），判断正确：基准="{base_user}"，AI="{hw_user}"'
+                        severity = 'low'
                 else:
                     is_match = False
                     error_type = '识别错误-判断正确'
@@ -1562,7 +1580,7 @@ def batch_tasks():
         try:
             placeholders = ','.join(['%s'] * len(homework_ids))
             sql = f"""
-                SELECT h.id, h.hw_publish_id, h.student_id, h.subject_id, h.page_num, h.pic_path, h.homework_result,
+                SELECT h.id, h.hw_publish_id, h.student_id, h.subject_id, h.page_num, h.pic_path, h.homework_result, h.data_value,
                        p.content AS homework_name, s.name AS student_name,
                        b.id AS book_id, b.book_name AS book_name
                 FROM zp_homework h
@@ -1643,6 +1661,7 @@ def batch_tasks():
                     'page_num': page_num,
                     'pic_path': row.get('pic_path', ''),
                     'homework_result': row.get('homework_result', '[]'),
+                    'data_value': row.get('data_value', '[]'),  # 题目类型信息来源
                     'matched_dataset': matched_dataset,
                     'status': 'matched' if matched_dataset else 'pending',
                     'accuracy': None,
@@ -1703,7 +1722,7 @@ def batch_task_detail(task_id):
 
 @batch_evaluation_bp.route('/tasks/<task_id>/homework/<homework_id>', methods=['GET'])
 def get_homework_detail(task_id, homework_id):
-    """获取任务中某个作业的评估详情"""
+    """获取任务中某个作业的评估详情（实时重新计算）"""
     try:
         task_data = StorageService.load_batch_task(task_id)
         if not task_data:
@@ -1711,7 +1730,7 @@ def get_homework_detail(task_id, homework_id):
         
         # 获取任务的学科ID，如果没有则从作业中推断
         task_subject_id = infer_subject_id_from_homework(task_data)
-        is_chinese = task_subject_id == 1  # 语文学科
+        
         # 查找对应的作业
         homework_item = None
         for item in task_data.get('homework_items', []):
@@ -1722,11 +1741,7 @@ def get_homework_detail(task_id, homework_id):
         if not homework_item:
             return jsonify({'success': False, 'error': '作业不存在'})
         
-        # 构建返回数据
-        evaluation = homework_item.get('evaluation', {})
-        errors = evaluation.get('errors', [])
-        
-        # 获取基准效果和AI结果的详细对比
+        # 获取基准效果
         base_effect = []
         if homework_item.get('matched_dataset'):
             ds_data = StorageService.load_dataset(homework_item['matched_dataset'])
@@ -1779,71 +1794,40 @@ def get_homework_detail(task_id, homework_id):
         except:
             pass
         
-        # 构建详细的错误信息
-        detailed_errors = []
-        
-        # 展开 homework_result 的 children 结构为扁平数组
-        flat_homework = flatten_homework_result(homework_result)
-        
-        # 构建多种索引方式的字典（使用展开后的数据，标准化题号）
-        hw_dict_by_index = {normalize_index(item.get('index', '')): item for item in flat_homework}
-        hw_dict_by_tempindex = {}
-        for i, item in enumerate(flat_homework):
-            temp_idx = item.get('tempIndex')
-            if temp_idx is not None:
-                hw_dict_by_tempindex[int(temp_idx)] = item
-            else:
-                hw_dict_by_tempindex[i] = item
+        # 获取 data_value（题目类型信息来源）
+        data_value = []
+        try:
+            data_value = json.loads(homework_item.get('data_value', '[]'))
+        except:
+            pass
         
         # 获取模糊匹配阈值和忽略题号前缀设置
         fuzzy_threshold = task_data.get('fuzzy_threshold', 0.85)
         ignore_index_prefix = task_data.get('ignore_index_prefix', True)
         
-        for i, base_item in enumerate(base_effect):
-            idx = str(base_item.get('index', ''))
-            # 标准化基准效果的题号
-            normalized_idx = normalize_index(idx)
-            # 基准效果的tempIndex，如果没有则使用循环索引
-            base_temp_idx = base_item.get('tempIndex')
-            if base_temp_idx is not None:
-                base_temp_idx = int(base_temp_idx)
-            else:
-                base_temp_idx = i
-            
-            # 匹配方式：优先按题号(index)匹配，其次按tempIndex匹配
-            hw_item = hw_dict_by_index.get(normalized_idx)
-            if not hw_item:
-                hw_item = hw_dict_by_tempindex.get(base_temp_idx)
-            
-            is_match, error_type, explanation, severity, similarity = classify_error(base_item, hw_item, is_chinese=is_chinese, fuzzy_threshold=fuzzy_threshold, ignore_index_prefix=ignore_index_prefix)
-            
-            # 不计入错误的类型也要显示在详情中（识别差异-判断正确、识别题干-判断正确）
-            if not is_match or error_type in ('识别差异-判断正确', '识别题干-判断正确', '格式差异'):
-                base_answer = str(base_item.get('answer', '') or base_item.get('mainAnswer', '')).strip()
-                base_user = str(base_item.get('userAnswer', '')).strip()
-                base_correct = get_correct_value(base_item)
-                
-                hw_answer = str(hw_item.get('answer', '') or hw_item.get('mainAnswer', '')).strip() if hw_item else ''
-                hw_user = str(hw_item.get('userAnswer', '')).strip() if hw_item else ''
-                hw_correct = get_correct_value(hw_item) if hw_item else ''
-                
-                detailed_errors.append({
-                    'index': idx,
-                    'error_type': error_type,
-                    'explanation': explanation,
-                    'severity': severity,
-                    'similarity': similarity,
-                    'base_effect': {
-                        'answer': base_answer,
-                        'userAnswer': base_user,
-                        'correct': base_correct if base_correct else '-'
-                    },
-                    'ai_result': {
-                        'answer': hw_answer,
-                        'userAnswer': hw_user,
-                        'correct': hw_correct if hw_correct else '-'
-                    }
-                })
+        # 实时重新计算评估结果（使用正确的学科ID，传递 data_value 获取题目类型）
+        if base_effect and homework_result:
+            print(f"[DEBUG] get_homework_detail: 调用 do_evaluation, base_effect={len(base_effect)}, homework_result={len(homework_result)}")
+            evaluation = do_evaluation(
+                base_effect, 
+                homework_result, 
+                subject_id=task_subject_id, 
+                fuzzy_threshold=fuzzy_threshold, 
+                ignore_index_prefix=ignore_index_prefix,
+                data_value=data_value
+            )
+            print(f"[DEBUG] get_homework_detail: 评估完成, errors={len(evaluation.get('errors', []))}")
+            if evaluation.get('errors'):
+                for err in evaluation['errors'][:2]:
+                    print(f"[DEBUG]   题{err.get('index')}: similarity={err.get('similarity')}")
+        else:
+            evaluation = {
+                'accuracy': 0,
+                'total_questions': 0,
+                'correct_count': 0,
+                'error_count': 0,
+                'errors': []
+            }
         
         return jsonify({
             'success': True,
@@ -1855,7 +1839,7 @@ def get_homework_detail(task_id, homework_id):
                 'student_id': homework_item.get('student_id', ''),
                 'student_name': homework_item.get('student_name', ''),
                 'status': homework_item.get('status', ''),
-                'accuracy': homework_item.get('accuracy', 0),
+                'accuracy': evaluation.get('accuracy', 0),
                 'base_effect': base_effect,
                 'ai_result': homework_result,
                 'evaluation': {
@@ -1863,7 +1847,7 @@ def get_homework_detail(task_id, homework_id):
                     'total_questions': evaluation.get('total_questions', 0),
                     'correct_count': evaluation.get('correct_count', 0),
                     'error_count': evaluation.get('error_count', 0),
-                    'errors': detailed_errors
+                    'errors': evaluation.get('errors', [])
                 }
             }
         })
@@ -1879,8 +1863,13 @@ def batch_evaluate(task_id):
     if not task_data:
         return jsonify({'success': False, 'error': '任务不存在'})
     
-    # 获取任务的学科ID，如果没有则从作业中推断
+    # 获取任务的学科ID，如果没有则从作业中推断，并保存到任务数据
     task_subject_id = infer_subject_id_from_homework(task_data)
+    
+    # 保存推断的学科信息到任务数据（确保重新评估时使用正确的学科逻辑）
+    if task_subject_id is not None and task_data.get('subject_id') != task_subject_id:
+        task_data['subject_id'] = task_subject_id
+        task_data['subject_name'] = SUBJECT_MAP.get(task_subject_id, '未知')
     
     # 获取前端传递的设置参数
     req_data = request.get_json() or {}
@@ -1931,9 +1920,16 @@ def batch_evaluate(task_id):
                 except:
                     pass
                 
+                # 解析 data_value 获取题目类型信息
+                data_value = []
+                try:
+                    data_value = json.loads(item.get('data_value', '[]'))
+                except:
+                    pass
+                
                 if base_effect and homework_result:
-                    # 传递学科ID和模糊匹配阈值，语文(1)使用题号匹配
-                    evaluation = do_evaluation(base_effect, homework_result, subject_id=task_subject_id, fuzzy_threshold=fuzzy_threshold, ignore_index_prefix=ignore_index_prefix)
+                    # 传递学科ID、模糊匹配阈值和 data_value（题目类型信息来源）
+                    evaluation = do_evaluation(base_effect, homework_result, subject_id=task_subject_id, fuzzy_threshold=fuzzy_threshold, ignore_index_prefix=ignore_index_prefix, data_value=data_value)
                     item['accuracy'] = evaluation['accuracy']
                     item['evaluation'] = evaluation
                     item['status'] = 'completed'
@@ -2040,7 +2036,7 @@ def batch_evaluate(task_id):
     return Response(generate(), mimetype='text/event-stream')
 
 
-def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=None, subject_id=None, fuzzy_threshold=0.85, ignore_index_prefix=True):
+def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=None, subject_id=None, fuzzy_threshold=0.85, ignore_index_prefix=True, data_value=None):
     """
     执行评估计算
     - 语文(subject_id=1): 按题号(index)匹配
@@ -2056,6 +2052,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         subject_id: 学科ID，语文(1)使用题号匹配
         fuzzy_threshold: 语文主观题模糊匹配阈值，默认0.85 (85%)
         ignore_index_prefix: 是否忽略题号前缀差异，默认True
+        data_value: 题目原始数据（包含 bvalue, questionType 等类型信息）
     """
     total = len(base_effect)
     correct_count = 0
@@ -2070,6 +2067,29 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         '缺失题目': 0,
         'AI识别幻觉': 0
     }
+    
+    # 从 data_value 构建题目类型映射（按 index 和 tempIndex）
+    type_map = {}
+    if data_value:
+        def add_to_type_map(item):
+            """递归添加题目及其子题到 type_map"""
+            temp_idx = item.get('tempIndex')
+            idx = str(item.get('index', ''))
+            normalized_idx = normalize_index(idx)
+            type_info = {
+                'questionType': item.get('questionType', ''),
+                'bvalue': str(item.get('bvalue', ''))
+            }
+            if temp_idx is not None:
+                type_map[f'temp_{temp_idx}'] = type_info
+            if normalized_idx:
+                type_map[f'idx_{normalized_idx}'] = type_info
+            # 递归处理子题
+            for child in item.get('children', []):
+                add_to_type_map(child)
+        
+        for item in data_value:
+            add_to_type_map(item)
     
     # 题目类型分类统计: 选择题、客观填空题、主观题（三类互不包含）
     type_stats = {
@@ -2147,8 +2167,31 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
             hw_item = hw_dict_by_tempindex.get(base_temp_idx)
         
         # 获取题目类型分类
-        question_category = classify_question_type(base_item)
-        bvalue = str(base_item.get('bvalue', ''))
+        # 优先从 type_map（data_value）获取类型信息
+        # 其次从 base_item 获取，最后从 hw_item 获取
+        type_info = None
+        if type_map:
+            # 优先按题号匹配
+            type_info = type_map.get(f'idx_{normalized_idx}')
+            # 其次按 tempIndex 匹配
+            if not type_info:
+                type_info = type_map.get(f'temp_{base_temp_idx}')
+        
+        if type_info:
+            # 从 type_map 获取到类型信息，构造一个临时对象用于分类
+            type_source = {
+                'bvalue': type_info.get('bvalue', ''),
+                'questionType': type_info.get('questionType', '')
+            }
+        elif base_item.get('bvalue'):
+            type_source = base_item
+        elif hw_item and hw_item.get('bvalue'):
+            type_source = hw_item
+        else:
+            type_source = base_item
+        
+        question_category = classify_question_type(type_source)
+        bvalue = str(type_source.get('bvalue', ''))
         
         # 跳过大题（有children的题目不参与统计）
         if question_category['is_parent']:
@@ -2194,9 +2237,10 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         severity = 'medium'
         similarity_value = None  # 记录相似度值（用于模糊匹配）
         
-        # 判断是否为语文主观题（用于模糊匹配）
-        # 语文学科只有主观题使用模糊匹配，客观填空题不使用
-        is_chinese_fuzzy = is_chinese and question_category['is_subjective']
+        # 判断是否为语文非选择题（用于模糊匹配）
+        # 语文学科的所有非选择题（包括客观填空题和主观题）都使用模糊匹配
+        is_chinese_fuzzy = is_chinese and not question_category['is_choice']
+        print(f"[DEBUG] do_evaluation 题{idx}: is_chinese={is_chinese}, is_choice={question_category['is_choice']}, is_chinese_fuzzy={is_chinese_fuzzy}")
         
         if not hw_item:
             is_match = False
@@ -2216,9 +2260,14 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
                     fuzzy_match, similarity_value = is_fuzzy_match(base_user, hw_user, fuzzy_threshold)
                     if fuzzy_match:
                         is_match = True
-                        error_type = '识别差异-判断正确'
-                        explanation = f'模糊匹配通过（相似度{similarity_value*100:.1f}%）：基准="{base_user}"，AI="{hw_user}"'
-                        severity = 'low'
+                        # 相似度100%算作完全识别成功，不设置error_type
+                        if similarity_value >= 0.9999:
+                            error_type = None
+                            explanation = ''
+                        else:
+                            error_type = '识别差异-判断正确'
+                            explanation = f'模糊匹配通过（相似度{similarity_value*100:.1f}%）：基准="{base_user}"，AI="{hw_user}"'
+                            severity = 'low'
                     else:
                         is_match = False
                         error_type = '识别错误-判断错误'
@@ -2281,9 +2330,14 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
                     fuzzy_match, similarity_value = is_fuzzy_match(base_user, hw_user, fuzzy_threshold)
                     if fuzzy_match:
                         is_match = True  # 不计入错误
-                        error_type = '识别差异-判断正确'
-                        explanation = f'模糊匹配通过（相似度{similarity_value*100:.1f}%），判断正确：基准="{base_user}"，AI="{hw_user}"'
-                        severity = 'low'
+                        # 相似度100%算作完全识别成功，不设置error_type
+                        if similarity_value >= 0.9999:
+                            error_type = None
+                            explanation = ''
+                        else:
+                            error_type = '识别差异-判断正确'
+                            explanation = f'模糊匹配通过（相似度{similarity_value*100:.1f}%），判断正确：基准="{base_user}"，AI="{hw_user}"'
+                            severity = 'low'
                     else:
                         is_match = False
                         error_type = '识别错误-判断正确'

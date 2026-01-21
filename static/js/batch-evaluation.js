@@ -2576,6 +2576,9 @@ function renderEvalDetail(detail) {
                     const severity = err.severity || err.severity_code || 'medium';
                     const severityClass = getSeverityClass(severity);
                     
+                    // 获取题型名称
+                    const questionTypeName = getQuestionTypeName(err.question_category, baseEffect);
+                    
                     // 判断是否为不计入错误的类型（识别差异-判断正确、识别题干-判断正确、格式差异）
                     const isNotCountedAsError = ['识别差异-判断正确', '识别题干-判断正确', '格式差异'].includes(err.error_type);
                     const cardClass = isNotCountedAsError ? 'error-card not-counted-error' : 'error-card';
@@ -2586,6 +2589,7 @@ function renderEvalDetail(detail) {
                             <div class="${headerClass}">
                                 <div class="error-card-title">
                                     <span class="error-index">题${err.index || '-'}</span>
+                                    ${questionTypeName ? `<span class="question-type-badge">${escapeHtml(questionTypeName)}</span>` : ''}
                                     ${isNotCountedAsError ? '<span class="not-counted-badge">不计入错误</span>' : `<span class="severity-badge severity-${severityClass}">${severity === 'high' ? '高' : severity === 'low' ? '低' : '中'}</span>`}
                                     <span class="tag ${errorTypeClass}">${escapeHtml(err.error_type || '-')}</span>
                                     ${err.similarity != null ? `<span class="similarity-badge">${(err.similarity * 100).toFixed(1)}%</span>` : ''}
@@ -2950,6 +2954,36 @@ function copyToClipboard(elementId) {
             alert('已复制到剪贴板');
         });
     }
+}
+
+// 获取题型名称
+function getQuestionTypeName(questionCategory, baseEffect) {
+    if (!questionCategory && !baseEffect) return '';
+    
+    // 优先从 question_category 获取
+    if (questionCategory) {
+        if (questionCategory.is_choice) {
+            const choiceTypeMap = {
+                'single': '单选题',
+                'multiple': '多选题',
+                'judge': '判断题'
+            };
+            return choiceTypeMap[questionCategory.choice_type] || '选择题';
+        }
+        if (questionCategory.is_fill) return '填空题';
+        if (questionCategory.is_subjective) return '主观解答题';
+    }
+    
+    // 从 base_effect 的 bvalue 推断
+    const bvalue = String(baseEffect?.bvalue || '');
+    const bvalueMap = {
+        '1': '单选题',
+        '2': '多选题',
+        '3': '判断题',
+        '4': '填空题',
+        '5': '主观解答题'
+    };
+    return bvalueMap[bvalue] || '';
 }
 
 function getErrorTypeClass(errorType) {

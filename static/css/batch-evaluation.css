@@ -1468,6 +1468,17 @@ body {
     border-radius: 4px;
 }
 
+/* 题型标签 */
+.question-type-badge {
+    font-size: 11px;
+    font-weight: 500;
+    color: #fff !important;
+    background: rgba(255,255,255,0.2) !important;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
 .error-cards-container .similarity-badge {
     font-size: 11px;
     font-weight: 500;

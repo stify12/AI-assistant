@@ -6,6 +6,90 @@ import re
 import json
 
 
+def normalize_punctuation(text):
+    """
+    第一层标准化：统一中英文符号（保留标点，只做转换）
+    用于需要保留标点语义的场景
+    """
+    if not text:
+        return ''
+    
+    text = str(text).strip()
+    
+    # 中英文标点映射表
+    punctuation_map = {
+        # 括号
+        '（': '(', '）': ')',
+        '【': '[', '】': ']',
+        '｛': '{', '｝': '}',
+        '〈': '<', '〉': '>',
+        '《': '<', '》': '>',  # 书名号转尖括号
+        # 引号
+        '"': '"', '"': '"',
+        ''': "'", ''': "'",
+        '「': '"', '」': '"',
+        '『': '"', '』': '"',
+        # 标点
+        '，': ',', '。': '.',
+        '；': ';', '：': ':',
+        '！': '!', '？': '?',
+        '、': ',',  # 顿号转逗号
+        '～': '~', '—': '-',
+        '…': '...',
+        '·': '.',
+        # 数学符号
+        '×': '*', '÷': '/',
+        '＋': '+', '－': '-', '＝': '=',
+        # 全角数字
+        '０': '0', '１': '1', '２': '2', '３': '3', '４': '4',
+        '５': '5', '６': '6', '７': '7', '８': '8', '９': '9',
+    }
+    
+    for cn, en in punctuation_map.items():
+        text = text.replace(cn, en)
+    
+    # 全角字母转半角
+    result = []
+    for char in text:
+        code = ord(char)
+        # 全角字母 A-Z: 0xFF21-0xFF3A -> 0x0041-0x005A
+        # 全角字母 a-z: 0xFF41-0xFF5A -> 0x0061-0x007A
+        if 0xFF21 <= code <= 0xFF3A:
+            result.append(chr(code - 0xFF21 + 0x41))
+        elif 0xFF41 <= code <= 0xFF5A:
+            result.append(chr(code - 0xFF41 + 0x61))
+        else:
+            result.append(char)
+    
+    return ''.join(result)
+
+
+def normalize_for_similarity(text):
+    """
+    第二层标准化：用于相似度计算的完整标准化
+    1. 统一中英文符号
+    2. 去除所有标点符号
+    3. 去除空白字符
+    4. 统一大小写
+    """
+    if not text:
+        return ''
+    
+    # 先统一中英文符号
+    text = normalize_punctuation(text)
+    
+    # 统一大小写
+    text = text.lower()
+    
+    # 移除HTML标签
+    text = re.sub(r'<[^>]+>', '', text)
+    
+    # 移除所有标点符号（只保留中文、字母、数字、常用序号符号）
+    text = re.sub(r'[^\u4e00-\u9fff\w①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮]', '', text)
+    
+    return text
+
+
 def normalize_answer(text):
     """
     标准化答案，用于比较AI批改结果和基准效果
@@ -186,13 +270,16 @@ def extract_reason_from_text(content):
 
 def calculate_similarity(text1, text2):
     """
-    计算两个文本的相似度（轻量级方案：字符n-gram + 序列匹配）
+    计算两个文本的相似度（优化版：先标准化符号再计算）
     
-    不依赖jieba/sklearn，内存占用极低，同时能识别：
-    1. 语义差异："古桥" vs "立交桥" → 较低相似度（不同字符）
-    2. 词序差异："①②③" vs "①③②" → 较低相似度（序列不同）
+    流程：
+    1. 先对两个文本进行完整标准化（统一中英文符号 + 去除标点）
+    2. 使用字符n-gram + 序列匹配计算相似度
     
-    算法：使用字符级2-gram的Jaccard相似度 + SequenceMatcher序列相似度
+    能识别：
+    1. 符号差异："《西游记》" vs "<西游记>" → 相似度 = 1.0
+    2. 语义差异："古桥" vs "立交桥" → 较低相似度
+    3. 词序差异："①②③" vs "①③②" → 较低相似度
     
     Args:
         text1: 第一个文本
@@ -208,14 +295,17 @@ def calculate_similarity(text1, text2):
     if not text1 or not text2:
         return 0.0
     
-    # 先标准化文本
-    norm1 = normalize_answer(text1)
-    norm2 = normalize_answer(text2)
+    # 使用专门的相似度标准化函数（统一符号 + 去除标点）
+    norm1 = normalize_for_similarity(text1)
+    norm2 = normalize_for_similarity(text2)
     
     if norm1 == norm2:
         return 1.0
     
-    # 如果文本太短，直接用序列匹配
+    if not norm1 or not norm2:
+        return 0.0
+    
+    # 短文本直接用序列匹配
     if len(norm1) < 3 or len(norm2) < 3:
         return SequenceMatcher(None, norm1, norm2).ratio()
     
@@ -238,7 +328,6 @@ def calculate_similarity(text1, text2):
     seq_sim = SequenceMatcher(None, norm1, norm2).ratio()
     
     # 3. 混合：50% n-gram Jaccard + 50% 序列相似度
-    # 这样既能识别内容差异，也能识别顺序差异
     similarity = 0.5 * jaccard_sim + 0.5 * seq_sim
     return float(similarity)
 
@@ -262,8 +351,9 @@ def calculate_char_similarity(text1, text2):
     if not text1 or not text2:
         return 0.0
     
-    norm1 = normalize_answer(text1)
-    norm2 = normalize_answer(text2)
+    # 使用相似度专用标准化
+    norm1 = normalize_for_similarity(text1)
+    norm2 = normalize_for_similarity(text2)
     
     if norm1 == norm2:
         return 1.0
@@ -288,4 +378,5 @@ def is_fuzzy_match(text1, text2, threshold=0.80):
         tuple: (is_match: bool, similarity: float)
     """
     similarity = calculate_similarity(text1, text2)
+    print(f"[DEBUG] is_fuzzy_match: text1={text1[:30]}..., text2={text2[:30]}..., similarity={similarity}")
     return similarity >= threshold, similarity
