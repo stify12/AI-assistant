@@ -1,0 +1,1909 @@
+{
+  "task_id": "667b5337",
+  "name": "物理1.21p92-101批量评估",
+  "subject_id": 3,
+  "subject_name": "物理",
+  "test_condition_id": 1,
+  "test_condition_name": "单份作业评估",
+  "fuzzy_threshold": 0.85,
+  "status": "completed",
+  "homework_items": [
+    {
+      "homework_id": "2013853926786437122",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "p92～101",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 92,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_92_4NB4X.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"外 凝华 内\",\n\t\t\"answer\":\"凝华 内 外\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"凝华 升华 控制温度\",\n\t\t\"answer\":\"升华 凝华 控制温度\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"B \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"空气中；凝固；凝固\",\n\t\t\"answer\":\"空气中；凝华；凝华\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"升华；放出；降低\",\n\t\t\"answer\":\"升华；吸收；降低\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":5\n\t}\n]",
+      "matched_dataset": "47094786",
+      "status": "completed",
+      "accuracy": 1.0,
+      "evaluation": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 6,
+        "error_count": 0,
+        "errors": [],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "识别题干-判断正确": 0,
+          "识别差异-判断正确": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 2,
+            "correct": 2,
+            "accuracy": 1.0
+          },
+          "objective_fill": {
+            "total": 4,
+            "correct": 4,
+            "accuracy": 1.0
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 2,
+            "correct": 2,
+            "accuracy": 1.0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 4,
+            "correct": 4,
+            "accuracy": 1.0,
+            "name": "填空"
+          },
+          "5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 2,
+            "correct": 2,
+            "accuracy": 1.0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 4,
+            "correct": 4,
+            "accuracy": 1.0,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2013853957346136066",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "p92～101",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 93,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_93_4W9C9.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"①熔化 吸热 ②升华 吸热 ③凝固 放热 ④汽化 吸热 ⑤凝华 吸热 ⑥液化 放热\",\n\t\t\"answer\":\"①升华 吸热 ②熔化 吸热 ③汽化 吸热 ④凝固 放热 ⑤液化 放热 ⑥凝华 放热\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"①凝华 ②放 ③液华化\",\n\t\t\"answer\":\"①凝华 ②液化 ③放\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t}\n]",
+      "matched_dataset": "47094786",
+      "status": "completed",
+      "accuracy": 0.5,
+      "evaluation": {
+        "accuracy": 0.5,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 2,
+        "correct_count": 1,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "2",
+            "base_effect": {
+              "answer": "①凝华 ②液化 ③放",
+              "userAnswer": "①凝华；②放；③液化",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "①凝华 ②液化 ③放",
+              "userAnswer": "①凝华 ②放 ③液华化",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"①凝华；②放；③液化\"，AI=\"①凝华 ②放 ③液华化\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false,
+              "similarity": null
+            },
+            "similarity": null,
+            "question_category": {
+              "is_choice": false,
+              "is_fill": true,
+              "is_subjective": false,
+              "is_parent": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "识别题干-判断正确": 0,
+          "识别差异-判断正确": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "objective_fill": {
+            "total": 2,
+            "correct": 1,
+            "accuracy": 0.5
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 2,
+            "correct": 1,
+            "accuracy": 0.5,
+            "name": "填空"
+          },
+          "5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 2,
+            "correct": 1,
+            "accuracy": 0.5,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2013854000832679937",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "p92～101",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 94,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_94_2INU9.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\"(1) 水蒸气 液化 凝华\\n<br>(2) 熔化 (3) 凝固\\n<br>(4) 水蒸气 凝华 (5) 液化\\n<br>(6) 水蒸气 液化\\n<br>(7) 水蒸气 凝华 固\\n\",\n\t\t\"correct\":\"partial\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"水蒸气 凝华 凝华\",\n\t\t\t\t\"answer\":\"水蒸气 液化 凝华\\n\\n\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例2(1)\",\n\t\t\t\t\"tempIndex\":3\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"熔化\",\n\t\t\t\t\"answer\":\" 熔化\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例2(2)\",\n\t\t\t\t\"tempIndex\":4\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"凝固\",\n\t\t\t\t\"answer\":\"凝固\\n\\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例2(3)\",\n\t\t\t\t\"tempIndex\":5\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"水蒸气 凝华\",\n\t\t\t\t\"answer\":\"水蒸气 凝华\\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例2(4)\",\n\t\t\t\t\"tempIndex\":6\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"液化\",\n\t\t\t\t\"answer\":\"液化\\n\\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例2(5)\",\n\t\t\t\t\"tempIndex\":7\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"水蒸气 升华\",\n\t\t\t\t\"answer\":\"水蒸气 液化\\n\\n\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例2(6)\",\n\t\t\t\t\"tempIndex\":8\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"水蒸气 固 凝华\",\n\t\t\t\t\"answer\":\"水蒸气 凝华 固\\n\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例2(7)\",\n\t\t\t\t\"tempIndex\":9\n\t\t\t}\n\t\t],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":2\n\t}\n]",
+      "matched_dataset": "47094786",
+      "status": "completed",
+      "accuracy": 0.7777777777777778,
+      "evaluation": {
+        "accuracy": 0.7777777777777778,
+        "precision": 0.875,
+        "recall": 1.0,
+        "f1_score": 0.9333333333333333,
+        "hallucination_rate": 0.0,
+        "total_questions": 9,
+        "correct_count": 7,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "例2(1)",
+            "base_effect": {
+              "answer": "水蒸气 液化 凝华",
+              "userAnswer": "水蒸气 凝华 液化",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "水蒸气 液化 凝华",
+              "userAnswer": "水蒸气 凝华 凝华",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"水蒸气 凝华 液化\"，AI=\"水蒸气 凝华 凝华\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false,
+              "similarity": null
+            },
+            "similarity": null,
+            "question_category": {
+              "is_choice": false,
+              "is_fill": true,
+              "is_subjective": false,
+              "is_parent": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "例2(7)",
+            "base_effect": {
+              "answer": "水蒸气 凝华 固",
+              "userAnswer": "水蒸气 固 凝华",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "水蒸气 凝华 固",
+              "userAnswer": "水蒸气 固 凝华",
+              "correct": "no"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=yes，AI=no",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false,
+              "similarity": null
+            },
+            "similarity": null,
+            "question_category": {
+              "is_choice": false,
+              "is_fill": true,
+              "is_subjective": false,
+              "is_parent": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 1,
+          "识别题干-判断正确": 0,
+          "识别差异-判断正确": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 2,
+            "correct": 2,
+            "accuracy": 1.0
+          },
+          "objective_fill": {
+            "total": 7,
+            "correct": 5,
+            "accuracy": 0.7142857142857143
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 2,
+            "correct": 2,
+            "accuracy": 1.0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 7,
+            "correct": 5,
+            "accuracy": 0.7142857142857143,
+            "name": "填空"
+          },
+          "5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 2,
+            "correct": 2,
+            "accuracy": 1.0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 7,
+            "correct": 5,
+            "accuracy": 0.7142857142857143,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2013854031010697217",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "p92～101",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 95,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_95_PUP5I.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\"(1) 液化 凝华 熔化 \\n<br>(2) 熔化\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"液化、熔化、凝华\",\n\t\t\t\t\"answer\":\"液化 凝华 熔化 \\n\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"4(1)\",\n\t\t\t\t\"tempIndex\":5\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"液化\",\n\t\t\t\t\"answer\":\"熔化\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"4(2)\",\n\t\t\t\t\"tempIndex\":6\n\t\t\t}\n\t\t],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t}\n]",
+      "matched_dataset": "47094786",
+      "status": "completed",
+      "accuracy": 0.6666666666666666,
+      "evaluation": {
+        "accuracy": 0.6666666666666666,
+        "precision": 0.8,
+        "recall": 1.0,
+        "f1_score": 0.888888888888889,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 4,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "4(1)",
+            "base_effect": {
+              "answer": "液化 凝华 熔化",
+              "userAnswer": "凝华、液化、熔化",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "液化 凝华 熔化",
+              "userAnswer": "液化、熔化、凝华",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"凝华、液化、熔化\"，AI=\"液化、熔化、凝华\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false,
+              "similarity": null
+            },
+            "similarity": null,
+            "question_category": {
+              "is_choice": false,
+              "is_fill": true,
+              "is_subjective": false,
+              "is_parent": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "4(2)",
+            "base_effect": {
+              "answer": "熔化",
+              "userAnswer": "液化",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "熔化",
+              "userAnswer": "液化",
+              "correct": "no"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=yes，AI=no",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false,
+              "similarity": null
+            },
+            "similarity": null,
+            "question_category": {
+              "is_choice": false,
+              "is_fill": true,
+              "is_subjective": false,
+              "is_parent": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 1,
+          "识别题干-判断正确": 0,
+          "识别差异-判断正确": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 4,
+            "correct": 4,
+            "accuracy": 1.0
+          },
+          "objective_fill": {
+            "total": 2,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 4,
+            "correct": 4,
+            "accuracy": 1.0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 2,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "填空"
+          },
+          "5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 4,
+            "correct": 4,
+            "accuracy": 1.0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 2,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2013854072748216321",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "p92～101",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 96,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_96_ECTLM.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"冷热程度；摄氏度(℃)；100；0；热胀冷缩；吸；放；放；吸；降低温度；吸；放\",\n\t\t\"answer\":\"冷热程度    摄氏度(℃)    100   0    热胀冷缩   吸   放   吸   放   降低温度   吸   放\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"知识导图\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":5\n\t}\n]",
+      "matched_dataset": "e117f067",
+      "status": "completed",
+      "accuracy": 0.8333333333333334,
+      "evaluation": {
+        "accuracy": 0.8333333333333334,
+        "precision": 1.0,
+        "recall": 0.8333333333333334,
+        "f1_score": 0.9090909090909091,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 5,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "知识导图",
+            "base_effect": {
+              "answer": "冷热程度    摄氏度(℃)    100   0    热胀冷缩   吸   放   吸   放   降低温度   吸   放",
+              "userAnswer": "冷热程度 摄氏度(℃) 100 0 吸 放 放 吸 降低温度 吸 放",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "冷热程度    摄氏度(℃)    100   0    热胀冷缩   吸   放   吸   放   降低温度   吸   放",
+              "userAnswer": "冷热程度；摄氏度(℃)；100；0；热胀冷缩；吸；放；放；吸；降低温度；吸；放",
+              "correct": "yes"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"冷热程度 摄氏度(℃) 100 0 吸 放 放 吸 降低温度 吸 放/no\"，AI=\"冷热程度；摄氏度(℃)；100；0；热胀冷缩；吸；放；放；吸；降低温度；吸；放/yes\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": false,
+              "similarity": null
+            },
+            "similarity": null,
+            "question_category": {
+              "is_choice": false,
+              "is_fill": true,
+              "is_subjective": false,
+              "is_parent": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 1,
+          "识别正确-判断错误": 0,
+          "识别题干-判断正确": 0,
+          "识别差异-判断正确": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0
+          },
+          "objective_fill": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "填空"
+          },
+          "5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2013854105920966658",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "p92～101",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 97,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_97_R7CVU.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"8\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"乙 38.5 -7\",\n\t\t\"answer\":\"乙   38.5   -7\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"9\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"熔化 凝固 放出\",\n\t\t\"answer\":\"熔化 凝固 放出\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"汽化 压缩体积 热\",\n\t\t\"answer\":\" 汽化  压缩体积  热\\n\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"11\",\n\t\t\"tempIndex\":5\n\t}\n]",
+      "matched_dataset": "e117f067",
+      "status": "completed",
+      "accuracy": 1.0,
+      "evaluation": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 6,
+        "error_count": 0,
+        "errors": [],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "识别题干-判断正确": 0,
+          "识别差异-判断正确": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 3,
+            "correct": 3,
+            "accuracy": 1.0
+          },
+          "objective_fill": {
+            "total": 3,
+            "correct": 3,
+            "accuracy": 1.0
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 3,
+            "correct": 3,
+            "accuracy": 1.0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 3,
+            "correct": 3,
+            "accuracy": 1.0,
+            "name": "填空"
+          },
+          "5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 3,
+            "correct": 3,
+            "accuracy": 1.0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 3,
+            "correct": 3,
+            "accuracy": 1.0,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2013854147981447169",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "p92～101",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 98,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_98_CHLPW.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"凝华 放出 凝固\",\n\t\t\"answer\":\"凝华 放出 凝固\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"12\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"60 不会 60\",\n\t\t\"answer\":\"60  不会  60\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"13\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"(1) 能使固体均匀受热\\\\n(2) B\\\\n(3) 晶体 8 固液共存态\",\n\t\t\"answer\":\"(1) 能使固体受热均匀\\n<br> (2) B\\n<br> (3) 晶体  8  固液共存\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"能使固体均匀受热\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"14(1)\",\n\t\t\t\t\"tempIndex\":4,\n\t\t\t\t\"mainAnswer\":\"能使固体受热均匀\\n\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"B\",\n\t\t\t\t\"answer\":\" B\\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"14(2)\",\n\t\t\t\t\"tempIndex\":5\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"晶体 8 固液共存态\",\n\t\t\t\t\"answer\":\"晶体  8  固液共存\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"14(3)\",\n\t\t\t\t\"tempIndex\":6\n\t\t\t}\n\t\t],\n\t\t\"index\":\"14\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"(1) A 下\\\\n(2) B 水蒸气\\\\n(3) \\\\n(4) 100 \\\\n(5) 不断吸热\",\n\t\t\"answer\":\"(1) A 下\\n<br>(2) B 水蒸气\\n<br>(3) 如图所示：\\n<br>![p98-15(3).png](https://img.gzzhengpu.cn/upload/20251209/p98-15(3).png)\\n<br>(4) 100 \\n<br>(5) 不断吸热\\n\\n\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"A 下\",\n\t\t\t\t\"answer\":\"A 下\\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"15(1)\",\n\t\t\t\t\"tempIndex\":7\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"B 水蒸气\",\n\t\t\t\t\"answer\":\" B 水蒸气\\n\\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"15(2)\",\n\t\t\t\t\"tempIndex\":8\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"15(3)\",\n\t\t\t\t\"tempIndex\":9,\n\t\t\t\t\"mainAnswer\":\"如图所示：\\n<br>![p98-15(3).png](https://img.gzzhengpu.cn/upload/20251209/p98-15(3).png)\\n\\n\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"100\",\n\t\t\t\t\"answer\":\"100 \\n\\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"15(4)\",\n\t\t\t\t\"tempIndex\":10\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"不断吸热\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"15(5)\",\n\t\t\t\t\"tempIndex\":11,\n\t\t\t\t\"mainAnswer\":\"不断吸热\\n\"\n\t\t\t}\n\t\t],\n\t\t\"index\":\"15\",\n\t\t\"tempIndex\":3\n\t}\n]",
+      "matched_dataset": "e117f067",
+      "status": "completed",
+      "accuracy": 0.9,
+      "evaluation": {
+        "accuracy": 0.9,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 10,
+        "correct_count": 9,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "15(3)",
+            "base_effect": {
+              "answer": "如图所示：\n<br>![p98-15(3).png](https://img.gzzhengpu.cn/upload/20251209/p98-15(3).png)",
+              "userAnswer": "未作答",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "如图所示：\n<br>![p98-15(3).png](https://img.gzzhengpu.cn/upload/20251209/p98-15(3).png)",
+              "userAnswer": "",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"未作答\"，AI=\"\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false,
+              "similarity": null
+            },
+            "similarity": null,
+            "question_category": {
+              "is_choice": false,
+              "is_fill": true,
+              "is_subjective": false,
+              "is_parent": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "识别题干-判断正确": 0,
+          "识别差异-判断正确": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "objective_fill": {
+            "total": 9,
+            "correct": 8,
+            "accuracy": 0.8888888888888888
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 9,
+            "correct": 8,
+            "accuracy": 0.8888888888888888,
+            "name": "填空"
+          },
+          "5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 9,
+            "correct": 8,
+            "accuracy": 0.8888888888888888,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2013854179900100610",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "p92～101",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 99,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_99_S5GUD.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"物质  m  千克(kg)  克(g)、毫克(mg)、吨(t)\",\n\t\t\"answer\":\"物质   $m$   千克(kg)   克(g)   毫克(mg)   吨(t)\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"形状、状态、位置\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1,\n\t\t\"mainAnswer\":\"形状 状态 位置\"\n\t},\n\t{\n\t\t\"userAnswer\":\"1000  1000  1000\",\n\t\t\"answer\":\"1 000   1 000   1 000\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"托盘天平  电子称、地磅\",\n\t\t\"answer\":\"托盘天平  电子秤  地磅\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"①镊子；②托盘；③标尺；④指针；⑤分度盘；⑥游码；⑦横梁；⑧平衡螺母；⑨指针\",\n\t\t\"answer\":\"①镊子 ②砝码 ③托盘 ④标尺 ⑤平衡螺母 ⑥指针 ⑦分度盘 ⑧游码 ⑨横梁\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t}\n]",
+      "matched_dataset": "e117f067",
+      "status": "completed",
+      "accuracy": 0.8,
+      "evaluation": {
+        "accuracy": 0.8,
+        "precision": 0.8,
+        "recall": 1.0,
+        "f1_score": 0.888888888888889,
+        "hallucination_rate": 0.0,
+        "total_questions": 5,
+        "correct_count": 4,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "4",
+            "base_effect": {
+              "answer": "托盘天平  电子秤  地磅",
+              "userAnswer": "托盘天平 电子称 地磅",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "托盘天平  电子秤  地磅",
+              "userAnswer": "托盘天平  电子称、地磅",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确（有格式差异）但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false,
+              "similarity": null
+            },
+            "similarity": null,
+            "question_category": {
+              "is_choice": false,
+              "is_fill": true,
+              "is_subjective": false,
+              "is_parent": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 1,
+          "识别题干-判断正确": 0,
+          "识别差异-判断正确": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "objective_fill": {
+            "total": 4,
+            "correct": 3,
+            "accuracy": 0.75
+          },
+          "subjective": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 5,
+            "correct": 4,
+            "accuracy": 0.8,
+            "name": "填空"
+          },
+          "5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 4,
+            "correct": 3,
+            "accuracy": 0.75,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2013854241229213697",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "p92～101",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 100,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_100_6PJPW.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"20  400  0.6\",\n\t\t\"answer\":\"20   300   0.6\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"(1) 水平  游码  左  \\\\n(2) ①将砝码放在左盘内 ②用手直接拿砝码  \\\\n(3) 73.2\",\n\t\t\"answer\":\"(1) 水平 游码 左  \\n(2) ①将砝码放在左盘内，物体放在右盘内 ②用手直接拿取砝码  \\n(3) 63.2\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"水平  游码  左\",\n\t\t\t\t\"answer\":\"水平 游码 左  \\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例3(1)\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"①将砝码放在左盘内 ②用手直接拿砝码\",\n\t\t\t\t\"answer\":\"①将砝码放在左盘内，物体放在右盘内 ②用手直接拿取砝码  \\n\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例3(2)\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"73.2\",\n\t\t\t\t\"answer\":\"63.2\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例3(3)\"\n\t\t\t}\n\t\t],\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":2\n\t}\n]",
+      "matched_dataset": "e117f067",
+      "status": "completed",
+      "accuracy": 0.8,
+      "evaluation": {
+        "accuracy": 0.8,
+        "precision": 0.8,
+        "recall": 1.0,
+        "f1_score": 0.888888888888889,
+        "hallucination_rate": 0.2,
+        "total_questions": 5,
+        "correct_count": 4,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "例3(1)",
+            "base_effect": {
+              "answer": "水平 游码 左",
+              "userAnswer": "水平 游码 右",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "水平 游码 左",
+              "userAnswer": "水平  游码  左",
+              "correct": "yes"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "AI将学生答案\"水平 游码 右\"识别为\"水平  游码  左\"（标准答案），属于识别幻觉",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": true,
+              "similarity": null
+            },
+            "similarity": null,
+            "question_category": {
+              "is_choice": false,
+              "is_fill": true,
+              "is_subjective": false,
+              "is_parent": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "识别题干-判断正确": 0,
+          "识别差异-判断正确": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 1
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "objective_fill": {
+            "total": 4,
+            "correct": 3,
+            "accuracy": 0.75
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 4,
+            "correct": 3,
+            "accuracy": 0.75,
+            "name": "填空"
+          },
+          "5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 4,
+            "correct": 3,
+            "accuracy": 0.75,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2013854274544570370",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "p92～101",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 101,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_101_55UIZ.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"水平\\\\n左\\\\n78.2\",\n\t\t\"answer\":\"水平   左   63.4\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\"(1) 左\\n  (2) B\\n  (3) 61.4\",\n\t\t\"correct\":\"\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"右\",\n\t\t\t\t\"answer\":\"左\\n\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"5(1)\",\n\t\t\t\t\"tempIndex\":5\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"C\",\n\t\t\t\t\"answer\":\"B\\n\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"5(2)\",\n\t\t\t\t\"tempIndex\":6\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"61.4\",\n\t\t\t\t\"answer\":\"61.4\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"5(3)\",\n\t\t\t\t\"tempIndex\":7\n\t\t\t}\n\t\t],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t}\n]",
+      "matched_dataset": "e117f067",
+      "status": "completed",
+      "accuracy": 0.8571428571428571,
+      "evaluation": {
+        "accuracy": 0.8571428571428571,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 7,
+        "correct_count": 6,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "4",
+            "base_effect": {
+              "answer": "水平   左   63.4",
+              "userAnswer": "右 水平 78.2",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "水平   左   63.4",
+              "userAnswer": "水平\\n左\\n78.2",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"右 水平 78.2\"，AI=\"水平\\n左\\n78.2\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false,
+              "similarity": null
+            },
+            "similarity": null,
+            "question_category": {
+              "is_choice": false,
+              "is_fill": true,
+              "is_subjective": false,
+              "is_parent": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "识别题干-判断正确": 0,
+          "识别差异-判断正确": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 4,
+            "correct": 4,
+            "accuracy": 1.0
+          },
+          "objective_fill": {
+            "total": 3,
+            "correct": 2,
+            "accuracy": 0.6666666666666666
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 4,
+            "correct": 4,
+            "accuracy": 1.0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 3,
+            "correct": 2,
+            "accuracy": 0.6666666666666666,
+            "name": "填空"
+          },
+          "5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 4,
+            "correct": 4,
+            "accuracy": 1.0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 3,
+            "correct": 2,
+            "accuracy": 0.6666666666666666,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观解答"
+          }
+        }
+      }
+    }
+  ],
+  "overall_report": {
+    "overall_accuracy": 0.8387096774193549,
+    "total_homework": 10,
+    "total_questions": 62,
+    "correct_questions": 52,
+    "by_question_type": {
+      "choice": {
+        "total": 22,
+        "correct": 22,
+        "accuracy": 1.0
+      },
+      "objective_fill": {
+        "total": 39,
+        "correct": 29,
+        "accuracy": 0.7435897435897436
+      },
+      "subjective": {
+        "total": 1,
+        "correct": 1,
+        "accuracy": 1.0
+      }
+    },
+    "by_bvalue": {
+      "1": {
+        "total": 22,
+        "correct": 22,
+        "accuracy": 1.0,
+        "name": "单选"
+      },
+      "2": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "多选"
+      },
+      "3": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "判断"
+      },
+      "4": {
+        "total": 40,
+        "correct": 30,
+        "accuracy": 0.75,
+        "name": "填空"
+      },
+      "5": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "解答"
+      }
+    },
+    "by_combined": {
+      "objective_1": {
+        "total": 22,
+        "correct": 22,
+        "accuracy": 1.0,
+        "name": "客观单选"
+      },
+      "objective_2": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "客观多选"
+      },
+      "objective_3": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "客观判断"
+      },
+      "objective_4": {
+        "total": 39,
+        "correct": 29,
+        "accuracy": 0.7435897435897436,
+        "name": "客观填空"
+      },
+      "objective_5": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "客观解答"
+      },
+      "subjective_1": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "主观单选"
+      },
+      "subjective_2": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "主观多选"
+      },
+      "subjective_3": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "主观判断"
+      },
+      "subjective_4": {
+        "total": 1,
+        "correct": 1,
+        "accuracy": 1.0,
+        "name": "主观填空"
+      },
+      "subjective_5": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "主观解答"
+      }
+    }
+  },
+  "created_at": "2026-01-21T15:45:16.188994",
+  "ignore_index_prefix": true
+}

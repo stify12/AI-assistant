@@ -1,0 +1,1783 @@
+{
+  "task_id": "f85afdcc",
+  "name": "英语测试",
+  "status": "completed",
+  "homework_items": [
+    {
+      "homework_id": "2011355824317845506",
+      "student_id": "2001099609117622274",
+      "student_name": "冯",
+      "homework_name": "Edf",
+      "book_id": "1997866819839905794",
+      "book_name": "袁崇焕中学校本作业.分层作业本.英语,八上",
+      "page_num": 80,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001099609117622274/1997866819839905794/1997866819839905794_80_XQXFM.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"D\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"D\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"6. it\\n7. tips\\n8. when\\n9. friendly\\n10. a\\n11. or\\n12. interested\\n13. listener\\n14. show\\n15. truth\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"二\",\n\t\t\"tempIndex\":5,\n\t\t\"userAnswer\":\"6. friends 7. interest 8. or 9. feel 10. when 11. find 12. good 13. Here 14. prefer 15. taking\"\n\t}\n]",
+      "matched_dataset": "572ee27b",
+      "status": "completed",
+      "accuracy": 1.0,
+      "evaluation": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 6,
+        "error_count": 0,
+        "errors": [],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0
+          },
+          "objective_fill": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "other": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0,
+            "name": "填空"
+          },
+          "5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011355850142175234",
+      "student_id": "2001099609117622274",
+      "student_name": "冯",
+      "homework_name": "Edf",
+      "book_id": "1997866819839905794",
+      "book_name": "袁崇焕中学校本作业.分层作业本.英语,八上",
+      "page_num": 81,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001099609117622274/1997866819839905794/1997866819839905794_81_9CESJ.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\" /ɪ/ \",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(一)1\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"/ɪ/\"\n\t},\n\t{\n\t\t\"answer\":\"/e/  \",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(一)2\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"/e/\"\n\t},\n\t{\n\t\t\"answer\":\"/ɑː/  \",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(一)3\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"/ɑː/\"\n\t},\n\t{\n\t\t\"answer\":\" /uː/\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(一).4\",\n\t\t\"tempIndex\":3,\n\t\t\"userAnswer\":\"/uː/\"\n\t},\n\t{\n\t\t\"answer\":\"/e/ \",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(一).5\",\n\t\t\"tempIndex\":4,\n\t\t\"userAnswer\":\"/ə/\"\n\t},\n\t{\n\t\t\"answer\":\"/e/  \",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(一).6\",\n\t\t\"tempIndex\":5,\n\t\t\"userAnswer\":\"/ɔɪ/\"\n\t},\n\t{\n\t\t\"answer\":\"/k/\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(一).7\",\n\t\t\"tempIndex\":6,\n\t\t\"userAnswer\":\"/k/\"\n\t},\n\t{\n\t\t\"answer\":\" /əʊ/\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(一).8\",\n\t\t\"tempIndex\":7,\n\t\t\"userAnswer\":\"/əʊ/\"\n\t},\n\t{\n\t\t\"answer\":\"/sk/  \",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(一).9\",\n\t\t\"tempIndex\":8,\n\t\t\"userAnswer\":\"/sk/\"\n\t},\n\t{\n\t\t\"answer\":\" /ʃ/  \",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(一)10\",\n\t\t\"tempIndex\":9,\n\t\t\"userAnswer\":\"/ʃ/\"\n\t},\n\t{\n\t\t\"answer\":\"/θ/  \",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(一)11\",\n\t\t\"tempIndex\":10,\n\t\t\"userAnswer\":\"/θ/\"\n\t},\n\t{\n\t\t\"answer\":\"/tʃ/  \",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(一)12\",\n\t\t\"tempIndex\":11,\n\t\t\"userAnswer\":\"/tʃ/\"\n\t},\n\t{\n\t\t\"answer\":\"/n/  \",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(一)13\",\n\t\t\"tempIndex\":12,\n\t\t\"userAnswer\":\"/ŋ/\"\n\t},\n\t{\n\t\t\"answer\":\"/bl/ \",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(一)14\",\n\t\t\"tempIndex\":13,\n\t\t\"userAnswer\":\"/b/\"\n\t},\n\t{\n\t\t\"answer\":\" /ɪə/\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(一)15\",\n\t\t\"tempIndex\":14,\n\t\t\"userAnswer\":\"/ɪə/\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(二).1\",\n\t\t\"tempIndex\":15,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"D\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(二).2\",\n\t\t\"tempIndex\":16,\n\t\t\"userAnswer\":\"D\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(二).3\",\n\t\t\"tempIndex\":17,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(二).4\",\n\t\t\"tempIndex\":18,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"D\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(二).5\",\n\t\t\"tempIndex\":19,\n\t\t\"userAnswer\":\"D\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(二).6\",\n\t\t\"tempIndex\":20,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(二).7\",\n\t\t\"tempIndex\":21,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(二).8\",\n\t\t\"tempIndex\":22,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"D\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(二).9\",\n\t\t\"tempIndex\":23,\n\t\t\"userAnswer\":\"D\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(二)10\",\n\t\t\"tempIndex\":24,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(二)11\",\n\t\t\"tempIndex\":25,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(二)12\",\n\t\t\"tempIndex\":26,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(二)13\",\n\t\t\"tempIndex\":27,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(二)14\",\n\t\t\"tempIndex\":28,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"D\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(二)15\",\n\t\t\"tempIndex\":29,\n\t\t\"userAnswer\":\"D\"\n\t},\n\t{\n\t\t\"answer\":\"D\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(三).1\",\n\t\t\"tempIndex\":30,\n\t\t\"userAnswer\":\"D\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(三).2\",\n\t\t\"tempIndex\":31,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"D\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(三).3\",\n\t\t\"tempIndex\":32,\n\t\t\"userAnswer\":\"D\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(三).4\",\n\t\t\"tempIndex\":33,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(三).5\",\n\t\t\"tempIndex\":34,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(三).6\",\n\t\t\"tempIndex\":35,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(三).7\",\n\t\t\"tempIndex\":36,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(三).8\",\n\t\t\"tempIndex\":37,\n\t\t\"userAnswer\":\"C\"\n\t}\n]",
+      "matched_dataset": "572ee27b",
+      "status": "completed",
+      "accuracy": 0.868421052631579,
+      "evaluation": {
+        "accuracy": 0.868421052631579,
+        "precision": 0.9428571428571428,
+        "recall": 0.9428571428571428,
+        "f1_score": 0.9428571428571428,
+        "hallucination_rate": 0,
+        "total_questions": 38,
+        "correct_count": 33,
+        "error_count": 5,
+        "errors": [
+          {
+            "index": "(一).5",
+            "base_effect": {
+              "answer": "/e/",
+              "userAnswer": "/ə/",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "/e/",
+              "userAnswer": "/ə/",
+              "correct": "no"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=yes，AI=no",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "(一).6",
+            "base_effect": {
+              "answer": "/e/",
+              "userAnswer": "/əɪ/",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "/e/",
+              "userAnswer": "/ɔɪ/",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"/əɪ//yes\"，AI=\"/ɔɪ//no\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "(一).7",
+            "base_effect": {
+              "answer": "/k/",
+              "userAnswer": "/kl/",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "/k/",
+              "userAnswer": "/k/",
+              "correct": "yes"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"/kl/\"，AI=\"/k/\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "(一)13",
+            "base_effect": {
+              "answer": "/n/",
+              "userAnswer": "/ŋ/",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "/n/",
+              "userAnswer": "/ŋ/",
+              "correct": "no"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=yes，AI=no",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "(一)14",
+            "base_effect": {
+              "answer": "/bl/",
+              "userAnswer": "/bl/",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "/bl/",
+              "userAnswer": "/b/",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"/bl//yes\"，AI=\"/b//no\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 2,
+          "识别正确-判断错误": 2,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 23,
+            "correct": 23,
+            "accuracy": 1.0
+          },
+          "objective_fill": {
+            "total": 15,
+            "correct": 10,
+            "accuracy": 0.6666666666666666
+          },
+          "other": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 23,
+            "correct": 23,
+            "accuracy": 1.0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 15,
+            "correct": 10,
+            "accuracy": 0.6666666666666666,
+            "name": "填空"
+          },
+          "5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 23,
+            "correct": 23,
+            "accuracy": 1.0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 15,
+            "correct": 10,
+            "accuracy": 0.6666666666666666,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011355883134570498",
+      "student_id": "2001099609117622274",
+      "student_name": "冯",
+      "homework_name": "Edf",
+      "book_id": "1997866819839905794",
+      "book_name": "袁崇焕中学校本作业.分层作业本.英语,八上",
+      "page_num": 82,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001099609117622274/1997866819839905794/1997866819839905794_82_QUX1A.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"9\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"11\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"12\",\n\t\t\"tempIndex\":3,\n\t\t\"userAnswer\":\"D\"\n\t},\n\t{\n\t\t\"answer\":\"D\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"13\",\n\t\t\"tempIndex\":4,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"D\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"14\",\n\t\t\"tempIndex\":5,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"D\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"15\",\n\t\t\"tempIndex\":6,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(四).1\",\n\t\t\"tempIndex\":7,\n\t\t\"userAnswer\":\"D\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(四).2\",\n\t\t\"tempIndex\":8,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"D\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(四).3\",\n\t\t\"tempIndex\":9,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(四).4\",\n\t\t\"tempIndex\":10,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(四).5\",\n\t\t\"tempIndex\":11,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(四).6\",\n\t\t\"tempIndex\":12,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"D\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(四).7\",\n\t\t\"tempIndex\":13,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(四).8\",\n\t\t\"tempIndex\":14,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(四).9\",\n\t\t\"tempIndex\":15,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(四)10\",\n\t\t\"tempIndex\":16,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"square\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(五).1\",\n\t\t\"tempIndex\":17,\n\t\t\"userAnswer\":\"SBUare\"\n\t},\n\t{\n\t\t\"answer\":\"arrival\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(五).2\",\n\t\t\"tempIndex\":18,\n\t\t\"userAnswer\":\"arrivaled\"\n\t},\n\t{\n\t\t\"answer\":\"glue\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(五).3\",\n\t\t\"tempIndex\":19,\n\t\t\"userAnswer\":\"glued\"\n\t},\n\t{\n\t\t\"answer\":\"prince\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(五).4\",\n\t\t\"tempIndex\":20,\n\t\t\"userAnswer\":\"prioce\"\n\t},\n\t{\n\t\t\"answer\":\"spoon\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(五).5\",\n\t\t\"tempIndex\":21,\n\t\t\"userAnswer\":\"soopn\"\n\t},\n\t{\n\t\t\"answer\":\"bored\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(五).6\",\n\t\t\"tempIndex\":22,\n\t\t\"userAnswer\":\"bore\"\n\t},\n\t{\n\t\t\"answer\":\"personal\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(五).7\",\n\t\t\"tempIndex\":23,\n\t\t\"userAnswer\":\"person\"\n\t},\n\t{\n\t\t\"answer\":\"simple\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(五).8\",\n\t\t\"tempIndex\":24,\n\t\t\"userAnswer\":\"Smiple\"\n\t},\n\t{\n\t\t\"answer\":\"actually\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(五).9\",\n\t\t\"tempIndex\":25,\n\t\t\"userAnswer\":\"actual\"\n\t},\n\t{\n\t\t\"answer\":\"Wherever\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(五)10\",\n\t\t\"tempIndex\":26,\n\t\t\"userAnswer\":\"wherever\"\n\t},\n\t{\n\t\t\"answer\":\"mess\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(六).1\",\n\t\t\"tempIndex\":27,\n\t\t\"userAnswer\":\"mass\"\n\t},\n\t{\n\t\t\"answer\":\"clean\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(六).2\",\n\t\t\"tempIndex\":28,\n\t\t\"userAnswer\":\"deun\"\n\t},\n\t{\n\t\t\"answer\":\"bedroom\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(六).3\",\n\t\t\"tempIndex\":29,\n\t\t\"userAnswer\":\"bedrom\"\n\t},\n\t{\n\t\t\"answer\":\"rubbish\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(六).4\",\n\t\t\"tempIndex\":30,\n\t\t\"userAnswer\":\"rubbishs\"\n\t},\n\t{\n\t\t\"answer\":\"outside\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(六).5\",\n\t\t\"tempIndex\":31,\n\t\t\"userAnswer\":\"otuside\"\n\t}\n]",
+      "matched_dataset": "09fcb84f",
+      "status": "completed",
+      "accuracy": 0.96875,
+      "evaluation": {
+        "accuracy": 0.96875,
+        "precision": 0.96875,
+        "recall": 1.0,
+        "f1_score": 0.9841269841269841,
+        "hallucination_rate": 0.0,
+        "total_questions": 32,
+        "correct_count": 31,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "(五)10",
+            "base_effect": {
+              "answer": "Wherever",
+              "userAnswer": "wherever",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "Wherever",
+              "userAnswer": "wherever",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 17,
+            "correct": 17,
+            "accuracy": 1.0
+          },
+          "objective_fill": {
+            "total": 15,
+            "correct": 14,
+            "accuracy": 0.9333333333333333
+          },
+          "other": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 17,
+            "correct": 17,
+            "accuracy": 1.0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 15,
+            "correct": 14,
+            "accuracy": 0.9333333333333333,
+            "name": "填空"
+          },
+          "5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 17,
+            "correct": 17,
+            "accuracy": 1.0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 15,
+            "correct": 14,
+            "accuracy": 0.9333333333333333,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011355916911300610",
+      "student_id": "2001099609117622274",
+      "student_name": "冯",
+      "homework_name": "Edf",
+      "book_id": "1997866819839905794",
+      "book_name": "袁崇焕中学校本作业.分层作业本.英语,八上",
+      "page_num": 84,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001099609117622274/1997866819839905794/1997866819839905794_84_724TN.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"probably\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"probuly\"\n\t},\n\t{\n\t\t\"answer\":\"surprised\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"surprised\"\n\t},\n\t{\n\t\t\"answer\":\"reminds\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"remind\"\n\t},\n\t{\n\t\t\"answer\":\"Palace\\n\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3,\n\t\t\"userAnswer\":\"palace\"\n\t},\n\t{\n\t\t\"answer\":\"especially\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4,\n\t\t\"userAnswer\":\"eff\"\n\t},\n\t{\n\t\t\"answer\":\"During\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5,\n\t\t\"userAnswer\":\"during\"\n\t},\n\t{\n\t\t\"answer\":\"especially\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6,\n\t\t\"userAnswer\":\"espcially\"\n\t},\n\t{\n\t\t\"answer\":\"forgot\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"8\",\n\t\t\"tempIndex\":7,\n\t\t\"userAnswer\":\"forget\"\n\t},\n\t{\n\t\t\"answer\":\"peace\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"9\",\n\t\t\"tempIndex\":8,\n\t\t\"userAnswer\":\"pease\"\n\t},\n\t{\n\t\t\"answer\":\"comfortable\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":9,\n\t\t\"userAnswer\":\"comfortules\"\n\t},\n\t{\n\t\t\"answer\":\"took my breath away\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"11\",\n\t\t\"tempIndex\":10,\n\t\t\"userAnswer\":\"took me breath way\"\n\t},\n\t{\n\t\t\"answer\":\"turned around\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"12\",\n\t\t\"tempIndex\":11,\n\t\t\"userAnswer\":\"turned around\"\n\t},\n\t{\n\t\t\"answer\":\"ready to attend\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"13\",\n\t\t\"tempIndex\":12,\n\t\t\"userAnswer\":\"ready to attend\"\n\t},\n\t{\n\t\t\"answer\":\"thousands of\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"14\",\n\t\t\"tempIndex\":13,\n\t\t\"userAnswer\":\"thousands to\"\n\t},\n\t{\n\t\t\"answer\":\"fight against\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"15\",\n\t\t\"tempIndex\":14,\n\t\t\"userAnswer\":\"lighted gainst\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"16\",\n\t\t\"tempIndex\":15,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"17\",\n\t\t\"tempIndex\":16,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"18\",\n\t\t\"tempIndex\":17,\n\t\t\"userAnswer\":\"D\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"19\",\n\t\t\"tempIndex\":18,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"20\",\n\t\t\"tempIndex\":19,\n\t\t\"userAnswer\":\"F\"\n\t}\n]",
+      "matched_dataset": "572ee27b",
+      "status": "completed",
+      "accuracy": 0.6,
+      "evaluation": {
+        "accuracy": 0.6,
+        "precision": 0.7058823529411765,
+        "recall": 1.0,
+        "f1_score": 0.8275862068965517,
+        "hallucination_rate": 0.1,
+        "total_questions": 20,
+        "correct_count": 12,
+        "error_count": 8,
+        "errors": [
+          {
+            "index": "1",
+            "base_effect": {
+              "answer": "probably",
+              "userAnswer": "probaly",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "probably",
+              "userAnswer": "probuly",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"probaly\"，AI=\"probuly\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "2",
+            "base_effect": {
+              "answer": "surprised",
+              "userAnswer": "surpriesd",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "surprised",
+              "userAnswer": "surprised",
+              "correct": "yes"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "AI将学生答案\"surpriesd\"识别为\"surprised\"（标准答案），属于识别幻觉",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": true
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "4",
+            "base_effect": {
+              "answer": "Palace",
+              "userAnswer": "palace",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "Palace",
+              "userAnswer": "palace",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "6",
+            "base_effect": {
+              "answer": "During",
+              "userAnswer": "during",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "During",
+              "userAnswer": "during",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "10",
+            "base_effect": {
+              "answer": "comfortable",
+              "userAnswer": "comfortales",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "comfortable",
+              "userAnswer": "comfortules",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"comfortales\"，AI=\"comfortules\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "12",
+            "base_effect": {
+              "answer": "turned around",
+              "userAnswer": "turned aorund",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "turned around",
+              "userAnswer": "turned around",
+              "correct": "yes"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "AI将学生答案\"turned aorund\"识别为\"turned around\"（标准答案），属于识别幻觉",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": true
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "13",
+            "base_effect": {
+              "answer": "ready to attend",
+              "userAnswer": "ready to attend",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "ready to attend",
+              "userAnswer": "ready to attend",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "15",
+            "base_effect": {
+              "answer": "fight against",
+              "userAnswer": "fighted gainst",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "fight against",
+              "userAnswer": "lighted gainst",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"fighted gainst\"，AI=\"lighted gainst\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 3,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 3,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 2
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 6,
+            "correct": 6,
+            "accuracy": 1.0
+          },
+          "objective_fill": {
+            "total": 14,
+            "correct": 6,
+            "accuracy": 0.42857142857142855
+          },
+          "other": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 15,
+            "correct": 7,
+            "accuracy": 0.4666666666666667,
+            "name": "填空"
+          },
+          "5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 15,
+            "correct": 7,
+            "accuracy": 0.4666666666666667,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011355951367507970",
+      "student_id": "2001099609117622274",
+      "student_name": "冯",
+      "homework_name": "Edf",
+      "book_id": "1997866819839905794",
+      "book_name": "袁崇焕中学校本作业.分层作业本.英语,八上",
+      "page_num": 85,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001099609117622274/1997866819839905794/1997866819839905794_85_8HJ8L.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"invited\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"invited\"\n\t},\n\t{\n\t\t\"answer\":\"several\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"several\"\n\t},\n\t{\n\t\t\"answer\":\"yet\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"yet\"\n\t},\n\t{\n\t\t\"answer\":\"Perhaps\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3,\n\t\t\"userAnswer\":\"perhaps\"\n\t},\n\t{\n\t\t\"answer\":\"planned\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4,\n\t\t\"userAnswer\":\"planned\"\n\t},\n\t{\n\t\t\"answer\":\"until\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5,\n\t\t\"userAnswer\":\"until\"\n\t},\n\t{\n\t\t\"answer\":\"text(s)\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6,\n\t\t\"userAnswer\":\"text\"\n\t},\n\t{\n\t\t\"answer\":\"covering\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"8\",\n\t\t\"tempIndex\":7,\n\t\t\"userAnswer\":\"covering\"\n\t},\n\t{\n\t\t\"answer\":\"joy\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"9\",\n\t\t\"tempIndex\":8,\n\t\t\"userAnswer\":\"joy\"\n\t},\n\t{\n\t\t\"answer\":\"apartment\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":9,\n\t\t\"userAnswer\":\"apartment\"\n\t},\n\t{\n\t\t\"answer\":\"pack   up\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"11\",\n\t\t\"tempIndex\":10,\n\t\t\"userAnswer\":\"pack up\"\n\t},\n\t{\n\t\t\"answer\":\"gave  her   a   lift\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"12\",\n\t\t\"tempIndex\":11,\n\t\t\"userAnswer\":\"gave her a lift\"\n\t},\n\t{\n\t\t\"answer\":\"clean   up \",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"13\",\n\t\t\"tempIndex\":12,\n\t\t\"userAnswer\":\"clean up\"\n\t},\n\t{\n\t\t\"answer\":\"share   with \",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"14\",\n\t\t\"tempIndex\":13,\n\t\t\"userAnswer\":\"share; with\"\n\t},\n\t{\n\t\t\"answer\":\"Be   careful  with\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"15\",\n\t\t\"tempIndex\":14,\n\t\t\"userAnswer\":\"be careful with\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"16\",\n\t\t\"tempIndex\":15,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"17\",\n\t\t\"tempIndex\":16,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"18\",\n\t\t\"tempIndex\":17,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"19\",\n\t\t\"tempIndex\":18,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"20\",\n\t\t\"tempIndex\":19,\n\t\t\"userAnswer\":\"A\"\n\t}\n]",
+      "matched_dataset": "572ee27b",
+      "status": "completed",
+      "accuracy": 0.95,
+      "evaluation": {
+        "accuracy": 0.95,
+        "precision": 0.95,
+        "recall": 1.0,
+        "f1_score": 0.9743589743589743,
+        "hallucination_rate": 0,
+        "total_questions": 20,
+        "correct_count": 19,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "7",
+            "base_effect": {
+              "answer": "text(s)",
+              "userAnswer": "text",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "text(s)",
+              "userAnswer": "text",
+              "correct": "no"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=yes，AI=no",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0
+          },
+          "objective_fill": {
+            "total": 15,
+            "correct": 14,
+            "accuracy": 0.9333333333333333
+          },
+          "other": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 15,
+            "correct": 14,
+            "accuracy": 0.9333333333333333,
+            "name": "填空"
+          },
+          "5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 15,
+            "correct": 14,
+            "accuracy": 0.9333333333333333,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011355983470710786",
+      "student_id": "2001099609117622274",
+      "student_name": "冯",
+      "homework_name": "Edf",
+      "book_id": "1997866819839905794",
+      "book_name": "袁崇焕中学校本作业.分层作业本.英语,八上",
+      "page_num": 86,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001099609117622274/1997866819839905794/1997866819839905794_86_YVDKC.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"serious\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"seriou\"\n\t},\n\t{\n\t\t\"answer\":\"sense\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"sense\"\n\t},\n\t{\n\t\t\"answer\":\"expects\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"expect\"\n\t},\n\t{\n\t\t\"answer\":\"shyer\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3,\n\t\t\"userAnswer\":\"shyers\"\n\t},\n\t{\n\t\t\"answer\":\"facts\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4,\n\t\t\"userAnswer\":\"fact\"\n\t},\n\t{\n\t\t\"answer\":\"situations\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5,\n\t\t\"userAnswer\":\"situation\"\n\t},\n\t{\n\t\t\"answer\":\"performed\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6,\n\t\t\"userAnswer\":\"performed\"\n\t},\n\t{\n\t\t\"answer\":\"interests\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"8\",\n\t\t\"tempIndex\":7,\n\t\t\"userAnswer\":\"interests\"\n\t},\n\t{\n\t\t\"answer\":\"pleasure\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"9\",\n\t\t\"tempIndex\":8,\n\t\t\"userAnswer\":\"pleasure\"\n\t},\n\t{\n\t\t\"answer\":\"opinions\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":9,\n\t\t\"userAnswer\":\"opinions\"\n\t},\n\t{\n\t\t\"answer\":\"compare     with / to\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"11\",\n\t\t\"tempIndex\":10,\n\t\t\"userAnswer\":\"compare; with\"\n\t},\n\t{\n\t\t\"answer\":\" in   my  spare   time\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"12\",\n\t\t\"tempIndex\":11,\n\t\t\"userAnswer\":\"in my spura times\"\n\t},\n\t{\n\t\t\"answer\":\"Thanks  to\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"13\",\n\t\t\"tempIndex\":12,\n\t\t\"userAnswer\":\"Thank to\"\n\t},\n\t{\n\t\t\"answer\":\"makes   a   mistake\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"14\",\n\t\t\"tempIndex\":13,\n\t\t\"userAnswer\":\"make a mistake\"\n\t},\n\t{\n\t\t\"answer\":\"cares   about\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"15\",\n\t\t\"tempIndex\":14,\n\t\t\"userAnswer\":\"care about\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"16\",\n\t\t\"tempIndex\":15,\n\t\t\"userAnswer\":\"O\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"17\",\n\t\t\"tempIndex\":16,\n\t\t\"userAnswer\":\"D\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"18\",\n\t\t\"tempIndex\":17,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"19\",\n\t\t\"tempIndex\":18,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"20\",\n\t\t\"tempIndex\":19,\n\t\t\"userAnswer\":\"B\"\n\t}\n]",
+      "matched_dataset": "572ee27b",
+      "status": "completed",
+      "accuracy": 0.7,
+      "evaluation": {
+        "accuracy": 0.7,
+        "precision": 0.7368421052631579,
+        "recall": 1.0,
+        "f1_score": 0.8484848484848484,
+        "hallucination_rate": 0.05,
+        "total_questions": 20,
+        "correct_count": 14,
+        "error_count": 6,
+        "errors": [
+          {
+            "index": "2",
+            "base_effect": {
+              "answer": "sense",
+              "userAnswer": "sanse",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "sense",
+              "userAnswer": "sense",
+              "correct": "yes"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "AI将学生答案\"sanse\"识别为\"sense\"（标准答案），属于识别幻觉",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": true
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "7",
+            "base_effect": {
+              "answer": "performed",
+              "userAnswer": "performed",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "performed",
+              "userAnswer": "performed",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "8",
+            "base_effect": {
+              "answer": "interests",
+              "userAnswer": "interests",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "interests",
+              "userAnswer": "interests",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "9",
+            "base_effect": {
+              "answer": "pleasure",
+              "userAnswer": "pleasure",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "pleasure",
+              "userAnswer": "pleasure",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "10",
+            "base_effect": {
+              "answer": "opinions",
+              "userAnswer": "opinions",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "opinions",
+              "userAnswer": "opinions",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "12",
+            "base_effect": {
+              "answer": "in   my  spare   time",
+              "userAnswer": "in my spara times",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "in   my  spare   time",
+              "userAnswer": "in my spura times",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"in my spara times\"，AI=\"in my spura times\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 4,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 1
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0
+          },
+          "objective_fill": {
+            "total": 15,
+            "correct": 9,
+            "accuracy": 0.6
+          },
+          "other": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 15,
+            "correct": 9,
+            "accuracy": 0.6,
+            "name": "填空"
+          },
+          "5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 15,
+            "correct": 9,
+            "accuracy": 0.6,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011356018103078914",
+      "student_id": "2001099609117622274",
+      "student_name": "冯",
+      "homework_name": "Edf",
+      "book_id": "1997866819839905794",
+      "book_name": "袁崇焕中学校本作业.分层作业本.英语,八上",
+      "page_num": 87,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001099609117622274/1997866819839905794/1997866819839905794_87_WA3J8.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"action\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"actions\"\n\t},\n\t{\n\t\t\"answer\":\"without\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"withouts\"\n\t},\n\t{\n\t\t\"answer\":\"imagining\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"imaing\"\n\t},\n\t{\n\t\t\"answer\":\"shot\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3,\n\t\t\"userAnswer\":\"shat\"\n\t},\n\t{\n\t\t\"answer\":\"wings\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4,\n\t\t\"userAnswer\":\"wings\"\n\t},\n\t{\n\t\t\"answer\":\"humans\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5,\n\t\t\"userAnswer\":\"hamans\"\n\t},\n\t{\n\t\t\"answer\":\"disappointed\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6,\n\t\t\"userAnswer\":\"disapponts\"\n\t},\n\t{\n\t\t\"answer\":\"communicated\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"8\",\n\t\t\"tempIndex\":7,\n\t\t\"userAnswer\":\"conmunicated\"\n\t},\n\t{\n\t\t\"answer\":\"tools\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"9\",\n\t\t\"tempIndex\":8,\n\t\t\"userAnswer\":\"tool\"\n\t},\n\t{\n\t\t\"answer\":\"popular\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":9,\n\t\t\"userAnswer\":\"populurs\"\n\t},\n\t{\n\t\t\"answer\":\"In order to\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"11\",\n\t\t\"tempIndex\":10,\n\t\t\"userAnswer\":\"In order for\"\n\t},\n\t{\n\t\t\"answer\":\"plays an important role/part in\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"12\",\n\t\t\"tempIndex\":11,\n\t\t\"userAnswer\":\"plays an important to pole\"\n\t},\n\t{\n\t\t\"answer\":\"is connected to/with\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"13\",\n\t\t\"tempIndex\":12,\n\t\t\"userAnswer\":\"connect is to\"\n\t},\n\t{\n\t\t\"answer\":\"for this reason\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"14\",\n\t\t\"tempIndex\":13,\n\t\t\"userAnswer\":\"for this reasons\"\n\t},\n\t{\n\t\t\"answer\":\"are home to\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"15\",\n\t\t\"tempIndex\":14,\n\t\t\"userAnswer\":\"is home to\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"16\",\n\t\t\"tempIndex\":15,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"17\",\n\t\t\"tempIndex\":16,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"18\",\n\t\t\"tempIndex\":17,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"B\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"19\",\n\t\t\"tempIndex\":18,\n\t\t\"userAnswer\":\"D\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"20\",\n\t\t\"tempIndex\":19,\n\t\t\"userAnswer\":\"A\"\n\t}\n]",
+      "matched_dataset": "4dbac0e8",
+      "status": "completed",
+      "accuracy": 0.9,
+      "evaluation": {
+        "accuracy": 0.9,
+        "precision": 0.9473684210526315,
+        "recall": 1.0,
+        "f1_score": 0.972972972972973,
+        "hallucination_rate": 0.0,
+        "total_questions": 20,
+        "correct_count": 18,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "5",
+            "base_effect": {
+              "answer": "wings",
+              "userAnswer": "wings",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "wings",
+              "userAnswer": "wings",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "10",
+            "base_effect": {
+              "answer": "popular",
+              "userAnswer": "populars",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "popular",
+              "userAnswer": "populurs",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"populars\"，AI=\"populurs\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0
+          },
+          "objective_fill": {
+            "total": 15,
+            "correct": 13,
+            "accuracy": 0.8666666666666667
+          },
+          "other": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 15,
+            "correct": 13,
+            "accuracy": 0.8666666666666667,
+            "name": "填空"
+          },
+          "5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 15,
+            "correct": 13,
+            "accuracy": 0.8666666666666667,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观解答"
+          }
+        }
+      }
+    }
+  ],
+  "overall_report": {
+    "overall_accuracy": 0.8525641025641025,
+    "total_homework": 7,
+    "total_questions": 156,
+    "correct_questions": 133,
+    "by_question_type": {
+      "choice": {
+        "total": 66,
+        "correct": 66,
+        "accuracy": 1.0
+      },
+      "objective_fill": {
+        "total": 90,
+        "correct": 67,
+        "accuracy": 0.7444444444444445
+      },
+      "other": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0
+      }
+    },
+    "by_bvalue": {
+      "1": {
+        "total": 65,
+        "correct": 65,
+        "accuracy": 1.0,
+        "name": "单选"
+      },
+      "2": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "多选"
+      },
+      "3": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "判断"
+      },
+      "4": {
+        "total": 91,
+        "correct": 68,
+        "accuracy": 0.7472527472527473,
+        "name": "填空"
+      },
+      "5": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "解答"
+      }
+    },
+    "by_combined": {
+      "objective_1": {
+        "total": 65,
+        "correct": 65,
+        "accuracy": 1.0,
+        "name": "客观单选"
+      },
+      "objective_2": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "客观多选"
+      },
+      "objective_3": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "客观判断"
+      },
+      "objective_4": {
+        "total": 91,
+        "correct": 68,
+        "accuracy": 0.7472527472527473,
+        "name": "客观填空"
+      },
+      "objective_5": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "客观解答"
+      },
+      "subjective_1": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "主观单选"
+      },
+      "subjective_2": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "主观多选"
+      },
+      "subjective_3": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "主观判断"
+      },
+      "subjective_4": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "主观填空"
+      },
+      "subjective_5": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "主观解答"
+      }
+    }
+  },
+  "created_at": "2026-01-14T20:19:48.341053"
+}

@@ -182,3 +182,110 @@ def extract_reason_from_text(content):
         return reason_match.group(1).strip()
     
     return ''
+
+
+def calculate_similarity(text1, text2):
+    """
+    计算两个文本的相似度（轻量级方案：字符n-gram + 序列匹配）
+    
+    不依赖jieba/sklearn，内存占用极低，同时能识别：
+    1. 语义差异："古桥" vs "立交桥" → 较低相似度（不同字符）
+    2. 词序差异："①②③" vs "①③②" → 较低相似度（序列不同）
+    
+    算法：使用字符级2-gram的Jaccard相似度 + SequenceMatcher序列相似度
+    
+    Args:
+        text1: 第一个文本
+        text2: 第二个文本
+        
+    Returns:
+        float: 相似度值 (0-1)
+    """
+    from difflib import SequenceMatcher
+    
+    if not text1 and not text2:
+        return 1.0
+    if not text1 or not text2:
+        return 0.0
+    
+    # 先标准化文本
+    norm1 = normalize_answer(text1)
+    norm2 = normalize_answer(text2)
+    
+    if norm1 == norm2:
+        return 1.0
+    
+    # 如果文本太短，直接用序列匹配
+    if len(norm1) < 3 or len(norm2) < 3:
+        return SequenceMatcher(None, norm1, norm2).ratio()
+    
+    # 1. 字符级2-gram Jaccard相似度（捕捉局部特征/语义差异）
+    def get_ngrams(text, n=2):
+        """生成字符级n-gram集合"""
+        return set(text[i:i+n] for i in range(len(text) - n + 1))
+    
+    ngrams1 = get_ngrams(norm1, 2)
+    ngrams2 = get_ngrams(norm2, 2)
+    
+    if not ngrams1 or not ngrams2:
+        jaccard_sim = 0.0
+    else:
+        intersection = len(ngrams1 & ngrams2)
+        union = len(ngrams1 | ngrams2)
+        jaccard_sim = intersection / union if union > 0 else 0.0
+    
+    # 2. 序列相似度（捕捉顺序差异）
+    seq_sim = SequenceMatcher(None, norm1, norm2).ratio()
+    
+    # 3. 混合：50% n-gram Jaccard + 50% 序列相似度
+    # 这样既能识别内容差异，也能识别顺序差异
+    similarity = 0.5 * jaccard_sim + 0.5 * seq_sim
+    return float(similarity)
+
+
+def calculate_char_similarity(text1, text2):
+    """
+    计算两个文本的字符级相似度（旧方法，保留备用）
+    使用 SequenceMatcher 算法，返回 0-1 之间的相似度值
+    
+    Args:
+        text1: 第一个文本
+        text2: 第二个文本
+        
+    Returns:
+        float: 相似度值 (0-1)
+    """
+    from difflib import SequenceMatcher
+    
+    if not text1 and not text2:
+        return 1.0
+    if not text1 or not text2:
+        return 0.0
+    
+    norm1 = normalize_answer(text1)
+    norm2 = normalize_answer(text2)
+    
+    if norm1 == norm2:
+        return 1.0
+    
+    return SequenceMatcher(None, norm1, norm2).ratio()
+
+
+def is_fuzzy_match(text1, text2, threshold=0.80):
+    """
+    判断两个文本是否模糊匹配（语义相似度达到阈值）
+    
+    使用 TF-IDF 语义相似度，能更好地识别语义差异：
+    - "古桥没有很高价值" vs "立交桥没有很高价值" → 不匹配（语义不同）
+    - "答案是A" vs "答案是a" → 匹配（语义相同）
+    
+    Args:
+        text1: 第一个文本
+        text2: 第二个文本
+        threshold: 相似度阈值，默认 0.85 (85%)
+        
+    Returns:
+        tuple: (is_match: bool, similarity: float)
+    """
+    similarity = calculate_similarity(text1, text2)
+    return similarity >= threshold, similarity

@@ -1,0 +1,480 @@
+{
+  "task_id": "08cf74e3",
+  "name": "批量评估-2026/1/15",
+  "status": "completed",
+  "homework_items": [
+    {
+      "homework_id": "2011632284286898177",
+      "student_id": "2008453555834384385",
+      "student_name": "语文",
+      "homework_name": "语文",
+      "book_id": "1998967464626053121",
+      "book_name": "徐泽和名师工作室.八年级语文单元优化题(五)(六)",
+      "page_num": 1,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2008453555834384385/1998967464626053121/1998967464626053121_1_N2W0M.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"江入大荒流  云生结海楼\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(1)\",\n\t\t\"mainAnswer\":\"江入大荒流  云生结海楼\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"江入大荒流；云生结海楼\"\n\t},\n\t{\n\t\t\"answer\":\"五色交辉\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(2)\",\n\t\t\"mainAnswer\":\"五色交辉\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"五色相辉\"\n\t},\n\t{\n\t\t\"answer\":\"一览众山小\\n\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(3)\",\n\t\t\"mainAnswer\":\"一览众山小\\n\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"一览众山小\"\n\t},\n\t{\n\t\t\"answer\":\"苔痕上阶绿  草色入帘青\\n\\n\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(4)\",\n\t\t\"mainAnswer\":\"苔痕上阶绿  草色入帘青\\n\\n\",\n\t\t\"tempIndex\":3,\n\t\t\"userAnswer\":\"苔痕上阶绿；草色入帘青\"\n\t},\n\t{\n\t\t\"answer\":\"山重水复疑无路  柳暗花明又一村\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"(5)\",\n\t\t\"mainAnswer\":\"山重水复疑无路  柳暗花明又一村\",\n\t\t\"tempIndex\":4,\n\t\t\"userAnswer\":\"山重水复疑无路；柳暗花明又一村\"\n\t},\n\t{\n\t\t\"answer\":\"将“摒弃”改为“健全”或“完善”（结合语境，第二空所写词语合理即可）\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"2\",\n\t\t\"mainAnswer\":\"将“摒弃”改为“健全”或“完善”（结合语境，第二空所写词语合理即可）\",\n\t\t\"tempIndex\":5,\n\t\t\"userAnswer\":\"完善；摒弃\"\n\t},\n\t{\n\t\t\"answer\":\"“严防”或“杜绝”（学生写出其中一词也可）\\n\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"3\",\n\t\t\"mainAnswer\":\"“严防”或“杜绝”（学生写出其中一词也可）\\n\",\n\t\t\"tempIndex\":6,\n\t\t\"userAnswer\":\"杜绝\"\n\t},\n\t{\n\t\t\"answer\":\"①将长江文物和文化遗产保护放在首要位置，健全系统保护、协同保护的机制；②全面加强长江流域文物考古研究，健全长江文物保护名录制度，加强长江文物本体保护；③统筹推进抢救性保护和预防性保护，统筹兼顾文物本体与周边环境、文化生态的整体性保护；④严防大拆大建违规开发等不良倾向，确保文化保护的科学性和可持续性。（两点1分）\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"4\",\n\t\t\"mainAnswer\":\"①将长江文物和文化遗产保护放在首要位置，健全系统保护、协同保护的机制；②全面加强长江流域文物考古研究，健全长江文物保护名录制度，加强长江文物本体保护；③统筹推进抢救性保护和预防性保护，统筹兼顾文物本体与周边环境、文化生态的整体性保护；④严防大拆大建违规开发等不良倾向，确保文化保护的科学性和可持续性。（两点1分）\",\n\t\t\"tempIndex\":7,\n\t\t\"userAnswer\":\"①摒弃长江文物保护名录制度；②全面加强长江流域开发，大拆大建违规开发\"\n\t}\n]",
+      "matched_dataset": "619c5aed",
+      "status": "completed",
+      "accuracy": 0.375,
+      "evaluation": {
+        "accuracy": 0.375,
+        "precision": 0.375,
+        "recall": 1.0,
+        "f1_score": 0.5454545454545454,
+        "hallucination_rate": 0.625,
+        "total_questions": 8,
+        "correct_count": 3,
+        "error_count": 5,
+        "errors": [
+          {
+            "index": "(1)",
+            "base_effect": {
+              "answer": "江入大荒流  云生结海楼",
+              "userAnswer": "江入大巟流；云生结海楼",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "江入大荒流  云生结海楼",
+              "userAnswer": "江入大荒流；云生结海楼",
+              "correct": "yes"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "基准效果中用户答案为“江入大巟流；云生结海楼”，AI识别为“江入大荒流；云生结海楼”，识别错误（‘巟’识别为‘荒’）。基准判断为no，AI判断为yes，判断错误。用户实际答错（有错别字），但AI识别成了正确答案并判对，属于幻觉。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "(3)",
+            "base_effect": {
+              "answer": "一览众山小",
+              "userAnswer": "一览众山水",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "一览众山小\n",
+              "userAnswer": "一览众山小",
+              "correct": "yes"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "基准效果中用户答案为“一览众山水”，AI识别为“一览众山小”，识别错误（‘水’识别为‘小’）。基准判断为no，AI判断为yes，判断错误。用户实际答错（有错别字），但AI识别成了正确答案并判对，属于幻觉。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "(4)",
+            "base_effect": {
+              "answer": "苔痕上阶绿  草色入帘青",
+              "userAnswer": "苔痕土阶绿，草色人帘青",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "苔痕上阶绿  草色入帘青\n\n",
+              "userAnswer": "苔痕上阶绿；草色入帘青",
+              "correct": "yes"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "基准效果中用户答案为“苔痕土阶绿，草色人帘青”，AI识别为“苔痕上阶绿；草色入帘青”，识别错误（‘土’识别为‘上’，‘人’识别为‘入’）。基准判断为no，AI判断为yes，判断错误。用户实际答错（有错别字），但AI识别成了正确答案并判对，属于幻觉。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "(5)",
+            "base_effect": {
+              "answer": "山重水复疑无路  柳暗花明又一村",
+              "userAnswer": "山重水复疑无路，柳明花暗又一村",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "山重水复疑无路  柳暗花明又一村",
+              "userAnswer": "山重水复疑无路；柳暗花明又一村",
+              "correct": "yes"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "基准效果中用户答案为“山重水复疑无路，柳明花暗又一村”，AI识别为“山重水复疑无路；柳暗花明又一村”，识别错误（‘柳明花暗’识别为‘柳暗花明’）。基准判断为no，AI判断为yes，判断错误。用户实际答错（语序错误），但AI识别成了正确答案并判对，属于幻觉。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "3",
+            "base_effect": {
+              "answer": "“严防”或“杜绝”（学生写出其中一词也可）",
+              "userAnswer": "社绝",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "“严防”或“杜绝”（学生写出其中一词也可）\n",
+              "userAnswer": "杜绝",
+              "correct": "yes"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "基准效果中用户答案为“社绝”，AI识别为“杜绝”，识别错误（‘社’识别为‘杜’）。基准判断为no，AI判断为yes，判断错误。用户实际答错（有错别字），但AI识别成了正确答案并判对，属于幻觉。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 5
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 7,
+            "correct": 2,
+            "accuracy": 0.2857142857142857
+          },
+          "subjective": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 8,
+            "correct": 3,
+            "accuracy": 0.375
+          }
+        },
+        "ai_compared": true
+      }
+    },
+    {
+      "homework_id": "2011632306365714433",
+      "student_id": "2008453555834384385",
+      "student_name": "语文",
+      "homework_name": "语文",
+      "book_id": "1998967464626053121",
+      "book_name": "徐泽和名师工作室.八年级语文单元优化题(五)(六)",
+      "page_num": 2,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2008453555834384385/1998967464626053121/1998967464626053121_2_9B449.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"苏州园林冠江南（合乎题干要求即可）\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"5\",\n\t\t\"mainAnswer\":\"苏州园林冠江南（合乎题干要求即可）\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"广州路过睡大街\"\n\t},\n\t{\n\t\t\"answer\":\"①建筑——巧夺天工　②文学——诗词沃土　③旅游——观赏胜地\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"6\",\n\t\t\"mainAnswer\":\"①建筑——巧夺天工　②文学——诗词沃土　③旅游——观赏胜地\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"文学——苦难遗霜；旅游——痛苦风华\"\n\t},\n\t{\n\t\t\"answer\":\"示例：阿姨，您好！飞宇热爱古建筑，学了课文内容后开展拓展活动，探寻身边的文化遗产，这不但不会影响他的学习，还能培养他的学习能力，提升他的学习深度。阿姨，您就让飞宇开展这次有意义的活动吧！\\n\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"7\",\n\t\t\"mainAnswer\":\"示例：阿姨，您好！飞宇热爱古建筑，学了课文内容后开展拓展活动，探寻身边的文化遗产，这不但不会影响他的学习，还能培养他的学习能力，提升他的学习深度。阿姨，您就让飞宇开展这次有意义的活动吧！\\n\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"这题给我判对吧\"\n\t},\n\t{\n\t\t\"answer\":\"成岗　舍己为人（或为保护同志和党组织宁可牺牲自己）\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(1)\",\n\t\t\"mainAnswer\":\"成岗　舍己为人（或为保护同志和党组织宁可牺牲自己）\",\n\t\t\"tempIndex\":3,\n\t\t\"userAnswer\":\"孙悟空；舍人为己\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"(2)\",\n\t\t\"mainAnswer\":\"C\",\n\t\t\"tempIndex\":4,\n\t\t\"userAnswer\":\"D\"\n\t},\n\t{\n\t\t\"answer\":\"(1)感叹句\\n(2)祈使句\\n(3)疑问句\\n(4)陈述句\\n\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"9\",\n\t\t\"mainAnswer\":\"(1)感叹句\\n(2)祈使句\\n(3)疑问句\\n(4)陈述句\\n\",\n\t\t\"tempIndex\":5,\n\t\t\"userAnswer\":\"(1)疑问句；(2)陈述句；(3)感叹句；(4)祈使句\"\n\t}\n]",
+      "matched_dataset": "619c5aed",
+      "status": "completed",
+      "accuracy": 1.0,
+      "evaluation": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 6,
+        "error_count": 0,
+        "errors": [],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 4,
+            "correct": 4,
+            "accuracy": 1.0
+          },
+          "subjective": {
+            "total": 2,
+            "correct": 2,
+            "accuracy": 1.0
+          },
+          "choice": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0
+          }
+        },
+        "ai_compared": true
+      }
+    },
+    {
+      "homework_id": "2011632334991839233",
+      "student_id": "2008453555834384385",
+      "student_name": "语文",
+      "homework_name": "语文",
+      "book_id": "1998967464626053121",
+      "book_name": "徐泽和名师工作室.八年级语文单元优化题(五)(六)",
+      "page_num": 3,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2008453555834384385/1998967464626053121/1998967464626053121_3_RQJ7D.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"平台　四周　碑文　空间\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"10\",\n\t\t\"mainAnswer\":\"平台　四周　碑文　空间\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"平台；旁边；碑文；时间\"\n\t},\n\t{\n\t\t\"answer\":\"作比较、列数字。“栏杆的形状和天安门前金水桥的汉白玉栏杆一样”运用了作比较的说明方法，将人民英雄纪念碑的栏杆与天安门前金水桥的汉白玉栏杆进行对比，突出两者形状相似，同时强调了栏杆美观朴素、洁白耀眼的特点，使读者更直观地理解栏杆的样式，增强了说明的生动性和准确性。“在一块60吨重、14.7米高的碑心石上”运用列数字的说明方法，描述碑心石的重量和高度，用具体的数字让读者更直观地了解碑心石的规模和大小，使说明更具有说服力。\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"11\",\n\t\t\"mainAnswer\":\"作比较、列数字。“栏杆的形状和天安门前金水桥的汉白玉栏杆一样”运用了作比较的说明方法，将人民英雄纪念碑的栏杆与天安门前金水桥的汉白玉栏杆进行对比，突出两者形状相似，同时强调了栏杆美观朴素、洁白耀眼的特点，使读者更直观地理解栏杆的样式，增强了说明的生动性和准确性。“在一块60吨重、14.7米高的碑心石上”运用列数字的说明方法，描述碑心石的重量和高度，用具体的数字让读者更直观地了解碑心石的规模和大小，使说明更具有说服力。\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"①比喻，夸张，将碑心石夸张为60吨重，突出了人物的弱小，强调了时代的朴素，让读者更加了解碑心石大小。\"\n\t},\n\t{\n\t\t\"answer\":\"不能删，说明毛主席、周总理对此事态度非常慎重，显示建碑的意义重大。三段碑文分开写，由近溯远，层次清晰，表达了人民对各个历史阶段革命先烈的崇敬和怀念之情。\\n\\n\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"12\",\n\t\t\"mainAnswer\":\"不能删，说明毛主席、周总理对此事态度非常慎重，显示建碑的意义重大。三段碑文分开写，由近溯远，层次清晰，表达了人民对各个历史阶段革命先烈的崇敬和怀念之情。\\n\\n\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"可以或许删了。没有什么作用，也不突出意义的重大。表达了对人民的疏忽。\"\n\t}\n]",
+      "matched_dataset": "619c5aed",
+      "status": "completed",
+      "accuracy": 0.6666666666666666,
+      "evaluation": {
+        "accuracy": 0.6666666666666666,
+        "precision": 0.6666666666666666,
+        "recall": 1.0,
+        "f1_score": 0.8,
+        "hallucination_rate": 0.0,
+        "total_questions": 3,
+        "correct_count": 2,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "11",
+            "base_effect": {
+              "answer": "作比较、列数字。“栏杆的形状和天安门前金水桥的汉白玉栏杆一样”运用了作比较的说明方法，将人民英雄纪念碑的栏杆与天安门前金水桥的汉白玉栏杆进行对比，突出两者形状相似，同时强调了栏杆美观朴素、洁白耀眼的特点，使读者更直观地理解栏杆的样式，增强了说明的生动性和准确性。“在一块60吨重、14.7米高的碑心石上”运用列数字的说明方法，描述碑心石的重量和高度，用具体的数字让读者更直观地了解碑心石的规模和大小，使说明更具有说服力。",
+              "userAnswer": "①比喻,夸张,将碑心石夸张为60吨重,突出了人物的弱小,强调了时代的朴素,让读者更加了解碑心石大小",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "作比较、列数字。“栏杆的形状和天安门前金水桥的汉白玉栏杆一样”运用了作比较的说明方法，将人民英雄纪念碑的栏杆与天安门前金水桥的汉白玉栏杆进行对比，突出两者形状相似，同时强调了栏杆美观朴素、洁白耀眼的特点，使读者更直观地理解栏杆的样式，增强了说明的生动性和准确性。“在一块60吨重、14.7米高的碑心石上”运用列数字的说明方法，描述碑心石的重量和高度，用具体的数字让读者更直观地了解碑心石的规模和大小，使说明更具有说服力。",
+              "userAnswer": "①比喻，夸张，将碑心石夸张为60吨重，突出了人物的弱小，强调了时代的朴素，让读者更加了解碑心石大小。",
+              "correct": "no"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "基准效果中用户答案为“①比喻,夸张,将碑心石夸张为60吨重,突出了人物的弱小,强调了时代的朴素,让读者更加了解碑心石大小”，AI识别为“①比喻，夸张，将碑心石夸张为60吨重，突出了人物的弱小，强调了时代的朴素，让读者更加了解碑心石大小。”，识别正确（仅标点/空格格式差异）。但基准效果中correct为“no”，AI批改结果中correct也为“no”，判断结果一致。此处应为correct类型，但根据错误类型定义，识别正确且判断正确应归类为correct。然而，AI批改结果中correct与基准一致，因此AI批改正确，错误类型应为correct。但根据提供的错误类型定义，recognition_correct_judgment_error表示识别正确但判断错误，这与事实不符。实际上，AI识别正确且判断正确，应属于correct。但根据分析，AI批改结果中correct为“no”，与基准一致，因此判断正确。错误类型应为correct。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 3,
+            "correct": 2,
+            "accuracy": 0.6666666666666666
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 3,
+            "correct": 2,
+            "accuracy": 0.6666666666666666
+          }
+        },
+        "ai_compared": true
+      }
+    },
+    {
+      "homework_id": "2011632368961507330",
+      "student_id": "2008453555834384385",
+      "student_name": "语文",
+      "homework_name": "语文",
+      "book_id": "1998967464626053121",
+      "book_name": "徐泽和名师工作室.八年级语文单元优化题(五)(六)",
+      "page_num": 4,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2008453555834384385/1998967464626053121/1998967464626053121_4_A4BJA.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"A\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"13\",\n\t\t\"mainAnswer\":\"A\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"answer\":\"不仅历史悠久\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"14\",\n\t\t\"mainAnswer\":\"不仅历史悠久\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"\"\n\t},\n\t{\n\t\t\"answer\":\" 列数字、打比方、摹状貌。\\n<br>示例1：列举长、高、桥孔个数三项具体数字，科学准确地说明了双龙桥是云南古桥梁中规模最大的多孔联拱桥。（列数字）\\n<br>示例2：将远观的双龙桥比作横卧在水面上的长虹，生动形象地说明了17个桥孔一字排开的雄美景象，写出了拱桥的形状优美。（打比方）\\n<br>示例3：细致描摹桥孔“一字排开，孔孔相连”，桥上阁楼“楼中有楼，檐外有檐，雕琢精美”，通过具体的文字呈现特征，使读者更直观地感受其样貌。（摹状貌）\\n（选择一种回答即可，3分）\\n\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"15\",\n\t\t\"mainAnswer\":\" 列数字、打比方、摹状貌。\\n<br>示例1：列举长、高、桥孔个数三项具体数字，科学准确地说明了双龙桥是云南古桥梁中规模最大的多孔联拱桥。（列数字）\\n<br>示例2：将远观的双龙桥比作横卧在水面上的长虹，生动形象地说明了17个桥孔一字排开的雄美景象，写出了拱桥的形状优美。（打比方）\\n<br>示例3：细致描摹桥孔“一字排开，孔孔相连”，桥上阁楼“楼中有楼，檐外有檐，雕琢精美”，通过具体的文字呈现特征，使读者更直观地感受其样貌。（摹状貌）\\n（选择一种回答即可，3分）\\n\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"①列数字，列举了长，高等三个具体的数字，科学准确地说明了双龙桥是云南桥梁规模最大的多孔联拱桥。\"\n\t},\n\t{\n\t\t\"answer\":\"古桥具有很高的价值，但古桥的现状令人担忧，我们应重视对古桥的维修和保护。（意思相符即可）\\n\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"16\",\n\t\t\"mainAnswer\":\"古桥具有很高的价值，但古桥的现状令人担忧，我们应重视对古桥的维修和保护。（意思相符即可）\\n\",\n\t\t\"tempIndex\":3,\n\t\t\"userAnswer\":\"\"\n\t}\n]",
+      "matched_dataset": "619c5aed",
+      "status": "completed",
+      "accuracy": 1.0,
+      "evaluation": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 4,
+        "correct_count": 4,
+        "error_count": 0,
+        "errors": [],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "subjective": {
+            "total": 3,
+            "correct": 3,
+            "accuracy": 1.0
+          },
+          "choice": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 3,
+            "correct": 3,
+            "accuracy": 1.0
+          }
+        },
+        "ai_compared": true
+      }
+    },
+    {
+      "homework_id": "2011632395700195330",
+      "student_id": "2008453555834384385",
+      "student_name": "语文",
+      "homework_name": "语文",
+      "book_id": "1998967464626053121",
+      "book_name": "徐泽和名师工作室.八年级语文单元优化题(五)(六)",
+      "page_num": 5,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2008453555834384385/1998967464626053121/1998967464626053121_5_5X99P.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"（1）大雀却捕不到，为什么呢？\\n（2）因此君子应当慎重地选择所要跟随的人。\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"17\",\n\t\t\"mainAnswer\":\"（1）大雀却捕不到，为什么呢？\\n（2）因此君子应当慎重地选择所要跟随的人。\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"大雀却捕不到，这是为什么呢。\"\n\t},\n\t{\n\t\t\"answer\":\"善惊以远害/利食而忘患/自其心矣/而以所从为祸福。\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"18\",\n\t\t\"mainAnswer\":\"善惊以远害/利食而忘患/自其心矣/而以所从为祸福。\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"善惊/以远害 利食/而忘患/自其心矣/而以所从为/祸福。\"\n\t},\n\t{\n\t\t\"answer\":\"示例：谨慎选择正确的人来跟从并且效仿，将会影响我们之后的人生，要多借鉴长者的经验。（或：不要贪图眼前利益，要有忧患意识。回答符合文意即可。）\\n\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"19\",\n\t\t\"mainAnswer\":\"示例：谨慎选择正确的人来跟从并且效仿，将会影响我们之后的人生，要多借鉴长者的经验。（或：不要贪图眼前利益，要有忧患意识。回答符合文意即可。）\\n\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"要选择正确的人来追随，并且效仿，这会决定我们一生。\"\n\t},\n\t{\n\t\t\"answer\":\"| 作文等级       | 评分标准                                                     |\\n| -------------- | ------------------------------------------------------------ |\\n| 一类卷（36—40分） | 1. 切合题意，立意明确，中心突出，材料具体生动，富有真情实感。<br>2. 结构严谨，注意照应，详略得当。<br>3. 语言得体、流畅。 |\\n| 二类卷（30—35分） | 1. 符合题意，立意明确，中心突出，材料具体，有真情实感。<br>2. 结构完整，条理清楚。<br>3. 语言规范、通顺。 |\\n| 三类卷（24—29分） | 1. 基本符合题意，立意明确，材料能表现中心，有情感。<br>2. 结构基本完整，有条理。<br>3. 语言基本通顺，有少数错别字。 |\\n| 四类卷（16—23分） | 1. 不符合题意，立意不明确，材料难以表现中心，缺乏情感。<br>2. 结构不完整，条理不清楚。<br>3. 语言不通顺，错别字较多。 |\\n| 五类卷（0—15分）  | 1. 没有中心，空洞无物，严重离题。<br>2. 结构残缺，不成篇章。<br>3. 文理不通，错别字较多。 |\\n| 加分           | 符合如下条件之一，可酌情加1—3分（加至本题满分为止）：<br>1. 情真意切，立意深刻。<br>2. 构思独特，富有创意。<br>3. 语言优美，富有个性。<br>4. 文面整洁，书写优美。 |\\n| 扣分           | 1. 没有标题扣2分。<br>2. 不足500字，每少50字扣1分。<br>3. 错别字每3个扣1分（重复的错别字不计），最多扣3分。<br>4. 不能正确使用标点扣1—3分。<br>5. 文面脏乱，字迹潦草，难以辨认者扣1—3分。<br>6. 出现暴露身份的真实校名、地名、人名的扣1—3分。 |\\n\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"20\",\n\t\t\"mainAnswer\":\"| 作文等级       | 评分标准                                                     |\\n| -------------- | ------------------------------------------------------------ |\\n| 一类卷（36—40分） | 1. 切合题意，立意明确，中心突出，材料具体生动，富有真情实感。<br>2. 结构严谨，注意照应，详略得当。<br>3. 语言得体、流畅。 |\\n| 二类卷（30—35分） | 1. 符合题意，立意明确，中心突出，材料具体，有真情实感。<br>2. 结构完整，条理清楚。<br>3. 语言规范、通顺。 |\\n| 三类卷（24—29分） | 1. 基本符合题意，立意明确，材料能表现中心，有情感。<br>2. 结构基本完整，有条理。<br>3. 语言基本通顺，有少数错别字。 |\\n| 四类卷（16—23分） | 1. 不符合题意，立意不明确，材料难以表现中心，缺乏情感。<br>2. 结构不完整，条理不清楚。<br>3. 语言不通顺，错别字较多。 |\\n| 五类卷（0—15分）  | 1. 没有中心，空洞无物，严重离题。<br>2. 结构残缺，不成篇章。<br>3. 文理不通，错别字较多。 |\\n| 加分           | 符合如下条件之一，可酌情加1—3分（加至本题满分为止）：<br>1. 情真意切，立意深刻。<br>2. 构思独特，富有创意。<br>3. 语言优美，富有个性。<br>4. 文面整洁，书写优美。 |\\n| 扣分           | 1. 没有标题扣2分。<br>2. 不足500字，每少50字扣1分。<br>3. 错别字每3个扣1分（重复的错别字不计），最多扣3分。<br>4. 不能正确使用标点扣1—3分。<br>5. 文面脏乱，字迹潦草，难以辨认者扣1—3分。<br>6. 出现暴露身份的真实校名、地名、人名的扣1—3分。 |\\n\",\n\t\t\"tempIndex\":3,\n\t\t\"userAnswer\":\"要选择正确的人来追随，并且效仿，这会决定我们一生。\"\n\t}\n]",
+      "matched_dataset": "619c5aed",
+      "status": "completed",
+      "accuracy": 0.5,
+      "evaluation": {
+        "accuracy": 0.5,
+        "precision": 0.6666666666666666,
+        "recall": 1.0,
+        "f1_score": 0.8,
+        "hallucination_rate": 0.3333333333333333,
+        "total_questions": 4,
+        "correct_count": 2,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "17",
+            "base_effect": {
+              "answer": "（1）大雀却捕不到，为什么呢？\n<br>（2）因此君子应当慎重地选择所要跟随的人。",
+              "userAnswer": "（1）大雀却捕不到，这是为什么呢（2）因此君子慎重不要去追随别人",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "（1）大雀却捕不到，为什么呢？\n（2）因此君子应当慎重地选择所要跟随的人。",
+              "userAnswer": "大雀却捕不到，这是为什么呢。",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "AI识别用户答案不完整（缺少第二句），但判断结果（correct: no）与基准一致。",
+            "question_category": {
+              "is_objective": false,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "20",
+            "base_effect": {
+              "answer": "| 作文等级       | 评分标准                                                     |\n| -------------- | ------------------------------------------------------------ |\n| 一类卷（36—40分） | 1. 切合题意，立意明确，中心突出，材料具体生动，富有真情实感。<br>2. 结构严谨，注意照应，详略得当。<br>3. 语言得体、流畅。 |\n| 二类卷（30—35分） | 1. 符合题意，立意明确，中心突出，材料具体，有真情实感。<br>2. 结构完整，条理清楚。<br>3. 语言规范、通顺。 |\n| 三类卷（24—29分） | 1. 基本符合题意，立意明确，材料能表现中心，有情感。<br>2. 结构基本完整，有条理。<br>3. 语言基本通顺，有少数错别字。 |\n| 四类卷（16—23分） | 1. 不符合题意，立意不明确，材料难以表现中心，缺乏情感。<br>2. 结构不完整，条理不清楚。<br>3. 语言不通顺，错别字较多。 |\n| 五类卷（0—15分）  | 1. 没有中心，空洞无物，严重离题。<br>2. 结构残缺，不成篇章。<br>3. 文理不通，错别字较多。 |\n| 加分           | 符合如下条件之一，可酌情加1—3分（加至本题满分为止）：<br>1. 情真意切，立意深刻。<br>2. 构思独特，富有创意。<br>3. 语言优美，富有个性。<br>4. 文面整洁，书写优美。 |\n| 扣分           | 1. 没有标题扣2分。<br>2. 不足500字，每少50字扣1分。<br>3. 错别字每3个扣1分（重复的错别字不计），最多扣3分。<br>4. 不能正确使用标点扣1—3分。<br>5. 文面脏乱，字迹潦草，难以辨认者扣1—3分。<br>6. 出现暴露身份的真实校名、地名、人名的扣1—3分。 |",
+              "userAnswer": "",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "| 作文等级       | 评分标准                                                     |\n| -------------- | ------------------------------------------------------------ |\n| 一类卷（36—40分） | 1. 切合题意，立意明确，中心突出，材料具体生动，富有真情实感。<br>2. 结构严谨，注意照应，详略得当。<br>3. 语言得体、流畅。 |\n| 二类卷（30—35分） | 1. 符合题意，立意明确，中心突出，材料具体，有真情实感。<br>2. 结构完整，条理清楚。<br>3. 语言规范、通顺。 |\n| 三类卷（24—29分） | 1. 基本符合题意，立意明确，材料能表现中心，有情感。<br>2. 结构基本完整，有条理。<br>3. 语言基本通顺，有少数错别字。 |\n| 四类卷（16—23分） | 1. 不符合题意，立意不明确，材料难以表现中心，缺乏情感。<br>2. 结构不完整，条理不清楚。<br>3. 语言不通顺，错别字较多。 |\n| 五类卷（0—15分）  | 1. 没有中心，空洞无物，严重离题。<br>2. 结构残缺，不成篇章。<br>3. 文理不通，错别字较多。 |\n| 加分           | 符合如下条件之一，可酌情加1—3分（加至本题满分为止）：<br>1. 情真意切，立意深刻。<br>2. 构思独特，富有创意。<br>3. 语言优美，富有个性。<br>4. 文面整洁，书写优美。 |\n| 扣分           | 1. 没有标题扣2分。<br>2. 不足500字，每少50字扣1分。<br>3. 错别字每3个扣1分（重复的错别字不计），最多扣3分。<br>4. 不能正确使用标点扣1—3分。<br>5. 文面脏乱，字迹潦草，难以辨认者扣1—3分。<br>6. 出现暴露身份的真实校名、地名、人名的扣1—3分。 |\n",
+              "userAnswer": "要选择正确的人来追随，并且效仿，这会决定我们一生。",
+              "correct": "no"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "基准用户答案为空，AI错误识别为第19题的用户答案（'要选择正确的人来追随...'），属于幻觉。判断结果（correct: no）虽与基准一致，但识别内容完全错误。",
+            "question_category": {
+              "is_objective": false,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 1
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "subjective": {
+            "total": 3,
+            "correct": 1,
+            "accuracy": 0.3333333333333333
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 4,
+            "correct": 2,
+            "accuracy": 0.5
+          }
+        },
+        "ai_compared": true
+      }
+    }
+  ],
+  "overall_report": {
+    "overall_accuracy": 0.68,
+    "total_homework": 5,
+    "total_questions": 25,
+    "correct_questions": 17,
+    "ai_evaluated": true,
+    "by_question_type": {
+      "objective": {
+        "total": 16,
+        "correct": 10,
+        "accuracy": 0.625
+      },
+      "subjective": {
+        "total": 9,
+        "correct": 7,
+        "accuracy": 0.7777777777777778
+      },
+      "choice": {
+        "total": 2,
+        "correct": 2,
+        "accuracy": 1.0
+      },
+      "non_choice": {
+        "total": 23,
+        "correct": 15,
+        "accuracy": 0.6521739130434783
+      }
+    }
+  },
+  "created_at": "2026-01-15T10:56:55.411510"
+}

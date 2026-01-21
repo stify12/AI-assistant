@@ -1,0 +1,302 @@
+{
+  "task_id": "95ac5321",
+  "name": "语文1.16批量评估2",
+  "subject_id": 1,
+  "subject_name": "语文",
+  "test_condition_id": 1,
+  "test_condition_name": "单份作业评估",
+  "status": "completed",
+  "homework_items": [
+    {
+      "homework_id": "2011988740647436290",
+      "student_id": "2009176747511177218",
+      "student_name": "会尽快",
+      "homework_name": "p7～11",
+      "book_id": "1998967464626053121",
+      "book_name": "徐泽和名师工作室.八年级语文单元优化题(五)(六)",
+      "page_num": 7,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2009176747511177218/1998967464626053121/1998967464626053121_7_453SE.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"(1)悠然见南山(2)江春入旧年(3)可以调素琴(4)造化钟神秀 阴阳割昏晓(5)若出其中(6)天接云涛连晓雾 星河欲转千帆舞\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"answer\":\"悠然见南山\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"1(1)\",\n\t\t\t\t\"tempIndex\":3,\n\t\t\t\t\"userAnswer\":\"悠燃见南山\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"江春入旧年\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"1(2)\",\n\t\t\t\t\"tempIndex\":4,\n\t\t\t\t\"userAnswer\":\"江春人旧年\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"可以调素琴\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"1(3)\",\n\t\t\t\t\"tempIndex\":5,\n\t\t\t\t\"userAnswer\":\"可以调素秦\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"造化钟神秀 阴阳割昏晓\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"1(4)\",\n\t\t\t\t\"tempIndex\":6,\n\t\t\t\t\"userAnswer\":\"阴阳割昏晓;造化钟神秀\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"若出其中\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"1(5)\",\n\t\t\t\t\"tempIndex\":7,\n\t\t\t\t\"userAnswer\":\"若出其里\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"天接云涛连晓雾 星河欲转千帆舞\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"1(6)\",\n\t\t\t\t\"tempIndex\":8,\n\t\t\t\t\"userAnswer\":\"星河欲转千帆舞;天接云涛连晓雾\"\n\t\t\t}\n\t\t],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"悠燃见南山;江春人旧年;可以调素秦;阴阳割昏晓;造化钟神秀;若出其里;星河欲转千帆舞;天接云涛连晓雾\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"3\",\n\t\t\"mainAnswer\":\"“情”：对时光流逝的惋惜和因燕子归来而产生的欣慰之情。“思”：一切必然要消逝的美好事物，我们都无法阻止其消逝，但消逝的同时仍然有美好事物的再现，生活不会因消逝而变得一片虚无。（意思相近即可）\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"原句①介绍造型,②介绍结构,③介绍工艺\"\n\t}\n]",
+      "matched_dataset": "25c78c34",
+      "status": "completed",
+      "accuracy": 0.875,
+      "evaluation": {
+        "accuracy": 0.875,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 8,
+        "correct_count": 7,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "3",
+            "base_effect": {
+              "answer": "“情”：对时光流逝的惋惜和因燕子归来而产生的欣慰之情。\n“思”：一切必然要消逝的美好事物，我们都无法阻止其消逝，但消逝的同时仍然有美好事物的再现，生活不会因消逝而变得一片虚无。（意思相近即可）",
+              "userAnswer": "原句①介绍造型，③介绍结构，②介绍工艺",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "“情”：对时光流逝的惋惜和因燕子归来而产生的欣慰之情。“思”：一切必然要消逝的美好事物，我们都无法阻止其消逝，但消逝的同时仍然有美好事物的再现，生活不会因消逝而变得一片虚无。（意思相近即可）",
+              "userAnswer": "原句①介绍造型,②介绍结构,③介绍工艺",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"原句①介绍造型，③介绍结构，②介绍工艺\"，AI=\"原句①介绍造型,②介绍结构,③介绍工艺\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": false,
+              "is_choice": false,
+              "is_fill": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "objective_fill": {
+            "total": 6,
+            "correct": 6,
+            "accuracy": 1.0
+          },
+          "other": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 6,
+            "correct": 6,
+            "accuracy": 1.0,
+            "name": "填空"
+          },
+          "5": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 6,
+            "correct": 6,
+            "accuracy": 1.0,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "主观解答"
+          }
+        }
+      }
+    }
+  ],
+  "overall_report": {
+    "overall_accuracy": 0.875,
+    "total_homework": 1,
+    "total_questions": 8,
+    "correct_questions": 7,
+    "by_question_type": {
+      "choice": {
+        "total": 1,
+        "correct": 1,
+        "accuracy": 1.0
+      },
+      "objective_fill": {
+        "total": 6,
+        "correct": 6,
+        "accuracy": 1.0
+      },
+      "other": {
+        "total": 1,
+        "correct": 0,
+        "accuracy": 0.0
+      }
+    },
+    "by_bvalue": {
+      "1": {
+        "total": 1,
+        "correct": 1,
+        "accuracy": 1.0,
+        "name": "单选"
+      },
+      "2": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "多选"
+      },
+      "3": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "判断"
+      },
+      "4": {
+        "total": 6,
+        "correct": 6,
+        "accuracy": 1.0,
+        "name": "填空"
+      },
+      "5": {
+        "total": 1,
+        "correct": 0,
+        "accuracy": 0.0,
+        "name": "解答"
+      }
+    },
+    "by_combined": {
+      "objective_1": {
+        "total": 1,
+        "correct": 1,
+        "accuracy": 1.0,
+        "name": "客观单选"
+      },
+      "objective_2": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "客观多选"
+      },
+      "objective_3": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "客观判断"
+      },
+      "objective_4": {
+        "total": 6,
+        "correct": 6,
+        "accuracy": 1.0,
+        "name": "客观填空"
+      },
+      "objective_5": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "客观解答"
+      },
+      "subjective_1": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "主观单选"
+      },
+      "subjective_2": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "主观多选"
+      },
+      "subjective_3": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "主观判断"
+      },
+      "subjective_4": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "主观填空"
+      },
+      "subjective_5": {
+        "total": 1,
+        "correct": 0,
+        "accuracy": 0.0,
+        "name": "主观解答"
+      }
+    }
+  },
+  "created_at": "2026-01-16T13:43:50.881450"
+}

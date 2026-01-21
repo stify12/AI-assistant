@@ -1,0 +1,924 @@
+{
+  "task_id": "887eda14",
+  "name": "物理测试18：03",
+  "status": "completed",
+  "homework_items": [
+    {
+      "homework_id": "2011376798060826626",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 76,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_76_7CGIF.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"热量；度；℃\",\n\t\t\"answer\":\"冷热程度  摄氏度   ℃  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"水银；冷热\",\n\t\t\"answer\":\" 温度计  热胀冷缩  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"混合物；10；1\",\n\t\t\"answer\":\"冰水混合物   100   1  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\" (2)量程 分度值 <br>(3)玻璃泡<br> (4)相平 不能  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"量程；分度值\",\n\t\t\t\t\"answer\":\"量程 分度值\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"4(2)\",\n\t\t\t\t\"tempIndex\":6\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"玻璃\",\n\t\t\t\t\"answer\":\"玻璃泡\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"4(3)\",\n\t\t\t\t\"tempIndex\":7\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"倾斜；能\",\n\t\t\t\t\"answer\":\"相平 不能\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"4(4)\",\n\t\t\t\t\"tempIndex\":8\n\t\t\t}\n\t\t],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\"(1)细弯管<br> (2)可以   甩几下  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"细弯管\",\n\t\t\t\t\"answer\":\"细弯管\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"5(1)\",\n\t\t\t\t\"tempIndex\":9\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"可以；甩几下\",\n\t\t\t\t\"answer\":\"可以   甩几下  \",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"5(2)\",\n\t\t\t\t\"tempIndex\":10\n\t\t\t}\n\t\t],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"高\",\n\t\t\"answer\":\"高\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.6666666666666666,
+      "evaluation": {
+        "accuracy": 0.6666666666666666,
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "f1_score": 0.8,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 4,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "4",
+            "base_effect": {
+              "answer": "量程 分度值 玻璃泡 相平 不能",
+              "userAnswer": "量程 分度值 玻璃 倾斜 能",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": " (2)量程 分度值 <br>(3)玻璃泡<br> (4)相平 不能  ",
+              "userAnswer": "",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "AI批改将本题拆分为子题进行判断。对于整体（index 4），AI给出的判断为no，与基准效果（no）一致。但AI对子题4(2)的判断为yes，而基准效果中用户答案'量程 分度值'与标准答案'量程 分度值'一致，基准整体判断为no是因为其他部分错误。AI的拆分处理方式与基准的整体判断逻辑不同，导致在子题层面出现判断差异（如4(2)应为正确但基准整体为错误）。从整体题目角度看，AI的最终判断（no）与基准（no）一致，但识别和处理过程存在显著差异。考虑到题目匹配和整体判断结果，AI对本题的最终判断正确，但识别和解析方式错误。然而，根据错误类型定义，AI识别了不同的用户答案结构（拆分并部分识别不同），且对子题的判断与基准整体逻辑不符，但最终整体correct字段与基准一致。严格来说，AI的userAnswer为空，与基准的'量程 分度值 玻璃 倾斜 能'不同，属于识别错误，但判断结果正确。应归类为recognition_error_judgment_correct。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "5",
+            "base_effect": {
+              "answer": "细弯管 可以 甩几下",
+              "userAnswer": "细弯管 可以 甩几下",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "(1)细弯管<br> (2)可以   甩几下  ",
+              "userAnswer": "",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "基准效果中用户答案与标准答案完全一致，判断为yes。AI批改将本题拆分，并对子题5(1)判断为no（用户答案'细弯管'与标准答案'细弯管'一致，应正确），整体判断为no。AI识别错误（拆分处理且子题判断错误），且最终判断结果错误（基准yes vs AI no）。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 2,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 6,
+            "correct": 4,
+            "accuracy": 0.6666666666666666
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 6,
+            "correct": 4,
+            "accuracy": 0.6666666666666666
+          }
+        },
+        "ai_compared": true
+      }
+    },
+    {
+      "homework_id": "2011376830671540225",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 77,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_77_G4EKJ.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"冷热程度；不相同；不可靠\",\n\t\t\"answer\":\"冷热程度   不相同  不可靠\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"answer\":\"(1)热胀冷缩   量程   分度值\\n<br> (2)D  \\n(3)B    不能\\n<br> (4)38    -22  \",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"冷热程度；量程；分度\",\n\t\t\t\t\"answer\":\"热胀冷缩   量程   分度值\\n\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例3(1)\",\n\t\t\t\t\"tempIndex\":3\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"D\",\n\t\t\t\t\"answer\":\"D  \\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例3(2)\",\n\t\t\t\t\"tempIndex\":4\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"D；不能\",\n\t\t\t\t\"answer\":\"B    不能\\n\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例3(3)\",\n\t\t\t\t\"tempIndex\":5\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"380；-22\",\n\t\t\t\t\"answer\":\"38    -22  \",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例3(4)\",\n\t\t\t\t\"tempIndex\":6\n\t\t\t}\n\t\t],\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":2\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 1.0,
+      "evaluation": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 3,
+        "correct_count": 3,
+        "error_count": 0,
+        "errors": [],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 3,
+            "correct": 3,
+            "accuracy": 1.0
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 2,
+            "correct": 2,
+            "accuracy": 1.0
+          }
+        },
+        "ai_compared": true
+      }
+    },
+    {
+      "homework_id": "2011376863559077889",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 78,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_78_MVLVK.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\"(1)35~42    0.1    37.8\\n<br> (2)细弯管 能  <br>(3)甩几下<br> (4)D  \",\n\t\t\"correct\":\"\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"36~42, 0.1, 37.8\",\n\t\t\t\t\"answer\":\"35~42    0.1    37.8\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例4(1)\",\n\t\t\t\t\"tempIndex\":3\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"细弯管, 不能\",\n\t\t\t\t\"answer\":\"细弯管 能\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例4(2)\",\n\t\t\t\t\"tempIndex\":4\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"甩几下\",\n\t\t\t\t\"answer\":\"甩几下\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例4(3)\",\n\t\t\t\t\"tempIndex\":5\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"D\",\n\t\t\t\t\"answer\":\"D\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例4(4)\",\n\t\t\t\t\"tempIndex\":6\n\t\t\t}\n\t\t],\n\t\t\"index\":\"例4\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"高低, 热岛效应, 26\",\n\t\t\"answer\":\"高   热岛效应   26  \\n\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例5\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":2\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.3333333333333333,
+      "evaluation": {
+        "accuracy": 0.3333333333333333,
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1_score": 0.6666666666666666,
+        "hallucination_rate": 0.0,
+        "total_questions": 3,
+        "correct_count": 1,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "4",
+            "base_effect": {
+              "answer": "35~42 0.1 37.8 细弯管（缩口） 能 甩几下 D",
+              "userAnswer": "36~42 0.1 378 细弯管 不能 甩几下 D",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": ""
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "基准效果中第4题是完整的客观题，AI批改结果将第4题拆分为多个子题（例4(1)到例4(4)），导致整体识别错误。但AI对整体判断（correct）与基准效果一致（均为'no'），因此判断正确。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "5",
+            "base_effect": {
+              "answer": "高 热岛效应 26",
+              "userAnswer": "高低 热岛效应 26",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": ""
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "AI批改结果中第5题（例5）的用户答案与基准效果一致（均为'高低, 热岛效应, 26'），识别正确。但AI判断为'no'，而基准效果中correct为'no'，两者一致，因此判断正确。此处错误类型应为'correct'，但根据基准效果correct为'no'，AI也为'no'，所以实际是判断正确。但题目要求分析AI批改是否正确，基准效果中correct为'no'，AI也为'no'，所以AI批改正确。但根据错误类型定义，识别正确且判断正确应为'correct'。然而，在基准效果中，用户答案与标准答案不一致，correct为'no'，AI也判断为'no'，所以AI批改正确。但错误类型应基于AI批改结果与基准效果的比对，这里AI批改结果与基准效果在correct上一致，所以应为'correct'。但根据基准效果，用户答案与标准答案不一致，correct为'no'，AI也判断为'no'，所以AI批改正确。因此，错误类型应为'correct'。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 3,
+            "correct": 1,
+            "accuracy": 0.3333333333333333
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 2,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        },
+        "ai_compared": true
+      }
+    },
+    {
+      "homework_id": "2011376895347707906",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 79,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_79_D4WUH.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"1; 0~50; 能\",\n\t\t\"answer\":\" 1   -30～50   不能  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"冷热程度; 36; -16\",\n\t\t\"answer\":\"热胀冷缩   17   -16  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"0.1; 37; 乙\",\n\t\t\"answer\":\"0.1  38  乙  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"36; >; 能\",\n\t\t\"answer\":\"36.6   =   不能  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":5\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.3333333333333333,
+      "evaluation": {
+        "accuracy": 0.3333333333333333,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 2,
+        "error_count": 4,
+        "errors": [
+          {
+            "index": "3",
+            "base_effect": {
+              "answer": "1 -20~50 不能",
+              "userAnswer": "1 0~50 不能",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": " 1   -30～50   不能  ",
+              "userAnswer": "1; 0~50; 能",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "AI识别用户答案有差异（基准为'1 0~50 不能'，AI为'1; 0~50; 能'），但判断结果均为no，判断正确但识别错误。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "4",
+            "base_effect": {
+              "answer": "热胀冷缩 16 -14",
+              "userAnswer": "冷热程度 36 -16",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "热胀冷缩   17   -16  ",
+              "userAnswer": "冷热程度; 36; -16",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "AI识别用户答案有差异（基准为'冷热程度 36 -16'，AI为'冷热程度; 36; -16'），但判断结果均为no，判断正确但识别错误。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "5",
+            "base_effect": {
+              "answer": "0.1 37.8 乙",
+              "userAnswer": "0.1 37 乙",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "0.1  38  乙  ",
+              "userAnswer": "0.1; 37; 乙",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "AI识别用户答案有差异（基准为'0.1 37 乙'，AI为'0.1; 37; 乙'），但判断结果均为no，判断正确但识别错误。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "6",
+            "base_effect": {
+              "answer": "36.7 = 不能",
+              "userAnswer": "36 > 能",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "36.6   =   不能  ",
+              "userAnswer": "36; >; 能",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "AI识别用户答案有差异（基准为'36 > 能'，AI为'36; >; 能'），但判断结果均为no，判断正确但识别错误。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 4,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 6,
+            "correct": 2,
+            "accuracy": 0.3333333333333333
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 2,
+            "correct": 2,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 4,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        },
+        "ai_compared": true
+      }
+    },
+    {
+      "homework_id": "2011376927232806913",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 80,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_80_CUVFW.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"5度\",\n\t\t\"answer\":\"5 摄氏度  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"任务一\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"任务二\",\n\t\t\"tempIndex\":1\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 1.0,
+      "evaluation": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 2,
+        "correct_count": 2,
+        "error_count": 0,
+        "errors": [],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 2,
+            "correct": 2,
+            "accuracy": 1.0
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          }
+        },
+        "ai_compared": true
+      }
+    },
+    {
+      "homework_id": "2011376959776411649",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 81,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_81_ZQBTG.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"空气流速加快\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"任务三\",\n\t\t\"tempIndex\":0,\n\t\t\"mainAnswer\":\"空气流动速度加快，加快了水的蒸发，蒸发吸热，所以感觉凉快  \"\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"任务四\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"answer\":\"(1) 市中心   快 \\n<br>(2) 小  \\n(3) 市区温度升高，使有害气体、烟尘在市区上空累积，造成严重的大气污染（合理即可）  \\n(4) 汽化   吸热  \\n(5) 绿色出行（合理即可）\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"市中心；快\",\n\t\t\t\t\"answer\":\" 市中心   快\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"(1)\",\n\t\t\t\t\"tempIndex\":3\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"大\",\n\t\t\t\t\"answer\":\"小  \",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"(2)\",\n\t\t\t\t\"tempIndex\":4\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"温度升高，造成大气污染\",\n\t\t\t\t\"answer\":\"市区温度升高，使有害气体、烟尘在市区上空累积，造成严重的大气污染（合理即可）  \",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"(3)\",\n\t\t\t\t\"tempIndex\":5\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"汽化；吸热\",\n\t\t\t\t\"answer\":\"汽化   吸热\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"(4)\",\n\t\t\t\t\"tempIndex\":6\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"绿色出行\",\n\t\t\t\t\"answer\":\" 绿色出行（合理即可）\\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"(5)\",\n\t\t\t\t\"tempIndex\":7\n\t\t\t}\n\t\t],\n\t\t\"index\":\"高分原创\",\n\t\t\"tempIndex\":2\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.3333333333333333,
+      "evaluation": {
+        "accuracy": 0.3333333333333333,
+        "precision": 1.0,
+        "recall": 0.5,
+        "f1_score": 0.6666666666666666,
+        "hallucination_rate": 0.0,
+        "total_questions": 3,
+        "correct_count": 1,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "1",
+            "base_effect": {
+              "answer": "空气流动加快，蒸发吸热",
+              "userAnswer": "空气流速加快",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": ""
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "AI批改结果中index为'任务三'，与基准index不匹配，但按tempIndex=0匹配成功。基准标准答案为'空气流动加快，蒸发吸热'，AI的mainAnswer为'空气流动速度加快，加快了水的蒸发，蒸发吸热，所以感觉凉快'，内容本质相同但格式不同，但AI未提取为标准答案字段。用户答案识别一致('空气流速加快')，判断结果一致('no')。由于AI未正确提取标准答案，存在识别错误，但判断正确。",
+            "question_category": {
+              "is_objective": false,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "3",
+            "base_effect": {
+              "answer": "市中心 快 小 加剧城市大气污染（合理即可） 汽化 吸热 植树造林（合理即可）",
+              "userAnswer": "市中心 快 大 温度升高，造成大气污染 汽化 吸热 红色出行",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": ""
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "AI批改结果中index为'高分原创'，与基准index不匹配，但按tempIndex=2匹配成功。基准中该题为一道完整题目，标准答案为'市中心 快 小 加剧城市大气污染（合理即可） 汽化 吸热 植树造林（合理即可）'，用户答案为'市中心 快 大 温度升高，造成大气污染 汽化 吸热 红色出行'，判断结果为'no'。AI将该题拆分为5个子题，并分别给出了标准答案、用户答案和判断结果。综合AI子题结果：用户答案在(2)部分为'大'，AI标准答案为'小'，判断为'no'，与基准一致；但在(3)部分，用户答案为'温度升高，造成大气污染'，AI判断为'yes'，而基准整体判断为'no'，存在判断错误。同时，AI的识别方式（拆分题目）与基准不同，导致整体判断不一致，属于识别错误且判断错误。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 1,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 2,
+            "correct": 1,
+            "accuracy": 0.5
+          },
+          "subjective": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "choice": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 2,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        },
+        "ai_compared": true
+      }
+    },
+    {
+      "homework_id": "2011376990369665025",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 82,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_82_URV71.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"气态、液态、固态\",\n\t\t\"answer\":\"固态  液态  气态  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"气态、液态、蒸气、沸腾\",\n\t\t\"answer\":\"液态  气态  蒸发  沸腾  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"固定、里面\",\n\t\t\"answer\":\"任何 表面  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\"(1)温度 \\n<br>(2)表面积\\n<br> (3)空气流动速度  \",\n\t\t\"correct\":\"\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"温度\",\n\t\t\t\t\"answer\":\"温度 \\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"4(1)\",\n\t\t\t\t\"tempIndex\":8\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"面积\",\n\t\t\t\t\"answer\":\"表面积\\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"4(2)\",\n\t\t\t\t\"tempIndex\":9\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"空气流动\",\n\t\t\t\t\"answer\":\"空气流动速度  \",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"4(3)\",\n\t\t\t\t\"tempIndex\":10\n\t\t\t}\n\t\t],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"外部、里面、缓慢、沸点\",\n\t\t\"answer\":\"内部 表面 剧烈 沸点  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\" (1)沸点 \\n<br>(2)吸热  \",\n\t\t\"correct\":\"\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"沸点\",\n\t\t\t\t\"answer\":\"沸点 \\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"6(1)\",\n\t\t\t\t\"tempIndex\":11\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"放热\",\n\t\t\t\t\"answer\":\"吸热\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"6(2)\",\n\t\t\t\t\"tempIndex\":12\n\t\t\t}\n\t\t],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\"(1)升高\\n<br> (2)不变  \\n\",\n\t\t\"correct\":\"\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"降低\",\n\t\t\t\t\"answer\":\"升高\\n\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"7(1)\",\n\t\t\t\t\"tempIndex\":13\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"不变\",\n\t\t\t\t\"answer\":\"不变  \",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"7(2)\",\n\t\t\t\t\"tempIndex\":14\n\t\t\t}\n\t\t],\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6\n\t},\n\t{\n\t\t\"userAnswer\":\"①③④；⑤；②\",\n\t\t\"answer\":\"①③   ②⑤   ④  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":7\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.5,
+      "evaluation": {
+        "accuracy": 0.5,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 8,
+        "correct_count": 4,
+        "error_count": 4,
+        "errors": [
+          {
+            "index": "4",
+            "base_effect": {
+              "answer": "温度 表面积 空气流动的快慢",
+              "userAnswer": "温度 面积 空气流动",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "(1)温度 \n<br>(2)表面积\n<br> (3)空气流动速度  ",
+              "userAnswer": "",
+              "correct": ""
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "AI批改将题目拆分为子题，用户答案识别为子题形式（温度、面积、空气流动），与基准效果的用户答案（温度 面积 空气流动）内容本质相同但格式不同。基准效果判断为no，AI批改对子题判断均为yes，但整体判断结果（correct为空）与基准效果（no）不一致，但用户答案识别正确，判断结果因格式处理不同而不同，属于识别错误（格式差异）但判断正确（用户答案与标准答案不一致）。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "6",
+            "base_effect": {
+              "answer": "沸点 吸热",
+              "userAnswer": "佛点 放热",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": " (1)沸点 \n<br>(2)吸热  ",
+              "userAnswer": "",
+              "correct": ""
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "AI批改将题目拆分为子题，用户答案识别为子题形式（沸点、放热），与基准效果的用户答案（佛点 放热）内容部分相同（放热相同，沸点与佛点音似但基准为佛点）。基准效果判断为no，AI批改对子题判断为yes和no，整体判断结果（correct为空）与基准效果（no）不一致，但用户答案识别基本正确（沸点识别正确），判断结果因格式处理不同而不同，属于识别错误（格式差异）但判断正确（用户答案与标准答案不一致）。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "7",
+            "base_effect": {
+              "answer": "升高 不变",
+              "userAnswer": "降低 不变",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "(1)升高\n<br> (2)不变  \n",
+              "userAnswer": "",
+              "correct": ""
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "AI批改将题目拆分为子题，用户答案识别为子题形式（降低、不变），与基准效果的用户答案（降低 不变）内容本质相同但格式不同。基准效果判断为no，AI批改对子题判断为no和yes，整体判断结果（correct为空）与基准效果（no）不一致，但用户答案识别正确，判断结果因格式处理不同而不同，属于识别错误（格式差异）但判断正确（用户答案与标准答案不一致）。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 3,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 7,
+            "correct": 4,
+            "accuracy": 0.5714285714285714
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 7,
+            "correct": 4,
+            "accuracy": 0.5714285714285714
+          }
+        },
+        "ai_compared": true
+      }
+    },
+    {
+      "homework_id": "2011377022472867841",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 83,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_83_4XQHN.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"室外；室外；慢\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例2(1)\",\n\t\t\t\t\"tempIndex\":1\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"展开；叠起开；好\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例2(2)\",\n\t\t\t\t\"tempIndex\":2\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"风吹；快\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例2(3)\",\n\t\t\t\t\"tempIndex\":3\n\t\t\t}\n\t\t],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":0,\n\t\t\"mainAnswer\":\"(1)室外 室外 快\\n<br>  (2)展开 展开 快\\n<br> (3)有风吹 快  \"\n\t},\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\"(1)自下而上  \\n(2)如图所示：\\n<br> ![p83-例3.png](https://img.gzzhengpu.cn/upload/20260104/p83-例3.png) \\n\\n(3)A\\n<br> (4)99   升高   不变\\n<br> (5)水的初温太低  \\n\\n\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"自上而下\",\n\t\t\t\t\"answer\":\"自下而上  \\n\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例3(1)\",\n\t\t\t\t\"tempIndex\":5\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"（已在图中画出温度时间关系曲线）\",\n\t\t\t\t\"answer\":\"如图所示：  <br> ![p83-例3.png](https://img.gzzhengpu.cn/upload/20260104/p83-例3.png) \\n\\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例3(2)\",\n\t\t\t\t\"tempIndex\":6\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"B\",\n\t\t\t\t\"answer\":\"A\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例3(3)\",\n\t\t\t\t\"tempIndex\":7\n\t\t\t}\n\t\t],\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":4\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.0,
+      "evaluation": {
+        "accuracy": 0.0,
+        "precision": 0,
+        "recall": 0,
+        "f1_score": 0,
+        "hallucination_rate": 0.0,
+        "total_questions": 2,
+        "correct_count": 0,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "1",
+            "base_effect": {
+              "answer": "室外 室外 快 展开 展开 快 有风吹 快",
+              "userAnswer": "室外 室外 慢 展开 叠起来 好 风吹 快",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": ""
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中找不到与基准效果index为'1'或tempIndex为0直接对应的题目。AI结果中index为'例2'的题目可能对应基准效果中的第1题，但其子题目被拆分，且用户答案和判断结果无法与基准效果中的整体题目完全匹配，因此标记为missing。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "2",
+            "base_effect": {
+              "answer": "自下而上 A",
+              "userAnswer": "自上而下 B",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": ""
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "基准效果中题目index为'2'，AI批改结果中在index为'例3'的子题目中找到对应部分（例3(1)）。基准效果用户答案为'自上而下 B'，AI识别为'自上而下'（仅部分），但判断结果correct均为'no'，因此属于识别错误（未完整识别用户答案）但判断正确。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 1,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 2,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 2,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        },
+        "ai_compared": true
+      }
+    },
+    {
+      "homework_id": "2011377057168150530",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 84,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_84_BVFXN.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"99；升高；不变\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"(4)\",\n\t\t\"tempIndex\":0,\n\t\t\"mainAnswer\":\"99    升高    不变\"\n\t},\n\t{\n\t\t\"userAnswer\":\"太凉了\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"(5)\",\n\t\t\"tempIndex\":1,\n\t\t\"mainAnswer\":\"水的初温太低\"\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":2,\n\t\t\"mainAnswer\":\"\"\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":3,\n\t\t\"mainAnswer\":\"\"\n\t},\n\t{\n\t\t\"userAnswer\":\"正在；B；高于\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":4,\n\t\t\"mainAnswer\":\"正在    A    低于  \"\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.75,
+      "evaluation": {
+        "accuracy": 0.75,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 4,
+        "correct_count": 3,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "实验题",
+            "base_effect": {
+              "answer": "99 升高 不变 水的初温过低（合理即可）",
+              "userAnswer": "99 升高 不变 太冷了",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": ""
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少index为'实验题'的题目，按index和tempIndex均无法匹配。",
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 1,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 4,
+            "correct": 3,
+            "accuracy": 0.75
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 3,
+            "correct": 3,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        },
+        "ai_compared": true
+      }
+    },
+    {
+      "homework_id": "2011377085878161410",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 85,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_85_BWVPD.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"液态，气态\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0,\n\t\t\"mainAnswer\":\"气态 液态  \"\n\t},\n\t{\n\t\t\"userAnswer\":\"升高温度、压缩体积\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1,\n\t\t\"mainAnswer\":\"降低温度 压缩体积  \\n \"\n\t},\n\t{\n\t\t\"userAnswer\":\"吸，放\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2,\n\t\t\"mainAnswer\":\"吸 放  \"\n\t},\n\t{\n\t\t\"userAnswer\":\"壶内，液化，汽化\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":3,\n\t\t\"mainAnswer\":\"壶内 液化 汽化\"\n\t},\n\t{\n\t\t\"userAnswer\":\"变大，汽化，吸收\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":4,\n\t\t\"mainAnswer\":\"变小 液化 降低温度\"\n\t},\n\t{\n\t\t\"userAnswer\":\"汽化，左，外\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":5,\n\t\t\"mainAnswer\":\"液化 外 内\"\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 1.0,
+      "evaluation": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 6,
+        "error_count": 0,
+        "errors": [],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 6,
+            "correct": 6,
+            "accuracy": 1.0
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 6,
+            "correct": 6,
+            "accuracy": 1.0
+          }
+        },
+        "ai_compared": true
+      }
+    }
+  ],
+  "overall_report": {
+    "overall_accuracy": 0.6046511627906976,
+    "total_homework": 10,
+    "total_questions": 43,
+    "correct_questions": 26,
+    "ai_evaluated": true,
+    "by_question_type": {
+      "objective": {
+        "total": 41,
+        "correct": 26,
+        "accuracy": 0.6341463414634146
+      },
+      "subjective": {
+        "total": 1,
+        "correct": 0,
+        "accuracy": 0.0
+      },
+      "choice": {
+        "total": 9,
+        "correct": 9,
+        "accuracy": 1.0
+      },
+      "non_choice": {
+        "total": 33,
+        "correct": 17,
+        "accuracy": 0.5151515151515151
+      }
+    }
+  },
+  "created_at": "2026-01-14T18:03:42.302905"
+}

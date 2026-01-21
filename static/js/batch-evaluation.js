@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 批量评估页面 JavaScript
  */
 
@@ -86,6 +86,7 @@ function saveSettings() {
     hideSettingsModal();
     alert('设置已保存，重新评估时生效');
 }
+
 // ========== 任务列表学科筛选 ==========
 let currentSubjectFilter = '';
 let currentConditionFilter = '';
@@ -136,6 +137,8 @@ function filterBySubject(subjectId) {
     if (select) select.value = subjectId;
     loadTaskList(subjectId || null, currentConditionFilter || null);
 }
+
+
 
 // 兼容旧函数名
 function onTaskSubjectFilterChange() {
@@ -621,7 +624,8 @@ let batchChartInstances = {
     errorTypePie: null,
     typeBar: null,
     errorTrend: null,
-    metricsRadar: null
+    recognitionPie: null,
+    gradingPie: null
 };
 
 // ========== 销毁图表 ==========
@@ -629,7 +633,7 @@ function destroyBatchCharts() {
     Object.values(batchChartInstances).forEach(chart => {
         if (chart) chart.destroy();
     });
-    batchChartInstances = { errorTypePie: null, typeBar: null, errorTrend: null, metricsRadar: null };
+    batchChartInstances = { errorTypePie: null, typeBar: null, errorTrend: null, recognitionPie: null, gradingPie: null };
 }
 
 // ========== 渲染总体报告图表 ==========
@@ -777,6 +781,12 @@ function renderOverallCharts(report) {
     const homeworkItems = selectedTask?.homework_items || [];
     const completedItems = homeworkItems.filter(h => h.status === 'completed' && h.evaluation);
     
+    console.log('homeworkItems count:', homeworkItems.length);
+    console.log('completedItems count:', completedItems.length);
+    if (completedItems.length > 0) {
+        console.log('First completedItem:', completedItems[0]);
+    }
+    
     if (completedItems.length > 0) {
         // 统计每道题的错误次数和错误类型（按页码+题号组合）
         const questionErrors = {}; // { 'P2-第5题': { total: 3, types: {...}, page: 2, index: '5' } }
@@ -905,45 +915,206 @@ function renderOverallCharts(report) {
         }
     }
     
-    // 4. 评估指标雷达图
-    const accuracy = (report.overall_accuracy || 0) * 100;
-    const completeness = report.total_questions > 0 ? 100 : 0;
-    const radarByType = report.by_question_type || {};
-    const radarChoice = radarByType.choice || {};
-    const radarObjFill = radarByType.objective_fill || {};
-    const choiceAcc = radarChoice.total > 0 ? (radarChoice.accuracy || 0) * 100 : accuracy;
-    const objFillAcc = radarObjFill.total > 0 ? (radarObjFill.accuracy || 0) * 100 : accuracy;
-    const consistency = completedItems.length > 1 ? calculateConsistency(completedItems) : accuracy;
+    // 4. 准确率分析进度条
+    console.log('Before calculateAccuracyStats - completedItems:', completedItems.length);
+    if (completedItems.length > 0) {
+        console.log('First item for accuracy:', JSON.stringify({
+            status: completedItems[0].status,
+            hasEvaluation: !!completedItems[0].evaluation,
+            total_questions: completedItems[0].evaluation?.total_questions,
+            error_distribution: completedItems[0].evaluation?.error_distribution
+        }));
+    }
+    const accuracyStats = calculateAccuracyStats(completedItems);
+    console.log('Accuracy stats:', accuracyStats);
     
-    batchChartInstances.metricsRadar = new Chart(document.getElementById('metricsRadarChart'), {
-        type: 'radar',
-        data: {
-            labels: ['总体准确率', '选择题准确率', '客观填空准确率', '一致性', '完整性'],
-            datasets: [{
-                label: '评估指标',
-                data: [accuracy, choiceAcc, objFillAcc, consistency, completeness],
-                backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                borderColor: '#3b82f6',
-                pointBackgroundColor: '#3b82f6',
-                pointBorderColor: '#fff',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                r: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: { stepSize: 20, font: { size: 10 }, color: '#666' },
-                    pointLabels: { font: { size: 11 }, color: '#1d1d1f' },
-                    grid: { color: '#e5e5e5' },
-                    angleLines: { color: '#e5e5e5' }
-                }
-            },
-            plugins: { legend: { display: false } }
+    // 渲染识别准确率进度条
+    const recTotal = accuracyStats.totalQuestions || 0;
+    const recCorrect = accuracyStats.recognitionCorrect || 0;
+    const recRate = accuracyStats.recognitionRate || 0;
+    
+    const recRateEl = document.getElementById('recognitionRateValue');
+    const recFillEl = document.getElementById('recognitionProgressFill');
+    const recStatsEl = document.getElementById('recognitionStats');
+    
+    if (recRateEl) recRateEl.textContent = recTotal > 0 ? recRate.toFixed(1) + '%' : '-';
+    if (recFillEl) recFillEl.style.width = recTotal > 0 ? recRate + '%' : '0%';
+    if (recStatsEl) recStatsEl.textContent = `正确 ${recCorrect} / 总计 ${recTotal}`;
+    
+    // 渲染批改准确率进度条
+    const gradCorrect = accuracyStats.gradingCorrect || 0;
+    const gradRate = accuracyStats.gradingRate || 0;
+    
+    const gradRateEl = document.getElementById('gradingRateValue');
+    const gradFillEl = document.getElementById('gradingProgressFill');
+    const gradStatsEl = document.getElementById('gradingStats');
+    
+    if (gradRateEl) gradRateEl.textContent = recTotal > 0 ? gradRate.toFixed(1) + '%' : '-';
+    if (gradFillEl) gradFillEl.style.width = recTotal > 0 ? gradRate + '%' : '0%';
+    if (gradStatsEl) gradStatsEl.textContent = `正确 ${gradCorrect} / 总计 ${recTotal}`;
+}
+
+// 旧的 showAccuracyDetail 函数已移除，使用新版本（在文件后面定义）
+
+// ========== 计算识别准确率和批改准确率 ==========
+// 简化版：直接使用后端计算的 correct_count 和 error_distribution
+function calculateAccuracyStats(completedItems) {
+    let totalQuestions = 0;
+    let recognitionCorrect = 0;
+    let gradingCorrect = 0;
+    
+    // 收集详情数据 - 遍历每道题的 errors 数组
+    window.accuracyDetails = { recognition: { correct: [], wrong: [] }, grading: { correct: [], wrong: [] } };
+    
+    // 识别错误类型列表
+    const recognitionErrorTypes = ['识别错误-判断正确', '识别错误-判断错误', '识别题干-判断正确', 
+                                   '识别差异-判断正确', '缺失题目', 'AI识别幻觉', '答案不匹配'];
+    // 批改错误类型列表
+    const gradingErrorTypes = ['识别错误-判断错误', '识别正确-判断错误', '缺失题目', 'AI识别幻觉', '答案不匹配'];
+    
+    completedItems.forEach((item, idx) => {
+        const evaluation = item.evaluation || {};
+        const total = evaluation.total_questions || 0;
+        const correctCount = evaluation.correct_count || 0;
+        const errorDist = evaluation.error_distribution || {};
+        const errors = evaluation.errors || [];
+        const pageNum = item.page_num || '?';
+        
+        // 调试：打印第一个item的详细信息
+        if (idx === 0) {
+            console.log('First item evaluation:', evaluation);
+            console.log('error_distribution:', errorDist);
+            console.log('total_questions:', total, 'correct_count:', correctCount);
+            console.log('errors array:', errors);
+        }
+        
+        totalQuestions += total;
+        
+        // 收集错误题目详情
+        const errorIndexSet = new Set(); // 记录有错误的题号
+        errors.forEach(err => {
+            const errorType = err.error_type || '';
+            
+            // 兼容两种数据格式：
+            // 格式1: base_effect/ai_result 对象 (语文等学科)
+            // 格式2: base_answer/base_user/hw_user 字段 (其他学科)
+            let baseAnswer = '-';
+            let baseUser = '-';
+            let hwUser = '-';
+            let baseCorrect = '-';
+            let aiCorrect = '-';
+            
+            if (err.base_effect) {
+                // 格式1: 使用 base_effect 和 ai_result
+                baseAnswer = err.base_effect.answer || '-';
+                baseUser = err.base_effect.userAnswer || '-';
+                baseCorrect = err.base_effect.correct || '-';
+                hwUser = err.ai_result?.userAnswer || '-';
+                aiCorrect = err.ai_result?.correct || '-';
+            } else {
+                // 格式2: 直接使用字段
+                baseAnswer = err.base_answer || '-';
+                baseUser = err.base_user || '-';
+                hwUser = err.hw_user || '-';
+            }
+            
+            const questionInfo = {
+                pageNum: pageNum,
+                index: err.index || '-',
+                errorType: errorType,
+                baseAnswer: baseAnswer,
+                baseUser: baseUser,
+                hwUser: hwUser,
+                baseCorrect: baseCorrect,
+                aiCorrect: aiCorrect,
+                explanation: err.explanation || '',
+                reason: errorType
+            };
+            
+            errorIndexSet.add(err.index);
+            
+            // 识别错误
+            if (recognitionErrorTypes.includes(errorType)) {
+                window.accuracyDetails.recognition.wrong.push(questionInfo);
+            }
+            // 批改错误
+            if (gradingErrorTypes.includes(errorType)) {
+                window.accuracyDetails.grading.wrong.push(questionInfo);
+            }
+        });
+        
+        // 计算正确题目数量并收集正确题目详情
+        // 正确题目 = 总题数 - 错误题数
+        const correctQuestions = total - errors.length;
+        
+        // 尝试从 homework_result 解析正确的题目
+        let hwResult = [];
+        try {
+            if (item.homework_result) {
+                hwResult = typeof item.homework_result === 'string' ? 
+                    JSON.parse(item.homework_result) : item.homework_result;
+            }
+        } catch (e) {
+            hwResult = [];
+        }
+        
+        // 遍历作业结果，找出正确的题目
+        hwResult.forEach(q => {
+            const qIndex = q.index || q.tempIndex;
+            // 如果这道题不在错误列表中，说明是正确的
+            if (!errorIndexSet.has(qIndex) && !errorIndexSet.has(String(qIndex))) {
+                const correctInfo = {
+                    pageNum: pageNum,
+                    index: qIndex || '-',
+                    errorType: '正确',
+                    baseAnswer: q.answer || q.mainAnswer || '-',
+                    baseUser: q.userAnswer || '-',
+                    hwUser: q.userAnswer || '-',
+                    reason: '完全匹配'
+                };
+                window.accuracyDetails.recognition.correct.push(correctInfo);
+                window.accuracyDetails.grading.correct.push(correctInfo);
+            }
+        });
+        
+        // 如果没有 error_distribution，使用 correct_count 作为备选
+        if (Object.keys(errorDist).length === 0) {
+            // 没有错误分布数据，直接用 correct_count
+            recognitionCorrect += correctCount;
+            gradingCorrect += correctCount;
+        } else {
+            // 识别正确 = 总数 - 识别错误类型的数量
+            const recErrors = (errorDist['识别错误-判断正确'] || 0) + 
+                              (errorDist['识别错误-判断错误'] || 0) + 
+                              (errorDist['识别题干-判断正确'] || 0) +
+                              (errorDist['识别差异-判断正确'] || 0) +
+                              (errorDist['缺失题目'] || 0) + 
+                              (errorDist['AI识别幻觉'] || 0) +
+                              (errorDist['答案不匹配'] || 0);
+            recognitionCorrect += (total - recErrors);
+            
+            // 批改正确 = 总数 - 批改错误类型的数量
+            const gradErrors = (errorDist['识别错误-判断错误'] || 0) + 
+                               (errorDist['识别正确-判断错误'] || 0) + 
+                               (errorDist['缺失题目'] || 0) + 
+                               (errorDist['AI识别幻觉'] || 0) +
+                               (errorDist['答案不匹配'] || 0);
+            gradingCorrect += (total - gradErrors);
         }
     });
+    
+    console.log('Final stats:', { totalQuestions, recognitionCorrect, gradingCorrect });
+    console.log('accuracyDetails:', window.accuracyDetails);
+    
+    return {
+        totalQuestions,
+        recognitionCorrect: Math.max(0, recognitionCorrect),
+        recognitionWrong: Math.max(0, totalQuestions - recognitionCorrect),
+        recognitionRate: totalQuestions > 0 ? (recognitionCorrect / totalQuestions) * 100 : 0,
+        gradingCorrect: Math.max(0, gradingCorrect),
+        gradingWrong: Math.max(0, totalQuestions - gradingCorrect),
+        gradingRate: totalQuestions > 0 ? (gradingCorrect / totalQuestions) * 100 : 0
+    };
 }
 
 // ========== 计算一致性（准确率标准差的反向指标） ==========
@@ -1826,7 +1997,11 @@ async function startBatchEvaluation() {
         const response = await fetch(`/api/batch/tasks/${selectedTask.task_id}/evaluate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ auto_recognize: true })
+            body: JSON.stringify({ 
+                auto_recognize: true,
+                fuzzy_threshold: evalSettings.fuzzyThreshold / 100,
+                ignore_index_prefix: evalSettings.ignoreIndexPrefix
+            })
         });
         
         const reader = response.body.getReader();
@@ -2946,6 +3121,260 @@ function closeErrorDetailModal() {
 function handleModalEsc(e) {
     if (e.key === 'Escape') {
         closeErrorDetailModal();
+        closeAccuracyDetailModal();
+    }
+}
+
+// ========== 准确率详情弹窗 ==========
+function showAccuracyDetail(type, subType) {
+    if (!window.accuracyDetails) {
+        alert('暂无详情数据');
+        return;
+    }
+    
+    let title = '';
+    let items = [];
+    let colorCorrect = '';
+    let colorWrong = '';
+    
+    if (type === 'recognition') {
+        title = subType === 'correct' ? '识别正确详情' : (subType === 'wrong' ? '识别错误详情' : '识别准确率详情');
+        colorCorrect = '#34c759';
+        colorWrong = '#ff3b30';
+        
+        if (subType === 'correct') {
+            items = window.accuracyDetails.recognition.correct || [];
+        } else if (subType === 'wrong') {
+            items = window.accuracyDetails.recognition.wrong || [];
+        } else {
+            // 显示汇总 - 使用新弹窗
+            const correct = window.accuracyDetails.recognition.correct || [];
+            const wrong = window.accuracyDetails.recognition.wrong || [];
+            showAccuracySummaryModal('recognition', correct, wrong, colorCorrect, colorWrong);
+            return;
+        }
+    } else if (type === 'grading') {
+        title = subType === 'correct' ? '批改正确详情' : (subType === 'wrong' ? '批改错误详情' : '批改准确率详情');
+        colorCorrect = '#007aff';
+        colorWrong = '#ff9500';
+        
+        if (subType === 'correct') {
+            items = window.accuracyDetails.grading.correct || [];
+        } else if (subType === 'wrong') {
+            items = window.accuracyDetails.grading.wrong || [];
+        } else {
+            // 显示汇总 - 使用新弹窗
+            const correct = window.accuracyDetails.grading.correct || [];
+            const wrong = window.accuracyDetails.grading.wrong || [];
+            showAccuracySummaryModal('grading', correct, wrong, colorCorrect, colorWrong);
+            return;
+        }
+    }
+    
+    // 显示详情列表 - 使用类似错误类型详情的卡片式弹窗
+    if (items.length === 0) {
+        alert('暂无数据');
+        return;
+    }
+    
+    const color = subType === 'correct' ? colorCorrect : colorWrong;
+    const typeName = type === 'recognition' ? '识别' : '批改';
+    const statusName = subType === 'correct' ? '正确' : '错误';
+    
+    // 创建弹窗
+    const modal = document.createElement('div');
+    modal.className = 'error-detail-modal';
+    modal.innerHTML = `
+        <div class="error-detail-overlay" onclick="closeAccuracyDetailModal()"></div>
+        <div class="error-detail-content">
+            <div class="error-detail-header">
+                <div class="error-detail-title">
+                    <span class="error-type-dot" style="background: ${color}"></span>
+                    ${typeName}${statusName}详情
+                    <span class="error-count">${items.length}题</span>
+                </div>
+                <button class="error-detail-close" onclick="closeAccuracyDetailModal()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="error-detail-body">
+                <div class="error-cards-list">
+                    ${items.map((item, idx) => `
+                        <div class="error-card" data-idx="${idx}">
+                            <div class="error-card-header" onclick="toggleErrorCard(this)">
+                                <div class="error-card-summary">
+                                    <span class="error-card-page">P${item.pageNum}</span>
+                                    <span class="error-card-index">题${escapeHtml(String(item.index))}</span>
+                                    <span class="error-card-preview">${escapeHtml(truncateText(item.baseUser || '-', 30))}</span>
+                                    <span class="error-card-type" style="background: ${subType === 'correct' ? '#e3f9e5' : '#ffeef0'}; color: ${subType === 'correct' ? '#1e7e34' : '#d73a49'};">${escapeHtml(item.errorType || statusName)}</span>
+                                </div>
+                                <span class="error-card-toggle">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M6 9l6 6 6-6"/>
+                                    </svg>
+                                </span>
+                            </div>
+                            <div class="error-card-detail" style="display: none;">
+                                <div class="error-card-row">
+                                    <div class="error-card-label">标准答案</div>
+                                    <div class="error-card-value full-text">${escapeHtml(item.baseAnswer || '-')}</div>
+                                </div>
+                                <div class="error-card-row">
+                                    <div class="error-card-label">基准用户答案</div>
+                                    <div class="error-card-value full-text">${escapeHtml(item.baseUser || '-')}</div>
+                                </div>
+                                <div class="error-card-row">
+                                    <div class="error-card-label">AI识别答案</div>
+                                    <div class="error-card-value full-text">${escapeHtml(item.hwUser || '-')}</div>
+                                </div>
+                                ${item.baseCorrect && item.baseCorrect !== '-' ? `
+                                <div class="error-card-row two-col">
+                                    <div class="error-card-col">
+                                        <div class="error-card-label">基准判断</div>
+                                        <div class="error-card-value ${item.baseCorrect === 'yes' ? 'correct-yes' : 'correct-no'}">${item.baseCorrect}</div>
+                                    </div>
+                                    <div class="error-card-col">
+                                        <div class="error-card-label">AI判断</div>
+                                        <div class="error-card-value ${item.aiCorrect === 'yes' ? 'correct-yes' : 'correct-no'}">${item.aiCorrect || '-'}</div>
+                                    </div>
+                                </div>
+                                ` : ''}
+                                ${item.explanation ? `
+                                <div class="error-card-row">
+                                    <div class="error-card-label">说明</div>
+                                    <div class="error-card-value explanation">${escapeHtml(item.explanation)}</div>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    document.addEventListener('keydown', handleAccuracyModalEsc);
+}
+
+// 显示准确率汇总弹窗
+function showAccuracySummaryModal(type, correct, wrong, colorCorrect, colorWrong) {
+    const typeName = type === 'recognition' ? '识别' : '批改';
+    const total = correct.length + wrong.length;
+    const rate = total > 0 ? ((correct.length / total) * 100).toFixed(1) : 0;
+    
+    const modal = document.createElement('div');
+    modal.className = 'error-detail-modal';
+    modal.innerHTML = `
+        <div class="error-detail-overlay" onclick="closeAccuracyDetailModal()"></div>
+        <div class="error-detail-content" style="max-width: 800px;">
+            <div class="error-detail-header">
+                <div class="error-detail-title">
+                    ${typeName}准确率详情
+                    <span class="error-count">${total}题</span>
+                </div>
+                <button class="error-detail-close" onclick="closeAccuracyDetailModal()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="error-detail-body">
+                <div class="accuracy-summary-stats" style="display: flex; gap: 16px; margin-bottom: 20px;">
+                    <div class="accuracy-stat-card" style="flex: 1; background: #e3f9e5; padding: 16px; border-radius: 8px; text-align: center; cursor: pointer;" onclick="showAccuracyDetail('${type}', 'correct')">
+                        <div style="font-size: 24px; font-weight: 600; color: #1e7e34;">${correct.length}</div>
+                        <div style="font-size: 12px; color: #1e7e34;">${typeName}正确</div>
+                    </div>
+                    <div class="accuracy-stat-card" style="flex: 1; background: #ffeef0; padding: 16px; border-radius: 8px; text-align: center; cursor: pointer;" onclick="showAccuracyDetail('${type}', 'wrong')">
+                        <div style="font-size: 24px; font-weight: 600; color: #d73a49;">${wrong.length}</div>
+                        <div style="font-size: 12px; color: #d73a49;">${typeName}错误</div>
+                    </div>
+                    <div class="accuracy-stat-card" style="flex: 1; background: #f5f5f7; padding: 16px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px; font-weight: 600; color: ${colorCorrect};">${rate}%</div>
+                        <div style="font-size: 12px; color: #86868b;">准确率</div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <div style="font-weight: 500; margin-bottom: 8px; color: #d73a49;">错误题目列表 (${wrong.length}题)</div>
+                    <div class="error-cards-list" style="max-height: 400px; overflow-y: auto;">
+                        ${wrong.length === 0 ? '<div style="text-align: center; color: #86868b; padding: 20px;">无错误题目</div>' : 
+                        wrong.map((item, idx) => `
+                            <div class="error-card" data-idx="${idx}" style="background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; margin-bottom: 8px;">
+                                <div class="error-card-header" onclick="toggleErrorCard(this)" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; cursor: pointer; background: #fff;">
+                                    <div class="error-card-summary" style="display: flex; align-items: center; gap: 8px; flex: 1; color: #1d1d1f;">
+                                        <span style="font-size: 12px; font-weight: 500; color: #1d1d1f; background: #f5f5f7; padding: 2px 8px; border-radius: 4px;">P${item.pageNum || '?'}</span>
+                                        <span style="font-size: 13px; font-weight: 600; color: #1d1d1f;">题${escapeHtml(String(item.index || '-'))}</span>
+                                        <span style="font-size: 13px; color: #666; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(truncateText(item.baseUser || '-', 20))} vs ${escapeHtml(truncateText(item.hwUser || '-', 20))}</span>
+                                        <span style="background: #ffeef0; color: #d73a49; padding: 2px 6px; border-radius: 4px; font-size: 11px;">${escapeHtml(item.errorType || '-')}</span>
+                                    </div>
+                                    <span class="error-card-toggle" style="color: #1d1d1f;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M6 9l6 6 6-6"/>
+                                        </svg>
+                                    </span>
+                                </div>
+                                <div class="error-card-detail" style="display: none; padding: 12px 16px; border-top: 1px solid #e5e5e5; background: #fafafa;">
+                                    <div style="margin-bottom: 8px;">
+                                        <div style="font-size: 11px; color: #86868b; margin-bottom: 4px;">标准答案</div>
+                                        <div style="font-size: 13px; color: #1d1d1f; background: #fff; padding: 8px; border-radius: 4px;">${escapeHtml(item.baseAnswer || '-')}</div>
+                                    </div>
+                                    <div style="margin-bottom: 8px;">
+                                        <div style="font-size: 11px; color: #86868b; margin-bottom: 4px;">基准用户答案</div>
+                                        <div style="font-size: 13px; color: #1d1d1f; background: #fff; padding: 8px; border-radius: 4px;">${escapeHtml(item.baseUser || '-')}</div>
+                                    </div>
+                                    <div style="margin-bottom: 8px;">
+                                        <div style="font-size: 11px; color: #86868b; margin-bottom: 4px;">AI识别答案</div>
+                                        <div style="font-size: 13px; color: #1d1d1f; background: #fff; padding: 8px; border-radius: 4px;">${escapeHtml(item.hwUser || '-')}</div>
+                                    </div>
+                                    ${item.baseCorrect && item.baseCorrect !== '-' ? `
+                                    <div style="display: flex; gap: 16px; margin-bottom: 8px;">
+                                        <div style="flex: 1;">
+                                            <div style="font-size: 11px; color: #86868b; margin-bottom: 4px;">基准判断</div>
+                                            <div style="font-size: 13px; font-weight: 600; color: ${item.baseCorrect === 'yes' ? '#10b981' : '#ef4444'};">${item.baseCorrect}</div>
+                                        </div>
+                                        <div style="flex: 1;">
+                                            <div style="font-size: 11px; color: #86868b; margin-bottom: 4px;">AI判断</div>
+                                            <div style="font-size: 13px; font-weight: 600; color: ${item.aiCorrect === 'yes' ? '#10b981' : '#ef4444'};">${item.aiCorrect || '-'}</div>
+                                        </div>
+                                    </div>
+                                    ` : ''}
+                                    ${item.explanation ? `
+                                    <div>
+                                        <div style="font-size: 11px; color: #86868b; margin-bottom: 4px;">说明</div>
+                                        <div style="font-size: 12px; color: #666;">${escapeHtml(item.explanation)}</div>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    document.addEventListener('keydown', handleAccuracyModalEsc);
+}
+
+function closeAccuracyDetailModal() {
+    // 关闭动态创建的准确率详情弹窗
+    const modals = document.querySelectorAll('.error-detail-modal');
+    modals.forEach(modal => {
+        // 只移除动态创建的弹窗（不是 #errorDetailModal）
+        if (!modal.id) {
+            modal.remove();
+        }
+    });
+    document.removeEventListener('keydown', handleAccuracyModalEsc);
+}
+
+function handleAccuracyModalEsc(e) {
+    if (e.key === 'Escape') {
+        closeAccuracyDetailModal();
     }
 }
 

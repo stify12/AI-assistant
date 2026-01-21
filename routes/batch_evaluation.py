@@ -16,7 +16,7 @@ from services.database_service import DatabaseService, AppDatabaseService
 from services.storage_service import StorageService
 from services.llm_service import LLMService
 from services.semantic_eval_service import SemanticEvalService
-from utils.text_utils import normalize_answer, has_format_diff
+from utils.text_utils import normalize_answer, has_format_diff, calculate_similarity, is_fuzzy_match
 
 batch_evaluation_bp = Blueprint('batch_evaluation', __name__)
 
@@ -606,11 +606,37 @@ def enrich_base_effects_with_question_types(book_id, base_effects):
     return enriched_effects
 
 
-def classify_error(base_item, hw_item):
+def remove_index_prefix(text):
+    """
+    移除答案前面的题号前缀
+    如: "(1)答案内容" -> "答案内容"
+        "（2）答案内容" -> "答案内容"
+        "1.答案内容" -> "答案内容"
+        "1、答案内容" -> "答案内容"
+    """
+    import re
+    if not text:
+        return text
+    text = str(text).strip()
+    # 匹配常见的题号前缀格式：(1) （1） 1. 1、 1) 等
+    pattern = r'^[\(（]?\d+[\)）]?[\.、\s]*'
+    return re.sub(pattern, '', text).strip()
+
+
+def classify_error(base_item, hw_item, is_chinese=False, fuzzy_threshold=0.85, ignore_index_prefix=True):
     """
     详细的错误分类逻辑
-    返回: (is_match, error_type, explanation, severity)
+    返回: (is_match, error_type, explanation, severity, similarity)
+    
+    Args:
+        base_item: 基准效果数据
+        hw_item: AI批改结果
+        is_chinese: 是否是语文学科
+        fuzzy_threshold: 模糊匹配阈值
+        ignore_index_prefix: 是否忽略题号前缀差异
     """
+    from utils.text_utils import is_fuzzy_match
+    
     idx = str(base_item.get('index', ''))
     
     # 基准效果的标准答案：优先取 answer，没有则取 mainAnswer
@@ -627,6 +653,14 @@ def classify_error(base_item, hw_item):
     error_type = None
     explanation = ''
     severity = 'medium'
+    similarity_value = None
+    
+    # 获取题目类型
+    question_category = classify_question_type(base_item)
+    bvalue = str(base_item.get('bvalue', ''))
+    
+    # 语文主观题使用模糊匹配（客观填空题不使用）
+    is_chinese_fuzzy = is_chinese and question_category['is_subjective']
     
     if not hw_item:
         is_match = False
@@ -642,18 +676,42 @@ def classify_error(base_item, hw_item):
             is_match = True
             explanation = '用户答案识别一致（基准效果缺少判断结果）'
         else:
-            is_match = False
-            error_type = '识别错误-判断错误'
-            explanation = f'用户答案不一致：基准="{base_user}"，AI="{hw_user}"'
-            severity = 'high'
+            # 语文非选择题：尝试模糊匹配
+            if is_chinese_fuzzy:
+                fuzzy_match, similarity_value = is_fuzzy_match(base_user, hw_user, fuzzy_threshold)
+                if fuzzy_match:
+                    is_match = True
+                    error_type = '识别差异-判断正确'
+                    explanation = f'模糊匹配通过（相似度{similarity_value*100:.1f}%）：基准="{base_user}"，AI="{hw_user}"'
+                    severity = 'low'
+                else:
+                    is_match = False
+                    error_type = '识别错误-判断错误'
+                    explanation = f'用户答案不一致（相似度{similarity_value*100:.1f}%）：基准="{base_user}"，AI="{hw_user}"'
+                    severity = 'high'
+            else:
+                is_match = False
+                error_type = '识别错误-判断错误'
+                explanation = f'用户答案不一致：基准="{base_user}"，AI="{hw_user}"'
+                severity = 'high'
     else:
         # 标准化答案进行比较
-        norm_base_user = normalize_answer(base_user)
-        norm_hw_user = normalize_answer(hw_user)
-        norm_base_answer = normalize_answer(base_answer)
+        if ignore_index_prefix:
+            # 先移除题号前缀，再标准化
+            norm_base_user = normalize_answer(remove_index_prefix(base_user))
+            norm_hw_user = normalize_answer(remove_index_prefix(hw_user))
+            norm_base_answer = normalize_answer(remove_index_prefix(base_answer))
+        else:
+            # 直接标准化，不移除题号前缀
+            norm_base_user = normalize_answer(base_user)
+            norm_hw_user = normalize_answer(hw_user)
+            norm_base_answer = normalize_answer(base_answer)
         
         user_match = norm_base_user == norm_hw_user
         correct_match = base_correct == hw_correct
+        
+        # 检测是否只是题号前缀差异（移除前缀后完全一致）
+        has_index_prefix_diff = ignore_index_prefix and (normalize_answer(base_user) != normalize_answer(hw_user)) and user_match
         
         # 检测AI识别幻觉：学生答错了 + AI识别的用户答案≠基准用户答案 + AI识别的用户答案=标准答案
         # 即AI把学生的错误手写答案"脑补"成了标准答案
@@ -663,10 +721,17 @@ def classify_error(base_item, hw_item):
             explanation = f'AI将学生答案"{base_user}"识别为"{hw_user}"（标准答案），属于识别幻觉'
             severity = 'high'
         elif user_match and correct_match:
-            is_match = True
+            # 检查是否有题号前缀差异
+            if has_index_prefix_diff:
+                is_match = True  # 不计入错误
+                error_type = '识别差异-判断正确'
+                explanation = f'AI多识别了题号前缀，判断正确：基准="{base_user}"，AI="{hw_user}"'
+                severity = 'low'
+                similarity_value = 1.0  # 移除前缀后完全一致
+            else:
+                is_match = True
         elif user_match and not correct_match:
             # 用户答案识别正确，但判断结果不同
-            # 这是"识别正确-判断错误"，格式差异只是次要问题
             is_match = False
             error_type = '识别正确-判断错误'
             if has_format_diff(base_user, hw_user):
@@ -675,8 +740,21 @@ def classify_error(base_item, hw_item):
                 explanation = f'识别正确但判断错误：基准={base_correct}，AI={hw_correct}'
             severity = 'high'
         elif not user_match and correct_match:
-            # 检测是否是"识别题干"的情况
-            if is_stem_recognition(base_user, hw_user):
+            # 语文非选择题：优先尝试模糊匹配
+            if is_chinese_fuzzy:
+                fuzzy_match, similarity_value = is_fuzzy_match(base_user, hw_user, fuzzy_threshold)
+                if fuzzy_match:
+                    is_match = True  # 不计入错误
+                    error_type = '识别差异-判断正确'
+                    explanation = f'模糊匹配通过（相似度{similarity_value*100:.1f}%），判断正确：基准="{base_user}"，AI="{hw_user}"'
+                    severity = 'low'
+                else:
+                    is_match = False
+                    error_type = '识别错误-判断正确'
+                    explanation = f'识别不准确（相似度{similarity_value*100:.1f}%）但判断结果正确：基准="{base_user}"，AI="{hw_user}"'
+                    severity = 'medium'
+            # 非语文的填空题：检测是否是"识别题干"的情况
+            elif not is_chinese and bvalue == '4' and is_stem_recognition(base_user, hw_user):
                 is_match = True  # 不计入错误
                 error_type = '识别题干-判断正确'
                 explanation = f'AI多识别了题干内容，但判断正确：基准="{base_user}"，AI="{hw_user}"'
@@ -687,12 +765,26 @@ def classify_error(base_item, hw_item):
                 explanation = f'识别不准确但判断结果正确：基准="{base_user}"，AI="{hw_user}"'
                 severity = 'medium'
         else:
-            is_match = False
-            error_type = '识别错误-判断错误'
-            explanation = f'识别和判断都有误：基准="{base_user}/{base_correct}"，AI="{hw_user}/{hw_correct}"'
-            severity = 'high'
+            # 语文非选择题：即使判断不一致，也检查模糊匹配
+            if is_chinese_fuzzy:
+                fuzzy_match, similarity_value = is_fuzzy_match(base_user, hw_user, fuzzy_threshold)
+                if fuzzy_match:
+                    is_match = False
+                    error_type = '识别正确-判断错误'
+                    explanation = f'识别相似（相似度{similarity_value*100:.1f}%）但判断错误：基准={base_correct}，AI={hw_correct}'
+                    severity = 'high'
+                else:
+                    is_match = False
+                    error_type = '识别错误-判断错误'
+                    explanation = f'识别和判断都有误（相似度{similarity_value*100:.1f}%）：基准="{base_user}/{base_correct}"，AI="{hw_user}/{hw_correct}"'
+                    severity = 'high'
+            else:
+                is_match = False
+                error_type = '识别错误-判断错误'
+                explanation = f'识别和判断都有误：基准="{base_user}/{base_correct}"，AI="{hw_user}/{hw_correct}"'
+                severity = 'high'
     
-    return is_match, error_type, explanation, severity
+    return is_match, error_type, explanation, severity, similarity_value
 
 
 # ========== 测试条件 API ==========
@@ -1391,6 +1483,7 @@ def batch_tasks():
         test_condition_id = data.get('test_condition_id')
         test_condition_name = data.get('test_condition_name', '')
         homework_ids = data.get('homework_ids', [])
+        fuzzy_threshold = data.get('fuzzy_threshold', 0.85)  # 语文主观题模糊匹配阈值，默认85%
         
         if not homework_ids:
             return jsonify({'success': False, 'error': '请选择作业'})
@@ -1491,6 +1584,7 @@ def batch_tasks():
                 'subject_name': subject_name,
                 'test_condition_id': test_condition_id,
                 'test_condition_name': test_condition_name,
+                'fuzzy_threshold': fuzzy_threshold,  # 语文主观题模糊匹配阈值
                 'status': 'pending',
                 'homework_items': homework_items,
                 'overall_report': None,
@@ -1628,6 +1722,10 @@ def get_homework_detail(task_id, homework_id):
             else:
                 hw_dict_by_tempindex[i] = item
         
+        # 获取模糊匹配阈值和忽略题号前缀设置
+        fuzzy_threshold = task_data.get('fuzzy_threshold', 0.85)
+        ignore_index_prefix = task_data.get('ignore_index_prefix', True)
+        
         for i, base_item in enumerate(base_effect):
             idx = str(base_item.get('index', ''))
             # 标准化基准效果的题号
@@ -1644,9 +1742,10 @@ def get_homework_detail(task_id, homework_id):
             if not hw_item:
                 hw_item = hw_dict_by_tempindex.get(base_temp_idx)
             
-            is_match, error_type, explanation, severity = classify_error(base_item, hw_item)
+            is_match, error_type, explanation, severity, similarity = classify_error(base_item, hw_item, is_chinese=is_chinese, fuzzy_threshold=fuzzy_threshold, ignore_index_prefix=ignore_index_prefix)
             
-            if not is_match:
+            # 不计入错误的类型也要显示在详情中（识别差异-判断正确、识别题干-判断正确）
+            if not is_match or error_type in ('识别差异-判断正确', '识别题干-判断正确', '格式差异'):
                 base_answer = str(base_item.get('answer', '') or base_item.get('mainAnswer', '')).strip()
                 base_user = str(base_item.get('userAnswer', '')).strip()
                 base_correct = get_correct_value(base_item)
@@ -1660,6 +1759,7 @@ def get_homework_detail(task_id, homework_id):
                     'error_type': error_type,
                     'explanation': explanation,
                     'severity': severity,
+                    'similarity': similarity,
                     'base_effect': {
                         'answer': base_answer,
                         'userAnswer': base_user,
@@ -1709,6 +1809,15 @@ def batch_evaluate(task_id):
     # 获取任务的学科ID
     task_subject_id = task_data.get('subject_id')
     
+    # 获取前端传递的设置参数
+    req_data = request.get_json() or {}
+    fuzzy_threshold = req_data.get('fuzzy_threshold', 0.85)
+    ignore_index_prefix = req_data.get('ignore_index_prefix', True)
+    
+    # 保存设置到任务数据
+    task_data['fuzzy_threshold'] = fuzzy_threshold
+    task_data['ignore_index_prefix'] = ignore_index_prefix
+    
     def generate():
         task_data['status'] = 'running'
         homework_items = task_data.get('homework_items', [])
@@ -1750,8 +1859,8 @@ def batch_evaluate(task_id):
                     pass
                 
                 if base_effect and homework_result:
-                    # 传递学科ID，语文(2)使用题号匹配
-                    evaluation = do_evaluation(base_effect, homework_result, subject_id=task_subject_id)
+                    # 传递学科ID和模糊匹配阈值，语文(1)使用题号匹配
+                    evaluation = do_evaluation(base_effect, homework_result, subject_id=task_subject_id, fuzzy_threshold=fuzzy_threshold, ignore_index_prefix=ignore_index_prefix)
                     item['accuracy'] = evaluation['accuracy']
                     item['evaluation'] = evaluation
                     item['status'] = 'completed'
@@ -1858,7 +1967,7 @@ def batch_evaluate(task_id):
     return Response(generate(), mimetype='text/event-stream')
 
 
-def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=None, subject_id=None):
+def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=None, subject_id=None, fuzzy_threshold=0.85, ignore_index_prefix=True):
     """
     执行评估计算
     - 语文(subject_id=1): 按题号(index)匹配
@@ -1872,6 +1981,8 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         use_ai_compare: 是否使用AI比对
         user_id: 用户ID，用于加载用户API配置
         subject_id: 学科ID，语文(1)使用题号匹配
+        fuzzy_threshold: 语文主观题模糊匹配阈值，默认0.85 (85%)
+        ignore_index_prefix: 是否忽略题号前缀差异，默认True
     """
     total = len(base_effect)
     correct_count = 0
@@ -1881,6 +1992,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         '识别错误-判断错误': 0,
         '识别正确-判断错误': 0,
         '识别题干-判断正确': 0,
+        '识别差异-判断正确': 0,  # 新增：语文主观题模糊匹配
         '格式差异': 0,
         '缺失题目': 0,
         'AI识别幻觉': 0
@@ -2007,6 +2119,11 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         error_type = None
         explanation = ''
         severity = 'medium'
+        similarity_value = None  # 记录相似度值（用于模糊匹配）
+        
+        # 判断是否为语文主观题（用于模糊匹配）
+        # 语文学科只有主观题使用模糊匹配，客观填空题不使用
+        is_chinese_fuzzy = is_chinese and question_category['is_subjective']
         
         if not hw_item:
             is_match = False
@@ -2021,18 +2138,42 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
             if norm_base_user == norm_hw_user:
                 is_match = True
             else:
-                is_match = False
-                error_type = '识别错误-判断错误'
-                explanation = f'用户答案不一致：基准="{base_user}"，AI="{hw_user}"'
-                severity = 'high'
+                # 语文非选择题：尝试模糊匹配
+                if is_chinese_fuzzy:
+                    fuzzy_match, similarity_value = is_fuzzy_match(base_user, hw_user, fuzzy_threshold)
+                    if fuzzy_match:
+                        is_match = True
+                        error_type = '识别差异-判断正确'
+                        explanation = f'模糊匹配通过（相似度{similarity_value*100:.1f}%）：基准="{base_user}"，AI="{hw_user}"'
+                        severity = 'low'
+                    else:
+                        is_match = False
+                        error_type = '识别错误-判断错误'
+                        explanation = f'用户答案不一致（相似度{similarity_value*100:.1f}%）：基准="{base_user}"，AI="{hw_user}"'
+                        severity = 'high'
+                else:
+                    is_match = False
+                    error_type = '识别错误-判断错误'
+                    explanation = f'用户答案不一致：基准="{base_user}"，AI="{hw_user}"'
+                    severity = 'high'
         else:
             # 标准化答案进行比较
-            norm_base_user = normalize_answer(base_user)
-            norm_hw_user = normalize_answer(hw_user)
-            norm_base_answer = normalize_answer(base_answer)
+            if ignore_index_prefix:
+                # 先移除题号前缀，再标准化
+                norm_base_user = normalize_answer(remove_index_prefix(base_user))
+                norm_hw_user = normalize_answer(remove_index_prefix(hw_user))
+                norm_base_answer = normalize_answer(remove_index_prefix(base_answer))
+            else:
+                # 直接标准化，不移除题号前缀
+                norm_base_user = normalize_answer(base_user)
+                norm_hw_user = normalize_answer(hw_user)
+                norm_base_answer = normalize_answer(base_answer)
             
             user_match = norm_base_user == norm_hw_user
             correct_match = base_correct == hw_correct
+            
+            # 检测是否只是题号前缀差异（移除前缀后完全一致）
+            has_index_prefix_diff = ignore_index_prefix and (normalize_answer(base_user) != normalize_answer(hw_user)) and user_match
             
             # 检测AI识别幻觉：学生答错了 + AI识别的用户答案≠基准用户答案 + AI识别的用户答案=标准答案
             # 即AI把学生的错误手写答案"脑补"成了标准答案
@@ -2042,7 +2183,15 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
                 explanation = f'AI将学生答案"{base_user}"识别为"{hw_user}"（标准答案），属于识别幻觉'
                 severity = 'high'
             elif user_match and correct_match:
-                is_match = True
+                # 检查是否有题号前缀差异
+                if has_index_prefix_diff:
+                    is_match = True  # 不计入错误
+                    error_type = '识别差异-判断正确'
+                    explanation = f'AI多识别了题号前缀，判断正确：基准="{base_user}"，AI="{hw_user}"'
+                    severity = 'low'
+                    similarity_value = 1.0  # 移除前缀后完全一致
+                else:
+                    is_match = True
             elif user_match and not correct_match:
                 # 用户答案识别正确，但判断结果不同
                 # 这是"识别正确-判断错误"，格式差异只是次要问题
@@ -2054,8 +2203,21 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
                     explanation = f'识别正确但判断错误：基准={base_correct}，AI={hw_correct}'
                 severity = 'high'
             elif not user_match and correct_match:
-                # 检测是否是"识别题干"的情况
-                if is_stem_recognition(base_user, hw_user):
+                # 语文非选择题：优先尝试模糊匹配（语文不使用识别题干逻辑）
+                if is_chinese_fuzzy:
+                    fuzzy_match, similarity_value = is_fuzzy_match(base_user, hw_user, fuzzy_threshold)
+                    if fuzzy_match:
+                        is_match = True  # 不计入错误
+                        error_type = '识别差异-判断正确'
+                        explanation = f'模糊匹配通过（相似度{similarity_value*100:.1f}%），判断正确：基准="{base_user}"，AI="{hw_user}"'
+                        severity = 'low'
+                    else:
+                        is_match = False
+                        error_type = '识别错误-判断正确'
+                        explanation = f'识别不准确（相似度{similarity_value*100:.1f}%）但判断结果正确：基准="{base_user}"，AI="{hw_user}"'
+                        severity = 'medium'
+                # 非语文的填空题：检测是否是"识别题干"的情况
+                elif not is_chinese and bvalue == '4' and is_stem_recognition(base_user, hw_user):
                     is_match = True  # 不计入错误
                     error_type = '识别题干-判断正确'
                     explanation = f'AI多识别了题干内容，但判断正确：基准="{base_user}"，AI="{hw_user}"'
@@ -2066,10 +2228,25 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
                     explanation = f'识别不准确但判断结果正确：基准="{base_user}"，AI="{hw_user}"'
                     severity = 'medium'
             else:
-                is_match = False
-                error_type = '识别错误-判断错误'
-                explanation = f'识别和判断都有误：基准="{base_user}/{base_correct}"，AI="{hw_user}/{hw_correct}"'
-                severity = 'high'
+                # 语文非选择题：即使判断不一致，也检查模糊匹配
+                if is_chinese_fuzzy:
+                    fuzzy_match, similarity_value = is_fuzzy_match(base_user, hw_user, fuzzy_threshold)
+                    if fuzzy_match:
+                        # 识别相似但判断不同
+                        is_match = False
+                        error_type = '识别正确-判断错误'
+                        explanation = f'识别相似（相似度{similarity_value*100:.1f}%）但判断错误：基准={base_correct}，AI={hw_correct}'
+                        severity = 'high'
+                    else:
+                        is_match = False
+                        error_type = '识别错误-判断错误'
+                        explanation = f'识别和判断都有误（相似度{similarity_value*100:.1f}%）：基准="{base_user}/{base_correct}"，AI="{hw_user}/{hw_correct}"'
+                        severity = 'high'
+                else:
+                    is_match = False
+                    error_type = '识别错误-判断错误'
+                    explanation = f'识别和判断都有误：基准="{base_user}/{base_correct}"，AI="{hw_user}/{hw_correct}"'
+                    severity = 'high'
         
         if is_match:
             correct_count += 1
@@ -2089,37 +2266,40 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
             if combined_key in combined_stats:
                 combined_stats[combined_key]['correct'] += 1
             
-            # 格式差异和识别题干虽然计入正确，但仍记录到分布和详情中
-            if error_type in ('格式差异', '识别题干-判断正确'):
+            # 格式差异、识别题干、识别差异虽然计入正确，但仍记录到分布和详情中
+            if error_type in ('格式差异', '识别题干-判断正确', '识别差异-判断正确'):
                 error_distribution[error_type] = error_distribution.get(error_type, 0) + 1
-                # 识别题干也要记录到详情中展示
-                if error_type == '识别题干-判断正确':
-                    recognition_match = normalize_answer(base_user) == normalize_answer(hw_user) if base_user or hw_user else None
-                    judgment_match = base_correct == hw_correct if base_correct and hw_correct else None
-                    errors.append({
-                        'index': idx,
-                        'base_effect': {
-                            'answer': base_answer,
-                            'userAnswer': base_user,
-                            'correct': base_correct if base_correct else '-'
-                        },
-                        'ai_result': {
-                            'answer': hw_answer,
-                            'userAnswer': hw_user,
-                            'correct': hw_correct if hw_correct else '-'
-                        },
-                        'error_type': error_type,
-                        'explanation': explanation,
-                        'severity': severity,
-                        'severity_code': severity,
-                        'analysis': {
-                            'recognition_match': recognition_match,
-                            'judgment_match': judgment_match,
-                            'is_hallucination': False
-                        },
-                        'question_category': question_category,
-                        'is_stem_recognition': True  # 标记为识别题干
-                    })
+                # 记录到详情中展示
+                recognition_match = normalize_answer(base_user) == normalize_answer(hw_user) if base_user or hw_user else None
+                judgment_match = base_correct == hw_correct if base_correct and hw_correct else None
+                error_record = {
+                    'index': idx,
+                    'base_effect': {
+                        'answer': base_answer,
+                        'userAnswer': base_user,
+                        'correct': base_correct if base_correct else '-'
+                    },
+                    'ai_result': {
+                        'answer': hw_answer,
+                        'userAnswer': hw_user,
+                        'correct': hw_correct if hw_correct else '-'
+                    },
+                    'error_type': error_type,
+                    'explanation': explanation,
+                    'severity': severity,
+                    'severity_code': severity,
+                    'analysis': {
+                        'recognition_match': recognition_match,
+                        'judgment_match': judgment_match,
+                        'is_hallucination': False,
+                        'similarity': similarity_value  # 添加相似度值
+                    },
+                    'question_category': question_category,
+                    'is_stem_recognition': error_type == '识别题干-判断正确',
+                    'is_fuzzy_match': error_type == '识别差异-判断正确',
+                    'similarity': similarity_value  # 顶层也添加相似度值，方便前端访问
+                }
+                errors.append(error_record)
         else:
             if error_type:
                 error_distribution[error_type] = error_distribution.get(error_type, 0) + 1
@@ -2147,8 +2327,10 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
                 'analysis': {
                     'recognition_match': recognition_match,
                     'judgment_match': judgment_match,
-                    'is_hallucination': error_type == 'AI识别幻觉'
+                    'is_hallucination': error_type == 'AI识别幻觉',
+                    'similarity': similarity_value  # 添加相似度值
                 },
+                'similarity': similarity_value,  # 顶层也添加相似度值
                 # 添加题目类型标注
                 'question_category': question_category
             })

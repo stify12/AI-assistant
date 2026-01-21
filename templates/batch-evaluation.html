@@ -129,8 +129,29 @@
                                         <canvas id="errorTrendChart"></canvas>
                                     </div>
                                     <div class="chart-box">
-                                        <div class="chart-title">评估指标雷达图</div>
-                                        <canvas id="metricsRadarChart"></canvas>
+                                        <div class="chart-title">准确率分析</div>
+                                        <div class="accuracy-progress-container" id="accuracyProgressContainer">
+                                            <div class="accuracy-progress-item" onclick="showAccuracyDetail('recognition')">
+                                                <div class="accuracy-progress-header">
+                                                    <span class="accuracy-progress-label">识别准确率</span>
+                                                    <span class="accuracy-progress-value" id="recognitionRateValue">-</span>
+                                                </div>
+                                                <div class="accuracy-progress-bar">
+                                                    <div class="accuracy-progress-fill recognition-fill" id="recognitionProgressFill"></div>
+                                                </div>
+                                                <div class="accuracy-progress-stats" id="recognitionStats">正确 0 / 总计 0</div>
+                                            </div>
+                                            <div class="accuracy-progress-item" onclick="showAccuracyDetail('grading')">
+                                                <div class="accuracy-progress-header">
+                                                    <span class="accuracy-progress-label">批改准确率</span>
+                                                    <span class="accuracy-progress-value" id="gradingRateValue">-</span>
+                                                </div>
+                                                <div class="accuracy-progress-bar">
+                                                    <div class="accuracy-progress-fill grading-fill" id="gradingProgressFill"></div>
+                                                </div>
+                                                <div class="accuracy-progress-stats" id="gradingStats">正确 0 / 总计 0</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -291,26 +312,35 @@
 
     <!-- 设置弹窗 -->
     <div class="modal" id="settingsModal">
-        <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-content settings-modal">
             <div class="modal-header">
                 <h3>评估设置</h3>
-                <button class="close-btn" onclick="hideSettingsModal()">x</button>
+                <button class="close-btn" onclick="hideSettingsModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>模糊匹配阈值（语文主观题）</label>
-                    <div class="threshold-input-wrapper">
-                        <input type="range" id="settingsFuzzyThreshold" min="50" max="100" value="85" oninput="updateSettingsThresholdDisplay()">
-                        <span id="settingsFuzzyThresholdValue">85%</span>
+                <!-- 模糊匹配阈值设置 -->
+                <div class="settings-section">
+                    <div class="settings-section-header">
+                        <div class="settings-section-title">模糊匹配阈值</div>
+                        <div class="settings-section-badge">语文主观题</div>
                     </div>
-                    <div class="form-hint">语文主观题相似度达到此阈值视为匹配，不计入错误</div>
+                    <div class="settings-slider-group">
+                        <input type="range" id="settingsFuzzyThreshold" class="settings-slider" min="50" max="100" value="85" oninput="updateSettingsThresholdDisplay()">
+                        <div class="settings-slider-value" id="settingsFuzzyThresholdValue">85%</div>
+                    </div>
+                    <div class="settings-hint">相似度达到此阈值视为匹配，不计入错误</div>
                 </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="settingsIgnoreIndexPrefix" checked>
-                        忽略题号前缀差异
+                
+                <!-- 题号前缀设置 -->
+                <div class="settings-section">
+                    <label class="settings-checkbox-label">
+                        <input type="checkbox" id="settingsIgnoreIndexPrefix" class="settings-checkbox" checked>
+                        <span class="settings-checkbox-custom"></span>
+                        <div class="settings-checkbox-content">
+                            <div class="settings-checkbox-title">忽略题号前缀差异</div>
+                            <div class="settings-checkbox-desc">如 "(1)答案" 与 "答案" 视为相同</div>
+                        </div>
                     </label>
-                    <div class="form-hint">如 "(1)答案" 与 "答案" 视为相同</div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -320,6 +350,6 @@
         </div>
     </div>
 
-    <script src="/static/js/batch-evaluation.js?v=2"></script>
+    <script src="/static/js/batch-evaluation.js?v=4"></script>
 </body>
 </html>

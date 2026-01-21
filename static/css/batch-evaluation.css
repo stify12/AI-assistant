@@ -1026,7 +1026,11 @@ body {
     color: #0369a1;
     border: 1px solid #7dd3fc;
 }
-    color: #fff;
+
+.tag-fuzzy {
+    background: #ccfbf1;
+    color: #0d9488;
+    border: 1px solid #5eead4;
 }
 
 /* 说明单元格 */
@@ -1407,29 +1411,70 @@ body {
     gap: 12px;
 }
 
-.error-card {
+/* 旧版错误卡片样式 - 用于作业详情页 */
+.error-cards-container .error-card {
     background: #fff;
     border: 1px solid #e5e5e5;
     border-radius: 8px;
     overflow: hidden;
 }
 
-.error-card-header {
-    background: #1d1d1f;
-    padding: 10px 16px;
+.error-cards-container .error-card-header {
+    background: #1d1d1f !important;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
 }
 
-.error-card-title {
+.error-cards-container .error-card-title {
     display: flex;
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
 }
 
-.error-index {
+.error-cards-container .error-index {
     font-size: 14px;
     font-weight: 600;
-    color: #fff;
+    color: #fff !important;
+}
+
+.error-cards-container .severity-badge {
+    color: #fff !important;
+}
+
+.error-cards-container .tag {
+    color: #fff !important;
+    background: rgba(255,255,255,0.2) !important;
+    border: none !important;
+}
+
+/* 不计入错误的卡片样式（识别差异-判断正确、识别题干-判断正确、格式差异） */
+.error-cards-container .error-card.not-counted-error {
+    border-color: #14b8a6;
+}
+
+.error-cards-container .error-card.not-counted-error .error-card-header,
+.error-cards-container .fuzzy-match-header {
+    background: #14b8a6 !important;
+}
+
+.error-cards-container .not-counted-badge {
+    font-size: 11px;
+    font-weight: 500;
+    color: #fff !important;
+    background: rgba(255,255,255,0.25) !important;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.error-cards-container .similarity-badge {
+    font-size: 11px;
+    font-weight: 500;
+    color: #fff !important;
+    background: rgba(255,255,255,0.25) !important;
+    padding: 2px 8px;
+    border-radius: 4px;
 }
 
 .error-card-body {
@@ -1960,6 +2005,375 @@ body {
 
 .chart-box canvas {
     max-height: 240px;
+}
+
+/* 双饼图容器 */
+.dual-pie-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 24px;
+    padding: 10px 0;
+}
+
+.pie-chart-box {
+    flex: 1;
+    max-width: 180px;
+    text-align: center;
+}
+
+.pie-chart-box .pie-chart-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1d1d1f;
+    margin-bottom: 8px;
+}
+
+.pie-chart-box canvas {
+    max-height: 140px;
+}
+
+/* 准确率进度条样式 */
+.accuracy-progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 16px 0;
+}
+
+.accuracy-progress-item {
+    cursor: pointer;
+    padding: 12px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.accuracy-progress-item:hover {
+    background: #f5f5f7;
+}
+
+.accuracy-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.accuracy-progress-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1d1d1f;
+}
+
+.accuracy-progress-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.accuracy-progress-bar {
+    height: 12px;
+    background: #e5e5e5;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.accuracy-progress-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.5s ease;
+}
+
+.accuracy-progress-fill.recognition-fill {
+    background: #3b82f6;
+}
+
+.accuracy-progress-fill.grading-fill {
+    background: #10b981;
+}
+
+.accuracy-progress-stats {
+    font-size: 12px;
+    color: #86868b;
+    margin-top: 6px;
+}
+
+/* 准确率图例样式（保留兼容） */
+.accuracy-legend {
+    margin-top: 8px;
+    padding: 6px 8px;
+    background: #f9f9fb;
+    border-radius: 6px;
+    text-align: left;
+}
+
+.accuracy-legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #1d1d1f;
+    padding: 3px 0;
+}
+
+.accuracy-legend .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* 准确率详情弹窗 */
+.accuracy-detail-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.accuracy-detail-modal.show {
+    display: flex;
+}
+
+.accuracy-detail-content {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 480px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.accuracy-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.accuracy-detail-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.accuracy-detail-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: #f5f5f7;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    color: #86868b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+}
+
+.accuracy-detail-close:hover {
+    background: #e5e5e5;
+}
+
+.accuracy-stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.accuracy-stat-row:last-child {
+    border-bottom: none;
+}
+
+.accuracy-stat-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #1d1d1f;
+}
+
+.accuracy-stat-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.accuracy-stat-value {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1d1d1f;
+}
+
+.accuracy-formula {
+    background: #f5f5f7;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 16px;
+    font-size: 12px;
+    color: #86868b;
+}
+
+.accuracy-formula-title {
+    font-weight: 500;
+    color: #1d1d1f;
+    margin-bottom: 4px;
+}
+
+/* 准确率详情弹窗内部样式 */
+.accuracy-detail-summary {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.accuracy-detail-summary .summary-item {
+    flex: 1;
+    text-align: center;
+    padding: 16px;
+    border-radius: 8px;
+    background: #f5f5f7;
+}
+
+.accuracy-detail-summary .summary-item.correct {
+    background: #e3f9e5;
+}
+
+.accuracy-detail-summary .summary-item.wrong {
+    background: #ffeef0;
+}
+
+.accuracy-detail-summary .summary-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1d1d1f;
+}
+
+.accuracy-detail-summary .summary-item.correct .summary-value {
+    color: #1e7e34;
+}
+
+.accuracy-detail-summary .summary-item.wrong .summary-value {
+    color: #d73a49;
+}
+
+.accuracy-detail-summary .summary-label {
+    font-size: 13px;
+    color: #86868b;
+    margin-top: 4px;
+}
+
+.detail-section {
+    margin-bottom: 20px;
+}
+
+.detail-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.reason-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.reason-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: #ffeef0;
+    border-radius: 6px;
+}
+
+.reason-item.correct {
+    background: #e3f9e5;
+}
+
+.reason-name {
+    font-size: 13px;
+    color: #1d1d1f;
+}
+
+.reason-count {
+    font-size: 13px;
+    font-weight: 500;
+    color: #86868b;
+}
+
+.error-detail-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.error-detail-item {
+    background: #f5f5f7;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.error-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.error-detail-index {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.error-detail-reason {
+    font-size: 11px;
+    padding: 2px 8px;
+    background: #1d1d1f;
+    color: #fff;
+    border-radius: 4px;
+}
+
+.error-detail-compare {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.compare-row {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.compare-label {
+    color: #86868b;
+    width: 40px;
+    flex-shrink: 0;
+}
+
+.compare-value {
+    color: #1d1d1f;
+    word-break: break-all;
 }
 
 /* 响应式：小屏幕时垂直排列 */
@@ -2708,9 +3122,181 @@ body {
 .error-detail-body {
     flex: 1;
     overflow: auto;
-    padding: 0;
+    padding: 16px;
 }
 
+/* 错误卡片列表 */
+.error-cards-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.error-card {
+    background: #fff !important;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.2s;
+    border: 1px solid #e5e5e5;
+}
+
+/* 准确率详情弹窗中的错误卡片 - 确保内容可见 */
+.error-detail-modal .error-card {
+    overflow: visible;
+    height: auto;
+}
+
+.error-card:hover {
+    background: #fafafa !important;
+    border-color: #d2d2d7;
+}
+
+.error-card.expanded {
+    background: #fff !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-color: #d2d2d7;
+}
+
+.error-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+    background: #fff !important;
+}
+
+.error-card-summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.error-card-page {
+    font-size: 12px;
+    font-weight: 500;
+    color: #1d1d1f !important;
+    background: #f5f5f7 !important;
+    padding: 2px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.error-card-index {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1d1d1f !important;
+    flex-shrink: 0;
+}
+
+.error-card-preview {
+    font-size: 13px;
+    color: #1d1d1f !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+.error-card-similarity {
+    font-size: 12px;
+    font-weight: 500;
+    color: #14b8a6;
+    background: #ccfbf1;
+    padding: 2px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.error-card-toggle {
+    color: #1d1d1f;
+    flex-shrink: 0;
+}
+
+.error-card-toggle svg {
+    transition: transform 0.2s;
+}
+
+.error-card-detail {
+    padding: 0 16px 16px;
+    border-top: 1px solid #e5e5e5;
+    margin-top: 0;
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.error-card-row {
+    margin-top: 12px;
+}
+
+.error-card-row.two-col {
+    display: flex;
+    gap: 16px;
+}
+
+.error-card-col {
+    flex: 1;
+}
+
+.error-card-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: #86868b;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.error-card-value {
+    font-size: 13px;
+    color: #1d1d1f;
+    line-height: 1.5;
+}
+
+.error-card-value.full-text {
+    background: #fff;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #e5e5e5;
+    word-break: break-all;
+    white-space: pre-wrap;
+}
+
+.error-card-value.correct-yes {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.error-card-value.correct-no {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.error-card-value.similarity-value {
+    color: #14b8a6;
+    font-weight: 600;
+}
+
+.error-card-value.explanation {
+    font-size: 12px;
+    color: #86868b;
+    font-style: italic;
+}
+
+/* 保留旧表格样式兼容 */
 .error-detail-table {
     width: 100%;
     border-collapse: collapse;
@@ -3029,4 +3615,253 @@ body {
 #hwTaskList .task-item.active .task-count {
     background: rgba(255, 255, 255, 0.2);
     color: #fff;
+}
+
+
+/* 模糊匹配阈值输入样式 */
+.threshold-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.threshold-input-wrapper input[type="range"] {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    background: #e5e5e5;
+    border-radius: 2px;
+    outline: none;
+}
+
+.threshold-input-wrapper input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #1d1d1f;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.threshold-input-wrapper span {
+    min-width: 40px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1d1d1f;
+}
+
+.form-hint {
+    font-size: 11px;
+    color: #86868b;
+    margin-top: 4px;
+}
+
+
+/* ========== 设置弹窗优化样式 ========== */
+.settings-modal {
+    max-width: 480px;
+    border-radius: 16px;
+}
+
+.settings-modal .modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.settings-modal .modal-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.settings-modal .modal-body {
+    padding: 24px;
+}
+
+.settings-modal .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e5e5e5;
+    gap: 12px;
+}
+
+/* 设置分区 */
+.settings-section {
+    background: #f5f5f7;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.settings-section:last-child {
+    margin-bottom: 0;
+}
+
+.settings-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.settings-section-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.settings-section-badge {
+    font-size: 11px;
+    font-weight: 500;
+    color: #86868b;
+    background: #fff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid #e5e5e5;
+}
+
+/* 滑块组 */
+.settings-slider-group {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.settings-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    background: #e5e5e5;
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+}
+
+.settings-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #1d1d1f;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.settings-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+}
+
+.settings-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #1d1d1f;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.settings-slider-value {
+    min-width: 48px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d1d1f;
+    text-align: right;
+}
+
+/* 提示文字 */
+.settings-hint {
+    font-size: 13px;
+    color: #86868b;
+    line-height: 1.5;
+}
+
+/* 复选框样式 */
+.settings-checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.settings-checkbox {
+    display: none;
+}
+
+.settings-checkbox-custom {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border: 2px solid #d2d2d7;
+    border-radius: 6px;
+    background: #fff;
+    position: relative;
+    transition: all 0.15s ease;
+    margin-top: 2px;
+}
+
+.settings-checkbox:checked + .settings-checkbox-custom {
+    background: #1d1d1f;
+    border-color: #1d1d1f;
+}
+
+.settings-checkbox:checked + .settings-checkbox-custom::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 6px;
+    height: 11px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.settings-checkbox-content {
+    flex: 1;
+}
+
+.settings-checkbox-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: #1d1d1f;
+    margin-bottom: 4px;
+}
+
+.settings-checkbox-desc {
+    font-size: 13px;
+    color: #86868b;
+    line-height: 1.4;
+}
+
+/* 按钮优化 */
+.settings-modal .btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+}
+
+.settings-modal .btn-secondary {
+    background: #fff;
+    border: 1px solid #d2d2d7;
+    color: #1d1d1f;
+}
+
+.settings-modal .btn-secondary:hover {
+    background: #f5f5f7;
+}
+
+.settings-modal .btn-primary {
+    background: #1d1d1f;
+    color: #fff;
+    border: none;
+}
+
+.settings-modal .btn-primary:hover {
+    background: #424245;
 }

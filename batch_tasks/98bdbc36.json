@@ -1,0 +1,4461 @@
+{
+  "task_id": "98bdbc36",
+  "name": "物理测试",
+  "status": "completed",
+  "homework_items": [
+    {
+      "homework_id": "2011376798060826626",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 76,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_76_7CGIF.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"热量；度；℃\",\n\t\t\"answer\":\"冷热程度  摄氏度   ℃  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"水银；冷热\",\n\t\t\"answer\":\" 温度计  热胀冷缩  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"混合物；10；1\",\n\t\t\"answer\":\"冰水混合物   100   1  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\" (2)量程 分度值 <br>(3)玻璃泡<br> (4)相平 不能  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"量程；分度值\",\n\t\t\t\t\"answer\":\"量程 分度值\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"4(2)\",\n\t\t\t\t\"tempIndex\":6\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"玻璃\",\n\t\t\t\t\"answer\":\"玻璃泡\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"4(3)\",\n\t\t\t\t\"tempIndex\":7\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"倾斜；能\",\n\t\t\t\t\"answer\":\"相平 不能\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"4(4)\",\n\t\t\t\t\"tempIndex\":8\n\t\t\t}\n\t\t],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\"(1)细弯管<br> (2)可以   甩几下  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"细弯管\",\n\t\t\t\t\"answer\":\"细弯管\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"5(1)\",\n\t\t\t\t\"tempIndex\":9\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"可以；甩几下\",\n\t\t\t\t\"answer\":\"可以   甩几下  \",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"5(2)\",\n\t\t\t\t\"tempIndex\":10\n\t\t\t}\n\t\t],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"高\",\n\t\t\"answer\":\"高\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.5,
+      "evaluation": {
+        "accuracy": 0.5,
+        "precision": 1.0,
+        "recall": 0.75,
+        "f1_score": 0.8571428571428571,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 3,
+        "error_count": 3,
+        "errors": [
+          {
+            "index": "2",
+            "base_effect": {
+              "answer": "温度计 热胀冷缩",
+              "userAnswer": "火枪 冷热",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "温度计  热胀冷缩",
+              "userAnswer": "水银；冷热",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"火枪 冷热\"，AI=\"水银；冷热\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "4",
+            "base_effect": {
+              "answer": "量程 分度值 玻璃泡 相平 不能",
+              "userAnswer": "量程 分度值 玻璃 倾斜 能",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "(2)量程 分度值 <br>(3)玻璃泡<br> (4)相平 不能",
+              "userAnswer": "",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"量程 分度值 玻璃 倾斜 能\"，AI=\"\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "5",
+            "base_effect": {
+              "answer": "细弯管 可以 甩几下",
+              "userAnswer": "细弯管 可以 甩几下",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "(1)细弯管<br> (2)可以   甩几下",
+              "userAnswer": "",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"细弯管 可以 甩几下/yes\"，AI=\"/no\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 2,
+          "识别错误-判断错误": 1,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 6,
+            "correct": 3,
+            "accuracy": 0.5
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 6,
+            "correct": 3,
+            "accuracy": 0.5
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011376830671540225",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 77,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_77_G4EKJ.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"冷热程度；不相同；不可靠\",\n\t\t\"answer\":\"冷热程度   不相同  不可靠\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"answer\":\"(1)热胀冷缩   量程   分度值\\n<br> (2)D  \\n(3)B    不能\\n<br> (4)38    -22  \",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"冷热程度；量程；分度\",\n\t\t\t\t\"answer\":\"热胀冷缩   量程   分度值\\n\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例3(1)\",\n\t\t\t\t\"tempIndex\":3\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"D\",\n\t\t\t\t\"answer\":\"D  \\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例3(2)\",\n\t\t\t\t\"tempIndex\":4\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"D；不能\",\n\t\t\t\t\"answer\":\"B    不能\\n\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例3(3)\",\n\t\t\t\t\"tempIndex\":5\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"380；-22\",\n\t\t\t\t\"answer\":\"38    -22  \",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例3(4)\",\n\t\t\t\t\"tempIndex\":6\n\t\t\t}\n\t\t],\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":2\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.6666666666666666,
+      "evaluation": {
+        "accuracy": 0.6666666666666666,
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "f1_score": 0.8,
+        "hallucination_rate": 0.0,
+        "total_questions": 3,
+        "correct_count": 2,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "3",
+            "base_effect": {
+              "answer": "热胀冷缩 量程 分度值 D B 不能 38 -22",
+              "userAnswer": "冷热程度 量程 分度 D D 不能 380 -22",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "(1)热胀冷缩   量程   分度值\n<br> (2)D  \n(3)B    不能\n<br> (4)38    -22",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"冷热程度 量程 分度 D D 不能 380 -22/no\"，AI=\"/\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 1,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 3,
+            "correct": 2,
+            "accuracy": 0.6666666666666666
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 2,
+            "correct": 1,
+            "accuracy": 0.5
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011376863559077889",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 78,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_78_MVLVK.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\"(1)35~42    0.1    37.8\\n<br> (2)细弯管 能  <br>(3)甩几下<br> (4)D  \",\n\t\t\"correct\":\"\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"36~42, 0.1, 37.8\",\n\t\t\t\t\"answer\":\"35~42    0.1    37.8\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例4(1)\",\n\t\t\t\t\"tempIndex\":3\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"细弯管, 不能\",\n\t\t\t\t\"answer\":\"细弯管 能\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例4(2)\",\n\t\t\t\t\"tempIndex\":4\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"甩几下\",\n\t\t\t\t\"answer\":\"甩几下\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例4(3)\",\n\t\t\t\t\"tempIndex\":5\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"D\",\n\t\t\t\t\"answer\":\"D\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例4(4)\",\n\t\t\t\t\"tempIndex\":6\n\t\t\t}\n\t\t],\n\t\t\"index\":\"例4\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"高低, 热岛效应, 26\",\n\t\t\"answer\":\"高   热岛效应   26  \\n\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例5\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":2\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.6666666666666666,
+      "evaluation": {
+        "accuracy": 0.6666666666666666,
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "f1_score": 0.8,
+        "hallucination_rate": 0.0,
+        "total_questions": 3,
+        "correct_count": 2,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "4",
+            "base_effect": {
+              "answer": "35~42 0.1 37.8 细弯管（缩口） 能 甩几下 D",
+              "userAnswer": "36~42 0.1 378 细弯管 不能 甩几下 D",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "(1)35~42    0.1    37.8\n<br> (2)细弯管 能  <br>(3)甩几下<br> (4)D",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"36~42 0.1 378 细弯管 不能 甩几下 D/no\"，AI=\"/\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 1,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 3,
+            "correct": 2,
+            "accuracy": 0.6666666666666666
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 2,
+            "correct": 1,
+            "accuracy": 0.5
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011376895347707906",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 79,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_79_D4WUH.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"1; 0~50; 能\",\n\t\t\"answer\":\" 1   -30～50   不能  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"冷热程度; 36; -16\",\n\t\t\"answer\":\"热胀冷缩   17   -16  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"0.1; 37; 乙\",\n\t\t\"answer\":\"0.1  38  乙  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"36; >; 能\",\n\t\t\"answer\":\"36.6   =   不能  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":5\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.8333333333333334,
+      "evaluation": {
+        "accuracy": 0.8333333333333334,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 5,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "3",
+            "base_effect": {
+              "answer": "1 -20~50 不能",
+              "userAnswer": "1 0~50 不能",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "1   -30～50   不能",
+              "userAnswer": "1; 0~50; 能",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"1 0~50 不能\"，AI=\"1; 0~50; 能\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 2,
+            "correct": 2,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 4,
+            "correct": 3,
+            "accuracy": 0.75
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011376927232806913",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 80,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_80_CUVFW.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"5度\",\n\t\t\"answer\":\"5 摄氏度  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"任务一\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"任务二\",\n\t\t\"tempIndex\":1\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 1.0,
+      "evaluation": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 2,
+        "correct_count": 2,
+        "error_count": 0,
+        "errors": [],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 2,
+            "correct": 2,
+            "accuracy": 1.0
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011376959776411649",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 81,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_81_ZQBTG.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"空气流速加快\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"任务三\",\n\t\t\"tempIndex\":0,\n\t\t\"mainAnswer\":\"空气流动速度加快，加快了水的蒸发，蒸发吸热，所以感觉凉快  \"\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"任务四\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"answer\":\"(1) 市中心   快 \\n<br>(2) 小  \\n(3) 市区温度升高，使有害气体、烟尘在市区上空累积，造成严重的大气污染（合理即可）  \\n(4) 汽化   吸热  \\n(5) 绿色出行（合理即可）\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"市中心；快\",\n\t\t\t\t\"answer\":\" 市中心   快\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"(1)\",\n\t\t\t\t\"tempIndex\":3\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"大\",\n\t\t\t\t\"answer\":\"小  \",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"(2)\",\n\t\t\t\t\"tempIndex\":4\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"温度升高，造成大气污染\",\n\t\t\t\t\"answer\":\"市区温度升高，使有害气体、烟尘在市区上空累积，造成严重的大气污染（合理即可）  \",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"(3)\",\n\t\t\t\t\"tempIndex\":5\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"汽化；吸热\",\n\t\t\t\t\"answer\":\"汽化   吸热\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"(4)\",\n\t\t\t\t\"tempIndex\":6\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"绿色出行\",\n\t\t\t\t\"answer\":\" 绿色出行（合理即可）\\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"(5)\",\n\t\t\t\t\"tempIndex\":7\n\t\t\t}\n\t\t],\n\t\t\"index\":\"高分原创\",\n\t\t\"tempIndex\":2\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.6666666666666666,
+      "evaluation": {
+        "accuracy": 0.6666666666666666,
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "f1_score": 0.8,
+        "hallucination_rate": 0.0,
+        "total_questions": 3,
+        "correct_count": 2,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "3",
+            "base_effect": {
+              "answer": "市中心 快 小 加剧城市大气污染（合理即可） 汽化 吸热 植树造林（合理即可）",
+              "userAnswer": "市中心 快 大 温度升高，造成大气污染 汽化 吸热 红色出行",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "(1) 市中心   快 \n<br>(2) 小  \n(3) 市区温度升高，使有害气体、烟尘在市区上空累积，造成严重的大气污染（合理即可）  \n(4) 汽化   吸热  \n(5) 绿色出行（合理即可）",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"市中心 快 大 温度升高，造成大气污染 汽化 吸热 红色出行/no\"，AI=\"/\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 1,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 2,
+            "correct": 1,
+            "accuracy": 0.5
+          },
+          "subjective": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "choice": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 2,
+            "correct": 1,
+            "accuracy": 0.5
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011376990369665025",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 82,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_82_URV71.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"气态、液态、固态\",\n\t\t\"answer\":\"固态  液态  气态  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"气态、液态、蒸气、沸腾\",\n\t\t\"answer\":\"液态  气态  蒸发  沸腾  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"固定、里面\",\n\t\t\"answer\":\"任何 表面  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\"(1)温度 \\n<br>(2)表面积\\n<br> (3)空气流动速度  \",\n\t\t\"correct\":\"\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"温度\",\n\t\t\t\t\"answer\":\"温度 \\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"4(1)\",\n\t\t\t\t\"tempIndex\":8\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"面积\",\n\t\t\t\t\"answer\":\"表面积\\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"4(2)\",\n\t\t\t\t\"tempIndex\":9\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"空气流动\",\n\t\t\t\t\"answer\":\"空气流动速度  \",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"4(3)\",\n\t\t\t\t\"tempIndex\":10\n\t\t\t}\n\t\t],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"外部、里面、缓慢、沸点\",\n\t\t\"answer\":\"内部 表面 剧烈 沸点  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\" (1)沸点 \\n<br>(2)吸热  \",\n\t\t\"correct\":\"\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"沸点\",\n\t\t\t\t\"answer\":\"沸点 \\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"6(1)\",\n\t\t\t\t\"tempIndex\":11\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"放热\",\n\t\t\t\t\"answer\":\"吸热\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"6(2)\",\n\t\t\t\t\"tempIndex\":12\n\t\t\t}\n\t\t],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\"(1)升高\\n<br> (2)不变  \\n\",\n\t\t\"correct\":\"\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"降低\",\n\t\t\t\t\"answer\":\"升高\\n\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"7(1)\",\n\t\t\t\t\"tempIndex\":13\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"不变\",\n\t\t\t\t\"answer\":\"不变  \",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"7(2)\",\n\t\t\t\t\"tempIndex\":14\n\t\t\t}\n\t\t],\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6\n\t},\n\t{\n\t\t\"userAnswer\":\"①③④；⑤；②\",\n\t\t\"answer\":\"①③   ②⑤   ④  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":7\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.5,
+      "evaluation": {
+        "accuracy": 0.5,
+        "precision": 1.0,
+        "recall": 0.5714285714285714,
+        "f1_score": 0.7272727272727273,
+        "hallucination_rate": 0.0,
+        "total_questions": 8,
+        "correct_count": 4,
+        "error_count": 4,
+        "errors": [
+          {
+            "index": "4",
+            "base_effect": {
+              "answer": "温度 表面积 空气流动的快慢",
+              "userAnswer": "温度 面积 空气流动",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "(1)温度 \n<br>(2)表面积\n<br> (3)空气流动速度",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"温度 面积 空气流动/no\"，AI=\"/\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "5",
+            "base_effect": {
+              "answer": "内部 表面 剧烈 沸点",
+              "userAnswer": "外部 里面 缓慢 佛点",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "内部 表面 剧烈 沸点",
+              "userAnswer": "外部、里面、缓慢、沸点",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"外部 里面 缓慢 佛点\"，AI=\"外部、里面、缓慢、沸点\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "6",
+            "base_effect": {
+              "answer": "沸点 吸热",
+              "userAnswer": "佛点 放热",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "(1)沸点 \n<br>(2)吸热",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"佛点 放热/no\"，AI=\"/\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "7",
+            "base_effect": {
+              "answer": "升高 不变",
+              "userAnswer": "降低 不变",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "(1)升高\n<br> (2)不变",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"降低 不变/no\"，AI=\"/\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 3,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 8,
+            "correct": 4,
+            "accuracy": 0.5
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 8,
+            "correct": 4,
+            "accuracy": 0.5
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011377022472867841",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 83,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_83_4XQHN.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"室外；室外；慢\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例2(1)\",\n\t\t\t\t\"tempIndex\":1\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"展开；叠起开；好\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例2(2)\",\n\t\t\t\t\"tempIndex\":2\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"风吹；快\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例2(3)\",\n\t\t\t\t\"tempIndex\":3\n\t\t\t}\n\t\t],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":0,\n\t\t\"mainAnswer\":\"(1)室外 室外 快\\n<br>  (2)展开 展开 快\\n<br> (3)有风吹 快  \"\n\t},\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\"(1)自下而上  \\n(2)如图所示：\\n<br> ![p83-例3.png](https://img.gzzhengpu.cn/upload/20260104/p83-例3.png) \\n\\n(3)A\\n<br> (4)99   升高   不变\\n<br> (5)水的初温太低  \\n\\n\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"自上而下\",\n\t\t\t\t\"answer\":\"自下而上  \\n\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例3(1)\",\n\t\t\t\t\"tempIndex\":5\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"（已在图中画出温度时间关系曲线）\",\n\t\t\t\t\"answer\":\"如图所示：  <br> ![p83-例3.png](https://img.gzzhengpu.cn/upload/20260104/p83-例3.png) \\n\\n\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例3(2)\",\n\t\t\t\t\"tempIndex\":6\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"B\",\n\t\t\t\t\"answer\":\"A\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"例3(3)\",\n\t\t\t\t\"tempIndex\":7\n\t\t\t}\n\t\t],\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":4\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.0,
+      "evaluation": {
+        "accuracy": 0.0,
+        "precision": 0,
+        "recall": 0,
+        "f1_score": 0,
+        "hallucination_rate": 0.0,
+        "total_questions": 2,
+        "correct_count": 0,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "1",
+            "base_effect": {
+              "answer": "室外 室外 快 展开 展开 快 有风吹 快",
+              "userAnswer": "室外 室外 慢 展开 叠起来 好 风吹 快",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "(1)室外 室外 快\n<br>  (2)展开 展开 快\n<br> (3)有风吹 快",
+              "userAnswer": "",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"室外 室外 慢 展开 叠起来 好 风吹 快\"，AI=\"\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "2",
+            "base_effect": {
+              "answer": "自下而上 A",
+              "userAnswer": "自上而下 B",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第2题",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 1,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 2,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 2,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011377057168150530",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 84,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_84_BVFXN.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"99；升高；不变\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"(4)\",\n\t\t\"tempIndex\":0,\n\t\t\"mainAnswer\":\"99    升高    不变\"\n\t},\n\t{\n\t\t\"userAnswer\":\"太凉了\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"(5)\",\n\t\t\"tempIndex\":1,\n\t\t\"mainAnswer\":\"水的初温太低\"\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":2,\n\t\t\"mainAnswer\":\"\"\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":3,\n\t\t\"mainAnswer\":\"\"\n\t},\n\t{\n\t\t\"userAnswer\":\"正在；B；高于\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":4,\n\t\t\"mainAnswer\":\"正在    A    低于  \"\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 0.0,
+      "evaluation": {
+        "accuracy": 0.0,
+        "precision": 0,
+        "recall": 0.0,
+        "f1_score": 0,
+        "hallucination_rate": 0.0,
+        "total_questions": 4,
+        "correct_count": 0,
+        "error_count": 4,
+        "errors": [
+          {
+            "index": "实验题",
+            "base_effect": {
+              "answer": "99 升高 不变 水的初温过低（合理即可）",
+              "userAnswer": "99 升高 不变 太冷了",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "99    升高    不变",
+              "userAnswer": "99；升高；不变",
+              "correct": "yes"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"99 升高 不变 太冷了\"，AI=\"99；升高；不变\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "1",
+            "base_effect": {
+              "answer": "C",
+              "userAnswer": "D",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "水的初温太低",
+              "userAnswer": "太凉了",
+              "correct": "yes"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"D/no\"，AI=\"太凉了/yes\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": true,
+              "choice_type": "single"
+            }
+          },
+          {
+            "index": "2",
+            "base_effect": {
+              "answer": "A",
+              "userAnswer": "B",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "D",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"B\"，AI=\"D\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": true,
+              "choice_type": "single"
+            }
+          },
+          {
+            "index": "3",
+            "base_effect": {
+              "answer": "正在 A 低于",
+              "userAnswer": "正在 B 高于",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "B",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"正在 B 高于\"，AI=\"B\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": true,
+              "choice_type": "single"
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 3,
+          "识别错误-判断错误": 1,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 4,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 3,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011377085878161410",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 85,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_85_BWVPD.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"液态，气态\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0,\n\t\t\"mainAnswer\":\"气态 液态  \"\n\t},\n\t{\n\t\t\"userAnswer\":\"升高温度、压缩体积\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1,\n\t\t\"mainAnswer\":\"降低温度 压缩体积  \\n \"\n\t},\n\t{\n\t\t\"userAnswer\":\"吸，放\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2,\n\t\t\"mainAnswer\":\"吸 放  \"\n\t},\n\t{\n\t\t\"userAnswer\":\"壶内，液化，汽化\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":3,\n\t\t\"mainAnswer\":\"壶内 液化 汽化\"\n\t},\n\t{\n\t\t\"userAnswer\":\"变大，汽化，吸收\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":4,\n\t\t\"mainAnswer\":\"变小 液化 降低温度\"\n\t},\n\t{\n\t\t\"userAnswer\":\"汽化，左，外\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":5,\n\t\t\"mainAnswer\":\"液化 外 内\"\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 1.0,
+      "evaluation": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 6,
+        "error_count": 0,
+        "errors": [],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 6,
+            "correct": 6,
+            "accuracy": 1.0
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 6,
+            "correct": 6,
+            "accuracy": 1.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011377115162791938",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "物理测试",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 86,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_86_WNY1E.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"液化；吸收；降低\",\n\t\t\"answer\":\"汽化 吸收 降低\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例4\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"水蒸气；升高；放热\",\n\t\t\"answer\":\"小水珠 升高 放热\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例5\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"水蒸气；液化；小水珠\",\n\t\t\"answer\":\"水蒸气 液化 小水珠\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":2\n\t}\n]",
+      "matched_dataset": "b3b0395e",
+      "status": "completed",
+      "accuracy": 1.0,
+      "evaluation": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 3,
+        "correct_count": 3,
+        "error_count": 0,
+        "errors": [],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 1,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 3,
+            "correct": 3,
+            "accuracy": 1.0
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 3,
+            "correct": 3,
+            "accuracy": 1.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385085925838849",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 113,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_113_4BB1C.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"不指向性\",\n\t\t\"answer\":\"指向性  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"声音\",\n\t\t\"answer\":\"信息\\n\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"导体\",\n\t\t\"answer\":\" 导体\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"绝缘体\",\n\t\t\"answer\":\" 绝缘体 \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"热的良导体\",\n\t\t\"answer\":\"热的良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"热的不良导体\",\n\t\t\"answer\":\"热的不良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"功能\",\n\t\t\"answer\":\"性能  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6\n\t},\n\t{\n\t\t\"userAnswer\":\"半导体\",\n\t\t\"answer\":\"半导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"8\",\n\t\t\"tempIndex\":7\n\t},\n\t{\n\t\t\"userAnswer\":\"双向导电\",\n\t\t\"answer\":\"单向导电  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"9\",\n\t\t\"tempIndex\":8\n\t},\n\t{\n\t\t\"userAnswer\":\"密度, 超导性\",\n\t\t\"answer\":\"零   超导性\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":9\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.7,
+      "evaluation": {
+        "accuracy": 0.7,
+        "precision": 0.7777777777777778,
+        "recall": 1.0,
+        "f1_score": 0.8750000000000001,
+        "hallucination_rate": 0.14285714285714285,
+        "total_questions": 10,
+        "correct_count": 7,
+        "error_count": 3,
+        "errors": [
+          {
+            "index": "3",
+            "base_effect": {
+              "answer": "导体",
+              "userAnswer": "半导体",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "导体",
+              "userAnswer": "导体",
+              "correct": "yes"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "AI将学生答案\"半导体\"识别为\"导体\"（标准答案），属于识别幻觉",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": true
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "8",
+            "base_effect": {
+              "answer": "半导体",
+              "userAnswer": "半导体",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "半导体",
+              "userAnswer": "半导体",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "10",
+            "base_effect": {
+              "answer": "零   超导性",
+              "userAnswer": "零度 超导性",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "零   超导性",
+              "userAnswer": "密度, 超导性",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"零度 超导性\"，AI=\"密度, 超导性\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 1
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 10,
+            "correct": 7,
+            "accuracy": 0.7
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 10,
+            "correct": 7,
+            "accuracy": 0.7
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385121636143106",
+      "student_id": "2011263660032389136",
+      "student_name": "何佳怡",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 113,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389136/1997848714229166082/1997848714229166082_113_KLKSA.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"不指向性\",\n\t\t\"answer\":\"指向性  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"声音\",\n\t\t\"answer\":\"信息\\n\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"导体\",\n\t\t\"answer\":\" 导体\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"绝缘体\",\n\t\t\"answer\":\" 绝缘体 \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"热的良导体\",\n\t\t\"answer\":\"热的良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"热的不良导体\",\n\t\t\"answer\":\"热的不良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"功能\",\n\t\t\"answer\":\"性能  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6\n\t},\n\t{\n\t\t\"userAnswer\":\"半导体\",\n\t\t\"answer\":\"半导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"8\",\n\t\t\"tempIndex\":7\n\t},\n\t{\n\t\t\"userAnswer\":\"双向导电\",\n\t\t\"answer\":\"单向导电  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"9\",\n\t\t\"tempIndex\":8\n\t},\n\t{\n\t\t\"userAnswer\":\"密度\",\n\t\t\"answer\":\"零   超导性\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":9\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.7,
+      "evaluation": {
+        "accuracy": 0.7,
+        "precision": 0.7777777777777778,
+        "recall": 1.0,
+        "f1_score": 0.8750000000000001,
+        "hallucination_rate": 0.14285714285714285,
+        "total_questions": 10,
+        "correct_count": 7,
+        "error_count": 3,
+        "errors": [
+          {
+            "index": "3",
+            "base_effect": {
+              "answer": "导体",
+              "userAnswer": "半导体",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "导体",
+              "userAnswer": "导体",
+              "correct": "yes"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "AI将学生答案\"半导体\"识别为\"导体\"（标准答案），属于识别幻觉",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": true
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "8",
+            "base_effect": {
+              "answer": "半导体",
+              "userAnswer": "半导体",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "半导体",
+              "userAnswer": "半导体",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "10",
+            "base_effect": {
+              "answer": "零   超导性",
+              "userAnswer": "零度 超导性",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "零   超导性",
+              "userAnswer": "密度",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"零度 超导性\"，AI=\"密度\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 1
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 10,
+            "correct": 7,
+            "accuracy": 0.7
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 10,
+            "correct": 7,
+            "accuracy": 0.7
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385154108444674",
+      "student_id": "2011263660032389122",
+      "student_name": "刘一诺",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 113,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389122/1997848714229166082/1997848714229166082_113_BPTLR.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"不指向性\",\n\t\t\"answer\":\"指向性  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"声音\",\n\t\t\"answer\":\"信息\\n\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"导体\",\n\t\t\"answer\":\" 导体\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"绝缘体\",\n\t\t\"answer\":\" 绝缘体 \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"热的良导体\",\n\t\t\"answer\":\"热的良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"热的不良导体\",\n\t\t\"answer\":\"热的不良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"功能\",\n\t\t\"answer\":\"性能  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6\n\t},\n\t{\n\t\t\"userAnswer\":\"半导体\",\n\t\t\"answer\":\"半导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"8\",\n\t\t\"tempIndex\":7\n\t},\n\t{\n\t\t\"userAnswer\":\"双向导电\",\n\t\t\"answer\":\"单向导电  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"9\",\n\t\t\"tempIndex\":8\n\t},\n\t{\n\t\t\"userAnswer\":\"密度,超导性\",\n\t\t\"answer\":\"零   超导性\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":9\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.7,
+      "evaluation": {
+        "accuracy": 0.7,
+        "precision": 0.7777777777777778,
+        "recall": 1.0,
+        "f1_score": 0.8750000000000001,
+        "hallucination_rate": 0.14285714285714285,
+        "total_questions": 10,
+        "correct_count": 7,
+        "error_count": 3,
+        "errors": [
+          {
+            "index": "3",
+            "base_effect": {
+              "answer": "导体",
+              "userAnswer": "半导体",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "导体",
+              "userAnswer": "导体",
+              "correct": "yes"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "AI将学生答案\"半导体\"识别为\"导体\"（标准答案），属于识别幻觉",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": true
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "8",
+            "base_effect": {
+              "answer": "半导体",
+              "userAnswer": "半导体",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "半导体",
+              "userAnswer": "半导体",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "10",
+            "base_effect": {
+              "answer": "零   超导性",
+              "userAnswer": "零度 超导性",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "零   超导性",
+              "userAnswer": "密度,超导性",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"零度 超导性\"，AI=\"密度,超导性\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 1
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 10,
+            "correct": 7,
+            "accuracy": 0.7
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 10,
+            "correct": 7,
+            "accuracy": 0.7
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385185175654402",
+      "student_id": "2011263660032389135",
+      "student_name": "林泽宇",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 113,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389135/1997848714229166082/1997848714229166082_113_R33NR.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"指向性\",\n\t\t\"answer\":\"指向性  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"声音\",\n\t\t\"answer\":\"信息\\n\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"导体\",\n\t\t\"answer\":\" 导体\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"绝缘体\",\n\t\t\"answer\":\" 绝缘体 \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"热的良导体\",\n\t\t\"answer\":\"热的良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"热的不良导体\",\n\t\t\"answer\":\"热的不良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"功能\",\n\t\t\"answer\":\"性能  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6\n\t},\n\t{\n\t\t\"userAnswer\":\"半导体\",\n\t\t\"answer\":\"半导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"8\",\n\t\t\"tempIndex\":7\n\t},\n\t{\n\t\t\"userAnswer\":\"双向导电\",\n\t\t\"answer\":\"单向导电  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"9\",\n\t\t\"tempIndex\":8\n\t},\n\t{\n\t\t\"userAnswer\":\"零；超导性\",\n\t\t\"answer\":\"零   超导性\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":9\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.6,
+      "evaluation": {
+        "accuracy": 0.6,
+        "precision": 0.6,
+        "recall": 1.0,
+        "f1_score": 0.7499999999999999,
+        "hallucination_rate": 0.42857142857142855,
+        "total_questions": 10,
+        "correct_count": 6,
+        "error_count": 4,
+        "errors": [
+          {
+            "index": "1",
+            "base_effect": {
+              "answer": "指向性",
+              "userAnswer": "不指向性",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "指向性",
+              "userAnswer": "指向性",
+              "correct": "no"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "AI将学生答案\"不指向性\"识别为\"指向性\"（标准答案），属于识别幻觉",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": true
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "3",
+            "base_effect": {
+              "answer": "导体",
+              "userAnswer": "半导体",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "导体",
+              "userAnswer": "导体",
+              "correct": "yes"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "AI将学生答案\"半导体\"识别为\"导体\"（标准答案），属于识别幻觉",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": true
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "8",
+            "base_effect": {
+              "answer": "半导体",
+              "userAnswer": "半导体",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "半导体",
+              "userAnswer": "半导体",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "10",
+            "base_effect": {
+              "answer": "零   超导性",
+              "userAnswer": "零度 超导性",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "零   超导性",
+              "userAnswer": "零；超导性",
+              "correct": "no"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "AI将学生答案\"零度 超导性\"识别为\"零；超导性\"（标准答案），属于识别幻觉",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": true
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 3
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 10,
+            "correct": 6,
+            "accuracy": 0.6
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 10,
+            "correct": 6,
+            "accuracy": 0.6
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385221364109314",
+      "student_id": "2011263660032389124",
+      "student_name": "李雨桐",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 113,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389124/1997848714229166082/1997848714229166082_113_9G623.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"指向性\",\n\t\t\"answer\":\"指向性  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"声音\",\n\t\t\"answer\":\"信息\\n\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"导体\",\n\t\t\"answer\":\" 导体\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"绝缘体\",\n\t\t\"answer\":\" 绝缘体 \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"热的良导体\",\n\t\t\"answer\":\"热的良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"热的不良导体\",\n\t\t\"answer\":\"热的不良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"功能\",\n\t\t\"answer\":\"性能  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6\n\t},\n\t{\n\t\t\"userAnswer\":\"半导体\",\n\t\t\"answer\":\"半导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"8\",\n\t\t\"tempIndex\":7\n\t},\n\t{\n\t\t\"userAnswer\":\"双向导电\",\n\t\t\"answer\":\"单向导电  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"9\",\n\t\t\"tempIndex\":8\n\t},\n\t{\n\t\t\"userAnswer\":\"零度,超导性\",\n\t\t\"answer\":\"零   超导性\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":9\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.7,
+      "evaluation": {
+        "accuracy": 0.7,
+        "precision": 0.7,
+        "recall": 1.0,
+        "f1_score": 0.8235294117647058,
+        "hallucination_rate": 0.2857142857142857,
+        "total_questions": 10,
+        "correct_count": 7,
+        "error_count": 3,
+        "errors": [
+          {
+            "index": "1",
+            "base_effect": {
+              "answer": "指向性",
+              "userAnswer": "不指向性",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "指向性",
+              "userAnswer": "指向性",
+              "correct": "no"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "AI将学生答案\"不指向性\"识别为\"指向性\"（标准答案），属于识别幻觉",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": true
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "3",
+            "base_effect": {
+              "answer": "导体",
+              "userAnswer": "半导体",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "导体",
+              "userAnswer": "导体",
+              "correct": "yes"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "AI将学生答案\"半导体\"识别为\"导体\"（标准答案），属于识别幻觉",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": true
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "8",
+            "base_effect": {
+              "answer": "半导体",
+              "userAnswer": "半导体",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "半导体",
+              "userAnswer": "半导体",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 2
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 10,
+            "correct": 7,
+            "accuracy": 0.7
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 10,
+            "correct": 7,
+            "accuracy": 0.7
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385254025154562",
+      "student_id": "2011263660032389123",
+      "student_name": "张子涵",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 113,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389123/1997848714229166082/1997848714229166082_113_PENZ1.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"指向性\",\n\t\t\"answer\":\"指向性  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"声音\",\n\t\t\"answer\":\"信息\\n\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"导体\",\n\t\t\"answer\":\" 导体\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"绝缘体\",\n\t\t\"answer\":\" 绝缘体 \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"热的良导体\",\n\t\t\"answer\":\"热的良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"热的不良导体\",\n\t\t\"answer\":\"热的不良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"功能\",\n\t\t\"answer\":\"性能  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6\n\t},\n\t{\n\t\t\"userAnswer\":\"半导体\",\n\t\t\"answer\":\"半导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"8\",\n\t\t\"tempIndex\":7\n\t},\n\t{\n\t\t\"userAnswer\":\"双向导电\",\n\t\t\"answer\":\"单向导电  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"9\",\n\t\t\"tempIndex\":8\n\t},\n\t{\n\t\t\"userAnswer\":\"零度,超导性\",\n\t\t\"answer\":\"零   超导性\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":9\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.7,
+      "evaluation": {
+        "accuracy": 0.7,
+        "precision": 0.7,
+        "recall": 1.0,
+        "f1_score": 0.8235294117647058,
+        "hallucination_rate": 0.2857142857142857,
+        "total_questions": 10,
+        "correct_count": 7,
+        "error_count": 3,
+        "errors": [
+          {
+            "index": "1",
+            "base_effect": {
+              "answer": "指向性",
+              "userAnswer": "不指向性",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "指向性",
+              "userAnswer": "指向性",
+              "correct": "no"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "AI将学生答案\"不指向性\"识别为\"指向性\"（标准答案），属于识别幻觉",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": true
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "3",
+            "base_effect": {
+              "answer": "导体",
+              "userAnswer": "半导体",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "导体",
+              "userAnswer": "导体",
+              "correct": "yes"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "AI将学生答案\"半导体\"识别为\"导体\"（标准答案），属于识别幻觉",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": true
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "8",
+            "base_effect": {
+              "answer": "半导体",
+              "userAnswer": "半导体",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "半导体",
+              "userAnswer": "半导体",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 2
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 10,
+            "correct": 7,
+            "accuracy": 0.7
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 10,
+            "correct": 7,
+            "accuracy": 0.7
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385287080464386",
+      "student_id": "2011263660032389125",
+      "student_name": "陈浩然",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 113,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389125/1997848714229166082/1997848714229166082_113_R5W79.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"指向性\",\n\t\t\"answer\":\"指向性  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"声音\",\n\t\t\"answer\":\"信息\\n\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"导体\",\n\t\t\"answer\":\" 导体\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"绝缘体\",\n\t\t\"answer\":\" 绝缘体 \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"热的良导体\",\n\t\t\"answer\":\"热的良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"热的不良导体\",\n\t\t\"answer\":\"热的不良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"功能\",\n\t\t\"answer\":\"性能  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6\n\t},\n\t{\n\t\t\"userAnswer\":\"半导体\",\n\t\t\"answer\":\"半导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"8\",\n\t\t\"tempIndex\":7\n\t},\n\t{\n\t\t\"userAnswer\":\"单向导电\",\n\t\t\"answer\":\"单向导电  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"9\",\n\t\t\"tempIndex\":8\n\t},\n\t{\n\t\t\"userAnswer\":\"零度；超导性\",\n\t\t\"answer\":\"零   超导性\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":9\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.6,
+      "evaluation": {
+        "accuracy": 0.6,
+        "precision": 0.6,
+        "recall": 1.0,
+        "f1_score": 0.7499999999999999,
+        "hallucination_rate": 0.42857142857142855,
+        "total_questions": 10,
+        "correct_count": 6,
+        "error_count": 4,
+        "errors": [
+          {
+            "index": "1",
+            "base_effect": {
+              "answer": "指向性",
+              "userAnswer": "不指向性",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "指向性",
+              "userAnswer": "指向性",
+              "correct": "no"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "AI将学生答案\"不指向性\"识别为\"指向性\"（标准答案），属于识别幻觉",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": true
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "3",
+            "base_effect": {
+              "answer": "导体",
+              "userAnswer": "半导体",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "导体",
+              "userAnswer": "导体",
+              "correct": "yes"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "AI将学生答案\"半导体\"识别为\"导体\"（标准答案），属于识别幻觉",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": true
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "8",
+            "base_effect": {
+              "answer": "半导体",
+              "userAnswer": "半导体",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "半导体",
+              "userAnswer": "半导体",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "9",
+            "base_effect": {
+              "answer": "单向导电",
+              "userAnswer": "双向导电",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "单向导电",
+              "userAnswer": "单向导电",
+              "correct": "no"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "AI将学生答案\"双向导电\"识别为\"单向导电\"（标准答案），属于识别幻觉",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": true
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 3
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 10,
+            "correct": 6,
+            "accuracy": 0.6
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 10,
+            "correct": 6,
+            "accuracy": 0.6
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385319842172930",
+      "student_id": "2011263660032389132",
+      "student_name": "朱雨辰",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 113,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389132/1997848714229166082/1997848714229166082_113_2RS8M.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"不指向性\",\n\t\t\"answer\":\"指向性  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"魔音\",\n\t\t\"answer\":\"信息\\n\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"半导体\",\n\t\t\"answer\":\" 导体\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"绝体\",\n\t\t\"answer\":\" 绝缘体 \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"热的良导体\",\n\t\t\"answer\":\"热的良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"热的不良导体\",\n\t\t\"answer\":\"热的不良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"功能\",\n\t\t\"answer\":\"性能  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6\n\t},\n\t{\n\t\t\"userAnswer\":\"导体\",\n\t\t\"answer\":\"半导体  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"8\",\n\t\t\"tempIndex\":7\n\t},\n\t{\n\t\t\"userAnswer\":\"双向导性\",\n\t\t\"answer\":\"单向导电  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"9\",\n\t\t\"tempIndex\":8\n\t},\n\t{\n\t\t\"userAnswer\":\"密度,超导性\",\n\t\t\"answer\":\"零   超导性\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":9\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.5,
+      "evaluation": {
+        "accuracy": 0.5,
+        "precision": 1.0,
+        "recall": 0.8333333333333334,
+        "f1_score": 0.9090909090909091,
+        "hallucination_rate": 0.0,
+        "total_questions": 10,
+        "correct_count": 5,
+        "error_count": 5,
+        "errors": [
+          {
+            "index": "2",
+            "base_effect": {
+              "answer": "信息",
+              "userAnswer": "声音",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "信息",
+              "userAnswer": "魔音",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"声音\"，AI=\"魔音\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "4",
+            "base_effect": {
+              "answer": "绝缘体",
+              "userAnswer": "绝缘体",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "绝缘体",
+              "userAnswer": "绝体",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"绝缘体/yes\"，AI=\"绝体/no\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "8",
+            "base_effect": {
+              "answer": "半导体",
+              "userAnswer": "半导体",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "半导体",
+              "userAnswer": "导体",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"半导体\"，AI=\"导体\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "9",
+            "base_effect": {
+              "answer": "单向导电",
+              "userAnswer": "双向导电",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "单向导电",
+              "userAnswer": "双向导性",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"双向导电\"，AI=\"双向导性\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "10",
+            "base_effect": {
+              "answer": "零   超导性",
+              "userAnswer": "零度 超导性",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "零   超导性",
+              "userAnswer": "密度,超导性",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"零度 超导性\"，AI=\"密度,超导性\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 4,
+          "识别错误-判断错误": 1,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 10,
+            "correct": 5,
+            "accuracy": 0.5
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 10,
+            "correct": 5,
+            "accuracy": 0.5
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385353937670146",
+      "student_id": "2011263659998834690",
+      "student_name": "王梓轩",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 113,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263659998834690/1997848714229166082/1997848714229166082_113_Q5QCH.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"不指向性\",\n\t\t\"answer\":\"指向性  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"声音\",\n\t\t\"answer\":\"信息\\n\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"半导体\",\n\t\t\"answer\":\" 导体\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"绝缘体\",\n\t\t\"answer\":\" 绝缘体 \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"热的良导体\",\n\t\t\"answer\":\"热的良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"热的不良导体\",\n\t\t\"answer\":\"热的不良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"功能\",\n\t\t\"answer\":\"性能  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6\n\t},\n\t{\n\t\t\"userAnswer\":\"导体\",\n\t\t\"answer\":\"半导体  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"8\",\n\t\t\"tempIndex\":7\n\t},\n\t{\n\t\t\"userAnswer\":\"双向导电\",\n\t\t\"answer\":\"单向导电  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"9\",\n\t\t\"tempIndex\":8\n\t},\n\t{\n\t\t\"userAnswer\":\"密度,超导性\",\n\t\t\"answer\":\"零   超导性\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":9\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.7,
+      "evaluation": {
+        "accuracy": 0.7,
+        "precision": 0.875,
+        "recall": 1.0,
+        "f1_score": 0.9333333333333333,
+        "hallucination_rate": 0.0,
+        "total_questions": 10,
+        "correct_count": 7,
+        "error_count": 3,
+        "errors": [
+          {
+            "index": "4",
+            "base_effect": {
+              "answer": "绝缘体",
+              "userAnswer": "绝缘体",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "绝缘体",
+              "userAnswer": "绝缘体",
+              "correct": "no"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=yes，AI=no",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "8",
+            "base_effect": {
+              "answer": "半导体",
+              "userAnswer": "半导体",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "半导体",
+              "userAnswer": "导体",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"半导体\"，AI=\"导体\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "10",
+            "base_effect": {
+              "answer": "零   超导性",
+              "userAnswer": "零度 超导性",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "零   超导性",
+              "userAnswer": "密度,超导性",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"零度 超导性\"，AI=\"密度,超导性\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 2,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 10,
+            "correct": 7,
+            "accuracy": 0.7
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 10,
+            "correct": 7,
+            "accuracy": 0.7
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385385998929922",
+      "student_id": "2011263660032389130",
+      "student_name": "徐梦瑶",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 113,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389130/1997848714229166082/1997848714229166082_113_I713Q.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"不指向性\",\n\t\t\"answer\":\"指向性  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"声音\",\n\t\t\"answer\":\"信息\\n\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"导体\",\n\t\t\"answer\":\" 导体\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"绝缘体\",\n\t\t\"answer\":\" 绝缘体 \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"热的良导体\",\n\t\t\"answer\":\"热的良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"热的不良导体\",\n\t\t\"answer\":\"热的不良导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"功能\",\n\t\t\"answer\":\"性能  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6\n\t},\n\t{\n\t\t\"userAnswer\":\"半导体\",\n\t\t\"answer\":\"半导体  \",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"8\",\n\t\t\"tempIndex\":7\n\t},\n\t{\n\t\t\"userAnswer\":\"双向导电\",\n\t\t\"answer\":\"单向导电  \",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"9\",\n\t\t\"tempIndex\":8\n\t},\n\t{\n\t\t\"userAnswer\":\"零度,超导性\",\n\t\t\"answer\":\"零   超导性\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":9\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.8,
+      "evaluation": {
+        "accuracy": 0.8,
+        "precision": 0.8,
+        "recall": 1.0,
+        "f1_score": 0.888888888888889,
+        "hallucination_rate": 0.14285714285714285,
+        "total_questions": 10,
+        "correct_count": 8,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "3",
+            "base_effect": {
+              "answer": "导体",
+              "userAnswer": "半导体",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "导体",
+              "userAnswer": "导体",
+              "correct": "yes"
+            },
+            "error_type": "AI识别幻觉",
+            "explanation": "AI将学生答案\"半导体\"识别为\"导体\"（标准答案），属于识别幻觉",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": true
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "8",
+            "base_effect": {
+              "answer": "半导体",
+              "userAnswer": "半导体",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "半导体",
+              "userAnswer": "半导体",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 1
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 10,
+            "correct": 8,
+            "accuracy": 0.8
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "non_choice": {
+            "total": 10,
+            "correct": 8,
+            "accuracy": 0.8
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385424175484929",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 114,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_114_F2PUX.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"不能；不能, 导电\",\n\t\t\"answer\":\"能   导电   能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例6\",\n\t\t\"tempIndex\":5\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.8333333333333334,
+      "evaluation": {
+        "accuracy": 0.8333333333333334,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 5,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "例4",
+            "base_effect": {
+              "answer": "能   导电   能",
+              "userAnswer": "不能,不导电,不能",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "能   导电   能",
+              "userAnswer": "不能；不能, 导电",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"不能,不导电,不能\"，AI=\"不能；不能, 导电\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385486091800577",
+      "student_id": "2001182033604313089",
+      "student_name": "张奕一",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 115,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2001182033604313089/1997848714229166082/1997848714229166082_115_Q5SBH.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"超导\",\n\t\t\"answer\":\"超导  不会   不能\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"不会\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"7.2\",\n\t\t\t\t\"tempIndex\":7\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"电能\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"7.3\",\n\t\t\t\t\"tempIndex\":8\n\t\t\t}\n\t\t],\n\t\t\"index\":\"7.1\",\n\t\t\"tempIndex\":6\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.7142857142857143,
+      "evaluation": {
+        "accuracy": 0.7142857142857143,
+        "precision": 0.8333333333333334,
+        "recall": 1.0,
+        "f1_score": 0.9090909090909091,
+        "hallucination_rate": 0.0,
+        "total_questions": 7,
+        "correct_count": 5,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "5",
+            "base_effect": {
+              "answer": "A",
+              "userAnswer": "D",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "D",
+              "userAnswer": "D",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": true,
+              "choice_type": "single"
+            }
+          },
+          {
+            "index": "7.1",
+            "base_effect": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "超导 会 能",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "超导",
+              "correct": "yes"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"超导 会 能\"，AI=\"超导\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 7,
+            "correct": 5,
+            "accuracy": 0.7142857142857143
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385526243872769",
+      "student_id": "2011263660032389130",
+      "student_name": "徐梦瑶",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 114,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389130/1997848714229166082/1997848714229166082_114_QTJ27.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"不能；不能，导电\",\n\t\t\"answer\":\"能   导电   能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例6\",\n\t\t\"tempIndex\":5\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.8333333333333334,
+      "evaluation": {
+        "accuracy": 0.8333333333333334,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 5,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "例4",
+            "base_effect": {
+              "answer": "能   导电   能",
+              "userAnswer": "不能,不导电,不能",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "能   导电   能",
+              "userAnswer": "不能；不能，导电",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"不能,不导电,不能\"，AI=\"不能；不能，导电\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385565917794306",
+      "student_id": "2011263660032389130",
+      "student_name": "徐梦瑶",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 115,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389130/1997848714229166082/1997848714229166082_115_7RG53.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\"超导  不会   不能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"超导\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"7.1.1\",\n\t\t\t\t\"tempIndex\":0\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"会\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"7.1.2\",\n\t\t\t\t\"tempIndex\":1\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"节能\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"7.1.3\",\n\t\t\t\t\"tempIndex\":2\n\t\t\t}\n\t\t],\n\t\t\"index\":\"7.1\",\n\t\t\"tempIndex\":6\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.7142857142857143,
+      "evaluation": {
+        "accuracy": 0.7142857142857143,
+        "precision": 0.8333333333333334,
+        "recall": 0.8333333333333334,
+        "f1_score": 0.8333333333333334,
+        "hallucination_rate": 0.0,
+        "total_questions": 7,
+        "correct_count": 5,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "5",
+            "base_effect": {
+              "answer": "A",
+              "userAnswer": "D",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "D",
+              "userAnswer": "D",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": true,
+              "choice_type": "single"
+            }
+          },
+          {
+            "index": "7.1",
+            "base_effect": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "超导 会 能",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"超导 会 能/yes\"，AI=\"/no\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 1,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 7,
+            "correct": 5,
+            "accuracy": 0.7142857142857143
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385606510268417",
+      "student_id": "2011263659998834690",
+      "student_name": "王梓轩",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 114,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263659998834690/1997848714229166082/1997848714229166082_114_XJ06F.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"不能；不能，不导电\",\n\t\t\"answer\":\"能   导电   能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例6\",\n\t\t\"tempIndex\":5\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.8333333333333334,
+      "evaluation": {
+        "accuracy": 0.8333333333333334,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 5,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "例4",
+            "base_effect": {
+              "answer": "能   导电   能",
+              "userAnswer": "不能,不导电,不能",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "能   导电   能",
+              "userAnswer": "不能；不能，不导电",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"不能,不导电,不能\"，AI=\"不能；不能，不导电\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385641373323266",
+      "student_id": "2011263659998834690",
+      "student_name": "王梓轩",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 115,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263659998834690/1997848714229166082/1997848714229166082_115_T7MXU.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"超导；会；节能\",\n\t\t\"answer\":\"超导  不会   不能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"7.1\",\n\t\t\"tempIndex\":6\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.7142857142857143,
+      "evaluation": {
+        "accuracy": 0.7142857142857143,
+        "precision": 0.8333333333333334,
+        "recall": 0.8333333333333334,
+        "f1_score": 0.8333333333333334,
+        "hallucination_rate": 0.0,
+        "total_questions": 7,
+        "correct_count": 5,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "5",
+            "base_effect": {
+              "answer": "A",
+              "userAnswer": "D",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "D",
+              "userAnswer": "D",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": true,
+              "choice_type": "single"
+            }
+          },
+          {
+            "index": "7.1",
+            "base_effect": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "超导 会 能",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "超导；会；节能",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"超导 会 能/yes\"，AI=\"超导；会；节能/no\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 1,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 7,
+            "correct": 5,
+            "accuracy": 0.7142857142857143
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385679172390914",
+      "student_id": "2011263660032389132",
+      "student_name": "朱雨辰",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 114,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389132/1997848714229166082/1997848714229166082_114_J3XCQ.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"不能；导电；不能\",\n\t\t\"answer\":\"能   导电   能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例6\",\n\t\t\"tempIndex\":5\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.8333333333333334,
+      "evaluation": {
+        "accuracy": 0.8333333333333334,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 5,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "例4",
+            "base_effect": {
+              "answer": "能   导电   能",
+              "userAnswer": "不能,不导电,不能",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "能   导电   能",
+              "userAnswer": "不能；导电；不能",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"不能,不导电,不能\"，AI=\"不能；导电；不能\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385713376940034",
+      "student_id": "2011263660032389132",
+      "student_name": "朱雨辰",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 115,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389132/1997848714229166082/1997848714229166082_115_DCIVI.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"超导\",\n\t\t\"answer\":\"超导  不会   不能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"不会\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"7.2\",\n\t\t\t\t\"tempIndex\":7\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"节能\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"7.3\",\n\t\t\t\t\"tempIndex\":8\n\t\t\t}\n\t\t],\n\t\t\"index\":\"7.1\",\n\t\t\"tempIndex\":6\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.7142857142857143,
+      "evaluation": {
+        "accuracy": 0.7142857142857143,
+        "precision": 0.8333333333333334,
+        "recall": 0.8333333333333334,
+        "f1_score": 0.8333333333333334,
+        "hallucination_rate": 0.0,
+        "total_questions": 7,
+        "correct_count": 5,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "5",
+            "base_effect": {
+              "answer": "A",
+              "userAnswer": "D",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "D",
+              "userAnswer": "D",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": true,
+              "choice_type": "single"
+            }
+          },
+          {
+            "index": "7.1",
+            "base_effect": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "超导 会 能",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "超导",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"超导 会 能/yes\"，AI=\"超导/no\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 1,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 7,
+            "correct": 5,
+            "accuracy": 0.7142857142857143
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385751612215298",
+      "student_id": "2011263660032389125",
+      "student_name": "陈浩然",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 114,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389125/1997848714229166082/1997848714229166082_114_KSQ7D.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"不能；不能；导电\",\n\t\t\"answer\":\"能   导电   能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例6\",\n\t\t\"tempIndex\":5\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.8333333333333334,
+      "evaluation": {
+        "accuracy": 0.8333333333333334,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 5,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "例4",
+            "base_effect": {
+              "answer": "能   导电   能",
+              "userAnswer": "不能,不导电,不能",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "能   导电   能",
+              "userAnswer": "不能；不能；导电",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"不能,不导电,不能\"，AI=\"不能；不能；导电\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385785229561857",
+      "student_id": "2011263660032389125",
+      "student_name": "陈浩然",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 115,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389125/1997848714229166082/1997848714229166082_115_8TJZH.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\"超导  不会   不能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"超导\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"7.1\",\n\t\t\t\t\"tempIndex\":0\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"会\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"7.2\",\n\t\t\t\t\"tempIndex\":1\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"核能\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"7.3\",\n\t\t\t\t\"tempIndex\":2\n\t\t\t}\n\t\t],\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.7142857142857143,
+      "evaluation": {
+        "accuracy": 0.7142857142857143,
+        "precision": 0.8333333333333334,
+        "recall": 0.8333333333333334,
+        "f1_score": 0.8333333333333334,
+        "hallucination_rate": 0.0,
+        "total_questions": 7,
+        "correct_count": 5,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "5",
+            "base_effect": {
+              "answer": "A",
+              "userAnswer": "D",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "D",
+              "userAnswer": "D",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": true,
+              "choice_type": "single"
+            }
+          },
+          {
+            "index": "7.1",
+            "base_effect": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "超导 会 能",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"超导 会 能/yes\"，AI=\"/no\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 1,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 7,
+            "correct": 5,
+            "accuracy": 0.7142857142857143
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385825914310657",
+      "student_id": "2011263660032389123",
+      "student_name": "张子涵",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 114,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389123/1997848714229166082/1997848714229166082_114_TQH6N.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"不能；不能, 导电\",\n\t\t\"answer\":\"能   导电   能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例6\",\n\t\t\"tempIndex\":5\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.8333333333333334,
+      "evaluation": {
+        "accuracy": 0.8333333333333334,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 5,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "例4",
+            "base_effect": {
+              "answer": "能   导电   能",
+              "userAnswer": "不能,不导电,不能",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "能   导电   能",
+              "userAnswer": "不能；不能, 导电",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"不能,不导电,不能\"，AI=\"不能；不能, 导电\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385858940260353",
+      "student_id": "2011263660032389123",
+      "student_name": "张子涵",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 115,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389123/1997848714229166082/1997848714229166082_115_JQMYR.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"\",\n\t\t\"answer\":\"超导  不会   不能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"超导\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"7.1\",\n\t\t\t\t\"tempIndex\":0\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"会\",\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"7.2\",\n\t\t\t\t\"tempIndex\":1\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"userAnswer\":\"节能\",\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"index\":\"7.3\",\n\t\t\t\t\"tempIndex\":2\n\t\t\t}\n\t\t],\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":6\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.7142857142857143,
+      "evaluation": {
+        "accuracy": 0.7142857142857143,
+        "precision": 0.8333333333333334,
+        "recall": 0.8333333333333334,
+        "f1_score": 0.8333333333333334,
+        "hallucination_rate": 0.0,
+        "total_questions": 7,
+        "correct_count": 5,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "5",
+            "base_effect": {
+              "answer": "A",
+              "userAnswer": "D",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "D",
+              "userAnswer": "D",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": true,
+              "choice_type": "single"
+            }
+          },
+          {
+            "index": "7.1",
+            "base_effect": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "超导 会 能",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"超导 会 能/yes\"，AI=\"/no\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 1,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 7,
+            "correct": 5,
+            "accuracy": 0.7142857142857143
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385896538001409",
+      "student_id": "2011263660032389124",
+      "student_name": "李雨桐",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 114,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389124/1997848714229166082/1997848714229166082_114_J49UR.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"不能；不导电；不能\",\n\t\t\"answer\":\"能   导电   能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例6\",\n\t\t\"tempIndex\":5\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 1.0,
+      "evaluation": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 6,
+        "error_count": 0,
+        "errors": [],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 6,
+            "correct": 6,
+            "accuracy": 1.0
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385929291321345",
+      "student_id": "2011263660032389124",
+      "student_name": "李雨桐",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 115,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389124/1997848714229166082/1997848714229166082_115_QMLEF.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"超导；会；节能\",\n\t\t\"answer\":\"超导  不会   不能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"7.1\",\n\t\t\"tempIndex\":6\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.7142857142857143,
+      "evaluation": {
+        "accuracy": 0.7142857142857143,
+        "precision": 0.8333333333333334,
+        "recall": 0.8333333333333334,
+        "f1_score": 0.8333333333333334,
+        "hallucination_rate": 0.0,
+        "total_questions": 7,
+        "correct_count": 5,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "5",
+            "base_effect": {
+              "answer": "A",
+              "userAnswer": "D",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "D",
+              "userAnswer": "D",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": true,
+              "choice_type": "single"
+            }
+          },
+          {
+            "index": "7.1",
+            "base_effect": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "超导 会 能",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "超导；会；节能",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"超导 会 能/yes\"，AI=\"超导；会；节能/no\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 1,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 7,
+            "correct": 5,
+            "accuracy": 0.7142857142857143
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011385967371407362",
+      "student_id": "2011263660032389135",
+      "student_name": "林泽宇",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 114,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389135/1997848714229166082/1997848714229166082_114_T18KQ.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"不能; 不能, 导电\",\n\t\t\"answer\":\"能   导电   能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例6\",\n\t\t\"tempIndex\":5\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.8333333333333334,
+      "evaluation": {
+        "accuracy": 0.8333333333333334,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 5,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "例4",
+            "base_effect": {
+              "answer": "能   导电   能",
+              "userAnswer": "不能,不导电,不能",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "能   导电   能",
+              "userAnswer": "不能; 不能, 导电",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"不能,不导电,不能\"，AI=\"不能; 不能, 导电\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011386002435788801",
+      "student_id": "2011263660032389135",
+      "student_name": "林泽宇",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 115,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389135/1997848714229166082/1997848714229166082_115_DRIKE.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"超导；会；节能\",\n\t\t\"answer\":\"超导  不会   不能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"7.1\",\n\t\t\"tempIndex\":6\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.7142857142857143,
+      "evaluation": {
+        "accuracy": 0.7142857142857143,
+        "precision": 0.8333333333333334,
+        "recall": 0.8333333333333334,
+        "f1_score": 0.8333333333333334,
+        "hallucination_rate": 0.0,
+        "total_questions": 7,
+        "correct_count": 5,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "5",
+            "base_effect": {
+              "answer": "A",
+              "userAnswer": "D",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "D",
+              "userAnswer": "D",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": true,
+              "choice_type": "single"
+            }
+          },
+          {
+            "index": "7.1",
+            "base_effect": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "超导 会 能",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "超导；会；节能",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"超导 会 能/yes\"，AI=\"超导；会；节能/no\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 1,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 7,
+            "correct": 5,
+            "accuracy": 0.7142857142857143
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011386041614782465",
+      "student_id": "2011263660032389122",
+      "student_name": "刘一诺",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 114,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389122/1997848714229166082/1997848714229166082_114_6PIEI.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"不能；不能；导电\",\n\t\t\"answer\":\"能   导电   能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例6\",\n\t\t\"tempIndex\":5\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.8333333333333334,
+      "evaluation": {
+        "accuracy": 0.8333333333333334,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 5,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "例4",
+            "base_effect": {
+              "answer": "能   导电   能",
+              "userAnswer": "不能,不导电,不能",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "能   导电   能",
+              "userAnswer": "不能；不能；导电",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"不能,不导电,不能\"，AI=\"不能；不能；导电\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011386078059089922",
+      "student_id": "2011263660032389122",
+      "student_name": "刘一诺",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 115,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389122/1997848714229166082/1997848714229166082_115_8KEKN.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"超导；会；节能\",\n\t\t\"answer\":\"超导  不会   不能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"7.1\",\n\t\t\"tempIndex\":6\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.7142857142857143,
+      "evaluation": {
+        "accuracy": 0.7142857142857143,
+        "precision": 0.8333333333333334,
+        "recall": 0.8333333333333334,
+        "f1_score": 0.8333333333333334,
+        "hallucination_rate": 0.0,
+        "total_questions": 7,
+        "correct_count": 5,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "5",
+            "base_effect": {
+              "answer": "A",
+              "userAnswer": "D",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "D",
+              "userAnswer": "D",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": true,
+              "choice_type": "single"
+            }
+          },
+          {
+            "index": "7.1",
+            "base_effect": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "超导 会 能",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "超导；会；节能",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"超导 会 能/yes\"，AI=\"超导；会；节能/no\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 1,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 7,
+            "correct": 5,
+            "accuracy": 0.7142857142857143
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011386117737205761",
+      "student_id": "2011263660032389136",
+      "student_name": "何佳怡",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 114,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389136/1997848714229166082/1997848714229166082_114_3FKH9.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"A\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"例3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"不能; 不能, 不导电\",\n\t\t\"answer\":\"能   导电   能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"例6\",\n\t\t\"tempIndex\":5\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.8333333333333334,
+      "evaluation": {
+        "accuracy": 0.8333333333333334,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 6,
+        "correct_count": 5,
+        "error_count": 1,
+        "errors": [
+          {
+            "index": "例4",
+            "base_effect": {
+              "answer": "能   导电   能",
+              "userAnswer": "不能,不导电,不能",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "能   导电   能",
+              "userAnswer": "不能; 不能, 不导电",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"不能,不导电,不能\"，AI=\"不能; 不能, 不导电\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 5,
+            "correct": 5,
+            "accuracy": 1.0
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011386151895617537",
+      "student_id": "2011263660032389136",
+      "student_name": "何佳怡",
+      "homework_name": "他说他同时",
+      "book_id": "1997848714229166082",
+      "book_name": "袁崇焕中学校本作业.同步导学练.物理.八上",
+      "page_num": 115,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2011263660032389136/1997848714229166082/1997848714229166082_115_ETXLU.jpg",
+      "homework_result": "[\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0\n\t},\n\t{\n\t\t\"userAnswer\":\"B\",\n\t\t\"answer\":\"B\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1\n\t},\n\t{\n\t\t\"userAnswer\":\"C\",\n\t\t\"answer\":\"C\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"3\",\n\t\t\"tempIndex\":2\n\t},\n\t{\n\t\t\"userAnswer\":\"A\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":3\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"5\",\n\t\t\"tempIndex\":4\n\t},\n\t{\n\t\t\"userAnswer\":\"D\",\n\t\t\"answer\":\"D\",\n\t\t\"correct\":\"yes\",\n\t\t\"children\":[],\n\t\t\"index\":\"6\",\n\t\t\"tempIndex\":5\n\t},\n\t{\n\t\t\"userAnswer\":\"超导, 不会, 节能\",\n\t\t\"answer\":\"超导  不会   不能\",\n\t\t\"correct\":\"no\",\n\t\t\"children\":[],\n\t\t\"index\":\"7.1\",\n\t\t\"tempIndex\":6\n\t}\n]",
+      "matched_dataset": "957728a6",
+      "status": "completed",
+      "accuracy": 0.7142857142857143,
+      "evaluation": {
+        "accuracy": 0.7142857142857143,
+        "precision": 0.8333333333333334,
+        "recall": 0.8333333333333334,
+        "f1_score": 0.8333333333333334,
+        "hallucination_rate": 0.0,
+        "total_questions": 7,
+        "correct_count": 5,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "5",
+            "base_effect": {
+              "answer": "A",
+              "userAnswer": "D",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "D",
+              "userAnswer": "D",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": true,
+              "choice_type": "single"
+            }
+          },
+          {
+            "index": "7.1",
+            "base_effect": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "超导 会 能",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "超导  不会   不能",
+              "userAnswer": "超导, 不会, 节能",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"超导 会 能/yes\"，AI=\"超导, 不会, 节能/no\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 1,
+          "识别正确-判断错误": 1,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "objective": {
+            "total": 7,
+            "correct": 5,
+            "accuracy": 0.7142857142857143
+          },
+          "subjective": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "choice": {
+            "total": 6,
+            "correct": 5,
+            "accuracy": 0.8333333333333334
+          },
+          "non_choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    }
+  ],
+  "overall_report": {
+    "overall_accuracy": 0.7137681159420289,
+    "total_homework": 41,
+    "total_questions": 276,
+    "correct_questions": 197,
+    "by_question_type": {
+      "objective": {
+        "total": 275,
+        "correct": 196,
+        "accuracy": 0.7127272727272728
+      },
+      "subjective": {
+        "total": 1,
+        "correct": 1,
+        "accuracy": 1.0
+      },
+      "choice": {
+        "total": 119,
+        "correct": 106,
+        "accuracy": 0.8907563025210085
+      },
+      "non_choice": {
+        "total": 157,
+        "correct": 91,
+        "accuracy": 0.5796178343949044
+      }
+    }
+  },
+  "created_at": "2026-01-14T21:33:41.273826"
+}

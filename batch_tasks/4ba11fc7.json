@@ -1,0 +1,1526 @@
+{
+  "task_id": "4ba11fc7",
+  "name": "语文1.16批量评估",
+  "subject_id": 1,
+  "subject_name": "语文",
+  "test_condition_id": 1,
+  "test_condition_name": "单份作业评估",
+  "status": "completed",
+  "homework_items": [
+    {
+      "homework_id": "2011988740647436290",
+      "student_id": "2009176747511177218",
+      "student_name": "会尽快",
+      "homework_name": "p7～11",
+      "book_id": "1998967464626053121",
+      "book_name": "徐泽和名师工作室.八年级语文单元优化题(五)(六)",
+      "page_num": 7,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2009176747511177218/1998967464626053121/1998967464626053121_7_453SE.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"(1)悠然见南山(2)江春入旧年(3)可以调素琴(4)造化钟神秀 阴阳割昏晓(5)若出其中(6)天接云涛连晓雾 星河欲转千帆舞\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"answer\":\"悠然见南山\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"1(1)\",\n\t\t\t\t\"tempIndex\":3,\n\t\t\t\t\"userAnswer\":\"悠燃见南山\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"江春入旧年\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"1(2)\",\n\t\t\t\t\"tempIndex\":4,\n\t\t\t\t\"userAnswer\":\"江春人旧年\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"可以调素琴\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"1(3)\",\n\t\t\t\t\"tempIndex\":5,\n\t\t\t\t\"userAnswer\":\"可以调素秦\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"造化钟神秀 阴阳割昏晓\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"1(4)\",\n\t\t\t\t\"tempIndex\":6,\n\t\t\t\t\"userAnswer\":\"阴阳割昏晓;造化钟神秀\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"若出其中\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"1(5)\",\n\t\t\t\t\"tempIndex\":7,\n\t\t\t\t\"userAnswer\":\"若出其里\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"天接云涛连晓雾 星河欲转千帆舞\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"1(6)\",\n\t\t\t\t\"tempIndex\":8,\n\t\t\t\t\"userAnswer\":\"星河欲转千帆舞;天接云涛连晓雾\"\n\t\t\t}\n\t\t],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"1\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"悠燃见南山;江春人旧年;可以调素秦;阴阳割昏晓;造化钟神秀;若出其里;星河欲转千帆舞;天接云涛连晓雾\"\n\t},\n\t{\n\t\t\"answer\":\"C\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"2\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"A\"\n\t},\n\t{\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"3\",\n\t\t\"mainAnswer\":\"“情”：对时光流逝的惋惜和因燕子归来而产生的欣慰之情。“思”：一切必然要消逝的美好事物，我们都无法阻止其消逝，但消逝的同时仍然有美好事物的再现，生活不会因消逝而变得一片虚无。（意思相近即可）\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"原句①介绍造型,②介绍结构,③介绍工艺\"\n\t}\n]",
+      "matched_dataset": "c7b43ccb",
+      "status": "completed",
+      "accuracy": 0.2222222222222222,
+      "evaluation": {
+        "accuracy": 0.2222222222222222,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0.0,
+        "total_questions": 9,
+        "correct_count": 2,
+        "error_count": 7,
+        "errors": [
+          {
+            "index": "1",
+            "base_effect": {
+              "answer": "（1）悠然见南山\n（2）江春入旧年\n（3）可以调素琴\n（4）造化钟神秀 阴阳割昏晓\n（5）若出其中\n（6）天接云涛连晓雾 星河欲转千帆舞",
+              "userAnswer": "（1）悠燃见南山\n（2）江春人旧年\n（3）可以调素秦\n（4）阴阳割昏晓 造化钟神秀\n（5）若出其里\n（6）星河欲转千帆舞 天接云涛连晓雾",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "(1)悠然见南山(2)江春入旧年(3)可以调素琴(4)造化钟神秀 阴阳割昏晓(5)若出其中(6)天接云涛连晓雾 星河欲转千帆舞",
+              "userAnswer": "悠燃见南山;江春人旧年;可以调素秦;阴阳割昏晓;造化钟神秀;若出其里;星河欲转千帆舞;天接云涛连晓雾",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"（1）悠燃见南山\n（2）江春人旧年\n（3）可以调素秦\n（4）阴阳割昏晓 造化钟神秀\n（5）若出其里\n（6）星河欲转千帆舞 天接云涛连晓雾\"，AI=\"悠燃见南山;江春人旧年;可以调素秦;阴阳割昏晓;造化钟神秀;若出其里;星河欲转千帆舞;天接云涛连晓雾\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "1(1)",
+            "base_effect": {
+              "answer": "悠然见南山",
+              "userAnswer": "悠燃见南山",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第1(1)题",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "1(2)",
+            "base_effect": {
+              "answer": "江春入旧年",
+              "userAnswer": "江春人旧年",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第1(2)题",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "1(3)",
+            "base_effect": {
+              "answer": "可以调素琴",
+              "userAnswer": "可以调素秦",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第1(3)题",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "1(4)",
+            "base_effect": {
+              "answer": "造化钟神秀 阴阳割昏晓",
+              "userAnswer": "阴阳割昏晓 造化钟神秀",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第1(4)题",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "1(5)",
+            "base_effect": {
+              "answer": "若出其中",
+              "userAnswer": "若出其里",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第1(5)题",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "1(6)",
+            "base_effect": {
+              "answer": "天接云涛连晓雾 星河欲转千帆舞",
+              "userAnswer": "星河欲转千帆舞 天接云涛连晓雾",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第1(6)题",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 1,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 6,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "objective_fill": {
+            "total": 7,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "other": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 7,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "填空"
+          },
+          "5": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 7,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 1,
+            "correct": 1,
+            "accuracy": 1.0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011988766882807810",
+      "student_id": "2009176747511177218",
+      "student_name": "会尽快",
+      "homework_name": "p7～11",
+      "book_id": "1998967464626053121",
+      "book_name": "徐泽和名师工作室.八年级语文单元优化题(五)(六)",
+      "page_num": 8,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2009176747511177218/1998967464626053121/1998967464626053121_8_B8GNX.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"（1）①唤醒 ②胸襟（2）沧海桑田 品味（3）B（4）玉\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"answer\":\"①唤醒 ②胸襟\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"4(1)\",\n\t\t\t\t\"tempIndex\":2,\n\t\t\t\t\"userAnswer\":\"欢喜\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"沧海桑田 品味\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"4(2)\",\n\t\t\t\t\"tempIndex\":3,\n\t\t\t\t\"userAnswer\":\"络绎不绝;品位\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"B\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"4(3)\",\n\t\t\t\t\"tempIndex\":4,\n\t\t\t\t\"userAnswer\":\"D\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"玉\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"index\":\"4(4)\",\n\t\t\t\t\"tempIndex\":5,\n\t\t\t\t\"userAnswer\":\"玉\"\n\t\t\t}\n\t\t],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"4\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"唤醒;胸襟;沧海桑田 品味;B;玉\"\n\t},\n\t{\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"5\",\n\t\t\"mainAnswer\":\"将②句和③句调换位置。文段是对“十五连盏铜灯”的介绍，通常逻辑是先讲造型，再依次讲结构、工艺，最后总结。原句①介绍造型，③介绍结构，②介绍工艺，④总结。按照“造型—结构—工艺—总结”的合理顺序，且与④中“造型生动，结构科学，工艺精湛”的表述顺序对应，建议将②句和③句调换位置，使文段逻辑更连贯，符合人们认知事物从外观到内部构造、制作工艺的顺序。\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"建议②句和③句调换位置,使文段逻辑更连贯,符合人们认知。\"\n\t}\n]",
+      "matched_dataset": "c7b43ccb",
+      "status": "completed",
+      "accuracy": 0.0,
+      "evaluation": {
+        "accuracy": 0.0,
+        "precision": 0,
+        "recall": 0.0,
+        "f1_score": 0,
+        "hallucination_rate": 0.0,
+        "total_questions": 5,
+        "correct_count": 0,
+        "error_count": 5,
+        "errors": [
+          {
+            "index": "5",
+            "base_effect": {
+              "answer": "将②句和③句调换位置。\n文段是对“十五连盏铜灯”的介绍，通常逻辑是先讲造型，再依次讲结构、工艺，最后总结。原句①介绍造型，③介绍结构，②介绍工艺，④总结。按照“造型—结构—工艺—总结”的合理顺序，且与④中“造型生动，结构科学，工艺精湛”的表述顺序对应，建议将②句和③句调换位置，使文段逻辑更连贯，符合人们认知事物从外观到内部构造、制作工艺的顺序。",
+              "userAnswer": "建议②句和③句调换位置，使这段逻辑更连贯，符合人们认知",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "将②句和③句调换位置。文段是对“十五连盏铜灯”的介绍，通常逻辑是先讲造型，再依次讲结构、工艺，最后总结。原句①介绍造型，③介绍结构，②介绍工艺，④总结。按照“造型—结构—工艺—总结”的合理顺序，且与④中“造型生动，结构科学，工艺精湛”的表述顺序对应，建议将②句和③句调换位置，使文段逻辑更连贯，符合人们认知事物从外观到内部构造、制作工艺的顺序。",
+              "userAnswer": "建议②句和③句调换位置,使文段逻辑更连贯,符合人们认知。",
+              "correct": "yes"
+            },
+            "error_type": "识别错误-判断错误",
+            "explanation": "识别和判断都有误：基准=\"建议②句和③句调换位置，使这段逻辑更连贯，符合人们认知/no\"，AI=\"建议②句和③句调换位置,使文段逻辑更连贯,符合人们认知。/yes\"",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": false,
+              "is_choice": false,
+              "is_fill": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "4(1)",
+            "base_effect": {
+              "answer": "①唤醒 ②胸襟",
+              "userAnswer": "①欢喜 ②胸襟",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第4(1)题",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "4(2)",
+            "base_effect": {
+              "answer": "沧海桑田   品味",
+              "userAnswer": "络绎不绝 品位",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第4(2)题",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "4(3)",
+            "base_effect": {
+              "answer": "B",
+              "userAnswer": "D",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第4(3)题",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": true,
+              "is_fill": false,
+              "choice_type": "single"
+            }
+          },
+          {
+            "index": "4(4)",
+            "base_effect": {
+              "answer": "玉",
+              "userAnswer": "王",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第4(4)题",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 1,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 4,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "objective_fill": {
+            "total": 3,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "other": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 3,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "填空"
+          },
+          "5": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 3,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011988796523954178",
+      "student_id": "2009176747511177218",
+      "student_name": "会尽快",
+      "homework_name": "p7～11",
+      "book_id": "1998967464626053121",
+      "book_name": "徐泽和名师工作室.八年级语文单元优化题(五)(六)",
+      "page_num": 9,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2009176747511177218/1998967464626053121/1998967464626053121_9_F4DRM.jpg",
+      "homework_result": "[\n\t{\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"6\",\n\t\t\"mainAnswer\":\"许云峰 聪明机智、小心警惕、不畏强暴。\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"许云峰;聪明机智,小心警惕,不畏强暴\"\n\t},\n\t{\n\t\t\"answer\":\"(1)教导，训诲(2)准则，标准(3)到，往(4)像\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"answer\":\"教导，训诲\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"index\":\"7(1)\",\n\t\t\t\t\"tempIndex\":5,\n\t\t\t\t\"userAnswer\":\"教导,训诲\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"准则，标准\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"index\":\"7(2)\",\n\t\t\t\t\"tempIndex\":6,\n\t\t\t\t\"userAnswer\":\"准则,标准\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"到，往\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"index\":\"7(3)\",\n\t\t\t\t\"tempIndex\":7,\n\t\t\t\t\"userAnswer\":\"到,往\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"像\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"index\":\"7(4)\",\n\t\t\t\t\"tempIndex\":8,\n\t\t\t\t\"userAnswer\":\"像\"\n\t\t\t}\n\t\t],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"7\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"教导,训诲;准则,标准;到,往;像\"\n\t},\n\t{\n\t\t\"answer\":\"(1)富贵不能使他迷惑，贫贱不能使他动摇，威武不能使他屈服，这样的人才称得上大丈夫。(2)这个人不是我们的国君，为什么他的声音像我们的国君呢？\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"index\":\"8(1)\",\n\t\t\t\t\"mainAnswer\":\"富贵不能使他迷惑，贫贱不能使他动摇，威武不能使他屈服，这样的人才称得上大丈夫。\",\n\t\t\t\t\"tempIndex\":9,\n\t\t\t\t\"userAnswer\":\"富贵不能使他迷惑,贫贱不能使他动摇,威武不能使他屈服,这样的人才称得上大丈夫\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"yes\",\n\t\t\t\t\"index\":\"8(2)\",\n\t\t\t\t\"mainAnswer\":\"这个人不是我们的国君，为什么他的声音像我们的国君呢？\",\n\t\t\t\t\"tempIndex\":10,\n\t\t\t\t\"userAnswer\":\"这个人不是我们的国君,为什么他的声音像我们的国君呢?\"\n\t\t\t}\n\t\t],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"8\",\n\t\t\"tempIndex\":2,\n\t\t\"userAnswer\":\"富贵不能使他迷惑,贫贱不能使他动摇,威武不能使他屈服,这样的人才称得上大丈夫;这个人不是我们的国君,为什么他的声音像我们的国君呢?\"\n\t},\n\t{\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"9\",\n\t\t\"mainAnswer\":\"批评张仪之流靠顺从诸侯的意思往上爬，没有仁义道德，奉行的不过是“妾妇之道”，根本称不上大丈夫，而是小人。\",\n\t\t\"tempIndex\":3,\n\t\t\"userAnswer\":\"批评张仪之流靠顺从诸侯的意思往上爬,没有仁义道德,奉行的不过是“妾妇之道”,根本称不上大丈夫,而是小人\"\n\t},\n\t{\n\t\t\"answer\":\"仁 大丈夫 气质\",\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"10\",\n\t\t\"tempIndex\":4,\n\t\t\"userAnswer\":\"仁;大丈夫;气质\"\n\t}\n]",
+      "matched_dataset": "c7b43ccb",
+      "status": "completed",
+      "accuracy": 0.6,
+      "evaluation": {
+        "accuracy": 0.6,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "hallucination_rate": 0,
+        "total_questions": 5,
+        "correct_count": 3,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "7",
+            "base_effect": {
+              "answer": "(1)教导，训诲\n(2)准则，标准\n(3)到，往\n(4)像",
+              "userAnswer": "(1)教导，训诲\n(2)准则，标准\n(3)到，往\n(4)像",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "(1)教导，训诲(2)准则，标准(3)到，往(4)像",
+              "userAnswer": "教导,训诲;准则,标准;到,往;像",
+              "correct": "yes"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"(1)教导，训诲\n(2)准则，标准\n(3)到，往\n(4)像\"，AI=\"教导,训诲;准则,标准;到,往;像\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "8",
+            "base_effect": {
+              "answer": "(1)富贵不能使他迷惑，贫贱不能使他动摇，威武不能使他屈服，这样的人才称得上大丈夫。\n<br>(2)这个人不是我们的国君，为什么他的声音像我们的国君呢？",
+              "userAnswer": "(1)富贵不能使他迷惑，贫贱不能便他动摇，威武不能使他屈服，这样的人才称得上大丈夫\n(2)这个人不是我们的国君，为什么他的声音像我们的国君呢？",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "(1)富贵不能使他迷惑，贫贱不能使他动摇，威武不能使他屈服，这样的人才称得上大丈夫。(2)这个人不是我们的国君，为什么他的声音像我们的国君呢？",
+              "userAnswer": "富贵不能使他迷惑,贫贱不能使他动摇,威武不能使他屈服,这样的人才称得上大丈夫;这个人不是我们的国君,为什么他的声音像我们的国君呢?",
+              "correct": "yes"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"(1)富贵不能使他迷惑，贫贱不能便他动摇，威武不能使他屈服，这样的人才称得上大丈夫\n(2)这个人不是我们的国君，为什么他的声音像我们的国君呢？\"，AI=\"富贵不能使他迷惑,贫贱不能使他动摇,威武不能使他屈服,这样的人才称得上大丈夫;这个人不是我们的国君,为什么他的声音像我们的国君呢?\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 2,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 0,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "objective_fill": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "other": {
+            "total": 5,
+            "correct": 3,
+            "accuracy": 0.6
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "填空"
+          },
+          "5": {
+            "total": 5,
+            "correct": 3,
+            "accuracy": 0.6,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 3,
+            "correct": 1,
+            "accuracy": 0.3333333333333333,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 2,
+            "correct": 2,
+            "accuracy": 1.0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011988821538783233",
+      "student_id": "2009176747511177218",
+      "student_name": "会尽快",
+      "homework_name": "p7～11",
+      "book_id": "1998967464626053121",
+      "book_name": "徐泽和名师工作室.八年级语文单元优化题(五)(六)",
+      "page_num": 10,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2009176747511177218/1998967464626053121/1998967464626053121_10_KWUSW.jpg",
+      "homework_result": "[\n\t{\n\t\t\"answer\":\"(1)将近(2)正在(3)同“返”，往返(4)说\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"answer\":\"将近\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"11(1)\",\n\t\t\t\t\"tempIndex\":1,\n\t\t\t\t\"userAnswer\":\"已经\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"正在\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"11(2)\",\n\t\t\t\t\"tempIndex\":2,\n\t\t\t\t\"userAnswer\":\"刚刚\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"同“返”，往返\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"11(3)\",\n\t\t\t\t\"tempIndex\":3,\n\t\t\t\t\"userAnswer\":\"返回\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"说\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"11(4)\",\n\t\t\t\t\"tempIndex\":4,\n\t\t\t\t\"userAnswer\":\"称\"\n\t\t\t}\n\t\t],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"11\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"已经;刚刚;返回;称\"\n\t},\n\t{\n\t\t\"answer\":\"D\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"12\",\n\t\t\"tempIndex\":5,\n\t\t\"userAnswer\":\"C\"\n\t},\n\t{\n\t\t\"answer\":\"AD\",\n\t\t\"children\":[],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"13\",\n\t\t\"tempIndex\":6,\n\t\t\"userAnswer\":\"B\"\n\t},\n\t{\n\t\t\"answer\":\"(1)就凭你老迈的年纪和残余的力气，连山上的一点儿草木都毁不掉，又能把泥土石头怎么样呢？(2)李白被老妇人的意志感动，返回山中继续完成学业。\",\n\t\t\"children\":[\n\t\t\t{\n\t\t\t\t\"answer\":\"就凭你老迈的年纪和残余的力气，连山上的一点儿草木都毁不掉，又能把泥土石头怎么样呢？\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"14.1\",\n\t\t\t\t\"tempIndex\":9,\n\t\t\t\t\"userAnswer\":\"以你残余的力气和年长的年纪，连消灭不了这座山的任何东西，更何况是石头泥土呢\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"answer\":\"李白被老妇人的意志感动，返回山中继续完成学业。\",\n\t\t\t\t\"children\":[],\n\t\t\t\t\"correct\":\"no\",\n\t\t\t\t\"index\":\"14.2\",\n\t\t\t\t\"tempIndex\":10,\n\t\t\t\t\"userAnswer\":\"李白感受到了她的意志，于是返回去完成学业\"\n\t\t\t}\n\t\t],\n\t\t\"correct\":\"no\",\n\t\t\"index\":\"14\",\n\t\t\"tempIndex\":7,\n\t\t\"userAnswer\":\"以你残余的力气和年长的年纪，连消灭不了这座山的任何东西，更何况是石头泥土呢;李白感受到了她的意志，于是返回去完成学业\"\n\t},\n\t{\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"15\",\n\t\t\"mainAnswer\":\"从侧面烘托了愚公具有不怕困难的决心、坚韧不拔的毅力和造福子孙的宏愿。\",\n\t\t\"tempIndex\":8,\n\t\t\"userAnswer\":\"与愚公外形形成对比，衬托愚公移山的艰难及其不屈不挠的精神\"\n\t}\n]",
+      "matched_dataset": "c7b43ccb",
+      "status": "completed",
+      "accuracy": 0.1111111111111111,
+      "evaluation": {
+        "accuracy": 0.1111111111111111,
+        "precision": 0.3333333333333333,
+        "recall": 1.0,
+        "f1_score": 0.5,
+        "hallucination_rate": 0.0,
+        "total_questions": 9,
+        "correct_count": 1,
+        "error_count": 8,
+        "errors": [
+          {
+            "index": "11",
+            "base_effect": {
+              "answer": "(1)将近\n  (2)正在\n  (3)同“返”，往返\n  (4)说",
+              "userAnswer": "(1)已经\n(2)刚刚\n(3)返回\n(4)称",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "(1)将近(2)正在(3)同“返”，往返(4)说",
+              "userAnswer": "已经;刚刚;返回;称",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"(1)已经\n(2)刚刚\n(3)返回\n(4)称\"，AI=\"已经;刚刚;返回;称\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "11(1)",
+            "base_effect": {
+              "answer": "将近",
+              "userAnswer": "已经",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第11(1)题",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "11(2)",
+            "base_effect": {
+              "answer": "正在",
+              "userAnswer": "刚刚",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第11(2)题",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "11(3)",
+            "base_effect": {
+              "answer": "同“返”，往返",
+              "userAnswer": "返回",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第11(3)题",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "11(4)",
+            "base_effect": {
+              "answer": "说",
+              "userAnswer": "称",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "缺失题目",
+            "explanation": "AI批改结果中缺少第11(4)题",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "13",
+            "base_effect": {
+              "answer": "B",
+              "userAnswer": "B",
+              "correct": "yes"
+            },
+            "ai_result": {
+              "answer": "AD",
+              "userAnswer": "B",
+              "correct": "no"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=yes，AI=no",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": true,
+              "is_fill": false,
+              "choice_type": "single"
+            }
+          },
+          {
+            "index": "14",
+            "base_effect": {
+              "answer": "(1)就凭你老迈的年纪和残余的力气，连山上的一点儿草木都毁不掉，又能把泥土石头怎么样呢？\n(2)李白被老妇人的意志感动，返回山中继续完成学业。",
+              "userAnswer": "(1)以你残余的力气和年长的年纪，消灭不了这座山的任何东西，更何况是石头泥土呢\n(2)李白感受到了她的意志，于是返回去完成学业",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "(1)就凭你老迈的年纪和残余的力气，连山上的一点儿草木都毁不掉，又能把泥土石头怎么样呢？(2)李白被老妇人的意志感动，返回山中继续完成学业。",
+              "userAnswer": "以你残余的力气和年长的年纪，连消灭不了这座山的任何东西，更何况是石头泥土呢;李白感受到了她的意志，于是返回去完成学业",
+              "correct": "no"
+            },
+            "error_type": "识别错误-判断正确",
+            "explanation": "识别不准确但判断结果正确：基准=\"(1)以你残余的力气和年长的年纪，消灭不了这座山的任何东西，更何况是石头泥土呢\n(2)李白感受到了她的意志，于是返回去完成学业\"，AI=\"以你残余的力气和年长的年纪，连消灭不了这座山的任何东西，更何况是石头泥土呢;李白感受到了她的意志，于是返回去完成学业\"",
+            "severity": "medium",
+            "severity_code": "medium",
+            "analysis": {
+              "recognition_match": false,
+              "judgment_match": true,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": true,
+              "is_choice": false,
+              "is_fill": true,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "15",
+            "base_effect": {
+              "answer": "从侧面烘托了愚公具有不怕困难的决心、坚韧不拔的毅力和造福子孙的宏愿。",
+              "userAnswer": "与愚公外形形成对比，衬托愚公移山的艰难及其不屈不挠的精神",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "从侧面烘托了愚公具有不怕困难的决心、坚韧不拔的毅力和造福子孙的宏愿。",
+              "userAnswer": "与愚公外形形成对比，衬托愚公移山的艰难及其不屈不挠的精神",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": false,
+              "is_choice": false,
+              "is_fill": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 2,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 2,
+          "格式差异": 0,
+          "缺失题目": 4,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 2,
+            "correct": 1,
+            "accuracy": 0.5
+          },
+          "objective_fill": {
+            "total": 6,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "other": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 2,
+            "correct": 1,
+            "accuracy": 0.5,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 6,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "填空"
+          },
+          "5": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 2,
+            "correct": 1,
+            "accuracy": 0.5,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 6,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 1,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "主观解答"
+          }
+        }
+      }
+    },
+    {
+      "homework_id": "2011988845450510338",
+      "student_id": "2009176747511177218",
+      "student_name": "会尽快",
+      "homework_name": "p7～11",
+      "book_id": "1998967464626053121",
+      "book_name": "徐泽和名师工作室.八年级语文单元优化题(五)(六)",
+      "page_num": 11,
+      "pic_path": "https://img.gzzhengpu.cn/temp/homework/2009176747511177218/1998967464626053121/1998967464626053121_11_P2FV5.jpg",
+      "homework_result": "[\n\t{\n\t\t\"children\":[],\n\t\t\"correct\":\"yes\",\n\t\t\"index\":\"16\",\n\t\t\"mainAnswer\":\"示例：做任何事情要有恒心、有毅力，这样才能成功。（符合题意，语言简明通顺，言之成理即可视情况给分）\",\n\t\t\"tempIndex\":0,\n\t\t\"userAnswer\":\"要持之以恒，坚持才是最大的天赋\"\n\t},\n\t{\n\t\t\"children\":[],\n\t\t\"correct\":\"\",\n\t\t\"index\":\"17\",\n\t\t\"mainAnswer\":\"请查看作文答题区第一页的参考答案\",\n\t\t\"tempIndex\":1,\n\t\t\"userAnswer\":\"\"\n\t}\n]",
+      "matched_dataset": "c7b43ccb",
+      "status": "completed",
+      "accuracy": 0.0,
+      "evaluation": {
+        "accuracy": 0.0,
+        "precision": 0.0,
+        "recall": 0,
+        "f1_score": 0,
+        "hallucination_rate": 0.0,
+        "total_questions": 2,
+        "correct_count": 0,
+        "error_count": 2,
+        "errors": [
+          {
+            "index": "16",
+            "base_effect": {
+              "answer": "示例：做任何事情要有恒心、有毅力，这样才能成功。（符合题意，语言简明通顺，言之成理即可视情况给分）",
+              "userAnswer": "要持之以恒，坚持才是最大的天赋",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "示例：做任何事情要有恒心、有毅力，这样才能成功。（符合题意，语言简明通顺，言之成理即可视情况给分）",
+              "userAnswer": "要持之以恒，坚持才是最大的天赋",
+              "correct": "yes"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=yes",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": true,
+              "judgment_match": false,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": false,
+              "is_choice": false,
+              "is_fill": false,
+              "choice_type": null
+            }
+          },
+          {
+            "index": "17",
+            "base_effect": {
+              "answer": "| 作文等级       | 评分标准                                                     |\n| -------------- | ------------------------------------------------------------ |\n| 一类卷（36—40分） | 1. 切合题意，立意明确，中心突出，材料具体生动，富有真情实感。<br>2. 结构严谨，注意照应，详略得当。<br>3. 语言得体、流畅。 |\n| 二类卷（30—35分） | 1. 符合题意，立意明确，中心突出，材料具体，有真情实感。<br>2. 结构完整，条理清楚。<br>3. 语言规范、通顺。 |\n| 三类卷（24—29分） | 1. 基本符合题意，立意明确，材料能表现中心，有情感。<br>2. 结构基本完整，有条理。<br>3. 语言基本通顺，有少数错别字。 |\n| 四类卷（16—23分） | 1. 不符合题意，立意不明确，材料难以表现中心，缺乏情感。<br>2. 结构不完整，条理不清楚。<br>3. 语言不通顺，错别字较多。 |\n| 五类卷（0—15分）  | 1. 没有中心，空洞无物，严重离题。<br>2. 结构残缺，不成篇章。<br>3. 文理不通，错别字较多。 |\n| 加分           | 符合如下条件之一，可酌情加1—3分（加至本题满分为止）：<br>1. 情真意切，立意深刻。<br>2. 构思独特，富有创意。<br>3. 语言优美，富有个性。<br>4. 文面整洁，书写优美。 |\n| 扣分           | 1. 没有标题扣2分。<br>2. 不足500字，每少50字扣1分。<br>3. 错别字每3个扣1分（重复的错别字不计），最多扣3分。<br>4. 不能正确使用标点扣1—3分。<br>5. 文面脏乱，字迹潦草，难以辨认者扣1—3分。<br>6. 出现暴露身份的真实校名、人名的扣1—3分。 |",
+              "userAnswer": "",
+              "correct": "no"
+            },
+            "ai_result": {
+              "answer": "请查看作文答题区第一页的参考答案",
+              "userAnswer": "",
+              "correct": "-"
+            },
+            "error_type": "识别正确-判断错误",
+            "explanation": "识别正确但判断错误：基准=no，AI=",
+            "severity": "high",
+            "severity_code": "high",
+            "analysis": {
+              "recognition_match": null,
+              "judgment_match": null,
+              "is_hallucination": false
+            },
+            "question_category": {
+              "is_objective": false,
+              "is_choice": false,
+              "is_fill": false,
+              "choice_type": null
+            }
+          }
+        ],
+        "error_distribution": {
+          "识别错误-判断正确": 0,
+          "识别错误-判断错误": 0,
+          "识别正确-判断错误": 2,
+          "格式差异": 0,
+          "缺失题目": 0,
+          "AI识别幻觉": 0
+        },
+        "by_question_type": {
+          "choice": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "objective_fill": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0
+          },
+          "other": {
+            "total": 2,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        },
+        "by_bvalue": {
+          "1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "单选"
+          },
+          "2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "多选"
+          },
+          "3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "判断"
+          },
+          "4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "填空"
+          },
+          "5": {
+            "total": 2,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "解答"
+          }
+        },
+        "by_combined": {
+          "objective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观单选"
+          },
+          "objective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观多选"
+          },
+          "objective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观判断"
+          },
+          "objective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观填空"
+          },
+          "objective_5": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "客观解答"
+          },
+          "subjective_1": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观单选"
+          },
+          "subjective_2": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观多选"
+          },
+          "subjective_3": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观判断"
+          },
+          "subjective_4": {
+            "total": 0,
+            "correct": 0,
+            "accuracy": 0,
+            "name": "主观填空"
+          },
+          "subjective_5": {
+            "total": 2,
+            "correct": 0,
+            "accuracy": 0.0,
+            "name": "主观解答"
+          }
+        }
+      }
+    }
+  ],
+  "overall_report": {
+    "overall_accuracy": 0.2,
+    "total_homework": 5,
+    "total_questions": 30,
+    "correct_questions": 6,
+    "by_question_type": {
+      "choice": {
+        "total": 4,
+        "correct": 2,
+        "accuracy": 0.5
+      },
+      "objective_fill": {
+        "total": 16,
+        "correct": 0,
+        "accuracy": 0.0
+      },
+      "other": {
+        "total": 10,
+        "correct": 4,
+        "accuracy": 0.4
+      }
+    },
+    "by_bvalue": {
+      "1": {
+        "total": 4,
+        "correct": 2,
+        "accuracy": 0.5,
+        "name": "单选"
+      },
+      "2": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "多选"
+      },
+      "3": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "判断"
+      },
+      "4": {
+        "total": 16,
+        "correct": 0,
+        "accuracy": 0.0,
+        "name": "填空"
+      },
+      "5": {
+        "total": 10,
+        "correct": 4,
+        "accuracy": 0.4,
+        "name": "解答"
+      }
+    },
+    "by_combined": {
+      "objective_1": {
+        "total": 4,
+        "correct": 2,
+        "accuracy": 0.5,
+        "name": "客观单选"
+      },
+      "objective_2": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "客观多选"
+      },
+      "objective_3": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "客观判断"
+      },
+      "objective_4": {
+        "total": 16,
+        "correct": 0,
+        "accuracy": 0.0,
+        "name": "客观填空"
+      },
+      "objective_5": {
+        "total": 3,
+        "correct": 1,
+        "accuracy": 0.3333333333333333,
+        "name": "客观解答"
+      },
+      "subjective_1": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "主观单选"
+      },
+      "subjective_2": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "主观多选"
+      },
+      "subjective_3": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "主观判断"
+      },
+      "subjective_4": {
+        "total": 0,
+        "correct": 0,
+        "accuracy": 0,
+        "name": "主观填空"
+      },
+      "subjective_5": {
+        "total": 7,
+        "correct": 3,
+        "accuracy": 0.42857142857142855,
+        "name": "主观解答"
+      }
+    }
+  },
+  "created_at": "2026-01-16T10:50:56.940624"
+}
