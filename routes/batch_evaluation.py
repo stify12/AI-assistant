@@ -17,6 +17,7 @@ from services.storage_service import StorageService
 from services.llm_service import LLMService
 from services.semantic_eval_service import SemanticEvalService
 from services.physics_eval import normalize_physics_markdown
+from services.chemistry_eval import normalize_chemistry_markdown
 from utils.text_utils import normalize_answer, has_format_diff, calculate_similarity, is_fuzzy_match
 
 batch_evaluation_bp = Blueprint('batch_evaluation', __name__)
@@ -2522,6 +2523,15 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
             hw_answer = normalize_physics_markdown(hw_answer)
             hw_user = normalize_physics_markdown(hw_user)
         
+        # 化学学科(subject_id=4)：先将 LaTeX 化学式/方程式转换为纯文本
+        # 这样可以正确比较 "$MgCl_2$" 和 "MgCl₂" 这类格式差异
+        is_chemistry = subject_id == 4
+        if is_chemistry:
+            base_answer = normalize_chemistry_markdown(base_answer)
+            base_user = normalize_chemistry_markdown(base_user)
+            hw_answer = normalize_chemistry_markdown(hw_answer)
+            hw_user = normalize_chemistry_markdown(hw_user)
+        
         is_match = True
         error_type = None
         explanation = ''
@@ -2531,7 +2541,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         # 判断是否为语文非选择题（用于模糊匹配）
         # 语文学科的所有非选择题（包括客观填空题和主观题）都使用模糊匹配
         is_chinese_fuzzy = is_chinese and not question_category['is_choice']
-        print(f"[DEBUG] do_evaluation 题{idx}: is_chinese={is_chinese}, is_choice={question_category['is_choice']}, is_chinese_fuzzy={is_chinese_fuzzy}, is_physics={is_physics}")
+        print(f"[DEBUG] do_evaluation 题{idx}: is_chinese={is_chinese}, is_choice={question_category['is_choice']}, is_chinese_fuzzy={is_chinese_fuzzy}, is_physics={is_physics}, is_chemistry={is_chemistry}")
         
         if not hw_item:
             is_match = False
