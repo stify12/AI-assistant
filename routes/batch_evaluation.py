@@ -16,6 +16,7 @@ from services.database_service import DatabaseService, AppDatabaseService
 from services.storage_service import StorageService
 from services.llm_service import LLMService
 from services.semantic_eval_service import SemanticEvalService
+from services.physics_eval import normalize_physics_markdown
 from utils.text_utils import normalize_answer, has_format_diff, calculate_similarity, is_fuzzy_match
 
 batch_evaluation_bp = Blueprint('batch_evaluation', __name__)
@@ -346,9 +347,7 @@ SUBJECT_MAP = {
     3: '物理',
     4: '化学',
     5: '生物',
-    6: '政治',
-    7: '历史',
-    8: '地理'
+    6: '地理'
 }
 
 
@@ -1068,6 +1067,143 @@ def get_all_books_with_datasets():
         return jsonify({'success': False, 'error': str(e)})
 
 
+@batch_evaluation_bp.route('/datasets/check-duplicate', methods=['GET'])
+def check_duplicate_datasets():
+    """
+    检查是否存在重复数据集
+    
+    Query params:
+        book_id: 书本ID
+        pages: 页码列表（逗号分隔，如 "1,2,3"）
+    
+    Returns:
+        {
+            "success": true,
+            "has_duplicate": true/false,
+            "duplicates": [
+                {
+                    "dataset_id": "abc12345",
+                    "name": "学生A基准",
+                    "book_name": "七年级英语上册",
+                    "pages": [1, 2, 3],
+                    "question_count": 50,
+                    "created_at": "2024-01-01T10:00:00"
+                }
+            ]
+        }
+    """
+    book_id = request.args.get('book_id')
+    pages_str = request.args.get('pages', '')
+    
+    if not book_id:
+        return jsonify({'success': False, 'error': '缺少 book_id 参数'})
+    
+    if not pages_str:
+        return jsonify({'success': False, 'error': '缺少 pages 参数'})
+    
+    try:
+        # 解析页码列表
+        pages = [int(p.strip()) for p in pages_str.split(',') if p.strip()]
+        if not pages:
+            return jsonify({'success': False, 'error': '页码列表为空'})
+        
+        # 查找所有匹配的数据集
+        duplicates = []
+        all_datasets = StorageService.get_all_datasets_summary()
+        
+        for ds in all_datasets:
+            if ds.get('book_id') != book_id:
+                continue
+            
+            ds_pages = ds.get('pages', [])
+            # 检查是否有任何页码重叠
+            if any(p in ds_pages for p in pages):
+                duplicates.append({
+                    'dataset_id': ds['dataset_id'],
+                    'name': ds.get('name', ''),
+                    'book_name': ds.get('book_name', ''),
+                    'pages': ds_pages,
+                    'question_count': ds.get('question_count', 0),
+                    'created_at': ds.get('created_at', '')
+                })
+        
+        return jsonify({
+            'success': True,
+            'has_duplicate': len(duplicates) > 0,
+            'duplicates': duplicates
+        })
+        
+    except ValueError as e:
+        return jsonify({'success': False, 'error': f'页码格式错误: {str(e)}'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@batch_evaluation_bp.route('/matching-datasets', methods=['GET'])
+def get_matching_datasets():
+    """
+    查询匹配的数据集列表
+    
+    根据 book_id 和 page_num 查询所有匹配的数据集，
+    按创建时间倒序排列（最新的排在前面）
+    
+    Query params:
+        book_id: 书本ID（必填）
+        page_num: 页码（必填，正整数）
+    
+    Returns:
+        {
+            "success": true,
+            "data": [
+                {
+                    "dataset_id": "abc12345",
+                    "name": "学生A基准",
+                    "book_name": "七年级英语上册",
+                    "pages": [30, 31],
+                    "question_count": 50,
+                    "created_at": "2024-01-01T10:00:00"
+                }
+            ]
+        }
+    
+    Error responses:
+        - 400: 缺少书本ID
+        - 400: 缺少页码
+        - 400: 页码必须是正整数
+    """
+    book_id = request.args.get('book_id')
+    page_num_str = request.args.get('page_num')
+    
+    # 参数验证：book_id 必填
+    if not book_id:
+        return jsonify({'success': False, 'error': '缺少书本ID'}), 400
+    
+    # 参数验证：page_num 必填
+    if not page_num_str:
+        return jsonify({'success': False, 'error': '缺少页码'}), 400
+    
+    # 参数验证：page_num 必须是正整数
+    try:
+        page_num = int(page_num_str)
+        if page_num <= 0:
+            return jsonify({'success': False, 'error': '页码必须是正整数'}), 400
+    except ValueError:
+        return jsonify({'success': False, 'error': '页码必须是正整数'}), 400
+    
+    try:
+        # 调用 StorageService 获取匹配的数据集
+        matching_datasets = StorageService.get_matching_datasets(book_id, page_num)
+        
+        # 返回结果（已按 created_at 倒序排列）
+        return jsonify({
+            'success': True,
+            'data': matching_datasets
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @batch_evaluation_bp.route('/datasets', methods=['GET', 'POST'])
 def batch_datasets():
     """数据集管理"""
@@ -1075,29 +1211,36 @@ def batch_datasets():
     
     if request.method == 'GET':
         book_id = request.args.get('book_id')
+        search = request.args.get('search', '').strip()
         
         try:
-            datasets = []
-            for filename in StorageService.list_datasets():
-                dataset_id = filename[:-5]
-                data = StorageService.load_dataset(dataset_id)
-                if data:
-                    if book_id and data.get('book_id') != book_id:
-                        continue
-                    
-                    question_count = 0
-                    for effects in data.get('base_effects', {}).values():
-                        question_count += len(effects) if isinstance(effects, list) else 0
-                    
-                    datasets.append({
-                        'dataset_id': dataset_id,
-                        'book_id': data.get('book_id'),
-                        'book_name': data.get('book_name', ''),
-                        'pages': data.get('pages', []),
-                        'question_count': question_count,
-                        'created_at': data.get('created_at', '')
-                    })
+            # 使用 get_all_datasets_summary 获取更好的性能
+            all_datasets = StorageService.get_all_datasets_summary()
             
+            datasets = []
+            for ds in all_datasets:
+                # 按 book_id 过滤
+                if book_id and ds.get('book_id') != book_id:
+                    continue
+                
+                # 按 name 模糊搜索（不区分大小写）
+                if search:
+                    ds_name = ds.get('name', '') or ''
+                    if search.lower() not in ds_name.lower():
+                        continue
+                
+                datasets.append({
+                    'dataset_id': ds['dataset_id'],
+                    'name': ds.get('name', ''),
+                    'book_id': ds.get('book_id'),
+                    'book_name': ds.get('book_name', ''),
+                    'pages': ds.get('pages', []),
+                    'question_count': ds.get('question_count', 0),
+                    'description': ds.get('description', ''),
+                    'created_at': ds.get('created_at', '')
+                })
+            
+            # 按 created_at 倒序排列（get_all_datasets_summary 已排序，但确保一致性）
             datasets.sort(key=lambda x: x.get('created_at', ''), reverse=True)
             return jsonify({'success': True, 'data': datasets})
         
@@ -1112,15 +1255,23 @@ def batch_datasets():
             return jsonify({'success': False, 'error': '请求数据为空'})
         
         book_id = data.get('book_id')
+        book_name = data.get('book_name', '')
         pages = data.get('pages', [])
         base_effects = data.get('base_effects', {})
+        name = data.get('name', '').strip() if data.get('name') else ''
+        description = data.get('description', '').strip() if data.get('description') else ''
         
         if not book_id or not pages:
             return jsonify({'success': False, 'error': '缺少必要参数'})
         
+        # 验证 name 不能为空或纯空白（如果提供了 name 参数）
+        if 'name' in data and data.get('name') is not None:
+            if not name:
+                return jsonify({'success': False, 'error': '数据集名称不能为空'})
+        
         try:
             dataset_id = str(uuid.uuid4())[:8]
-            print(f"[CreateDataset] Creating dataset: {dataset_id}, pages={pages}")
+            print(f"[CreateDataset] Creating dataset: {dataset_id}, name={name}, pages={pages}")
             
             # 为每个页码的题目添加类型信息
             enriched_base_effects = enrich_base_effects_with_question_types(book_id, base_effects)
@@ -1128,6 +1279,9 @@ def batch_datasets():
             StorageService.save_dataset(dataset_id, {
                 'dataset_id': dataset_id,
                 'book_id': book_id,
+                'book_name': book_name,  # 传递 book_name 用于生成默认名称
+                'name': name,  # 传递 name，StorageService 会处理空值情况
+                'description': description,
                 'pages': pages,
                 'base_effects': enriched_base_effects,
                 'created_at': datetime.now().isoformat()
@@ -1160,6 +1314,19 @@ def dataset_detail(dataset_id):
                 return jsonify({'success': False, 'error': '数据集不存在'})
             
             update_data = request.get_json()
+            
+            # 更新 name 字段（如果提供）
+            if 'name' in update_data:
+                new_name = update_data.get('name', '').strip() if update_data.get('name') else ''
+                # 验证 name 不能为空或纯空白
+                if update_data.get('name') is not None and not new_name:
+                    return jsonify({'success': False, 'error': '数据集名称不能为空'})
+                if new_name:
+                    data['name'] = new_name
+            
+            # 更新 description 字段（如果提供）
+            if 'description' in update_data:
+                data['description'] = update_data.get('description', '').strip() if update_data.get('description') else ''
             
             # 检查是否需要删除页码
             delete_pages = update_data.get('delete_pages', [])
@@ -1414,7 +1581,7 @@ def get_homework_tasks():
             avg_homework_per_student = round(homework_count / student_count, 1) if student_count > 0 else 0
             
             tasks.append({
-                'hw_publish_id': row['hw_publish_id'],
+                'hw_publish_id': str(row['hw_publish_id']),  # 转为字符串避免JS精度丢失
                 'task_name': row.get('task_name', ''),
                 'homework_count': homework_count,
                 'student_count': student_count,
@@ -1436,12 +1603,25 @@ def get_batch_homework():
     """获取可用于批量评估的作业列表"""
     subject_id = request.args.get('subject_id', type=int)
     hours = request.args.get('hours', 6, type=int)  # 默认6小时
-    hw_publish_id = request.args.get('hw_publish_id', type=int)
+    hw_publish_id = request.args.get('hw_publish_id')  # 改为字符串，避免大整数精度问题
+    hw_publish_ids = request.args.get('hw_publish_ids', '')  # 支持多个ID，逗号分隔
     
     try:
+        # 解析多个作业任务ID（保持字符串形式，避免大整数精度问题）
+        publish_id_list = []
+        if hw_publish_ids:
+            for x in hw_publish_ids.split(','):
+                x = x.strip()
+                if x and x.isdigit():
+                    publish_id_list.append(x)
+            print(f"[get_batch_homework] 解析hw_publish_ids: {hw_publish_ids} -> {publish_id_list}")
+        elif hw_publish_id:
+            publish_id_list = [str(hw_publish_id)]
+        
         # 根据是否有hw_publish_id决定查询条件
-        if hw_publish_id:
-            sql = """
+        if publish_id_list:
+            placeholders = ','.join(['%s'] * len(publish_id_list))
+            sql = f"""
                 SELECT h.id, h.student_id, h.hw_publish_id, h.subject_id, h.page_num, 
                        h.pic_path, h.homework_result, h.create_time,
                        p.content AS homework_name,
@@ -1453,15 +1633,16 @@ def get_batch_homework():
                 LEFT JOIN zp_student s ON h.student_id = s.id
                 LEFT JOIN zp_make_book b ON p.book_id = b.id
                 WHERE h.status = 3 
-                  AND h.hw_publish_id = %s
+                  AND h.hw_publish_id IN ({placeholders})
             """
-            params = [hw_publish_id]
+            params = list(publish_id_list)
             
             if subject_id is not None:
                 sql += " AND h.subject_id = %s"
                 params.append(subject_id)
             
             sql += " ORDER BY h.create_time DESC LIMIT 500"
+            print(f"[get_batch_homework] 查询参数: {params}")
         else:
             sql = """
                 SELECT h.id, h.student_id, h.hw_publish_id, h.subject_id, h.page_num, 
@@ -1603,9 +1784,7 @@ def batch_tasks():
                 3: '物理',
                 4: '化学',
                 5: '生物',
-                6: '政治',
-                7: '历史',
-                8: '地理'
+                6: '地理'
             }
             subject_name = subject_map.get(subject_id, f'学科{subject_id}') if subject_id is not None else ''
             
@@ -1624,8 +1803,8 @@ def batch_tasks():
                 if ds:
                     datasets.append(ds)
             
-            # 按数据集包含的页码数量降序排序，优先匹配包含更多页码的数据集
-            datasets.sort(key=lambda ds: len(ds.get('pages', [])), reverse=True)
+            # 按创建时间倒序排序，优先匹配最新创建的数据集 (Requirements 4.3, 5.3)
+            datasets.sort(key=lambda ds: ds.get('created_at', ''), reverse=True)
             
             homework_items = []
             for row in rows:
@@ -1635,6 +1814,7 @@ def batch_tasks():
                 page_num_int = int(page_num) if page_num is not None else None
                 
                 matched_dataset = None
+                matched_dataset_name = ''  # 记录匹配的数据集名称
                 for ds in datasets:
                     ds_book_id = str(ds.get('book_id', '')) if ds.get('book_id') else ''
                     ds_pages = ds.get('pages', [])
@@ -1649,6 +1829,7 @@ def batch_tasks():
                         
                         if page_in_pages and page_in_effects:
                             matched_dataset = ds.get('dataset_id')
+                            matched_dataset_name = ds.get('name', '')  # 获取数据集名称
                             break
                 
                 homework_items.append({
@@ -1663,6 +1844,7 @@ def batch_tasks():
                     'homework_result': row.get('homework_result', '[]'),
                     'data_value': row.get('data_value', '[]'),  # 题目类型信息来源
                     'matched_dataset': matched_dataset,
+                    'matched_dataset_name': matched_dataset_name,  # 记录数据集名称
                     'status': 'matched' if matched_dataset else 'pending',
                     'accuracy': None,
                     'evaluation': None
@@ -1840,6 +2022,8 @@ def get_homework_detail(task_id, homework_id):
                 'student_name': homework_item.get('student_name', ''),
                 'status': homework_item.get('status', ''),
                 'accuracy': evaluation.get('accuracy', 0),
+                'matched_dataset': homework_item.get('matched_dataset', ''),
+                'matched_dataset_name': homework_item.get('matched_dataset_name', ''),
                 'base_effect': base_effect,
                 'ai_result': homework_result,
                 'evaluation': {
@@ -1854,6 +2038,104 @@ def get_homework_detail(task_id, homework_id):
     
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
+
+
+@batch_evaluation_bp.route('/tasks/<task_id>/select-dataset', methods=['POST'])
+def select_dataset_for_homework(task_id):
+    """
+    为作业选择数据集
+    
+    支持批量为多个作业选择同一数据集。
+    更换数据集时会清除已有评估结果，重置状态为 pending。
+    
+    Request body:
+        {
+            "homework_ids": ["hw1", "hw2"],  # 作业ID列表（必填）
+            "dataset_id": "abc12345"         # 数据集ID（必填）
+        }
+    
+    Returns:
+        {
+            "success": true,
+            "updated_count": 2
+        }
+    
+    Error responses:
+        - 400: 缺少作业ID列表
+        - 400: 缺少数据集ID
+        - 404: 任务不存在
+        - 404: 数据集不存在
+    
+    _Requirements: 4.5, 4.6, 5.4_
+    """
+    # 加载任务数据
+    task_data = StorageService.load_batch_task(task_id)
+    if not task_data:
+        return jsonify({'success': False, 'error': '任务不存在'}), 404
+    
+    # 解析请求参数
+    req_data = request.get_json() or {}
+    homework_ids = req_data.get('homework_ids')
+    dataset_id = req_data.get('dataset_id')
+    
+    # 参数验证：homework_ids 必填
+    if not homework_ids:
+        return jsonify({'success': False, 'error': '缺少作业ID列表'}), 400
+    
+    # 参数验证：homework_ids 必须是列表
+    if not isinstance(homework_ids, list):
+        return jsonify({'success': False, 'error': '作业ID列表格式错误'}), 400
+    
+    # 参数验证：dataset_id 必填
+    if not dataset_id:
+        return jsonify({'success': False, 'error': '缺少数据集ID'}), 400
+    
+    # 加载数据集，验证数据集存在
+    dataset = StorageService.load_dataset(dataset_id)
+    if not dataset:
+        return jsonify({'success': False, 'error': '数据集不存在'}), 404
+    
+    # 获取数据集名称
+    dataset_name = dataset.get('name', '')
+    
+    # 遍历作业列表，更新匹配的作业
+    updated_count = 0
+    homework_items = task_data.get('homework_items', [])
+    
+    # 将 homework_ids 转换为字符串集合，便于匹配
+    homework_ids_set = set(str(hw_id) for hw_id in homework_ids)
+    
+    for item in homework_items:
+        item_id = str(item.get('homework_id', ''))
+        
+        # 检查是否在待更新列表中
+        if item_id in homework_ids_set:
+            # 更新数据集信息
+            item['matched_dataset'] = dataset_id
+            item['matched_dataset_name'] = dataset_name
+            
+            # 清除已有评估结果
+            item['accuracy'] = None
+            item['precision'] = None
+            item['recall'] = None
+            item['f1'] = None
+            item['correct_count'] = None
+            item['wrong_count'] = None
+            item['total_count'] = None
+            item['error_details'] = None
+            
+            # 重置状态为 pending
+            item['status'] = 'pending'
+            
+            updated_count += 1
+    
+    # 保存更新后的任务数据
+    StorageService.save_batch_task(task_id, task_data)
+    
+    return jsonify({
+        'success': True,
+        'updated_count': updated_count
+    })
 
 
 @batch_evaluation_bp.route('/tasks/<task_id>/evaluate', methods=['POST'])
@@ -2231,6 +2513,15 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         hw_user = str(hw_item.get('userAnswer', '')).strip() if hw_item else ''
         hw_correct = get_correct_value(hw_item) if hw_item else ''
         
+        # 物理学科(subject_id=3)：先将 LaTeX/Markdown 格式转换为纯文本
+        # 这样可以正确比较 "$1\text{m}^3$" 和 "1m³" 这类格式差异
+        is_physics = subject_id == 3
+        if is_physics:
+            base_answer = normalize_physics_markdown(base_answer)
+            base_user = normalize_physics_markdown(base_user)
+            hw_answer = normalize_physics_markdown(hw_answer)
+            hw_user = normalize_physics_markdown(hw_user)
+        
         is_match = True
         error_type = None
         explanation = ''
@@ -2240,7 +2531,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         # 判断是否为语文非选择题（用于模糊匹配）
         # 语文学科的所有非选择题（包括客观填空题和主观题）都使用模糊匹配
         is_chinese_fuzzy = is_chinese and not question_category['is_choice']
-        print(f"[DEBUG] do_evaluation 题{idx}: is_chinese={is_chinese}, is_choice={question_category['is_choice']}, is_chinese_fuzzy={is_chinese_fuzzy}")
+        print(f"[DEBUG] do_evaluation 题{idx}: is_chinese={is_chinese}, is_choice={question_category['is_choice']}, is_chinese_fuzzy={is_chinese_fuzzy}, is_physics={is_physics}")
         
         if not hw_item:
             is_match = False
@@ -3901,8 +4192,8 @@ def refresh_task_datasets(task_id):
             if ds:
                 datasets.append(ds)
         
-        # 按数据集包含的页码数量降序排序，优先匹配包含更多页码的数据集
-        datasets.sort(key=lambda ds: len(ds.get('pages', [])), reverse=True)
+        # 按创建时间倒序排序，优先匹配最新创建的数据集 (Requirements 4.3, 5.3)
+        datasets.sort(key=lambda ds: ds.get('created_at', ''), reverse=True)
         
         updated_count = 0
         
@@ -3915,6 +4206,7 @@ def refresh_task_datasets(task_id):
             
             old_dataset = item.get('matched_dataset')
             new_dataset = None
+            new_dataset_name = ''  # 记录匹配的数据集名称
             
             # 查找匹配的数据集
             for ds in datasets:
@@ -3931,11 +4223,13 @@ def refresh_task_datasets(task_id):
                     
                     if page_in_pages and page_in_effects:
                         new_dataset = ds.get('dataset_id')
+                        new_dataset_name = ds.get('name', '')  # 获取数据集名称
                         break
             
             # 更新匹配状态
             if new_dataset != old_dataset:
                 item['matched_dataset'] = new_dataset
+                item['matched_dataset_name'] = new_dataset_name  # 记录数据集名称
                 if new_dataset:
                     item['status'] = 'matched'
                 else:

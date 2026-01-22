@@ -313,6 +313,60 @@ def eval_config_api():
 
 # ========== 数据库连接测试 API ==========
 
+# ========== 优化日志 API ==========
+
+@common_bp.route('/api/optimization-logs', methods=['GET'])
+def get_optimization_logs():
+    """获取优化日志列表"""
+    from services.database_service import AppDatabaseService
+    try:
+        logs = AppDatabaseService.execute_query(
+            "SELECT id, log_date, content, category, created_at FROM optimization_logs ORDER BY log_date DESC, id DESC LIMIT 50"
+        )
+        return jsonify([{
+            'id': log['id'],
+            'log_date': log['log_date'].strftime('%m/%d %H:%M') if log['log_date'] else '',
+            'content': log['content'],
+            'category': log['category'],
+            'created_at': log['created_at'].isoformat() if log['created_at'] else ''
+        } for log in logs])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@common_bp.route('/api/optimization-logs', methods=['POST'])
+def add_optimization_log():
+    """添加优化日志"""
+    from services.database_service import AppDatabaseService
+    data = request.json
+    log_date = data.get('log_date')
+    content = data.get('content', '').strip()
+    category = data.get('category', 'general')
+    
+    if not content:
+        return jsonify({'error': '内容不能为空'}), 400
+    
+    try:
+        AppDatabaseService.execute_update(
+            "INSERT INTO optimization_logs (log_date, content, category) VALUES (%s, %s, %s)",
+            (log_date, content, category)
+        )
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@common_bp.route('/api/optimization-logs/<int:log_id>', methods=['DELETE'])
+def delete_optimization_log(log_id):
+    """删除优化日志"""
+    from services.database_service import AppDatabaseService
+    try:
+        AppDatabaseService.execute_update("DELETE FROM optimization_logs WHERE id = %s", (log_id,))
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @common_bp.route('/api/test-database', methods=['POST'])
 def test_database_connection():
     """测试数据库连接"""

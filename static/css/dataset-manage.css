@@ -2354,3 +2354,207 @@ body {
     border-radius: 6px;
     margin-top: 8px;
 }
+
+
+/* ========== 数据集命名表单样式 ========== */
+
+.naming-form {
+    padding: 8px 0;
+}
+
+.naming-form .form-group {
+    margin-bottom: 20px;
+}
+
+.naming-form .form-group:last-child {
+    margin-bottom: 0;
+}
+
+.naming-form label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1d1d1f;
+    margin-bottom: 8px;
+}
+
+.naming-form .required {
+    color: #dc3545;
+    margin-left: 2px;
+}
+
+.naming-form input[type="text"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d2d2d7;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+    color: #1d1d1f;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.naming-form input[type="text"]:focus {
+    outline: none;
+    border-color: #1d1d1f;
+}
+
+.naming-form input[type="text"]::placeholder {
+    color: #999;
+}
+
+.naming-form textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d2d2d7;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+    color: #1d1d1f;
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.naming-form textarea:focus {
+    outline: none;
+    border-color: #1d1d1f;
+}
+
+.naming-form textarea::placeholder {
+    color: #999;
+}
+
+.naming-form .form-hint {
+    font-size: 12px;
+    color: #86868b;
+    margin-top: 6px;
+}
+
+/* ========== 重复检测弹窗样式 ========== */
+
+.duplicate-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2500;
+    align-items: center;
+    justify-content: center;
+}
+
+.duplicate-modal.show {
+    display: flex;
+}
+
+.duplicate-modal-content {
+    background: #fff;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.duplicate-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.duplicate-modal-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin: 0;
+}
+
+.duplicate-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.duplicate-warning {
+    font-size: 14px;
+    color: #1d1d1f;
+    margin: 0 0 16px 0;
+}
+
+.duplicate-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.duplicate-item {
+    padding: 14px 16px;
+    background: #f5f5f7;
+    border-radius: 10px;
+    border: 1px solid #e5e5e5;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.duplicate-item:hover {
+    border-color: #1d1d1f;
+    background: #f0f0f2;
+}
+
+.duplicate-item.selected {
+    border-color: #1d1d1f;
+    background: #e8e8ea;
+}
+
+.duplicate-item-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1d1d1f;
+    margin-bottom: 6px;
+}
+
+.duplicate-item-meta {
+    font-size: 12px;
+    color: #86868b;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.duplicate-item-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.duplicate-hint {
+    font-size: 13px;
+    color: #86868b;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.duplicate-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.duplicate-modal-footer .btn {
+    padding: 10px 20px;
+    font-size: 14px;
+}

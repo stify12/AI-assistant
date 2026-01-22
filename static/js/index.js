@@ -93,10 +93,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 如果有历史对话，加载最近的一个；否则显示欢迎界面
     if (allSessions.length > 0) {
         loadSession(allSessions[0].id);
+        // 即使有历史对话，初始也显示快捷入口视图
+        switchSidebarView(false);
     } else {
         // 显示欢迎界面，不创建新会话
         document.getElementById('chatWelcome').style.display = '';
         document.getElementById('chatMessages').innerHTML = '';
+        // 无历史对话，显示欢迎视图
+        switchSidebarView(false);
     }
 });
 
@@ -153,18 +157,9 @@ function filterHistory() {
 }
 
 function startNewChat() {
-    currentSessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    // 重置当前会话状态
+    currentSessionId = null;
     chatHistory = [];
-    
-    // 添加到列表顶部
-    allSessions.unshift({
-        id: currentSessionId,
-        title: '新对话',
-        messages: [],
-        updated_at: new Date().toISOString()
-    });
-    saveAllSessionsToLocal();
-    renderHistoryList();
     
     // 清空对话区域，显示欢迎界面
     document.getElementById('chatWelcome').style.display = '';
@@ -173,6 +168,14 @@ function startNewChat() {
     // 清空输入框
     document.getElementById('promptInput').value = '';
     removeInputImage();
+    
+    // 切换回快捷入口视图
+    switchSidebarView(false);
+    
+    // 取消历史列表中的选中状态
+    document.querySelectorAll('.history-item').forEach(item => {
+        item.classList.remove('active');
+    });
 }
 
 function loadSession(sessionId) {
@@ -377,6 +380,8 @@ async function sendMessage() {
         });
         saveAllSessionsToLocal();
         renderHistoryList();
+        // 切换到历史对话视图
+        switchSidebarView(true);
     }
     
     // 添加用户消息到UI
@@ -775,7 +780,22 @@ function setReasoningLevel(level) {
 
 // ========== 侧边栏切换 ==========
 function toggleHistorySidebar() {
-    document.getElementById('historySidebar').classList.toggle('collapsed');
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('collapsed');
+}
+
+// 切换侧边栏视图：欢迎视图 <-> 历史对话视图
+function switchSidebarView(showHistory) {
+    const welcomeView = document.getElementById('sidebarWelcome');
+    const historyView = document.getElementById('sidebarHistory');
+    
+    if (showHistory) {
+        welcomeView.style.display = 'none';
+        historyView.style.display = 'flex';
+    } else {
+        welcomeView.style.display = 'flex';
+        historyView.style.display = 'none';
+    }
 }
 
 function toggleToolsSidebar() {
@@ -2165,3 +2185,148 @@ async function submitFpInlineAnswer(inputId) {
     }
 }
 
+
+// ========== 优化日志功能 ==========
+let optLogs = [];
+
+async function loadOptLogs() {
+    try {
+        const res = await fetch('/api/optimization-logs', {
+            headers: getApiHeaders()
+        });
+        if (res.ok) {
+            optLogs = await res.json();
+            renderOptLogs();
+        }
+    } catch (e) {
+        console.error('Load opt logs error:', e);
+    }
+}
+
+function renderOptLogs() {
+    const list = document.getElementById('optLogsList');
+    if (!list) return;
+    
+    if (!optLogs || optLogs.length === 0) {
+        list.innerHTML = '<div class="opt-logs-empty">暂无日志</div>';
+        return;
+    }
+    
+    list.innerHTML = optLogs.map(log => `
+        <div class="opt-log-item" data-category="${log.category || 'general'}" onclick="showLogDetail(${log.id})">
+            <div class="opt-log-header">
+                <span class="opt-log-date">${log.log_date}</span>
+                <button class="opt-log-delete" onclick="event.stopPropagation();deleteOptLog(${log.id})" title="删除">×</button>
+            </div>
+            <div class="opt-log-content">${formatLogContent(log.content)}</div>
+        </div>
+    `).join('');
+}
+
+function formatLogContent(content) {
+    if (!content) return '';
+    const escaped = escapeHtml(content);
+    // 将 "数字. " 开头的条目分行显示
+    const formatted = escaped.replace(/(\d+)\.\s*/g, '\n$1. ').trim();
+    // 转换为带样式的HTML
+    return formatted.split('\n').filter(line => line.trim()).map(line => {
+        const match = line.match(/^(\d+)\.\s*(.*)$/);
+        if (match) {
+            return `<span class="log-item"><span class="log-num">${match[1]}.</span>${match[2]}</span>`;
+        }
+        return `<span class="log-item">${line}</span>`;
+    }).join('');
+}
+
+function showAddLogModal() {
+    // 设置默认日期和时间为当前
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = now.toTimeString().slice(0, 5);
+    document.getElementById('logDate').value = dateStr;
+    document.getElementById('logTime').value = timeStr;
+    document.getElementById('logCategory').value = 'general';
+    document.getElementById('logContent').value = '';
+    document.getElementById('addLogModal').classList.add('show');
+}
+
+function hideAddLogModal() {
+    document.getElementById('addLogModal').classList.remove('show');
+}
+
+function showLogDetail(logId) {
+    const log = optLogs.find(l => l.id === logId);
+    if (!log) return;
+    
+    const categoryNames = {
+        'general': '通用',
+        'accuracy': '准确率',
+        'performance': '性能',
+        'feature': '功能',
+        'bugfix': '修复'
+    };
+    
+    document.getElementById('viewLogDate').textContent = log.log_date;
+    document.getElementById('viewLogCategory').textContent = categoryNames[log.category] || '通用';
+    document.getElementById('viewLogCategory').className = 'log-detail-category category-' + (log.category || 'general');
+    document.getElementById('viewLogContent').innerHTML = formatLogContent(log.content);
+    document.getElementById('viewLogModal').classList.add('show');
+}
+
+function hideViewLogModal() {
+    document.getElementById('viewLogModal').classList.remove('show');
+}
+
+async function saveOptLog() {
+    const logDate = document.getElementById('logDate').value;
+    const logTime = document.getElementById('logTime').value || '00:00';
+    const category = document.getElementById('logCategory').value;
+    const content = document.getElementById('logContent').value.trim();
+    
+    if (!content) {
+        alert('请输入日志内容');
+        return;
+    }
+    
+    const logDateTime = `${logDate} ${logTime}:00`;
+    
+    try {
+        const res = await fetch('/api/optimization-logs', {
+            method: 'POST',
+            headers: getApiHeaders(),
+            body: JSON.stringify({ log_date: logDateTime, category, content })
+        });
+        
+        if (res.ok) {
+            hideAddLogModal();
+            loadOptLogs();
+        } else {
+            const data = await res.json();
+            alert(data.error || '保存失败');
+        }
+    } catch (e) {
+        alert('保存失败: ' + e.message);
+    }
+}
+
+async function deleteOptLog(logId) {
+    if (!confirm('确定删除此日志？')) return;
+    
+    try {
+        const res = await fetch(`/api/optimization-logs/${logId}`, {
+            method: 'DELETE',
+            headers: getApiHeaders()
+        });
+        
+        if (res.ok) {
+            loadOptLogs();
+        }
+    } catch (e) {
+        console.error('Delete opt log error:', e);
+    }
+}
+
+// 页面加载时加载优化日志
+document.addEventListener('DOMContentLoaded', () => {
+    loadOptLogs();
+});

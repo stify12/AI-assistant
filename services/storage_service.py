@@ -6,6 +6,7 @@
 import os
 import json
 from datetime import datetime
+from typing import Optional, List, Dict, Any
 
 # 是否使用数据库存储（可通过环境变量控制）
 USE_DB_STORAGE = os.environ.get('USE_DB_STORAGE', 'true').lower() == 'true'
@@ -76,6 +77,42 @@ class StorageService:
         """获取文件完整路径"""
         StorageService.ensure_dir(directory)
         return os.path.join(directory, f'{file_id}{extension}')
+    
+    # ========== 数据集名称生成 ==========
+    
+    @staticmethod
+    def generate_default_dataset_name(data: Dict[str, Any]) -> str:
+        """
+        生成默认数据集名称
+        
+        格式："{book_name}_P{min_page}-{max_page}_{timestamp}"
+        - 单页："{book_name}_P{page}_{timestamp}"
+        - 无页码："{book_name}_{timestamp}"
+        - 无书名：使用 "未知书本"
+        
+        Args:
+            data: 数据集数据字典，包含 book_name, pages 等字段
+        
+        Returns:
+            str: 生成的默认名称
+        """
+        book_name = data.get('book_name') or '未知书本'
+        pages = data.get('pages', [])
+        
+        # 处理页码部分
+        page_part = ""
+        if pages and isinstance(pages, list):
+            valid_pages = sorted([p for p in pages if isinstance(p, int) and p > 0])
+            if valid_pages:
+                if len(valid_pages) == 1:
+                    page_part = f"_P{valid_pages[0]}"
+                else:
+                    page_part = f"_P{min(valid_pages)}-{max(valid_pages)}"
+        
+        # 时间戳格式：MMDDHHmm
+        timestamp = datetime.now().strftime('%m%d%H%M')
+        
+        return f"{book_name}{page_part}_{timestamp}"
     
     # ========== 分析任务存储 ==========
     
@@ -152,7 +189,11 @@ class StorageService:
     
     @staticmethod
     def load_dataset(dataset_id):
-        """加载数据集"""
+        """
+        加载数据集
+        
+        兼容无 name 字段的旧数据，自动生成默认名称
+        """
         if USE_DB_STORAGE:
             from .database_service import AppDatabaseService
             row = AppDatabaseService.get_dataset(dataset_id)
@@ -190,25 +231,53 @@ class StorageService:
                 if isinstance(pages, str):
                     pages = json.loads(pages)
                 
+                # 处理 name 字段：如果为空则生成默认名称
+                name = row.get('name')
+                if not name:
+                    name = StorageService.generate_default_dataset_name({
+                        'book_name': row.get('book_name'),
+                        'pages': pages
+                    })
+                
                 return {
                     'dataset_id': row['dataset_id'],
+                    'name': name,
                     'book_id': row['book_id'],
                     'book_name': row['book_name'],
                     'subject_id': row['subject_id'],
                     'pages': pages,
                     'question_count': row['question_count'],
+                    'description': row.get('description', ''),
                     'base_effects': base_effects,
                     'created_at': row['created_at'].isoformat() if row['created_at'] else '',
                     'updated_at': row['updated_at'].isoformat() if row['updated_at'] else ''
                 }
             return None
         
+        # 文件存储模式
         filepath = StorageService.get_file_path(StorageService.DATASETS_DIR, dataset_id)
-        return StorageService.load_json(filepath)
+        data = StorageService.load_json(filepath)
+        
+        if data:
+            # 处理 name 字段：如果为空则生成默认名称
+            if not data.get('name'):
+                data['name'] = StorageService.generate_default_dataset_name(data)
+        
+        return data
     
     @staticmethod
     def save_dataset(dataset_id, data):
-        """保存数据集"""
+        """
+        保存数据集
+        
+        支持 name 字段，如果未提供或为空则自动生成默认名称
+        """
+        # 处理 name 字段：如果未提供或为空，生成默认名称
+        name = data.get('name', '').strip() if data.get('name') else ''
+        if not name:
+            name = StorageService.generate_default_dataset_name(data)
+        data['name'] = name
+        
         if USE_DB_STORAGE:
             from .database_service import AppDatabaseService
             existing = AppDatabaseService.get_dataset(dataset_id)
@@ -223,11 +292,13 @@ class StorageService:
             if existing:
                 AppDatabaseService.update_dataset(
                     dataset_id,
+                    name=name,
                     book_id=data.get('book_id'),
                     book_name=data.get('book_name'),
                     subject_id=data.get('subject_id'),
                     pages=pages,
-                    question_count=question_count
+                    question_count=question_count,
+                    description=data.get('description')
                 )
             else:
                 AppDatabaseService.create_dataset(
@@ -236,7 +307,9 @@ class StorageService:
                     pages,
                     data.get('book_name'),
                     data.get('subject_id'),
-                    question_count
+                    question_count,
+                    name=name,
+                    description=data.get('description')
                 )
             
             # 保存基准效果（包含questionType和bvalue）
@@ -256,6 +329,7 @@ class StorageService:
                 AppDatabaseService.save_baseline_effects(dataset_id, int(page_num), formatted_effects)
             return
         
+        # 文件存储模式
         filepath = StorageService.get_file_path(StorageService.DATASETS_DIR, dataset_id)
         StorageService.save_json(filepath, data)
     
@@ -281,12 +355,16 @@ class StorageService:
     
     @staticmethod
     def get_all_datasets_summary():
-        """获取所有数据集的摘要信息（不加载base_effects详情，提升性能）"""
+        """
+        获取所有数据集的摘要信息（不加载base_effects详情，提升性能）
+        
+        包含 name 字段，对于无 name 的旧数据自动生成默认名称
+        """
         if USE_DB_STORAGE:
             from .database_service import AppDatabaseService
             # 直接查询数据库，一次性获取所有需要的字段
             sql = """
-                SELECT dataset_id, book_id, book_name, subject_id, pages, question_count, created_at
+                SELECT dataset_id, name, book_id, book_name, subject_id, pages, question_count, description, created_at
                 FROM datasets
                 ORDER BY created_at DESC
             """
@@ -299,13 +377,24 @@ class StorageService:
                         pages = json.loads(pages)
                     except:
                         pages = []
+                
+                # 处理 name 字段：如果为空则生成默认名称
+                name = row.get('name')
+                if not name:
+                    name = StorageService.generate_default_dataset_name({
+                        'book_name': row.get('book_name'),
+                        'pages': pages
+                    })
+                
                 result.append({
                     'dataset_id': row['dataset_id'],
+                    'name': name,
                     'book_id': row['book_id'],
                     'book_name': row['book_name'],
                     'subject_id': row['subject_id'],
                     'pages': pages,
                     'question_count': row.get('question_count', 0),
+                    'description': row.get('description', ''),
                     'created_at': row['created_at'].isoformat() if row.get('created_at') else ''
                 })
             return result
@@ -322,15 +411,103 @@ class StorageService:
                 for effects in data.get('base_effects', {}).values():
                     question_count += len(effects) if isinstance(effects, list) else 0
                 
+                # 处理 name 字段：如果为空则生成默认名称
+                name = data.get('name')
+                if not name:
+                    name = StorageService.generate_default_dataset_name(data)
+                
                 result.append({
                     'dataset_id': dataset_id,
+                    'name': name,
                     'book_id': data.get('book_id'),
                     'book_name': data.get('book_name', ''),
                     'subject_id': data.get('subject_id'),
                     'pages': data.get('pages', []),
                     'question_count': question_count,
+                    'description': data.get('description', ''),
                     'created_at': data.get('created_at', '')
                 })
+        return result
+    
+    @staticmethod
+    def get_matching_datasets(book_id: str, page_num: int) -> List[Dict[str, Any]]:
+        """
+        获取匹配的数据集列表
+        
+        根据 book_id 和 page_num 查询所有匹配的数据集，
+        按创建时间倒序排列（最新的排在前面）
+        
+        Args:
+            book_id: 书本ID
+            page_num: 页码
+        
+        Returns:
+            list: 匹配的数据集列表，包含 dataset_id, name, book_name, pages, question_count, created_at
+        """
+        if USE_DB_STORAGE:
+            from .database_service import AppDatabaseService
+            rows = AppDatabaseService.get_datasets_by_book_page(book_id, page_num)
+            result = []
+            for row in rows:
+                pages = row.get('pages', [])
+                if isinstance(pages, str):
+                    try:
+                        pages = json.loads(pages)
+                    except:
+                        pages = []
+                
+                # 如果没有名称，生成默认名称
+                name = row.get('name')
+                if not name:
+                    name = StorageService.generate_default_dataset_name({
+                        'book_name': row.get('book_name'),
+                        'pages': pages
+                    })
+                
+                result.append({
+                    'dataset_id': row['dataset_id'],
+                    'name': name,
+                    'book_id': row['book_id'],
+                    'book_name': row.get('book_name', ''),
+                    'subject_id': row.get('subject_id'),
+                    'pages': pages,
+                    'question_count': row.get('question_count', 0),
+                    'description': row.get('description', ''),
+                    'created_at': row['created_at'].isoformat() if row.get('created_at') else ''
+                })
+            return result
+        
+        # 文件存储模式：遍历所有数据集查找匹配
+        result = []
+        for filename in StorageService.list_json_files(StorageService.DATASETS_DIR):
+            dataset_id = filename[:-5]
+            filepath = StorageService.get_file_path(StorageService.DATASETS_DIR, dataset_id)
+            data = StorageService.load_json(filepath)
+            if data and data.get('book_id') == book_id:
+                pages = data.get('pages', [])
+                if page_num in pages:
+                    name = data.get('name')
+                    if not name:
+                        name = StorageService.generate_default_dataset_name(data)
+                    
+                    question_count = 0
+                    for effects in data.get('base_effects', {}).values():
+                        question_count += len(effects) if isinstance(effects, list) else 0
+                    
+                    result.append({
+                        'dataset_id': dataset_id,
+                        'name': name,
+                        'book_id': data.get('book_id'),
+                        'book_name': data.get('book_name', ''),
+                        'subject_id': data.get('subject_id'),
+                        'pages': pages,
+                        'question_count': question_count,
+                        'description': data.get('description', ''),
+                        'created_at': data.get('created_at', '')
+                    })
+        
+        # 按创建时间倒序排列
+        result.sort(key=lambda x: x.get('created_at', ''), reverse=True)
         return result
     
     # ========== 基准效果存储 ==========

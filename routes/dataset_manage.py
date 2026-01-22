@@ -202,7 +202,8 @@ def build_dynamic_prompt(data_value_items, subject_id=0):
         2: '数学',
         3: '物理',
         4: '化学',
-        5: '生物'
+        5: '生物',
+        6: '地理'
     }
     subject_name = subject_map.get(subject_id, '通用')
     

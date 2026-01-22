@@ -200,8 +200,8 @@ function renderBookDetail() {
         datasetContainer.innerHTML = datasetList.map(ds => `
             <div class="dataset-card">
                 <div class="dataset-info">
-                    <div class="dataset-title">页码: ${ds.pages?.join(', ') || '-'}</div>
-                    <div class="dataset-meta">${ds.question_count || 0} 题 | 创建于 ${formatTime(ds.created_at)}</div>
+                    <div class="dataset-title">${escapeHtml(ds.name) || '未命名数据集'}</div>
+                    <div class="dataset-meta">页码: ${ds.pages?.join(', ') || '-'} | ${ds.question_count || 0} 题 | 创建于 ${formatTime(ds.created_at)}</div>
                 </div>
                 <div class="dataset-actions">
                     <button class="btn btn-small btn-secondary" onclick="exportDataset('${ds.dataset_id}')">导出</button>
@@ -240,6 +240,12 @@ function showAddDatasetPanel() {
     selectedHomework = {};
     recognizeResults = {};
     
+    // 重置命名输入
+    const nameInput = document.getElementById('datasetNameInput');
+    const descInput = document.getElementById('datasetDescInput');
+    if (nameInput) nameInput.value = '';
+    if (descInput) descInput.value = '';
+    
     // 渲染页码选择
     const pagesWithDataset = new Set();
     datasetList.forEach(ds => (ds.pages || []).forEach(p => pagesWithDataset.add(p)));
@@ -253,6 +259,7 @@ function showAddDatasetPanel() {
     // 隐藏后续步骤
     document.getElementById('step2Section').style.display = 'none';
     document.getElementById('step3Section').style.display = 'none';
+    document.getElementById('step4Section').style.display = 'none';
     document.getElementById('saveSection').style.display = 'none';
     document.getElementById('homeworkGrid').innerHTML = '<div class="empty-state"><div class="empty-state-text">请先选择页码</div></div>';
     document.getElementById('recognizeResult').innerHTML = '<div class="empty-state"><div class="empty-state-text">选择作业图片后点击"开始识别"</div></div>';
@@ -829,8 +836,18 @@ function checkCanSave() {
     // 只要有成功识别的页码就可以保存
     const canSave = successCount > 0;
     const saveSection = document.getElementById('saveSection');
+    const step4Section = document.getElementById('step4Section');
     
     if (canSave) {
+        // 显示步骤4（命名区域）
+        if (step4Section) {
+            step4Section.style.display = 'block';
+            // 如果名称输入框为空，生成默认名称
+            const nameInput = document.getElementById('datasetNameInput');
+            if (nameInput && !nameInput.value.trim()) {
+                nameInput.value = generateDefaultName();
+            }
+        }
         saveSection.style.display = 'block';
         // 更新保存按钮文案，显示成功/失败数量
         const saveBtn = saveSection.querySelector('.btn-primary');
@@ -840,8 +857,85 @@ function checkCanSave() {
             saveBtn.innerHTML = '保存数据集';
         }
     } else {
+        if (step4Section) {
+            step4Section.style.display = 'none';
+        }
         saveSection.style.display = 'none';
     }
+}
+
+// ========== 数据集命名相关函数 ==========
+
+// 生成默认数据集名称
+function generateDefaultName() {
+    const bookName = selectedBook?.book_name || '未知书本';
+    const pages = Object.keys(selectedHomework).map(Number).sort((a, b) => a - b);
+    let pageRange = '';
+    if (pages.length === 1) {
+        pageRange = `P${pages[0]}`;
+    } else if (pages.length > 1) {
+        pageRange = `P${pages[0]}-${pages[pages.length - 1]}`;
+    }
+    const now = new Date();
+    const timestamp = `${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+    return `${bookName}_${pageRange}_${timestamp}`;
+}
+
+// 检查重复数据集
+async function checkDuplicateDatasets() {
+    const pages = Object.keys(selectedHomework).map(Number).sort((a, b) => a - b);
+    if (pages.length === 0) return { hasDuplicate: false, duplicates: [] };
+    
+    try {
+        const res = await fetch(`/api/batch/datasets/check-duplicate?book_id=${selectedBook.book_id}&pages=${pages.join(',')}`);
+        const data = await res.json();
+        return {
+            hasDuplicate: data.has_duplicate || false,
+            duplicates: data.duplicates || []
+        };
+    } catch (e) {
+        console.error('Check duplicate failed:', e);
+        return { hasDuplicate: false, duplicates: [] };
+    }
+}
+
+// 显示重复检测弹窗
+function showDuplicateModal(duplicates) {
+    window.pendingDuplicates = duplicates;
+    const list = document.getElementById('duplicateList');
+    list.innerHTML = duplicates.map(ds => `
+        <div class="duplicate-item" data-id="${ds.dataset_id}">
+            <div class="duplicate-item-name">${escapeHtml(ds.name) || '未命名数据集'}</div>
+            <div class="duplicate-item-meta">
+                <span>页码: ${ds.pages?.join(', ') || '-'}</span>
+                <span>${ds.question_count || 0} 题</span>
+                <span>${formatTime(ds.created_at)}</span>
+            </div>
+        </div>
+    `).join('');
+    document.getElementById('duplicateModal').classList.add('show');
+}
+
+// 隐藏重复检测弹窗
+function hideDuplicateModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    document.getElementById('duplicateModal').classList.remove('show');
+    window.pendingDuplicates = null;
+}
+
+// 编辑现有数据集
+function editExistingDataset() {
+    const duplicates = window.pendingDuplicates || [];
+    if (duplicates.length > 0) {
+        hideDuplicateModal();
+        editDataset(duplicates[0].dataset_id);
+    }
+}
+
+// 继续创建新数据集
+function continueCreateNew() {
+    hideDuplicateModal();
+    proceedWithSave();
 }
 
 // ========== 保存数据集 ==========
@@ -878,6 +972,59 @@ async function saveDataset() {
             return;
         }
     }
+    
+    // 获取数据集名称
+    const nameInput = document.getElementById('datasetNameInput');
+    let datasetName = (nameInput?.value || '').trim();
+    
+    // 如果名称为空，生成默认名称
+    if (!datasetName) {
+        datasetName = generateDefaultName();
+        if (nameInput) {
+            nameInput.value = datasetName;
+        }
+    }
+    
+    // 检查重复数据集
+    showLoading('检查重复数据集...');
+    const { hasDuplicate, duplicates } = await checkDuplicateDatasets();
+    hideLoading();
+    
+    if (hasDuplicate && duplicates.length > 0) {
+        // 保存当前状态供后续使用
+        window.pendingSaveData = {
+            successPages,
+            baseEffects,
+            failedPages,
+            datasetName
+        };
+        showDuplicateModal(duplicates);
+        return;
+    }
+    
+    // 没有重复，直接保存
+    window.pendingSaveData = {
+        successPages,
+        baseEffects,
+        failedPages,
+        datasetName
+    };
+    await proceedWithSave();
+}
+
+// 执行实际的保存操作
+async function proceedWithSave() {
+    const saveData = window.pendingSaveData;
+    if (!saveData) {
+        alert('保存数据丢失，请重试');
+        return;
+    }
+    
+    const { successPages, baseEffects, failedPages, datasetName } = saveData;
+    
+    // 获取描述
+    const descInput = document.getElementById('datasetDescInput');
+    const description = (descInput?.value || '').trim();
     
     showLoading('保存数据集...');
     
@@ -918,7 +1065,9 @@ async function saveDataset() {
             body: JSON.stringify({
                 book_id: selectedBook.book_id,
                 pages: successPages,
-                base_effects: enrichedBaseEffects
+                base_effects: enrichedBaseEffects,
+                name: datasetName,
+                description: description
             })
         });
         const data = await res.json();
@@ -929,6 +1078,8 @@ async function saveDataset() {
                 msg += `\n\n已保存 ${successPages.length} 个页码，跳过了 ${failedPages.length} 个识别失败的页码。`;
             }
             alert(msg);
+            // 清理临时数据
+            window.pendingSaveData = null;
             // 重新加载数据集列表
             const datasetsRes = await fetch(`/api/batch/datasets?book_id=${selectedBook.book_id}`);
             const datasetsData = await datasetsRes.json();

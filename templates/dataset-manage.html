@@ -158,6 +158,25 @@
                     </div>
                 </div>
 
+                <!-- 步骤4: 数据集命名 -->
+                <div class="step-section" id="step4Section" style="display:none;">
+                    <div class="step-header">
+                        <span class="step-num">4</span>
+                        <span class="step-title">数据集命名</span>
+                    </div>
+                    <div class="naming-form">
+                        <div class="form-group">
+                            <label for="datasetNameInput">数据集名称 <span class="required">*</span></label>
+                            <input type="text" id="datasetNameInput" placeholder="输入数据集名称，如：学生A基准效果" maxlength="200">
+                            <div class="form-hint">名称用于区分不同的数据集，便于后续选择</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="datasetDescInput">描述（可选）</label>
+                            <textarea id="datasetDescInput" placeholder="添加备注说明..." maxlength="500" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 保存按钮 -->
                 <div class="save-section" id="saveSection" style="display:none;">
                     <button class="btn btn-primary btn-large" onclick="saveDataset()">保存数据集</button>
@@ -262,6 +281,25 @@
             <div class="edit-modal-footer">
                 <button class="btn btn-secondary" onclick="hideEditModal()">取消</button>
                 <button class="btn btn-primary" onclick="saveEditDataset()">保存修改</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 重复检测弹窗 -->
+    <div class="duplicate-modal" id="duplicateModal" onclick="hideDuplicateModal(event)">
+        <div class="duplicate-modal-content" onclick="event.stopPropagation()">
+            <div class="duplicate-modal-header">
+                <h3>发现相同页码的数据集</h3>
+                <button class="close-btn" onclick="hideDuplicateModal()">x</button>
+            </div>
+            <div class="duplicate-modal-body">
+                <p class="duplicate-warning">以下数据集包含相同的页码范围：</p>
+                <div class="duplicate-list" id="duplicateList"></div>
+                <p class="duplicate-hint">您可以选择编辑现有数据集，或继续创建新的数据集（适用于不同学生的答案作为基准）。</p>
+            </div>
+            <div class="duplicate-modal-footer">
+                <button class="btn btn-secondary" onclick="editExistingDataset()">编辑现有数据集</button>
+                <button class="btn btn-primary" onclick="continueCreateNew()">继续创建新数据集</button>
             </div>
         </div>
     </div>

@@ -13,8 +13,9 @@ let homeworkForTask = [];
 let selectedHomeworkIds = new Set();
 let selectedPages = new Set();
 let pageBaseEffects = {};
-let currentHwTaskId = ''; // 当前选中的作业任务ID
+let selectedHwTaskIds = new Set(); // 选中的作业任务ID集合（支持多选）
 let hwTaskList = []; // 作业任务列表
+let isLoadingHomework = false; // 作业列表加载状态
 let testConditions = []; // 测试条件列表
 let selectedConditionId = null; // 新建任务时选中的测试条件ID
 let selectedConditionName = ''; // 新建任务时选中的测试条件名称
@@ -30,8 +31,148 @@ const SUBJECT_NAMES = {
     0: '英语',
     1: '语文',
     2: '数学',
-    3: '物理'
+    3: '物理',
+    4: '化学',
+    5: '生物',
+    6: '地理'
 };
+
+// ========== LaTeX/Markdown 公式转换 ==========
+// 希腊字母映射
+const GREEK_LETTERS = {
+    '\\alpha': 'α', '\\beta': 'β', '\\gamma': 'γ', '\\delta': 'δ',
+    '\\epsilon': 'ε', '\\varepsilon': 'ε', '\\zeta': 'ζ', '\\eta': 'η',
+    '\\theta': 'θ', '\\iota': 'ι', '\\kappa': 'κ', '\\lambda': 'λ',
+    '\\mu': 'μ', '\\nu': 'ν', '\\xi': 'ξ', '\\pi': 'π',
+    '\\rho': 'ρ', '\\sigma': 'σ', '\\tau': 'τ', '\\upsilon': 'υ',
+    '\\phi': 'φ', '\\chi': 'χ', '\\psi': 'ψ', '\\omega': 'ω',
+    '\\Gamma': 'Γ', '\\Delta': 'Δ', '\\Theta': 'Θ', '\\Lambda': 'Λ',
+    '\\Xi': 'Ξ', '\\Pi': 'Π', '\\Sigma': 'Σ', '\\Phi': 'Φ',
+    '\\Psi': 'Ψ', '\\Omega': 'Ω'
+};
+
+// 数学运算符映射
+const MATH_OPERATORS = {
+    '\\times': '×', '\\div': '÷', '\\pm': '±', '\\cdot': '·',
+    '\\leq': '≤', '\\le': '≤', '\\geq': '≥', '\\ge': '≥',
+    '\\neq': '≠', '\\approx': '≈', '\\equiv': '≡',
+    '\\infty': '∞', '\\partial': '∂', '\\nabla': '∇',
+    '\\angle': '∠', '\\perp': '⊥', '\\parallel': '∥',
+    '\\triangle': '△', '\\rightarrow': '→', '\\leftarrow': '←',
+    '\\Rightarrow': '⇒', '\\Leftarrow': '⇐',
+    '\\int': '∫', '\\sum': 'Σ', '\\prod': 'Π'
+};
+
+// 上标字符映射
+const SUPERSCRIPT_MAP = {
+    '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+    '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
+    '+': '⁺', '-': '⁻', '=': '⁼', '(': '⁽', ')': '⁾',
+    'a': 'ᵃ', 'b': 'ᵇ', 'c': 'ᶜ', 'd': 'ᵈ', 'e': 'ᵉ',
+    'f': 'ᶠ', 'g': 'ᵍ', 'h': 'ʰ', 'i': 'ⁱ', 'j': 'ʲ',
+    'k': 'ᵏ', 'l': 'ˡ', 'm': 'ᵐ', 'n': 'ⁿ', 'o': 'ᵒ',
+    'p': 'ᵖ', 'r': 'ʳ', 's': 'ˢ', 't': 'ᵗ', 'u': 'ᵘ',
+    'v': 'ᵛ', 'w': 'ʷ', 'x': 'ˣ', 'y': 'ʸ', 'z': 'ᶻ'
+};
+
+// 下标字符映射
+const SUBSCRIPT_MAP = {
+    '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄',
+    '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉',
+    '+': '₊', '-': '₋', '=': '₌', '(': '₍', ')': '₎',
+    'a': 'ₐ', 'e': 'ₑ', 'h': 'ₕ', 'i': 'ᵢ', 'j': 'ⱼ',
+    'k': 'ₖ', 'l': 'ₗ', 'm': 'ₘ', 'n': 'ₙ', 'o': 'ₒ',
+    'p': 'ₚ', 'r': 'ᵣ', 's': 'ₛ', 't': 'ₜ', 'u': 'ᵤ',
+    'v': 'ᵥ', 'x': 'ₓ'
+};
+
+/**
+ * 将 LaTeX/Markdown 公式转换为可读纯文本
+ */
+function normalizeMarkdownFormula(text) {
+    if (!text) return '';
+    text = String(text);
+    
+    // 1. 双反斜杠转单反斜杠
+    text = text.replace(/\\\\/g, '\\');
+    
+    // 2. 移除 $ 符号
+    text = text.replace(/\$\$(.*?)\$\$/gs, '$1');
+    text = text.replace(/\$(.*?)\$/g, '$1');
+    text = text.replace(/\\\((.*?)\\\)/gs, '$1');
+    text = text.replace(/\\\[(.*?)\\\]/gs, '$1');
+    
+    // 3. 处理 \text 命令
+    for (let i = 0; i < 5; i++) {
+        const prev = text;
+        text = text.replace(/\\text(?:rm|bf|it|sf|tt)?\s*\{([^{}]*)\}/g, '$1');
+        text = text.replace(/\\mathrm\s*\{([^{}]*)\}/g, '$1');
+        text = text.replace(/\\mathbf\s*\{([^{}]*)\}/g, '$1');
+        if (text === prev) break;
+    }
+    
+    // 4. 处理下标 _{...}
+    for (let i = 0; i < 5; i++) {
+        const prev = text;
+        text = text.replace(/_\{([^{}]*)\}/g, (match, content) => {
+            // 中文下标直接保留
+            if (/[\u4e00-\u9fff]/.test(content)) return content;
+            return content.split('').map(c => SUBSCRIPT_MAP[c] || c).join('');
+        });
+        if (text === prev) break;
+    }
+    // 单字符下标
+    text = text.replace(/_([0-9a-zA-Z])/g, (m, c) => SUBSCRIPT_MAP[c] || c);
+    text = text.replace(/_([\u4e00-\u9fff])/g, '$1');
+    
+    // 5. 处理上标 ^{...}
+    for (let i = 0; i < 5; i++) {
+        const prev = text;
+        text = text.replace(/\^\{([^{}]*)\}/g, (match, content) => {
+            return content.split('').map(c => SUPERSCRIPT_MAP[c] || c).join('');
+        });
+        if (text === prev) break;
+    }
+    // 单字符上标
+    text = text.replace(/\^([0-9a-zA-Z+\-])/g, (m, c) => SUPERSCRIPT_MAP[c] || ('^' + c));
+    
+    // 6. 处理分数
+    for (let i = 0; i < 5; i++) {
+        const prev = text;
+        text = text.replace(/\\(?:d|t|c)?frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g, '($1)/($2)');
+        if (text === prev) break;
+    }
+    // 简化括号
+    text = text.replace(/\(([a-zA-Z0-9α-ωΑ-Ω])\)\/\(([a-zA-Z0-9α-ωΑ-Ω])\)/g, '$1/$2');
+    text = text.replace(/\(([a-zA-Z0-9α-ωΑ-Ω])\)\//g, '$1/');
+    text = text.replace(/\/\(([a-zA-Z0-9α-ωΑ-Ω])\)/g, '/$1');
+    
+    // 7. 处理根号
+    text = text.replace(/\\sqrt\s*\[([^\]]+)\]\s*\{([^{}]*)\}/g, (m, n, c) => {
+        const prefix = {'2': '√', '3': '³√', '4': '⁴√', 'n': 'ⁿ√'}[n] || (n + '√');
+        return prefix + c;
+    });
+    text = text.replace(/\\sqrt\s*\{([^{}]*)\}/g, '√$1');
+    
+    // 8. 替换希腊字母和运算符
+    const allSymbols = {...GREEK_LETTERS, ...MATH_OPERATORS};
+    Object.keys(allSymbols).sort((a, b) => b.length - a.length).forEach(latex => {
+        text = text.split(latex).join(allSymbols[latex]);
+    });
+    
+    // 9. 处理空格命令
+    text = text.replace(/\\quad/g, '  ');
+    text = text.replace(/\\qquad/g, '    ');
+    text = text.replace(/\\[,;:\s!]/g, ' ');
+    
+    // 10. 移除剩余的 LaTeX 命令
+    text = text.replace(/\\[a-zA-Z]+\s*(?:\[[^\]]*\])?\s*(?:\{[^{}]*\})?/g, '');
+    
+    // 11. 清理空白
+    text = text.replace(/[ \t]+/g, ' ').trim();
+    
+    return text;
+}
 
 // ========== 初始化 ==========
 document.addEventListener('DOMContentLoaded', () => {
@@ -1417,6 +1558,15 @@ function renderHomeworkList(items) {
         const picPath = item.pic_path || '';
         const hasImage = picPath && picPath.length > 0;
         
+        // 数据集名称徽章
+        let datasetBadge = '';
+        if (item.matched_dataset) {
+            const datasetName = item.matched_dataset_name || item.matched_dataset;
+            datasetBadge = `<span class="dataset-name-badge" title="${escapeHtml(datasetName)}">${escapeHtml(datasetName)}</span>`;
+        } else {
+            datasetBadge = '<span class="no-dataset-badge">无数据集</span>';
+        }
+        
         return `
             <div class="homework-item">
                 <div class="homework-item-content" onclick="showHomeworkDetail('${item.homework_id}')">
@@ -1428,6 +1578,12 @@ function renderHomeworkList(items) {
                     <div class="homework-item-meta">
                         学生: ${escapeHtml(item.student_name || item.student_id || '-')}
                         ${item.status === 'completed' ? ` | 准确率: <span class="homework-item-accuracy ${accuracyClass}">${(item.accuracy * 100).toFixed(1)}%</span>` : ''}
+                    </div>
+                    <div class="homework-item-dataset">
+                        ${datasetBadge}
+                        <button class="btn-select-dataset" onclick="event.stopPropagation(); showDatasetSelector('${item.homework_id}')" title="选择数据集">
+                            选择数据集
+                        </button>
                     </div>
                 </div>
                 <div class="homework-item-actions">
@@ -1528,7 +1684,7 @@ function showCreateTaskModal() {
     document.getElementById('taskNameInput').value = '';
     document.getElementById('taskNameInput').placeholder = '留空则自动生成：学科-月/日';
     selectedHomeworkIds.clear();
-    currentHwTaskId = '';
+    selectedHwTaskIds.clear(); // 清空作业任务选择
     selectedConditionId = null;
     selectedConditionName = '';
     
@@ -1662,6 +1818,10 @@ async function loadHomeworkTasksForFilter() {
     const subjectId = document.getElementById('hwSubjectFilter').value;
     const hours = document.getElementById('hwTimeFilter').value;
     
+    // 显示加载状态
+    const container = document.getElementById('hwTaskList');
+    container.innerHTML = '<div class="task-loading">加载中...</div>';
+    
     try {
         let url = `/api/batch/homework-tasks?hours=${hours}`;
         if (subjectId) url += `&subject_id=${subjectId}`;
@@ -1675,6 +1835,7 @@ async function loadHomeworkTasksForFilter() {
         }
     } catch (e) {
         console.error('加载作业任务失败:', e);
+        container.innerHTML = '<div class="task-loading error">加载失败</div>';
     }
 }
 
@@ -1683,74 +1844,94 @@ function renderHwTaskList() {
     const container = document.getElementById('hwTaskList');
     
     let html = `
-        <div class="task-item ${currentHwTaskId === '' ? 'active' : ''}" data-task-id="" onclick="selectHomeworkTask(this, '')">
+        <div class="task-item ${selectedHwTaskIds.size === 0 ? 'active' : ''}" data-task-id="" onclick="toggleHomeworkTaskSelection(this, '')">
+            <input type="checkbox" class="task-checkbox" ${selectedHwTaskIds.size === 0 ? 'checked' : ''} onclick="event.stopPropagation(); toggleHomeworkTaskSelection(this.parentElement, '')">
             <span class="task-name">全部作业</span>
         </div>
     `;
     
     if (hwTaskList.length > 0) {
-        html += hwTaskList.map(task => `
-            <div class="task-item ${currentHwTaskId == task.hw_publish_id ? 'active' : ''}" 
-                 data-task-id="${task.hw_publish_id}" 
+        html += hwTaskList.map(task => {
+            const taskId = String(task.hw_publish_id);
+            const isSelected = selectedHwTaskIds.has(taskId);
+            return `
+            <div class="task-item ${isSelected ? 'active' : ''}" 
+                 data-task-id="${taskId}" 
                  data-student-count="${task.student_count || 0}"
                  data-homework-count="${task.homework_count || 0}"
                  data-avg-homework="${task.avg_homework_per_student || 0}"
-                 onclick="selectHomeworkTask(this, '${task.hw_publish_id}')">
+                 onclick="toggleHomeworkTaskSelection(this, '${taskId}')">
+                <input type="checkbox" class="task-checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleHomeworkTaskSelection(this.parentElement, '${taskId}')">
                 <span class="task-name">${escapeHtml(task.task_name || '未命名任务')}</span>
                 <span class="task-count">${task.student_count || 0}人/${task.homework_count || 0}份</span>
             </div>
-        `).join('');
+        `}).join('');
     }
     
     container.innerHTML = html;
     
-    // 清空统计信息
-    updateTaskStatsInfo(null);
+    // 更新统计信息
+    updateTaskStatsInfo();
 }
 
-// ========== 选择作业任务 ==========
-function selectHomeworkTask(element, taskId) {
-    currentHwTaskId = taskId;
+// ========== 切换作业任务选择（多选） ==========
+function toggleHomeworkTaskSelection(element, taskId) {
+    const id = String(taskId);
     
-    // 更新选中状态
-    document.querySelectorAll('#hwTaskList .task-item').forEach(item => {
-        item.classList.toggle('active', item.dataset.taskId === taskId);
-    });
-    
-    // 更新统计信息
-    if (taskId && element) {
-        const studentCount = parseInt(element.dataset.studentCount) || 0;
-        const homeworkCount = parseInt(element.dataset.homeworkCount) || 0;
-        const avgHomework = parseFloat(element.dataset.avgHomework) || 0;
-        updateTaskStatsInfo({ studentCount, homeworkCount, avgHomework });
+    if (id === '') {
+        // 选择"全部作业"时，清空其他选择
+        selectedHwTaskIds.clear();
     } else {
-        updateTaskStatsInfo(null);
+        // 选择具体任务时
+        if (selectedHwTaskIds.has(id)) {
+            selectedHwTaskIds.delete(id);
+        } else {
+            selectedHwTaskIds.add(id);
+        }
     }
+    
+    // 重新渲染列表
+    renderHwTaskList();
     
     // 重新加载作业列表
     loadHomeworkForTask();
 }
 
 // ========== 更新任务统计信息 ==========
-function updateTaskStatsInfo(stats) {
+function updateTaskStatsInfo() {
     const container = document.getElementById('taskStatsInfo');
     if (!container) return;
     
-    if (stats && stats.studentCount > 0) {
-        container.innerHTML = `
-            <div class="task-stats-info">
-                <span class="stats-item"><strong>${stats.studentCount}</strong> 个学生</span>
-                <span class="stats-divider">|</span>
-                <span class="stats-item">共 <strong>${stats.homeworkCount}</strong> 份作业</span>
-                <span class="stats-divider">|</span>
-                <span class="stats-item">平均每人 <strong>${stats.avgHomework}</strong> 份</span>
-            </div>
-        `;
-        container.style.display = 'block';
-    } else {
+    if (selectedHwTaskIds.size === 0) {
         container.innerHTML = '';
         container.style.display = 'none';
+        return;
     }
+    
+    // 计算选中任务的统计信息
+    let totalStudents = 0;
+    let totalHomework = 0;
+    
+    selectedHwTaskIds.forEach(taskId => {
+        const taskItem = document.querySelector(`#hwTaskList .task-item[data-task-id="${taskId}"]`);
+        if (taskItem) {
+            totalStudents += parseInt(taskItem.dataset.studentCount) || 0;
+            totalHomework += parseInt(taskItem.dataset.homeworkCount) || 0;
+        }
+    });
+    
+    const avgHomework = totalStudents > 0 ? (totalHomework / totalStudents).toFixed(1) : 0;
+    
+    container.innerHTML = `
+        <div class="task-stats-info">
+            <span class="stats-item">已选 <strong>${selectedHwTaskIds.size}</strong> 个任务</span>
+            <span class="stats-divider">|</span>
+            <span class="stats-item"><strong>${totalStudents}</strong> 个学生</span>
+            <span class="stats-divider">|</span>
+            <span class="stats-item">共 <strong>${totalHomework}</strong> 份作业</span>
+        </div>
+    `;
+    container.style.display = 'block';
 }
 
 // ========== 过滤已选作业（只保留当前列表中存在的） ==========
@@ -1767,14 +1948,14 @@ function filterSelectedHomework() {
 
 // ========== 学科筛选变化 ==========
 function onSubjectFilterChange() {
-    currentHwTaskId = '';
+    selectedHwTaskIds.clear();
     loadHomeworkTasksForFilter();
     loadHomeworkForTask();
 }
 
 // ========== 时间筛选变化 ==========
 function onTimeFilterChange() {
-    currentHwTaskId = '';
+    selectedHwTaskIds.clear();
     loadHomeworkTasksForFilter();
     loadHomeworkForTask();
 }
@@ -1784,18 +1965,30 @@ async function loadHomeworkForTask() {
     const hours = document.getElementById('hwTimeFilter').value;
     
     const container = document.getElementById('homeworkSelectList');
-    container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载中...</div></div>';
+    container.innerHTML = '<div class="empty-state"><div class="loading-spinner"></div><div class="empty-state-text">加载中...</div></div>';
+    isLoadingHomework = true;
     
     try {
         let url = `/api/batch/homework?hours=${hours}`;
         if (subjectId) url += `&subject_id=${subjectId}`;
-        if (currentHwTaskId) url += `&hw_publish_id=${currentHwTaskId}`;
+        
+        // 支持多个作业任务ID
+        if (selectedHwTaskIds.size > 0) {
+            const taskIds = Array.from(selectedHwTaskIds).join(',');
+            url += `&hw_publish_ids=${taskIds}`;
+            console.log('[loadHomeworkForTask] 筛选作业任务IDs:', taskIds);
+        } else {
+            console.log('[loadHomeworkForTask] 加载全部作业');
+        }
+        
+        console.log('[loadHomeworkForTask] 请求URL:', url);
         
         const res = await fetch(url);
         const data = await res.json();
         
         if (data.success) {
             homeworkForTask = data.data || [];
+            console.log('[loadHomeworkForTask] 返回作业数量:', homeworkForTask.length);
             renderHomeworkSelectList();
         } else {
             container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载失败</div></div>';
@@ -1803,6 +1996,7 @@ async function loadHomeworkForTask() {
     } catch (e) {
         container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载失败: ' + e.message + '</div></div>';
     }
+    isLoadingHomework = false;
 }
 
 function renderHomeworkSelectList() {
@@ -2675,8 +2869,8 @@ function renderEvalDetail(detail) {
                                     ${baseEffect.map(item => `
                                         <tr>
                                             <td class="index-cell">${escapeHtml(String(item.index || '-'))}</td>
-                                            <td class="answer-cell">${escapeHtml(item.userAnswer || '-')}</td>
-                                            <td class="answer-cell muted">${escapeHtml(item.answer || item.mainAnswer || '-')}</td>
+                                            <td class="answer-cell">${escapeHtml(normalizeMarkdownFormula(item.userAnswer) || '-')}</td>
+                                            <td class="answer-cell muted">${escapeHtml(normalizeMarkdownFormula(item.answer || item.mainAnswer) || '-')}</td>
                                             <td class="correct-cell"><span class="${getCorrectClass(item)}">${getCorrectText(item)}</span></td>
                                         </tr>
                                     `).join('')}
@@ -2811,8 +3005,8 @@ function renderAiResultRows(aiResult) {
                 html += `
                     <tr class="child-row-visible">
                         <td class="index-cell child-index">${escapeHtml(String(child.index || `${item.index}-${idx+1}`))}</td>
-                        <td class="answer-cell">${escapeHtml(child.userAnswer || '-')}</td>
-                        <td class="answer-cell muted">${escapeHtml(child.answer || child.mainAnswer || '-')}</td>
+                        <td class="answer-cell">${escapeHtml(normalizeMarkdownFormula(child.userAnswer) || '-')}</td>
+                        <td class="answer-cell muted">${escapeHtml(normalizeMarkdownFormula(child.answer || child.mainAnswer) || '-')}</td>
                         <td class="correct-cell"><span class="${getCorrectClass(child)}">${getCorrectText(child)}</span></td>
                     </tr>
                 `;
@@ -2822,8 +3016,8 @@ function renderAiResultRows(aiResult) {
             html += `
                 <tr>
                     <td class="index-cell">${escapeHtml(String(item.index || '-'))}</td>
-                    <td class="answer-cell">${escapeHtml(item.userAnswer || '-')}</td>
-                    <td class="answer-cell muted">${escapeHtml(item.answer || item.mainAnswer || '-')}</td>
+                    <td class="answer-cell">${escapeHtml(normalizeMarkdownFormula(item.userAnswer) || '-')}</td>
+                    <td class="answer-cell muted">${escapeHtml(normalizeMarkdownFormula(item.answer || item.mainAnswer) || '-')}</td>
                     <td class="correct-cell"><span class="${getCorrectClass(item)}">${getCorrectText(item)}</span></td>
                 </tr>
             `;
@@ -2872,14 +3066,14 @@ function renderQuestionCompareCards(baseEffect, flatAiResult) {
                 <div class="compare-card-body">
                     <div class="compare-row">
                         <div class="compare-label">用户答案</div>
-                        <div class="compare-base ${!userMatch ? 'highlight' : ''}">${escapeHtml(baseUser || '-')}</div>
-                        <div class="compare-ai ${!userMatch ? 'highlight' : ''}">${escapeHtml(aiUser || '-')}</div>
+                        <div class="compare-base ${!userMatch ? 'highlight' : ''}">${escapeHtml(normalizeMarkdownFormula(baseUser) || '-')}</div>
+                        <div class="compare-ai ${!userMatch ? 'highlight' : ''}">${escapeHtml(normalizeMarkdownFormula(aiUser) || '-')}</div>
                         <div class="compare-match">${userMatch ? '<span class="match-yes">✓</span>' : '<span class="match-no">✗</span>'}</div>
                     </div>
                     <div class="compare-row">
                         <div class="compare-label">标准答案</div>
-                        <div class="compare-base">${escapeHtml(base.answer || base.mainAnswer || '-')}</div>
-                        <div class="compare-ai">${ai ? escapeHtml(ai.answer || ai.mainAnswer || '-') : '-'}</div>
+                        <div class="compare-base">${escapeHtml(normalizeMarkdownFormula(base.answer || base.mainAnswer) || '-')}</div>
+                        <div class="compare-ai">${ai ? escapeHtml(normalizeMarkdownFormula(ai.answer || ai.mainAnswer) || '-') : '-'}</div>
                         <div class="compare-match">-</div>
                     </div>
                     <div class="compare-row">
@@ -4660,4 +4854,252 @@ function jumpToErrorCard(pageNum, questionIndex) {
             }
         }, 300);
     });
+}
+
+
+// ========== 数据集选择功能 ==========
+
+// 当前选择的数据集ID
+let selectedDatasetId = null;
+// 当前正在选择数据集的作业ID列表
+let currentSelectingHomeworkIds = [];
+
+/**
+ * 显示数据集选择弹窗
+ * @param {string} homeworkId - 作业ID
+ */
+async function showDatasetSelector(homeworkId) {
+    // 查找作业信息
+    const homework = selectedTask?.homework_items?.find(h => h.homework_id === homeworkId);
+    if (!homework) {
+        alert('未找到作业信息');
+        return;
+    }
+    
+    // 设置当前选择的作业
+    currentSelectingHomeworkIds = [homeworkId];
+    selectedDatasetId = homework.matched_dataset || null;
+    
+    // 显示作业信息
+    const selectorInfo = document.getElementById('selectorInfo');
+    selectorInfo.innerHTML = `
+        <div class="info-row">
+            <span class="info-label">书本:</span>
+            <span class="info-value">${escapeHtml(homework.book_name || '未知书本')}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">页码:</span>
+            <span class="info-value">第 ${homework.page_num || '-'} 页</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">学生:</span>
+            <span class="info-value">${escapeHtml(homework.student_name || homework.student_id || '-')}</span>
+        </div>
+    `;
+    
+    // 显示弹窗
+    showModal('datasetSelectorModal');
+    
+    // 加载匹配的数据集
+    await loadMatchingDatasets(homework.book_id, homework.page_num);
+}
+
+/**
+ * 批量选择数据集
+ * @param {Array<string>} homeworkIds - 作业ID列表
+ */
+async function batchSelectDataset(homeworkIds) {
+    if (!homeworkIds || homeworkIds.length === 0) {
+        alert('请先选择作业');
+        return;
+    }
+    
+    // 获取第一个作业的信息作为参考
+    const firstHomework = selectedTask?.homework_items?.find(h => homeworkIds.includes(h.homework_id));
+    if (!firstHomework) {
+        alert('未找到作业信息');
+        return;
+    }
+    
+    // 设置当前选择的作业列表
+    currentSelectingHomeworkIds = [...homeworkIds];
+    selectedDatasetId = null;
+    
+    // 显示批量选择信息
+    const selectorInfo = document.getElementById('selectorInfo');
+    selectorInfo.innerHTML = `
+        <div class="info-row">
+            <span class="info-label">批量选择:</span>
+            <span class="info-value">已选择 ${homeworkIds.length} 个作业</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">书本:</span>
+            <span class="info-value">${escapeHtml(firstHomework.book_name || '未知书本')}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">页码:</span>
+            <span class="info-value">第 ${firstHomework.page_num || '-'} 页</span>
+        </div>
+    `;
+    
+    // 显示弹窗
+    showModal('datasetSelectorModal');
+    
+    // 加载匹配的数据集
+    await loadMatchingDatasets(firstHomework.book_id, firstHomework.page_num);
+}
+
+/**
+ * 加载匹配的数据集列表
+ * @param {string} bookId - 书本ID
+ * @param {number} pageNum - 页码
+ */
+async function loadMatchingDatasets(bookId, pageNum) {
+    const listContainer = document.getElementById('matchingDatasetList');
+    listContainer.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载中...</div></div>';
+    
+    // 禁用确认按钮
+    document.getElementById('confirmDatasetBtn').disabled = true;
+    
+    try {
+        const res = await fetch(`/api/batch/matching-datasets?book_id=${encodeURIComponent(bookId)}&page_num=${pageNum}`);
+        const data = await res.json();
+        
+        if (!data.success) {
+            listContainer.innerHTML = `<div class="empty-state"><div class="empty-state-text">加载失败: ${escapeHtml(data.error || '未知错误')}</div></div>`;
+            return;
+        }
+        
+        const datasets = data.data || [];
+        
+        if (datasets.length === 0) {
+            listContainer.innerHTML = '<div class="empty-state"><div class="empty-state-text">未找到匹配的数据集</div></div>';
+            return;
+        }
+        
+        // 渲染数据集列表
+        listContainer.innerHTML = datasets.map((ds, index) => {
+            const isSelected = ds.dataset_id === selectedDatasetId;
+            const isLatest = index === 0;
+            const pagesStr = Array.isArray(ds.pages) ? ds.pages.join(', ') : ds.pages;
+            
+            return `
+                <div class="dataset-selector-item ${isSelected ? 'selected' : ''}" 
+                     onclick="selectDatasetItem('${ds.dataset_id}')">
+                    <input type="radio" name="datasetSelect" value="${ds.dataset_id}" 
+                           ${isSelected ? 'checked' : ''} 
+                           onchange="selectDatasetItem('${ds.dataset_id}')">
+                    <div class="dataset-selector-info">
+                        <div class="dataset-selector-name">
+                            ${escapeHtml(ds.name || ds.dataset_id)}
+                            ${isLatest ? '<span class="latest-tag">最新</span>' : ''}
+                        </div>
+                        <div class="dataset-selector-meta">
+                            <span>页码: ${pagesStr}</span>
+                            <span>题目数: ${ds.question_count || 0}</span>
+                            <span>创建: ${formatTime(ds.created_at)}</span>
+                        </div>
+                        ${ds.description ? `<div class="dataset-selector-desc">${escapeHtml(ds.description)}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        // 如果有预选的数据集，启用确认按钮
+        if (selectedDatasetId) {
+            document.getElementById('confirmDatasetBtn').disabled = false;
+        }
+        
+    } catch (e) {
+        console.error('加载匹配数据集失败:', e);
+        listContainer.innerHTML = `<div class="empty-state"><div class="empty-state-text">加载失败: ${e.message}</div></div>`;
+    }
+}
+
+/**
+ * 选择数据集项
+ * @param {string} datasetId - 数据集ID
+ */
+function selectDatasetItem(datasetId) {
+    selectedDatasetId = datasetId;
+    
+    // 更新选中状态
+    document.querySelectorAll('.dataset-selector-item').forEach(item => {
+        const radio = item.querySelector('input[type="radio"]');
+        if (radio && radio.value === datasetId) {
+            item.classList.add('selected');
+            radio.checked = true;
+        } else {
+            item.classList.remove('selected');
+            if (radio) radio.checked = false;
+        }
+    });
+    
+    // 启用确认按钮
+    document.getElementById('confirmDatasetBtn').disabled = false;
+}
+
+/**
+ * 确认数据集选择
+ */
+async function confirmDatasetSelection() {
+    if (!selectedDatasetId) {
+        alert('请选择一个数据集');
+        return;
+    }
+    
+    if (!currentSelectingHomeworkIds || currentSelectingHomeworkIds.length === 0) {
+        alert('未选择作业');
+        return;
+    }
+    
+    if (!selectedTask) {
+        alert('未选择任务');
+        return;
+    }
+    
+    showLoading('更新数据集...');
+    
+    try {
+        const res = await fetch(`/api/batch/tasks/${selectedTask.task_id}/select-dataset`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                homework_ids: currentSelectingHomeworkIds,
+                dataset_id: selectedDatasetId
+            })
+        });
+        
+        const data = await res.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || '更新失败');
+        }
+        
+        // 关闭弹窗
+        hideModal('datasetSelectorModal');
+        
+        // 刷新任务详情
+        await selectTask(selectedTask.task_id);
+        
+        // 显示成功提示
+        const count = data.updated_count || 0;
+        if (count > 0) {
+            console.log(`已更新 ${count} 个作业的数据集`);
+        }
+        
+    } catch (e) {
+        alert('更新数据集失败: ' + e.message);
+    }
+    
+    hideLoading();
+}
+
+/**
+ * 隐藏数据集选择弹窗
+ */
+function hideDatasetSelector() {
+    hideModal('datasetSelectorModal');
+    selectedDatasetId = null;
+    currentSelectingHomeworkIds = [];
 }

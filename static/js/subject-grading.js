@@ -26,7 +26,10 @@ const SUBJECTS = {
     0: { id: 0, name: '英语' },
     1: { id: 1, name: '语文' },
     2: { id: 2, name: '数学' },
-    3: { id: 3, name: '物理' }
+    3: { id: 3, name: '物理' },
+    4: { id: 4, name: '化学' },
+    5: { id: 5, name: '生物' },
+    6: { id: 6, name: '地理' }
 };
 
 // 图表实例
@@ -57,8 +60,11 @@ function goBack() {
 
 // ========== 学科切换 ==========
 function switchSubject(subjectId) {
+    // 学科ID到标签索引的映射（0-6为学科，-1为历史记录）
+    const tabIndex = subjectId === -1 ? 7 : subjectId;
+    
     document.querySelectorAll('.tab').forEach((tab, i) => {
-        tab.classList.toggle('active', i === (subjectId === -1 ? 4 : subjectId));
+        tab.classList.toggle('active', i === tabIndex);
     });
     
     if (subjectId === -1) {

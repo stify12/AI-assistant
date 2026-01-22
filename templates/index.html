@@ -9,27 +9,116 @@
     <script src="https://cdn.bootcdn.net/ajax/libs/marked/9.1.6/marked.min.js"></script>
 </head>
 <body>
-    <!-- 左侧历史对话栏 -->
-    <aside class="history-sidebar" id="historySidebar">
-        <div class="history-header">
-            <button class="new-chat-btn" onclick="startNewChat()">
-                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                新对话
-            </button>
-            <button class="toggle-history-btn" onclick="toggleHistorySidebar()">
-                <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
-            </button>
+    <!-- 左侧快捷入口栏（初始状态）/ 历史对话栏（对话状态） -->
+    <aside class="sidebar" id="sidebar">
+        <!-- 快捷入口视图（初始状态显示） -->
+        <div class="sidebar-welcome" id="sidebarWelcome">
+            <div class="sidebar-brand">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                </div>
+                <span class="brand-text">AI 效果分析</span>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-label">核心功能</div>
+                <a href="/subject-grading" class="nav-card featured">
+                    <div class="nav-card-icon">
+                        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                    </div>
+                    <div class="nav-card-body">
+                        <div class="nav-card-title">学科批改评估</div>
+                        <div class="nav-card-desc">多学科作业批改效果分析</div>
+                    </div>
+                    <svg class="nav-card-arrow" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+                </a>
+                <a href="/batch-evaluation" class="nav-card">
+                    <div class="nav-card-icon">
+                        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l4.59-4.58L18 11l-6 6z"/></svg>
+                    </div>
+                    <div class="nav-card-body">
+                        <div class="nav-card-title">批量评估</div>
+                        <div class="nav-card-desc">批量对比AI批改结果</div>
+                    </div>
+                    <svg class="nav-card-arrow" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-label">工具</div>
+                <div class="nav-tools-compact">
+                    <a href="/knowledge-agent" class="nav-tool-item" title="知识点类题">
+                        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3z"/></svg>
+                        <span>知识点</span>
+                    </a>
+                    <a href="/data-analysis" class="nav-tool-item" title="数据分析">
+                        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+                        <span>分析</span>
+                    </a>
+                    <a href="/prompt-optimize" class="nav-tool-item" title="提示词优化">
+                        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg>
+                        <span>提示词</span>
+                    </a>
+                    <a href="/dataset-manage" class="nav-tool-item" title="数据集管理">
+                        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/></svg>
+                        <span>数据集</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 优化日志 -->
+            <div class="nav-section opt-logs-section">
+                <div class="nav-label">
+                    <span>优化日志</span>
+                    <button class="add-log-btn" onclick="showAddLogModal()" title="添加日志">+</button>
+                </div>
+                <div class="opt-logs-list" id="optLogsList">
+                    <div class="opt-logs-empty">暂无日志</div>
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <button class="footer-btn" onclick="showSettings()">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+                    设置
+                </button>
+            </div>
         </div>
-        <div class="history-search">
-            <input type="text" id="historySearch" placeholder="搜索对话..." oninput="filterHistory()">
-        </div>
-        <div class="history-list" id="historyList"></div>
-        <div class="history-footer">
-            <a href="/prompt-optimize" class="history-link">提示词优化</a>
-            <a href="/subject-grading" class="history-link">学科批改评估</a>
-            <a href="/data-analysis" class="history-link">数据分析</a>
-            <a href="/knowledge-agent" class="history-link">知识点类题</a>
-            <button class="history-link" onclick="showSettings()">设置</button>
+        
+        <!-- 历史对话视图（对话状态显示） -->
+        <div class="sidebar-history" id="sidebarHistory" style="display:none;">
+            <div class="history-header">
+                <button class="new-chat-btn" onclick="startNewChat()">
+                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    新对话
+                </button>
+                <button class="toggle-history-btn" onclick="toggleHistorySidebar()">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+                </button>
+            </div>
+            <div class="history-search">
+                <input type="text" id="historySearch" placeholder="搜索对话..." oninput="filterHistory()">
+            </div>
+            <div class="history-list" id="historyList"></div>
+            
+            <!-- 底部快捷入口（折叠状态） -->
+            <div class="history-quick-nav">
+                <a href="/subject-grading" class="quick-nav-btn" title="学科批改评估">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                </a>
+                <a href="/batch-evaluation" class="quick-nav-btn" title="批量评估">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l4.59-4.58L18 11l-6 6z"/></svg>
+                </a>
+                <a href="/knowledge-agent" class="quick-nav-btn" title="知识点类题">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3z"/></svg>
+                </a>
+                <a href="/data-analysis" class="quick-nav-btn" title="数据分析">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+                </a>
+                <button class="quick-nav-btn" onclick="showSettings()" title="设置">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg>
+                </button>
+            </div>
         </div>
     </aside>
 
@@ -83,7 +172,7 @@
         <!-- 对话内容区 -->
         <div class="chat-container" id="chatContainer">
             <div class="chat-welcome" id="chatWelcome">
-                <h1 id="welcomeTitle">AI 助手</h1>
+                <h1 id="welcomeTitle">有什么可以帮你的?</h1>
                 <p id="welcomeDesc">选择模型开始对话，支持图片识别与日常聊天</p>
             </div>
             <div class="chat-messages" id="chatMessages"></div>
@@ -414,6 +503,52 @@ mcp-trends-hub@1.6.0</pre>
                 <button class="btn-cancel" onclick="hideLoginModal()">取消</button>
                 <button class="btn-save login-btn" id="loginBtn" onclick="handleLogin()">登录</button>
             </div>
+        </div>
+    </div>
+
+    <!-- 添加优化日志弹窗 -->
+    <div class="modal" id="addLogModal">
+        <div class="modal-content" style="max-width:400px;">
+            <h3>添加优化日志</h3>
+            <div class="form-row">
+                <div class="form-group" style="flex:2;">
+                    <label>日期</label>
+                    <input type="date" id="logDate">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>时间</label>
+                    <input type="time" id="logTime">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>分类</label>
+                <select id="logCategory">
+                    <option value="general">通用</option>
+                    <option value="accuracy">准确率</option>
+                    <option value="performance">性能</option>
+                    <option value="feature">功能</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>内容</label>
+                <textarea id="logContent" rows="3" placeholder="例如：优化了物理学科批改准确率"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="hideAddLogModal()">取消</button>
+                <button class="btn-save" onclick="saveOptLog()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 查看日志详情弹窗 -->
+    <div class="modal" id="viewLogModal">
+        <div class="modal-content log-detail-modal">
+            <div class="log-detail-header">
+                <span class="log-detail-date" id="viewLogDate"></span>
+                <span class="log-detail-category" id="viewLogCategory"></span>
+                <button class="modal-close" onclick="hideViewLogModal()">&times;</button>
+            </div>
+            <div class="log-detail-content" id="viewLogContent"></div>
         </div>
     </div>
 

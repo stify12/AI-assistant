@@ -74,6 +74,7 @@ DROP TABLE IF EXISTS `datasets`;
 CREATE TABLE `datasets` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `dataset_id` VARCHAR(32) NOT NULL COMMENT '数据集唯一标识',
+  `name` VARCHAR(200) DEFAULT NULL COMMENT '数据集名称',
   `book_id` VARCHAR(50) DEFAULT NULL COMMENT '关联书本ID',
   `book_name` VARCHAR(200) DEFAULT NULL COMMENT '书本名称',
   `subject_id` INT DEFAULT NULL COMMENT '学科ID',
@@ -85,7 +86,8 @@ CREATE TABLE `datasets` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_dataset_id` (`dataset_id`),
   KEY `idx_book_id` (`book_id`),
-  KEY `idx_subject_id` (`subject_id`)
+  KEY `idx_subject_id` (`subject_id`),
+  KEY `idx_datasets_name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='数据集表';
 
 -- =====================================================
@@ -390,10 +392,26 @@ INSERT INTO `test_conditions` (`name`, `description`, `is_system`) VALUES
 ('模拟全班提交', '模拟全班学生同时提交作业的场景', 1);
 
 -- =====================================================
+-- 18. 优化日志表
+-- =====================================================
+DROP TABLE IF EXISTS `optimization_logs`;
+CREATE TABLE `optimization_logs` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `log_date` DATETIME NOT NULL COMMENT '日志时间',
+  `content` VARCHAR(500) NOT NULL COMMENT '优化内容',
+  `category` VARCHAR(50) DEFAULT 'general' COMMENT '分类: general/accuracy/performance/feature',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_log_date` (`log_date`),
+  KEY `idx_category` (`category`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='优化日志表';
+
+-- =====================================================
 -- 完成提示
 -- =====================================================
 -- 数据库表创建完成！
--- 共创建 17 张表：
+-- 共创建 18 张表：
 -- 0. users - 用户表
 -- 1. sys_config - 系统配置
 -- 2. prompt_templates - 提示词模板
@@ -411,3 +429,5 @@ INSERT INTO `test_conditions` (`name`, `description`, `is_system`) VALUES
 -- 14. model_stats - 模型调用统计
 -- 15. operation_logs - 操作日志
 -- 16. export_records - 导出记录
+-- 17. test_conditions - 测试条件
+-- 18. optimization_logs - 优化日志

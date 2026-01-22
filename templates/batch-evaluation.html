@@ -52,6 +52,9 @@
                                 <option value="1">语文</option>
                                 <option value="2">数学</option>
                                 <option value="3">物理</option>
+                                <option value="4">化学</option>
+                                <option value="5">生物</option>
+                                <option value="6">地理</option>
                             </select>
                         </div>
                         <div class="form-group" style="flex: 1;">
@@ -199,6 +202,9 @@
                             <option value="1">语文</option>
                             <option value="2">数学</option>
                             <option value="3">物理</option>
+                            <option value="4">化学</option>
+                            <option value="5">生物</option>
+                            <option value="6">地理</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -239,13 +245,11 @@
                 <!-- 作业任务筛选 -->
                 <div class="task-filter-section">
                     <div class="task-filter-header">
-                        <span class="task-filter-label">按作业任务筛选</span>
+                        <span class="task-filter-label">按作业任务筛选（可多选）</span>
                         <button class="btn btn-small btn-secondary" onclick="loadHomeworkTasksForFilter()">刷新任务</button>
                     </div>
                     <div class="task-list" id="hwTaskList">
-                        <div class="task-item active" data-task-id="" onclick="selectHomeworkTask(this, '')">
-                            <span class="task-name">全部作业</span>
-                        </div>
+                        <div class="task-loading">加载中...</div>
                     </div>
                     <!-- 任务统计信息 -->
                     <div id="taskStatsInfo" style="display: none;"></div>
@@ -346,6 +350,30 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="hideSettingsModal()">取消</button>
                 <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据集选择弹窗 -->
+    <div class="modal" id="datasetSelectorModal" onclick="hideModal('datasetSelectorModal', event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>选择数据集</h3>
+                <button class="close-btn" onclick="hideModal('datasetSelectorModal')">x</button>
+            </div>
+            <div class="modal-body">
+                <div class="selector-info" id="selectorInfo">
+                    <!-- 显示当前作业信息 -->
+                </div>
+                <div class="dataset-selector-list" id="matchingDatasetList">
+                    <div class="empty-state">
+                        <div class="empty-state-text">加载中...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('datasetSelectorModal')">取消</button>
+                <button class="btn btn-primary" id="confirmDatasetBtn" onclick="confirmDatasetSelection()" disabled>确认选择</button>
             </div>
         </div>
     </div>

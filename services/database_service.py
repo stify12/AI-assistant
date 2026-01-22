@@ -232,13 +232,30 @@ class AppDatabaseService:
         return AppDatabaseService.execute_one(sql, (dataset_id,))
     
     @staticmethod
-    def create_dataset(dataset_id, book_id, pages, book_name=None, subject_id=None, question_count=0):
-        """创建数据集"""
-        sql = """INSERT INTO datasets (dataset_id, book_id, book_name, subject_id, pages, question_count, created_at) 
-                 VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+    def create_dataset(dataset_id, book_id, pages, book_name=None, subject_id=None, 
+                       question_count=0, name=None, description=None):
+        """
+        创建数据集
+        
+        Args:
+            dataset_id: 数据集唯一标识
+            book_id: 关联书本ID
+            pages: 页码列表
+            book_name: 书本名称
+            subject_id: 学科ID
+            question_count: 题目总数
+            name: 数据集名称（可选，为空时由调用方生成默认名称）
+            description: 数据集描述（可选）
+        
+        Returns:
+            int: 插入的记录ID
+        """
+        sql = """INSERT INTO datasets 
+                 (dataset_id, name, book_id, book_name, subject_id, pages, question_count, description, created_at) 
+                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
         pages_json = json.dumps(pages) if isinstance(pages, list) else pages
         return AppDatabaseService.execute_insert(sql, (
-            dataset_id, book_id, book_name, subject_id, pages_json, question_count, datetime.now()
+            dataset_id, name, book_id, book_name, subject_id, pages_json, question_count, description, datetime.now()
         ))
     
     @staticmethod
@@ -262,6 +279,50 @@ class AppDatabaseService:
         """删除数据集及其基准效果"""
         AppDatabaseService.execute_update("DELETE FROM baseline_effects WHERE dataset_id = %s", (dataset_id,))
         return AppDatabaseService.execute_update("DELETE FROM datasets WHERE dataset_id = %s", (dataset_id,))
+    
+    @staticmethod
+    def get_datasets_by_book_page(book_id, page_num):
+        """
+        根据 book_id 和 page_num 查询所有匹配的数据集
+        
+        Args:
+            book_id: 书本ID
+            page_num: 页码
+        
+        Returns:
+            list: 匹配的数据集列表，按创建时间倒序排列
+        """
+        sql = """
+            SELECT dataset_id, name, book_id, book_name, subject_id, 
+                   pages, question_count, description, created_at
+            FROM datasets 
+            WHERE book_id = %s 
+              AND JSON_CONTAINS(pages, %s)
+            ORDER BY created_at DESC
+        """
+        return AppDatabaseService.execute_query(sql, (book_id, json.dumps(page_num)))
+    
+    @staticmethod
+    def search_datasets_by_name(search_query, book_id=None):
+        """
+        按名称模糊搜索数据集
+        
+        Args:
+            search_query: 搜索关键词
+            book_id: 可选，限定书本ID
+        
+        Returns:
+            list: 匹配的数据集列表
+        """
+        sql = "SELECT * FROM datasets WHERE name LIKE %s"
+        params = [f'%{search_query}%']
+        
+        if book_id:
+            sql += " AND book_id = %s"
+            params.append(book_id)
+        
+        sql += " ORDER BY created_at DESC"
+        return AppDatabaseService.execute_query(sql, tuple(params))
     
     # ========== 基准效果相关操作 ==========
     
