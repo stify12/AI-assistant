@@ -25,10 +25,11 @@
 ├── services/              # 业务服务层
 │   ├── config_service.py  # 配置管理
 │   ├── llm_service.py     # LLM调用封装
-│   ├── database_service.py # 数据库操作
+│   ├── database_service.py # 数据库操作 (含数据集CRUD)
 │   ├── session_service.py # 会话管理
-│   ├── storage_service.py # 文件存储
-│   └── auth_service.py    # 认证服务
+│   ├── storage_service.py # 文件/数据库存储 (USE_DB_STORAGE控制)
+│   ├── auth_service.py    # 认证服务
+│   └── physics_eval.py    # 物理评估服务
 │
 ├── knowledge_agent/       # 知识点类题生成模块
 │   ├── routes.py          # API路由
@@ -75,9 +76,9 @@
 │       └── prompt-optimize.js
 │
 ├── tests/                 # 测试文件
-│   ├── test_batch_evaluation.py
-│   ├── test_knowledge_agent.py
-│   └── test_properties.py # hypothesis属性测试
+│   ├── test_dataset_api.py    # 数据集API测试 (含属性测试)
+│   ├── test_physics_eval.py   # 物理评估测试
+│   └── test_*.py              # 其他测试文件
 │
 ├── datasets/              # 数据集存储 (JSON)
 ├── batch_tasks/           # 批量任务存储
@@ -107,5 +108,11 @@
 
 ## 数据存储
 - JSON文件存储任务和会话数据 (`*_tasks/`, `sessions/`)
-- MySQL存储作业数据和评估结果
+- MySQL存储作业数据、评估结果、数据集
 - 文件上传存储在对应的 `*_uploads/` 目录
+- 存储模式由 `USE_DB_STORAGE` 环境变量控制 (默认 true)
+
+## 数据集存储
+- 数据库表: `datasets` (元数据) + `baseline_effects` (基准效果)
+- 支持字段: `name`, `description`, `book_id`, `book_name`, `pages`, `question_count`
+- 默认名称生成: `StorageService.generate_default_dataset_name()`

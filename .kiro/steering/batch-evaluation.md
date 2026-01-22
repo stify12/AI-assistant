@@ -105,3 +105,27 @@ if not type_info:
 - 语文(subject_id=1)使用题号(index)匹配
 - 其他学科使用 tempIndex 匹配
 - 语文非选择题支持模糊匹配（默认阈值 85%）
+
+## 数据集选择功能
+
+### 多数据集支持
+同一 book_id + page_num 可关联多个数据集，用户可选择使用哪个：
+- 自动匹配: 默认使用最新创建的数据集
+- 手动选择: 点击"选择数据集"按钮切换
+- 批量选择: 勾选多个作业后批量指定数据集
+
+### 相关 API
+```
+GET  /api/batch/matching-datasets?book_id=xxx&page_num=30
+POST /api/batch/tasks/{task_id}/select-dataset
+     Body: { homework_ids: [...], dataset_id: "xxx" }
+```
+
+### 状态重置
+更换数据集后，作业的评估结果会被清除，状态重置为 pending：
+```python
+hw_item['matched_dataset'] = new_dataset_id
+hw_item['matched_dataset_name'] = dataset_name
+hw_item['status'] = 'pending'
+hw_item['accuracy'] = None  # 清除所有评估指标
+```

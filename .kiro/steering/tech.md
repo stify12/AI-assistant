@@ -40,18 +40,21 @@ gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 120 app:app
 # Docker构建运行
 docker-compose up -d --build
 
-# 运行测试
-pytest tests/ -v
+# 运行测试 (使用文件存储避免污染数据库)
+USE_DB_STORAGE=false pytest tests/ -v
 
-# 运行属性测试
-pytest tests/test_properties.py -v
+# 运行数据集API测试
+USE_DB_STORAGE=false pytest tests/test_dataset_api.py -v
+
+# 部署到服务器
+.\deploy-quick.ps1
 ```
 
 ## 环境变量
 | 变量 | 说明 | 默认值 |
 |-----|------|-------|
 | FLASK_ENV | 运行环境 | development |
-| USE_DB_STORAGE | 是否使用数据库存储 | false |
+| USE_DB_STORAGE | 是否使用数据库存储 | true |
 | TZ | 时区设置 | Asia/Shanghai |
 
 ## 配置文件
