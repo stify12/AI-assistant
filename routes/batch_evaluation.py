@@ -1257,6 +1257,7 @@ def batch_datasets():
         
         book_id = data.get('book_id')
         book_name = data.get('book_name', '')
+        subject_id = data.get('subject_id')
         pages = data.get('pages', [])
         base_effects = data.get('base_effects', {})
         name = data.get('name', '').strip() if data.get('name') else ''
@@ -1265,6 +1266,20 @@ def batch_datasets():
         if not book_id or not pages:
             return jsonify({'success': False, 'error': '缺少必要参数'})
         
+        # 如果前端没有传递 book_name 或 subject_id，从数据库查询
+        if not book_name or subject_id is None:
+            try:
+                sql = "SELECT book_name, subject_id FROM zp_make_book WHERE id = %s"
+                rows = DatabaseService.execute_query(sql, (book_id,))
+                if rows:
+                    if not book_name:
+                        book_name = rows[0].get('book_name', '')
+                    if subject_id is None:
+                        subject_id = rows[0].get('subject_id')
+                    print(f"[CreateDataset] Fetched from DB: book_name={book_name}, subject_id={subject_id}")
+            except Exception as e:
+                print(f"[CreateDataset] Warning: Failed to fetch book info: {e}")
+        
         # 验证 name 不能为空或纯空白（如果提供了 name 参数）
         if 'name' in data and data.get('name') is not None:
             if not name:
@@ -1272,7 +1287,7 @@ def batch_datasets():
         
         try:
             dataset_id = str(uuid.uuid4())[:8]
-            print(f"[CreateDataset] Creating dataset: {dataset_id}, name={name}, pages={pages}")
+            print(f"[CreateDataset] Creating dataset: {dataset_id}, name={name}, book_name={book_name}, subject_id={subject_id}, pages={pages}")
             
             # 为每个页码的题目添加类型信息
             enriched_base_effects = enrich_base_effects_with_question_types(book_id, base_effects)
@@ -1280,7 +1295,8 @@ def batch_datasets():
             StorageService.save_dataset(dataset_id, {
                 'dataset_id': dataset_id,
                 'book_id': book_id,
-                'book_name': book_name,  # 传递 book_name 用于生成默认名称
+                'book_name': book_name,
+                'subject_id': subject_id,
                 'name': name,  # 传递 name，StorageService 会处理空值情况
                 'description': description,
                 'pages': pages,

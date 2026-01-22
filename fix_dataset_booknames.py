@@ -1,6 +1,6 @@
 """
-一次性脚本：补全数据集中缺失的 book_name
-运行后，书本概览加载就不需要查询第二个数据库了
+一次性脚本：补全数据集中缺失的 book_name 和 subject_id
+同时更新名称中包含"未知书本"的数据集
 """
 import os
 import sys
@@ -11,21 +11,21 @@ os.environ['USE_DB_STORAGE'] = 'true'
 from services.database_service import DatabaseService, AppDatabaseService
 
 def fix_booknames():
-    """补全数据集中缺失的 book_name"""
+    """补全数据集中缺失的 book_name 和 subject_id"""
     
     # 1. 获取所有数据集
     datasets = AppDatabaseService.execute_query(
-        "SELECT dataset_id, book_id, book_name FROM datasets"
+        "SELECT dataset_id, book_id, book_name, subject_id, name FROM datasets"
     )
     
     print(f"共 {len(datasets)} 个数据集")
     
-    # 2. 找出缺失 book_name 的数据集
-    missing = [d for d in datasets if not d.get('book_name')]
-    print(f"缺失 book_name: {len(missing)} 个")
+    # 2. 找出需要修复的数据集（book_name 为空或 subject_id 为 NULL）
+    missing = [d for d in datasets if not d.get('book_name') or d.get('subject_id') is None]
+    print(f"需要修复: {len(missing)} 个")
     
     if not missing:
-        print("所有数据集都有 book_name，无需修复")
+        print("所有数据集都有完整信息，无需修复")
         return
     
     # 3. 批量查询书本信息
@@ -53,18 +53,26 @@ def fix_booknames():
         book_info = book_map.get(book_id)
         if book_info:
             book_name = book_info.get('book_name') or f"书本 {book_id[-6:]}"
-            subject_id = book_info.get('subject_id', 0)
+            subject_id = book_info.get('subject_id')
+            if subject_id is None:
+                subject_id = 0
         else:
             book_name = f"书本 {book_id[-6:]}"
             subject_id = 0
         
+        # 检查是否需要更新名称（替换"未知书本"）
+        current_name = d.get('name') or ''
+        new_name = current_name
+        if '未知书本' in current_name:
+            new_name = current_name.replace('未知书本', book_name)
+        
         # 更新数据库
         AppDatabaseService.execute_update(
-            "UPDATE datasets SET book_name = %s, subject_id = %s WHERE dataset_id = %s",
-            (book_name, subject_id, d['dataset_id'])
+            "UPDATE datasets SET book_name = %s, subject_id = %s, name = %s WHERE dataset_id = %s",
+            (book_name, subject_id, new_name, d['dataset_id'])
         )
         updated += 1
-        print(f"  更新 {d['dataset_id']}: {book_name}")
+        print(f"  更新 {d['dataset_id']}: book_name={book_name}, subject_id={subject_id}, name={new_name}")
     
     print(f"\n完成！更新了 {updated} 个数据集")
 
