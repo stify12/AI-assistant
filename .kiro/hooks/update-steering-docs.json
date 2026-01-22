@@ -1,0 +1,27 @@
+{
+  "name": "自动更新项目文档",
+  "version": "1.0.0",
+  "description": "当关键文件修改时，自动检查并更新对应的 steering 文档，保持文档与代码同步",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "app.py",
+      "routes/*.py",
+      "services/*.py",
+      "knowledge_agent/*.py",
+      "templates/*.html",
+      "static/css/*.css",
+      "static/js/*.js",
+      "docker-compose.yml",
+      "Dockerfile",
+      "requirements.txt",
+      "config.example.json",
+      "prompts.json",
+      "database_schema.sql"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "分析刚修改的文件，判断是否需要更新 .kiro/steering/ 目录下的文档，并自动更新：\n\n## 更新规则\n\n### structure.md\n- 新增/删除路由文件 (routes/*.py)\n- 新增/删除服务文件 (services/*.py)\n- 新增/删除模板文件 (templates/*.html)\n- 新增/删除功能模块目录\n- 修改项目目录结构\n\n### tech.md\n- 修改 requirements.txt (依赖变更)\n- 修改 docker-compose.yml 或 Dockerfile (容器配置)\n- 修改 app.py 中的核心技术栈\n- 新增环境变量或配置项\n\n### product.md\n- 新增功能模块 (routes/*.py)\n- 修改核心业务逻辑 (services/*.py)\n- 新增/修改页面 (templates/*.html)\n- 修改学科ID映射或评估维度\n\n### ui-style.md\n- 修改 CSS 变量定义\n- 新增/修改组件样式规范\n- 修改配色方案或圆角规范\n\n### models.md\n- 修改 config.example.json 中的模型配置\n- 修改 prompts.json 中的提示词\n- 修改 services/llm_service.py 中的模型调用\n\n### batch-evaluation.md\n- 修改批量评估相关的路由 (routes/batch_evaluation.py)\n- 修改评估逻辑 (services/database_service.py 中的评估函数)\n- 修改数据库表结构 (database_schema.sql)\n\n### deploy.md\n- 修改部署脚本 (deploy-*.ps1)\n- 修改 Docker 配置\n- 修改服务器相关配置\n\n## 执行步骤\n\n1. 识别修改的文件类型和内容\n2. 确定需要更新的 steering 文档\n3. 读取对应的 .md 文件\n4. 分析需要更新的具体章节\n5. 更新文档内容（保持原有格式和风格）\n6. 简要说明更新了什么内容\n\n## 注意事项\n\n- 只更新确实需要同步的内容，不要过度修改\n- 保持文档的简洁性和可读性\n- 使用 Markdown 表格和代码块格式\n- 遵循现有文档的写作风格\n- 如果不确定是否需要更新，先询问用户"
+  }
+}

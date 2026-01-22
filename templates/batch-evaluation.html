@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/static/css/common.css">
     <link rel="stylesheet" href="/static/css/batch-evaluation.css">
     <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
     <!-- 导航栏 -->
@@ -20,8 +21,19 @@
 
     <!-- 加载遮罩 -->
     <div class="loading-overlay" id="loadingOverlay">
-        <div class="spinner"></div>
-        <div class="loading-text" id="loadingText">处理中...</div>
+        <div class="loading-container">
+            <div class="loading-icon">
+                <div class="loading-icon-circle"></div>
+                <div class="loading-icon-arc"></div>
+            </div>
+            <div class="loading-progress-wrapper">
+                <div class="loading-text" id="loadingText">处理中...</div>
+                <div class="loading-progress-track">
+                    <div class="loading-progress-bar" id="loadingProgressBar"></div>
+                </div>
+                <div class="loading-subtext" id="loadingSubtext"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Tab切换 -->
@@ -87,6 +99,10 @@
                             <div>
                                 <div class="section-title" id="taskDetailTitle">任务详情</div>
                                 <div class="section-desc" id="taskDetailMeta"></div>
+                                <div class="task-remark-row" id="taskRemarkRow" style="display:none;">
+                                    <span class="task-remark-text" id="taskRemarkText"></span>
+                                    <button class="btn-edit-remark" onclick="showRemarkModal()">编辑</button>
+                                </div>
                             </div>
                             <div class="task-actions">
                                 <button class="btn btn-secondary" id="startEvalBtn" onclick="startBatchEvaluation()">本地评估</button>
@@ -378,6 +394,70 @@
         </div>
     </div>
 
-    <script src="/static/js/batch-evaluation.js?v=4"></script>
+    <!-- 题目类型详情弹窗 -->
+    <div class="modal" id="typeDetailModal" onclick="hideTypeDetailModal()">
+        <div class="modal-content modal-large" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="typeDetailTitle">题目详情</h3>
+                <button class="close-btn" onclick="hideTypeDetailModal()">x</button>
+            </div>
+            <div class="modal-body" id="typeDetailContent">
+                <div class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <div>加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI分析报告弹窗 -->
+    <div class="modal" id="aiReportModal" onclick="hideAIReportModal()">
+        <div class="modal-content modal-xlarge" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>AI 批改效果分析报告</h3>
+                <div class="modal-header-actions">
+                    <button class="btn btn-small btn-secondary" onclick="regenerateAIReport()">重新分析</button>
+                    <button class="close-btn" onclick="hideAIReportModal()">x</button>
+                </div>
+            </div>
+            <div class="modal-body" id="aiReportModalBody">
+                <div class="ai-report-loading">
+                    <div class="spinner"></div>
+                    <div>正在生成分析报告...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <span class="report-generated-time" id="reportGeneratedTime"></span>
+                <button class="btn btn-secondary" onclick="downloadReportScreenshot()">下载截图</button>
+                <button class="btn btn-primary" onclick="hideAIReportModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 备注编辑弹窗 -->
+    <div class="modal" id="remarkModal" onclick="hideModal('remarkModal', event)">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>编辑任务信息</h3>
+                <button class="close-btn" onclick="hideModal('remarkModal')">x</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>任务名称</label>
+                    <input type="text" id="taskNameEditInput" placeholder="输入任务名称" style="font-size: 15px; color: #1d1d1f;">
+                </div>
+                <div class="form-group">
+                    <label>任务备注</label>
+                    <textarea id="remarkInput" rows="5" placeholder="输入任务备注信息..." style="resize: vertical; font-size: 15px; color: #1d1d1f; line-height: 1.6;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('remarkModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveTaskInfo()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/batch-evaluation.js?v=8"></script>
 </body>
 </html>

@@ -18,7 +18,7 @@ from services.llm_service import LLMService
 from services.semantic_eval_service import SemanticEvalService
 from services.physics_eval import normalize_physics_markdown
 from services.chemistry_eval import normalize_chemistry_markdown
-from utils.text_utils import normalize_answer, has_format_diff, calculate_similarity, is_fuzzy_match
+from utils.text_utils import normalize_answer, normalize_answer_science, has_format_diff, calculate_similarity, is_fuzzy_match
 
 batch_evaluation_bp = Blueprint('batch_evaluation', __name__)
 
@@ -1742,6 +1742,33 @@ def batch_tasks():
                         continue
                     
                     overall_report = data.get('overall_report') or {}
+                    homework_items = data.get('homework_items', [])
+                    
+                    # 提取书本名称和页码范围（用于气泡展示）
+                    book_names = set()
+                    page_nums = set()
+                    student_ids = set()
+                    for item in homework_items:
+                        if item.get('book_name'):
+                            book_names.add(item.get('book_name'))
+                        if item.get('page_num'):
+                            page_nums.add(item.get('page_num'))
+                        if item.get('student_id'):
+                            student_ids.add(item.get('student_id'))
+                    
+                    # 格式化页码范围
+                    page_range = ''
+                    if page_nums:
+                        sorted_pages = sorted(page_nums)
+                        if len(sorted_pages) == 1:
+                            page_range = f'P{sorted_pages[0]}'
+                        else:
+                            page_range = f'P{sorted_pages[0]}-{sorted_pages[-1]}'
+                    
+                    # 计算学生数和每人作业数
+                    student_count = len(student_ids)
+                    homework_per_student = round(len(homework_items) / student_count, 1) if student_count > 0 else 0
+                    
                     tasks.append({
                         'task_id': data.get('task_id'),
                         'name': data.get('name', ''),
@@ -1750,9 +1777,15 @@ def batch_tasks():
                         'test_condition_id': task_test_condition_id,
                         'test_condition_name': data.get('test_condition_name', ''),
                         'status': data.get('status', 'pending'),
-                        'homework_count': len(data.get('homework_items', [])),
+                        'homework_count': len(homework_items),
                         'overall_accuracy': overall_report.get('overall_accuracy', 0),
-                        'created_at': data.get('created_at', '')
+                        'created_at': data.get('created_at', ''),
+                        # 气泡展示用字段
+                        'book_name': ', '.join(book_names) if book_names else '',
+                        'page_range': page_range,
+                        'remark': data.get('remark', ''),
+                        'student_count': student_count,
+                        'homework_per_student': homework_per_student
                     })
             
             tasks.sort(key=lambda x: x.get('created_at', ''), reverse=True)
@@ -1895,17 +1928,47 @@ def batch_task_detail(task_id):
     """获取或删除任务"""
     if request.method == 'GET':
         try:
+            # 支持 slim 模式，只返回精简数据（用于列表展示）
+            slim_mode = request.args.get('slim', '0') == '1'
+            
             data = StorageService.load_batch_task(task_id)
             if not data:
                 return jsonify({'success': False, 'error': '任务不存在'})
             
-            # 检查是否有英语作文，提取作文评分数据
-            subject_id = data.get('subject_id')
             homework_items = data.get('homework_items', [])
-            essay_data = extract_essay_scores(homework_items, subject_id)
+            subject_id = data.get('subject_id')
             
-            # 将作文数据添加到返回结果中
-            data['essay_data'] = essay_data
+            if slim_mode:
+                # 精简模式：不返回 homework_result 和 data_value 大字段
+                slim_items = []
+                for item in homework_items:
+                    slim_item = {
+                        'homework_id': item.get('homework_id'),
+                        'student_id': item.get('student_id'),
+                        'student_name': item.get('student_name'),
+                        'homework_name': item.get('homework_name'),
+                        'book_id': item.get('book_id'),
+                        'book_name': item.get('book_name'),
+                        'page_num': item.get('page_num'),
+                        'pic_path': item.get('pic_path'),
+                        'matched_dataset': item.get('matched_dataset'),
+                        'matched_dataset_name': item.get('matched_dataset_name'),
+                        'status': item.get('status'),
+                        'accuracy': item.get('accuracy'),
+                        # 不返回 homework_result 和 data_value（最大的字段）
+                    }
+                    # 保留 evaluation 数据（包含错误详情，用于图表点击）
+                    if item.get('evaluation'):
+                        slim_item['evaluation'] = item['evaluation']
+                    slim_items.append(slim_item)
+                
+                data['homework_items'] = slim_items
+                # 精简模式下跳过作文解析（耗时操作）
+                data['essay_data'] = {'has_essay': False, 'essays': [], 'stats': None}
+            else:
+                # 完整模式：提取作文评分数据
+                essay_data = extract_essay_scores(homework_items, subject_id)
+                data['essay_data'] = essay_data
             
             return jsonify({'success': True, 'data': data})
         except Exception as e:
@@ -2340,6 +2403,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
     执行评估计算
     - 语文(subject_id=1): 按题号(index)匹配
     - 其他学科: 按tempIndex匹配
+    - 当一页出现相同题号时，优先使用索引（数组位置）匹配
     支持本地计算和AI模型比对
     包含题目类型分类统计
     
@@ -2433,14 +2497,27 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
     # 判断是否是语文学科 (subject_id=1)，语文使用题号匹配
     is_chinese = subject_id == 1
     
+    # 检测是否有重复题号（基准效果和AI批改结果都检测）
+    base_indices = [normalize_index(item.get('index', '')) for item in base_effect]
+    hw_indices = [normalize_index(item.get('index', '')) for item in flat_homework]
+    has_duplicate_base = len(base_indices) != len(set(filter(None, base_indices)))
+    has_duplicate_hw = len(hw_indices) != len(set(filter(None, hw_indices)))
+    has_duplicate_index = has_duplicate_base or has_duplicate_hw
+    
+    if has_duplicate_index:
+        print(f"[DEBUG] do_evaluation: 检测到重复题号，使用索引匹配模式")
+    
     # 构建索引字典（使用展开后的数据）
     hw_dict_by_index = {}  # 按题号索引（标准化后）
     hw_dict_by_tempindex = {}  # 按tempIndex索引
+    hw_list_by_position = flat_homework  # 按位置索引（用于重复题号情况）
+    
     for i, item in enumerate(flat_homework):
-        # 按题号索引（标准化中英文符号）
-        item_idx = normalize_index(item.get('index', ''))
-        if item_idx:
-            hw_dict_by_index[item_idx] = item
+        # 按题号索引（标准化中英文符号）- 只有在没有重复题号时才使用
+        if not has_duplicate_index:
+            item_idx = normalize_index(item.get('index', ''))
+            if item_idx:
+                hw_dict_by_index[item_idx] = item
         # 按tempIndex索引
         temp_idx = item.get('tempIndex')
         if temp_idx is not None:
@@ -2459,11 +2536,22 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         else:
             base_temp_idx = i
         
-        # 匹配方式：优先按题号(index)匹配，其次按tempIndex匹配
-        # 因为基准效果可能是小题格式（如例3(1)），需要按题号匹配
-        hw_item = hw_dict_by_index.get(normalized_idx)
-        if not hw_item:
-            hw_item = hw_dict_by_tempindex.get(base_temp_idx)
+        # 匹配方式：
+        # 1. 如果有重复题号，优先使用位置索引匹配
+        # 2. 否则优先按题号(index)匹配，其次按tempIndex匹配
+        hw_item = None
+        if has_duplicate_index:
+            # 有重复题号时，优先使用位置索引匹配
+            if i < len(hw_list_by_position):
+                hw_item = hw_list_by_position[i]
+            # 如果位置匹配失败，尝试tempIndex匹配
+            if not hw_item:
+                hw_item = hw_dict_by_tempindex.get(base_temp_idx)
+        else:
+            # 没有重复题号时，优先按题号匹配
+            hw_item = hw_dict_by_index.get(normalized_idx)
+            if not hw_item:
+                hw_item = hw_dict_by_tempindex.get(base_temp_idx)
         
         # 获取题目类型分类
         # 优先从 type_map（data_value）获取类型信息
@@ -2566,8 +2654,14 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
             severity = 'high'
         elif not base_correct:
             # 基准效果缺少correct字段，只能比较userAnswer
-            norm_base_user = normalize_answer(base_user)
-            norm_hw_user = normalize_answer(hw_user)
+            # 理科（数学2、物理3、化学4、生物5、地理6）使用保留小数点的标准化
+            is_science = subject_id in (2, 3, 4, 5, 6)
+            if is_science:
+                norm_base_user = normalize_answer_science(base_user)
+                norm_hw_user = normalize_answer_science(hw_user)
+            else:
+                norm_base_user = normalize_answer(base_user)
+                norm_hw_user = normalize_answer(hw_user)
             
             if norm_base_user == norm_hw_user:
                 is_match = True
@@ -2596,23 +2690,27 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
                     explanation = f'用户答案不一致：基准="{base_user}"，AI="{hw_user}"'
                     severity = 'high'
         else:
+            # 理科（数学2、物理3、化学4、生物5、地理6）使用保留小数点的标准化
+            is_science = subject_id in (2, 3, 4, 5, 6)
+            normalize_func = normalize_answer_science if is_science else normalize_answer
+            
             # 标准化答案进行比较
             if ignore_index_prefix:
                 # 先移除题号前缀，再标准化
-                norm_base_user = normalize_answer(remove_index_prefix(base_user))
-                norm_hw_user = normalize_answer(remove_index_prefix(hw_user))
-                norm_base_answer = normalize_answer(remove_index_prefix(base_answer))
+                norm_base_user = normalize_func(remove_index_prefix(base_user))
+                norm_hw_user = normalize_func(remove_index_prefix(hw_user))
+                norm_base_answer = normalize_func(remove_index_prefix(base_answer))
             else:
                 # 直接标准化，不移除题号前缀
-                norm_base_user = normalize_answer(base_user)
-                norm_hw_user = normalize_answer(hw_user)
-                norm_base_answer = normalize_answer(base_answer)
+                norm_base_user = normalize_func(base_user)
+                norm_hw_user = normalize_func(hw_user)
+                norm_base_answer = normalize_func(base_answer)
             
             user_match = norm_base_user == norm_hw_user
             correct_match = base_correct == hw_correct
             
             # 检测是否只是题号前缀差异（移除前缀后完全一致）
-            has_index_prefix_diff = ignore_index_prefix and (normalize_answer(base_user) != normalize_answer(hw_user)) and user_match
+            has_index_prefix_diff = ignore_index_prefix and (normalize_func(base_user) != normalize_func(hw_user)) and user_match
             
             # 检测AI识别幻觉：学生答错了 + AI识别的用户答案≠基准用户答案 + AI识别的用户答案=标准答案
             # 即AI把学生的错误手写答案"脑补"成了标准答案
@@ -3132,653 +3230,63 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
 
 @batch_evaluation_bp.route('/tasks/<task_id>/export', methods=['GET'])
 def export_batch_excel(task_id):
-    """导出Excel报告 - 增强版，包含可视化图表和详细总结"""
-    from openpyxl.chart import PieChart, BarChart, RadarChart, Reference
-    from openpyxl.chart.label import DataLabelList
-    from openpyxl.utils import get_column_letter
-    from openpyxl.styles import Alignment, Font as XlFont, PatternFill as XlFill
+    """导出Excel报告 - 增强版，使用excel_export_service模块"""
+    from services.excel_export_service import export_batch_excel_enhanced
     
     task_data = StorageService.load_batch_task(task_id)
     if not task_data:
         return jsonify({'success': False, 'error': '任务不存在'})
     
-    wb = Workbook()
-    
-    header_font = Font(bold=True, size=12, color="FFFFFF")
-    header_fill = PatternFill(start_color="1D1D1F", end_color="1D1D1F", fill_type="solid")
-    border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
-    
-    # 样式定义
-    title_font = Font(bold=True, size=16, color="1D1D1F")
-    subtitle_font = Font(bold=True, size=14, color="1D1D1F")
-    section_font = Font(bold=True, size=12, color="1D1D1F")
-    highlight_fill = PatternFill(start_color="E3F9E5", end_color="E3F9E5", fill_type="solid")
-    warning_fill = PatternFill(start_color="FFF3E0", end_color="FFF3E0", fill_type="solid")
-    error_fill = PatternFill(start_color="FFEEF0", end_color="FFEEF0", fill_type="solid")
-    center_align = Alignment(horizontal='center', vertical='center')
-    
-    overall = task_data.get('overall_report', {})
-    by_question_type = overall.get('by_question_type', {})
-    homework_items = task_data.get('homework_items', [])
-    
-    # 获取题目类型统计数据
-    choice_stats = by_question_type.get('choice', {})
-    objective_fill_stats = by_question_type.get('objective_fill', {})
-    subjective_stats = by_question_type.get('subjective', {})
-    
-    # ========== 1. 评估总结表 (Summary) ==========
-    ws1 = wb.active
-    ws1.title = "评估总结"
-    ws1.column_dimensions['A'].width = 25
-    ws1.column_dimensions['B'].width = 20
-    ws1.column_dimensions['C'].width = 20
-    ws1.column_dimensions['D'].width = 20
-    ws1.column_dimensions['E'].width = 20
-    
-    # 标题
-    ws1.merge_cells('A1:E1')
-    ws1['A1'] = "AI批改效果评估报告"
-    ws1['A1'].font = title_font
-    ws1['A1'].alignment = center_align
-    ws1.row_dimensions[1].height = 30
-    
-    # 基本信息
-    ws1['A3'] = "任务名称"
-    ws1['B3'] = task_data.get('name', '')
-    ws1['A4'] = "创建时间"
-    ws1['B4'] = task_data.get('created_at', '')
-    ws1['A5'] = "评估状态"
-    ws1['B5'] = '已完成' if task_data.get('status') == 'completed' else task_data.get('status', '')
-    ws1['A6'] = "测试条件"
-    ws1['B6'] = task_data.get('test_condition_name', '-')
-    
-    for row in range(3, 7):
-        ws1[f'A{row}'].font = section_font
-    
-    # 核心指标
-    ws1['A8'] = "核心评估指标"
-    ws1['A8'].font = subtitle_font
-    ws1.merge_cells('A8:E8')
-    
-    metrics_headers = ['指标', '数值', '说明']
-    for col, h in enumerate(metrics_headers, 1):
-        cell = ws1.cell(row=9, column=col, value=h)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.border = border
-    
-    accuracy = overall.get('overall_accuracy', 0)
-    total_q = overall.get('total_questions', 0)
-    correct_q = overall.get('correct_questions', 0)
-    error_q = total_q - correct_q
-    
-    metrics_data = [
-        ['总体准确率', f"{accuracy * 100:.1f}%", '正确题目数/总题目数'],
-        ['总作业数', overall.get('total_homework', 0), '参与评估的作业数量'],
-        ['总题目数', total_q, '所有作业的题目总数'],
-        ['正确题目数', correct_q, 'AI批改与基准一致的题目'],
-        ['错误题目数', error_q, 'AI批改与基准不一致的题目'],
-    ]
-    
-    for row_idx, (label, value, desc) in enumerate(metrics_data, 10):
-        ws1.cell(row=row_idx, column=1, value=label).border = border
-        cell = ws1.cell(row=row_idx, column=2, value=value)
-        cell.border = border
-        cell.alignment = center_align
-        if row_idx == 10:  # 准确率行高亮
-            cell.fill = highlight_fill if accuracy >= 0.9 else warning_fill if accuracy >= 0.7 else error_fill
-        ws1.cell(row=row_idx, column=3, value=desc).border = border
-    
-    # 题型分类统计
-    ws1['A16'] = "题型分类统计"
-    ws1['A16'].font = subtitle_font
-    ws1.merge_cells('A16:E16')
-    
-    type_headers = ['题型', '总数', '正确数', '错误数', '准确率']
-    for col, h in enumerate(type_headers, 1):
-        cell = ws1.cell(row=17, column=col, value=h)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.border = border
-    
-    type_data = [
-        ['选择题', choice_stats.get('total', 0), choice_stats.get('correct', 0), 
-         choice_stats.get('total', 0) - choice_stats.get('correct', 0), choice_stats.get('accuracy', 0)],
-        ['客观填空题', objective_fill_stats.get('total', 0), objective_fill_stats.get('correct', 0),
-         objective_fill_stats.get('total', 0) - objective_fill_stats.get('correct', 0), objective_fill_stats.get('accuracy', 0)],
-        ['主观题', subjective_stats.get('total', 0), subjective_stats.get('correct', 0),
-         subjective_stats.get('total', 0) - subjective_stats.get('correct', 0), subjective_stats.get('accuracy', 0)],
-    ]
-    
-    for row_idx, row_data in enumerate(type_data, 18):
-        for col_idx, val in enumerate(row_data, 1):
-            cell = ws1.cell(row=row_idx, column=col_idx)
-            if col_idx == 5:  # 准确率列
-                cell.value = f"{val * 100:.1f}%" if row_data[1] > 0 else '-'
-            else:
-                cell.value = val
-            cell.border = border
-            if col_idx > 1:
-                cell.alignment = center_align
-    
-    # ========== 2. 错误分析表 (Error Analysis) ==========
-    ws_err = wb.create_sheet("错误分析")
-    ws_err.column_dimensions['A'].width = 25
-    ws_err.column_dimensions['B'].width = 15
-    ws_err.column_dimensions['C'].width = 15
-    ws_err.column_dimensions['D'].width = 40
-    
-    # 统计错误类型分布
-    error_distribution = {}
-    all_errors = []
-    page_error_count = {}  # 按页码统计错误
-    question_error_count = {}  # 按题号统计错误
-    
-    for item in homework_items:
-        if item.get('status') == 'completed' and item.get('evaluation'):
-            errors = item['evaluation'].get('errors', [])
-            page_num = str(item.get('page_num', '?'))
-            
-            for err in errors:
-                err_type = err.get('error_type', '未分类')
-                error_distribution[err_type] = error_distribution.get(err_type, 0) + 1
-                
-                # 按页码统计
-                page_error_count[page_num] = page_error_count.get(page_num, 0) + 1
-                
-                # 按题号统计
-                q_idx = err.get('index', '?')
-                q_key = f"P{page_num}-{q_idx}"
-                question_error_count[q_key] = question_error_count.get(q_key, 0) + 1
-                
-                all_errors.append({
-                    'page': page_num,
-                    'index': q_idx,
-                    'type': err_type,
-                    'explanation': err.get('explanation', ''),
-                    'book': item.get('book_name', ''),
-                    'student': item.get('student_name', '')
-                })
-    
-    # 错误类型分布表
-    ws_err['A1'] = "错误类型分布"
-    ws_err['A1'].font = subtitle_font
-    ws_err.merge_cells('A1:D1')
-    
-    err_headers = ['错误类型', '数量', '占比', '说明']
-    for col, h in enumerate(err_headers, 1):
-        cell = ws_err.cell(row=2, column=col, value=h)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.border = border
-    
-    total_errors = sum(error_distribution.values()) or 1
-    error_type_desc = {
-        '识别错误-判断正确': '用户答案识别不准确，但最终判断结果正确',
-        '识别错误-判断错误': '用户答案识别不准确，且判断结果错误',
-        '识别正确-判断错误': '用户答案识别正确，但判断结果错误',
-        '缺失题目': 'AI批改结果中缺少该题目',
-        'AI识别幻觉': 'AI将错误答案识别为标准答案',
-        '格式差异': '答案格式不一致但内容相同'
-    }
-    
-    sorted_errors = sorted(error_distribution.items(), key=lambda x: -x[1])
-    for row_idx, (err_type, count) in enumerate(sorted_errors, 3):
-        ws_err.cell(row=row_idx, column=1, value=err_type).border = border
-        ws_err.cell(row=row_idx, column=2, value=count).border = border
-        ws_err.cell(row=row_idx, column=3, value=f"{count/total_errors*100:.1f}%").border = border
-        ws_err.cell(row=row_idx, column=4, value=error_type_desc.get(err_type, '')).border = border
-    
-    # 错误类型饼图数据区域 (用于图表)
-    chart_start_row = len(sorted_errors) + 5
-    ws_err.cell(row=chart_start_row, column=1, value="图表数据区")
-    ws_err.cell(row=chart_start_row, column=1).font = section_font
-    
-    for row_idx, (err_type, count) in enumerate(sorted_errors, chart_start_row + 1):
-        ws_err.cell(row=row_idx, column=1, value=err_type)
-        ws_err.cell(row=row_idx, column=2, value=count)
-    
-    # 创建错误类型饼图
-    if sorted_errors:
-        pie = PieChart()
-        pie.title = "错误类型分布"
-        labels = Reference(ws_err, min_col=1, min_row=chart_start_row+1, max_row=chart_start_row+len(sorted_errors))
-        data = Reference(ws_err, min_col=2, min_row=chart_start_row, max_row=chart_start_row+len(sorted_errors))
-        pie.add_data(data, titles_from_data=True)
-        pie.set_categories(labels)
-        pie.width = 15
-        pie.height = 10
-        pie.dataLabels = DataLabelList()
-        pie.dataLabels.showPercent = True
-        pie.dataLabels.showVal = True
-        ws_err.add_chart(pie, "F2")
-    
-    # 高频错误题目 TOP10
-    top_error_row = chart_start_row + len(sorted_errors) + 3
-    ws_err.cell(row=top_error_row, column=1, value="高频错误题目 TOP10")
-    ws_err.cell(row=top_error_row, column=1).font = subtitle_font
-    ws_err.merge_cells(f'A{top_error_row}:D{top_error_row}')
-    
-    top_q_headers = ['题目', '错误次数', '占比']
-    for col, h in enumerate(top_q_headers, 1):
-        cell = ws_err.cell(row=top_error_row+1, column=col, value=h)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.border = border
-    
-    sorted_questions = sorted(question_error_count.items(), key=lambda x: -x[1])[:10]
-    for row_idx, (q_key, count) in enumerate(sorted_questions, top_error_row+2):
-        ws_err.cell(row=row_idx, column=1, value=q_key).border = border
-        ws_err.cell(row=row_idx, column=2, value=count).border = border
-        ws_err.cell(row=row_idx, column=3, value=f"{count/total_errors*100:.1f}%").border = border
-    
-    # 高频错误题目柱状图
-    if sorted_questions:
-        bar_data_start = top_error_row + 2
-        bar = BarChart()
-        bar.title = "高频错误题目 TOP10"
-        bar.type = "col"
-        bar.style = 10
-        data = Reference(ws_err, min_col=2, min_row=bar_data_start-1, max_row=bar_data_start+len(sorted_questions)-1)
-        cats = Reference(ws_err, min_col=1, min_row=bar_data_start, max_row=bar_data_start+len(sorted_questions)-1)
-        bar.add_data(data, titles_from_data=True)
-        bar.set_categories(cats)
-        bar.width = 15
-        bar.height = 10
-        bar.shape = 4
-        ws_err.add_chart(bar, "F18")
-    
-    # ========== 3. 可视化图表表 (Charts) ==========
-    ws_chart = wb.create_sheet("可视化图表")
-    ws_chart.column_dimensions['A'].width = 20
-    ws_chart.column_dimensions['B'].width = 15
-    ws_chart.column_dimensions['C'].width = 15
-    ws_chart.column_dimensions['D'].width = 15
-    ws_chart.column_dimensions['E'].width = 15
-    
-    # 题型准确率对比数据
-    ws_chart['A1'] = "题型准确率对比"
-    ws_chart['A1'].font = subtitle_font
-    
-    type_chart_headers = ['题型', '准确率%', '总数', '正确数']
-    for col, h in enumerate(type_chart_headers, 1):
-        cell = ws_chart.cell(row=2, column=col, value=h)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.border = border
-    
-    type_chart_data = [
-        ['选择题', choice_stats.get('accuracy', 0) * 100, choice_stats.get('total', 0), choice_stats.get('correct', 0)],
-        ['客观填空题', objective_fill_stats.get('accuracy', 0) * 100, objective_fill_stats.get('total', 0), objective_fill_stats.get('correct', 0)],
-        ['主观题', subjective_stats.get('accuracy', 0) * 100, subjective_stats.get('total', 0), subjective_stats.get('correct', 0)],
-    ]
-    
-    for row_idx, row_data in enumerate(type_chart_data, 3):
-        for col_idx, val in enumerate(row_data, 1):
-            cell = ws_chart.cell(row=row_idx, column=col_idx, value=val)
-            cell.border = border
-    
-    # 题型准确率柱状图
-    bar2 = BarChart()
-    bar2.title = "题型准确率对比"
-    bar2.type = "col"
-    bar2.style = 10
-    data2 = Reference(ws_chart, min_col=2, min_row=2, max_row=5)
-    cats2 = Reference(ws_chart, min_col=1, min_row=3, max_row=5)
-    bar2.add_data(data2, titles_from_data=True)
-    bar2.set_categories(cats2)
-    bar2.width = 12
-    bar2.height = 8
-    bar2.y_axis.scaling.max = 100
-    bar2.y_axis.title = "准确率 %"
-    ws_chart.add_chart(bar2, "F1")
-    
-    # 按页码错误分布
-    ws_chart['A8'] = "按页码错误分布"
-    ws_chart['A8'].font = subtitle_font
-    
-    page_headers = ['页码', '错误数']
-    for col, h in enumerate(page_headers, 1):
-        cell = ws_chart.cell(row=9, column=col, value=h)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.border = border
-    
-    sorted_pages = sorted(page_error_count.items(), key=lambda x: int(x[0]) if x[0].isdigit() else 999)
-    for row_idx, (page, count) in enumerate(sorted_pages, 10):
-        ws_chart.cell(row=row_idx, column=1, value=f"第{page}页").border = border
-        ws_chart.cell(row=row_idx, column=2, value=count).border = border
-    
-    # 页码错误柱状图
-    if sorted_pages:
-        bar3 = BarChart()
-        bar3.title = "按页码错误分布"
-        bar3.type = "col"
-        bar3.style = 11
-        data3 = Reference(ws_chart, min_col=2, min_row=9, max_row=9+len(sorted_pages))
-        cats3 = Reference(ws_chart, min_col=1, min_row=10, max_row=9+len(sorted_pages))
-        bar3.add_data(data3, titles_from_data=True)
-        bar3.set_categories(cats3)
-        bar3.width = 12
-        bar3.height = 8
-        ws_chart.add_chart(bar3, "F15")
-    
-    # 正确/错误对比饼图数据
-    pie_row = 10 + len(sorted_pages) + 2
-    ws_chart.cell(row=pie_row, column=1, value="正确/错误分布")
-    ws_chart.cell(row=pie_row, column=1).font = subtitle_font
-    
-    ws_chart.cell(row=pie_row+1, column=1, value="类别")
-    ws_chart.cell(row=pie_row+1, column=2, value="数量")
-    ws_chart.cell(row=pie_row+2, column=1, value="正确")
-    ws_chart.cell(row=pie_row+2, column=2, value=correct_q)
-    ws_chart.cell(row=pie_row+3, column=1, value="错误")
-    ws_chart.cell(row=pie_row+3, column=2, value=error_q)
-    
-    pie2 = PieChart()
-    pie2.title = "正确/错误分布"
-    labels2 = Reference(ws_chart, min_col=1, min_row=pie_row+2, max_row=pie_row+3)
-    data_pie2 = Reference(ws_chart, min_col=2, min_row=pie_row+1, max_row=pie_row+3)
-    pie2.add_data(data_pie2, titles_from_data=True)
-    pie2.set_categories(labels2)
-    pie2.width = 10
-    pie2.height = 8
-    pie2.dataLabels = DataLabelList()
-    pie2.dataLabels.showPercent = True
-    pie2.dataLabels.showVal = True
-    ws_chart.add_chart(pie2, "F30")
-    
-    # 评估指标雷达图数据
-    radar_row = pie_row + 6
-    ws_chart.cell(row=radar_row, column=1, value="评估指标雷达图数据")
-    ws_chart.cell(row=radar_row, column=1).font = subtitle_font
-    
-    radar_headers = ['指标', '得分']
-    for col, h in enumerate(radar_headers, 1):
-        cell = ws_chart.cell(row=radar_row+1, column=col, value=h)
-        cell.font = header_font
-        cell.fill = header_fill
-    
-    choice_acc = choice_stats.get('accuracy', 0) * 100 if choice_stats.get('total', 0) > 0 else accuracy * 100
-    fill_acc = objective_fill_stats.get('accuracy', 0) * 100 if objective_fill_stats.get('total', 0) > 0 else accuracy * 100
-    
-    radar_data = [
-        ['总体准确率', accuracy * 100],
-        ['选择题准确率', choice_acc],
-        ['填空题准确率', fill_acc],
-        ['完整性', 100 if total_q > 0 else 0],
-        ['一致性', accuracy * 100],
-    ]
-    
-    for row_idx, (label, val) in enumerate(radar_data, radar_row+2):
-        ws_chart.cell(row=row_idx, column=1, value=label)
-        ws_chart.cell(row=row_idx, column=2, value=round(val, 1))
-    
-    # 创建雷达图
-    radar = RadarChart()
-    radar.title = "评估指标雷达图"
-    radar.type = "filled"
-    radar_labels = Reference(ws_chart, min_col=1, min_row=radar_row+2, max_row=radar_row+6)
-    radar_values = Reference(ws_chart, min_col=2, min_row=radar_row+1, max_row=radar_row+6)
-    radar.add_data(radar_values, titles_from_data=True)
-    radar.set_categories(radar_labels)
-    radar.width = 12
-    radar.height = 10
-    ws_chart.add_chart(radar, "F45")
-    
-    # 按书本统计柱状图
-    by_book = overall.get('by_book', {})
-    if by_book:
-        book_row = radar_row + 10
-        ws_chart.cell(row=book_row, column=1, value="按书本准确率统计")
-        ws_chart.cell(row=book_row, column=1).font = subtitle_font
+    try:
+        # 调用增强版导出服务
+        wb = export_batch_excel_enhanced(task_data)
         
-        book_headers = ['书本', '准确率%', '作业数']
-        for col, h in enumerate(book_headers, 1):
-            cell = ws_chart.cell(row=book_row+1, column=col, value=h)
-            cell.font = header_font
-            cell.fill = header_fill
-            cell.border = border
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
         
-        for row_idx, (book_id, book_data) in enumerate(by_book.items(), book_row+2):
-            ws_chart.cell(row=row_idx, column=1, value=book_data.get('book_name', book_id)[:15]).border = border
-            ws_chart.cell(row=row_idx, column=2, value=round(book_data.get('accuracy', 0) * 100, 1)).border = border
-            ws_chart.cell(row=row_idx, column=3, value=book_data.get('homework_count', 0)).border = border
+        # 生成文件名
+        task_name = task_data.get('name', task_id)[:20].replace(' ', '_')
+        filename = f'batch_eval_{task_name}_{datetime.now().strftime("%Y%m%d_%H%M")}.xlsx'
         
-        if len(by_book) > 0:
-            bar4 = BarChart()
-            bar4.title = "按书本准确率统计"
-            bar4.type = "col"
-            bar4.style = 12
-            data4 = Reference(ws_chart, min_col=2, min_row=book_row+1, max_row=book_row+1+len(by_book))
-            cats4 = Reference(ws_chart, min_col=1, min_row=book_row+2, max_row=book_row+1+len(by_book))
-            bar4.add_data(data4, titles_from_data=True)
-            bar4.set_categories(cats4)
-            bar4.width = 12
-            bar4.height = 8
-            bar4.y_axis.scaling.max = 100
-            ws_chart.add_chart(bar4, "F60")
-    
-    # ========== 4. 作业明细表 ==========
-    ws2 = wb.create_sheet("作业明细")
-    headers = ['序号', '书本', '页码', '学生', '准确率', '正确数', '错误数', 
-               '选择题准确率', '客观填空题准确率', '主观题准确率', '状态']
-    for col, header in enumerate(headers, 1):
-        cell = ws2.cell(row=1, column=col, value=header)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.border = border
-    
-    for row_idx, item in enumerate(homework_items, 2):
-        eval_data = item.get('evaluation', {})
-        item_by_type = eval_data.get('by_question_type', {})
-        
-        ws2.cell(row=row_idx, column=1, value=row_idx - 1)
-        ws2.cell(row=row_idx, column=2, value=item.get('book_name', ''))
-        ws2.cell(row=row_idx, column=3, value=item.get('page_num', ''))
-        ws2.cell(row=row_idx, column=4, value=item.get('student_name', ''))
-        
-        item_acc = item.get('accuracy', 0)
-        acc_cell = ws2.cell(row=row_idx, column=5, value=f"{item_acc * 100:.1f}%")
-        if item_acc >= 0.9:
-            acc_cell.fill = highlight_fill
-        elif item_acc < 0.7:
-            acc_cell.fill = error_fill
-        
-        ws2.cell(row=row_idx, column=6, value=eval_data.get('correct_count', 0))
-        ws2.cell(row=row_idx, column=7, value=eval_data.get('error_count', 0))
-        
-        # 题目类型准确率
-        choice_acc = item_by_type.get('choice', {}).get('accuracy', 0)
-        obj_fill_acc = item_by_type.get('objective_fill', {}).get('accuracy', 0)
-        other_acc = item_by_type.get('other', {}).get('accuracy', 0)
-        
-        ws2.cell(row=row_idx, column=8, value=f"{choice_acc * 100:.1f}%" if item_by_type.get('choice', {}).get('total', 0) > 0 else '-')
-        ws2.cell(row=row_idx, column=9, value=f"{obj_fill_acc * 100:.1f}%" if item_by_type.get('objective_fill', {}).get('total', 0) > 0 else '-')
-        ws2.cell(row=row_idx, column=10, value=f"{other_acc * 100:.1f}%" if item_by_type.get('other', {}).get('total', 0) > 0 else '-')
-        ws2.cell(row=row_idx, column=11, value='已完成' if item.get('status') == 'completed' else item.get('status', ''))
-    
-    # 设置列宽
-    for col in range(1, 12):
-        ws2.column_dimensions[get_column_letter(col)].width = 15
-    
-    # ========== 5. 题目明细表 ==========
-    ws3 = wb.create_sheet("题目明细")
-    detail_headers = ['作业ID', '书本', '页码', '学生', '题号', '基准答案', 'AI答案', 
-                      '是否正确', '错误类型', '题型分类', '错误说明']
-    for col, header in enumerate(detail_headers, 1):
-        cell = ws3.cell(row=1, column=col, value=header)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.border = border
-    
-    detail_row = 2
-    for item in homework_items:
-        eval_data = item.get('evaluation', {})
-        errors = eval_data.get('errors', [])
-        
-        # 获取基准效果数据
-        base_effect = []
-        if item.get('matched_dataset'):
-            ds_data = StorageService.load_dataset(item['matched_dataset'])
-            if ds_data:
-                page_key = str(item.get('page_num'))
-                base_effect = ds_data.get('base_effects', {}).get(page_key, [])
-        
-        # 构建错误题目索引
-        error_indices = {str(e.get('index', '')): e for e in errors}
-        
-        for q in base_effect:
-            idx = str(q.get('index', ''))
-            error_info = error_indices.get(idx, {})
-            is_correct = idx not in error_indices
-            
-            # 获取题目类型分类
-            question_category = classify_question_type(q)
-            
-            if question_category['is_choice']:
-                type_text = '选择题'
-            elif question_category['is_fill']:
-                type_text = '客观填空题'
-            elif question_category['is_subjective']:
-                type_text = '主观题'
-            else:
-                type_text = '未分类'
-            
-            ws3.cell(row=detail_row, column=1, value=item.get('homework_id', ''))
-            ws3.cell(row=detail_row, column=2, value=item.get('book_name', ''))
-            ws3.cell(row=detail_row, column=3, value=item.get('page_num', ''))
-            ws3.cell(row=detail_row, column=4, value=item.get('student_name', ''))
-            ws3.cell(row=detail_row, column=5, value=idx)
-            ws3.cell(row=detail_row, column=6, value=q.get('userAnswer', ''))
-            
-            if error_info:
-                ai_result = error_info.get('ai_result', {})
-                ws3.cell(row=detail_row, column=7, value=ai_result.get('userAnswer', ''))
-            else:
-                ws3.cell(row=detail_row, column=7, value=q.get('userAnswer', ''))
-            
-            correct_cell = ws3.cell(row=detail_row, column=8, value='正确' if is_correct else '错误')
-            if not is_correct:
-                correct_cell.fill = error_fill
-            
-            ws3.cell(row=detail_row, column=9, value=error_info.get('error_type', '') if error_info else '')
-            ws3.cell(row=detail_row, column=10, value=type_text)
-            ws3.cell(row=detail_row, column=11, value=error_info.get('explanation', '') if error_info else '')
-            
-            detail_row += 1
-    
-    # 设置列宽
-    col_widths = [15, 20, 8, 12, 8, 20, 20, 10, 18, 12, 40]
-    for col, width in enumerate(col_widths, 1):
-        ws3.column_dimensions[get_column_letter(col)].width = width
-    
-    # ========== 6. 错误详情表 ==========
-    ws_detail = wb.create_sheet("错误详情")
-    err_detail_headers = ['序号', '书本', '页码', '题号', '错误类型', '基准用户答案', 'AI识别答案', 
-                          '基准判断', 'AI判断', '详细说明']
-    for col, header in enumerate(err_detail_headers, 1):
-        cell = ws_detail.cell(row=1, column=col, value=header)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.border = border
-    
-    for row_idx, err in enumerate(all_errors, 2):
-        ws_detail.cell(row=row_idx, column=1, value=row_idx - 1)
-        ws_detail.cell(row=row_idx, column=2, value=err.get('book', ''))
-        ws_detail.cell(row=row_idx, column=3, value=err.get('page', ''))
-        ws_detail.cell(row=row_idx, column=4, value=err.get('index', ''))
-        
-        err_type_cell = ws_detail.cell(row=row_idx, column=5, value=err.get('type', ''))
-        # 根据错误类型设置颜色
-        if '幻觉' in err.get('type', ''):
-            err_type_cell.fill = PatternFill(start_color="E3F2FD", end_color="E3F2FD", fill_type="solid")
-        elif '判断错误' in err.get('type', ''):
-            err_type_cell.fill = error_fill
-        elif '识别错误' in err.get('type', ''):
-            err_type_cell.fill = warning_fill
-        
-        ws_detail.cell(row=row_idx, column=6, value='')  # 基准用户答案
-        ws_detail.cell(row=row_idx, column=7, value='')  # AI识别答案
-        ws_detail.cell(row=row_idx, column=8, value='')  # 基准判断
-        ws_detail.cell(row=row_idx, column=9, value='')  # AI判断
-        ws_detail.cell(row=row_idx, column=10, value=err.get('explanation', ''))
-    
-    # 设置列宽
-    err_col_widths = [8, 20, 8, 8, 18, 15, 15, 10, 10, 50]
-    for col, width in enumerate(err_col_widths, 1):
-        ws_detail.column_dimensions[get_column_letter(col)].width = width
-    
-    # ========== 7. AI分析报告表 ==========
-    ai_analysis = overall.get('ai_analysis', {})
-    if ai_analysis:
-        ws_ai = wb.create_sheet("AI分析报告")
-        ws_ai.column_dimensions['A'].width = 25
-        ws_ai.column_dimensions['B'].width = 50
-        
-        ws_ai['A1'] = "AI智能分析报告"
-        ws_ai['A1'].font = title_font
-        ws_ai.merge_cells('A1:B1')
-        
-        # 能力评分
-        ws_ai['A3'] = "能力评分"
-        ws_ai['A3'].font = subtitle_font
-        
-        scores = ai_analysis.get('capability_scores', {})
-        ws_ai['A4'] = "识别能力"
-        ws_ai['B4'] = f"{scores.get('recognition', 0)}分"
-        ws_ai['A5'] = "判断能力"
-        ws_ai['B5'] = f"{scores.get('judgment', 0)}分"
-        ws_ai['A6'] = "综合评分"
-        ws_ai['B6'] = f"{scores.get('overall', 0)}分"
-        
-        # 主要问题
-        ws_ai['A8'] = "主要问题"
-        ws_ai['A8'].font = subtitle_font
-        
-        top_issues = ai_analysis.get('top_issues', [])
-        for row_idx, issue in enumerate(top_issues, 9):
-            ws_ai.cell(row=row_idx, column=1, value=issue.get('issue', ''))
-            ws_ai.cell(row=row_idx, column=2, value=f"出现 {issue.get('count', 0)} 次")
-        
-        # 改进建议
-        rec_row = 9 + len(top_issues) + 1
-        ws_ai.cell(row=rec_row, column=1, value="改进建议")
-        ws_ai.cell(row=rec_row, column=1).font = subtitle_font
-        
-        recommendations = ai_analysis.get('recommendations', [])
-        for row_idx, rec in enumerate(recommendations, rec_row + 1):
-            ws_ai.cell(row=row_idx, column=1, value=f"{row_idx - rec_row}.")
-            ws_ai.cell(row=row_idx, column=2, value=rec)
-        
-        # 结论
-        conclusion_row = rec_row + len(recommendations) + 2
-        ws_ai.cell(row=conclusion_row, column=1, value="总体结论")
-        ws_ai.cell(row=conclusion_row, column=1).font = subtitle_font
-        ws_ai.cell(row=conclusion_row + 1, column=1, value=ai_analysis.get('conclusion', ''))
-        ws_ai.merge_cells(f'A{conclusion_row + 1}:B{conclusion_row + 1}')
-    
-    output = io.BytesIO()
-    wb.save(output)
-    output.seek(0)
-    
-    # 生成文件名
-    task_name = task_data.get('name', task_id)[:20].replace(' ', '_')
-    filename = f'batch_eval_{task_name}_{datetime.now().strftime("%Y%m%d_%H%M")}.xlsx'
-    
-    return send_file(
-        output,
-        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        as_attachment=True,
-        download_name=filename
-    )
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'导出失败: {str(e)}'})
 
 
 # ========== AI分析报告 API ==========
 
+@batch_evaluation_bp.route('/tasks/<task_id>/ai-report', methods=['GET'])
+def get_ai_report(task_id):
+    """获取已缓存的AI分析报告"""
+    task_data = StorageService.load_batch_task(task_id)
+    if not task_data:
+        return jsonify({'success': False, 'error': '任务不存在'})
+    
+    # 检查是否有缓存的报告
+    ai_analysis = task_data.get('overall_report', {}).get('ai_analysis')
+    if ai_analysis:
+        return jsonify({
+            'success': True,
+            'cached': True,
+            'report': ai_analysis
+        })
+    else:
+        return jsonify({
+            'success': True,
+            'cached': False,
+            'report': None
+        })
+
+
 @batch_evaluation_bp.route('/tasks/<task_id>/ai-report', methods=['POST'])
 def generate_ai_report(task_id):
-    """生成AI分析报告"""
+    """生成AI分析报告（支持强制重新生成）"""
     from services.llm_service import LLMService
     from routes.auth import get_current_user_id
     
@@ -3786,142 +3294,170 @@ def generate_ai_report(task_id):
     if not task_data:
         return jsonify({'success': False, 'error': '任务不存在'})
     
+    # 检查是否强制重新生成
+    force_regenerate = request.json.get('force', False) if request.json else False
+    
+    # 如果不是强制重新生成，且已有缓存报告，直接返回
+    if not force_regenerate:
+        ai_analysis = task_data.get('overall_report', {}).get('ai_analysis')
+        if ai_analysis:
+            return jsonify({
+                'success': True,
+                'cached': True,
+                'report': ai_analysis
+            })
+    
     try:
-        # 收集所有评估结果 - 使用 homework_items 和 evaluation 字段
-        eval_results = []
+        # 收集所有评估结果
         total_questions = 0
         total_correct = 0
         error_distribution = {}
-        all_errors = []
         
-        for hw in task_data.get('homework_items', []):
-            if hw.get('status') == 'completed' and hw.get('evaluation'):
-                result = hw['evaluation']
-                # 注意：do_evaluation 返回的是 total_questions 和 correct_count
-                hw_total = result.get('total_questions', 0) or result.get('total', 0)
-                hw_correct = result.get('correct_count', 0) or result.get('correct', 0)
-                total_questions += hw_total
-                total_correct += hw_correct
-                
-                # 汇总错误分布 - 优先从 error_distribution 获取，否则从 errors 列表统计
-                hw_error_dist = result.get('error_distribution') or {}
-                if hw_error_dist:
-                    for err_type, count in hw_error_dist.items():
-                        error_distribution[err_type] = error_distribution.get(err_type, 0) + count
-                else:
-                    # 从 errors 列表统计
-                    for err in result.get('errors', []):
-                        err_type = err.get('error_type', '未知错误')
-                        error_distribution[err_type] = error_distribution.get(err_type, 0) + 1
-                
-                # 收集错误示例
-                all_errors.extend(result.get('errors', [])[:2])
-                
-                eval_results.append({
-                    'homework_id': hw.get('homework_id'),
-                    'book_name': hw.get('book_name', ''),
-                    'page_num': hw.get('page_num'),
-                    'total': hw_total,
-                    'correct': hw_correct,
-                    'accuracy': result.get('accuracy', 0),
-                    'error_count': result.get('error_count', hw_total - hw_correct)
-                })
+        # 题型统计
+        type_stats = {
+            'choice': {'total': 0, 'correct': 0},
+            'objective_fill': {'total': 0, 'correct': 0},
+            'subjective': {'total': 0, 'correct': 0}
+        }
         
-        if not eval_results:
-            return jsonify({'success': False, 'error': '没有可用的评估结果，请先执行批量评估'})
+        homework_items = task_data.get('homework_items', [])
+        for item in homework_items:
+            if item.get('status') != 'completed':
+                continue
+            
+            evaluation = item.get('evaluation', {})
+            total_questions += evaluation.get('total_questions', 0)
+            total_correct += evaluation.get('correct_count', 0)
+            
+            # 收集错误
+            errors = evaluation.get('errors', [])
+            for err in errors:
+                err_type = err.get('error_type', '未分类')
+                error_distribution[err_type] = error_distribution.get(err_type, 0) + 1
+            
+            # 题型统计
+            by_type = evaluation.get('by_question_type', {})
+            for type_key in type_stats:
+                type_data = by_type.get(type_key, {})
+                type_stats[type_key]['total'] += type_data.get('total', 0)
+                type_stats[type_key]['correct'] += type_data.get('correct', 0)
         
-        # 获取用户配置的模型
-        user_id = get_current_user_id()
-        config = ConfigService.load_config(user_id=user_id)
-        eval_model = config.get('eval_model', 'deepseek-v3.2')
+        # 构建分析数据
+        accuracy = total_correct / total_questions if total_questions > 0 else 0
         
-        # 构建 LLM 提示词
-        overall_accuracy = total_correct / total_questions if total_questions > 0 else 0
-        
-        # 简化错误示例
-        error_examples = []
-        for err in all_errors[:5]:
-            error_examples.append({
-                'type': err.get('error_type', ''),
-                'base': err.get('base_effect', {}),
-                'ai': err.get('ai_result', {})
-            })
-        
-        prompt = f"""请分析以下 AI 批改效果评估数据，生成分析报告：
+        # 调用LLM生成分析报告
+        analysis_prompt = f"""请分析以下AI批改效果评估数据，生成一份专业的分析报告：
 
-【总体数据】
-- 总题目数: {total_questions}
-- 正确题目数: {total_correct}
-- 错误题目数: {total_questions - total_correct}
-- 总体准确率: {overall_accuracy * 100:.1f}%
+评估概况：
+- 总题目数：{total_questions}
+- 正确题目数：{total_correct}
+- 总体准确率：{accuracy * 100:.1f}%
 
-【错误分布】
+题型统计：
+- 选择题：总数 {type_stats['choice']['total']}，正确 {type_stats['choice']['correct']}
+- 客观填空题：总数 {type_stats['objective_fill']['total']}，正确 {type_stats['objective_fill']['correct']}
+- 主观题：总数 {type_stats['subjective']['total']}，正确 {type_stats['subjective']['correct']}
+
+错误类型分布：
 {json.dumps(error_distribution, ensure_ascii=False, indent=2)}
 
-【错误示例】
-{json.dumps(error_examples, ensure_ascii=False, indent=2)[:3000]}
+请提供：
+1. 总体评价（2-3句话）
+2. 主要问题分析（列出3-5个主要问题）
+3. 改进建议（针对每个问题给出具体建议）
+4. 能力评分（识别能力、判断能力、综合评分，满分100）
 
-【各作业概览】
-{json.dumps(eval_results, ensure_ascii=False, indent=2)[:2000]}
-
-请按以下 JSON 格式输出分析报告：
-{{
-  "overview": {{
-    "total": {total_questions},
-    "passed": {total_correct},
-    "failed": {total_questions - total_correct},
-    "pass_rate": {round(overall_accuracy * 100, 1)}
-  }},
-  "capability_scores": {{
-    "recognition": 识别能力评分0到100,
-    "judgment": 判断能力评分0到100,
-    "overall": 综合评分0到100
-  }},
-  "top_issues": [
-    {{"issue": "问题描述", "count": 出现次数}}
-  ],
-  "recommendations": ["改进建议1", "改进建议2"],
-  "conclusion": "整体结论2到3句话"
-}}"""
-
-        system_prompt = "你是 AI 批改效果分析师，请根据评估数据生成分析报告。严格按照要求的 JSON 格式输出，不要输出其他内容。"
+请以JSON格式返回，包含以下字段：
+- summary: 总体评价
+- main_issues: 主要问题列表
+- suggestions: 改进建议列表
+- capability_scores: {{recognition: 分数, judgment: 分数, overall: 分数}}
+- conclusion: 总体结论
+"""
         
-        llm_result = LLMService.call_deepseek(
-            prompt,
-            system_prompt=system_prompt,
-            model=eval_model,
-            timeout=90
-        )
+        user_id = get_current_user_id()
+        response = LLMService.call_deepseek(analysis_prompt, user_id=user_id)
         
-        if llm_result.get('error'):
-            # LLM 调用失败，使用本地汇总
-            report = _generate_local_summary(total_questions, total_correct, error_distribution)
-        else:
-            parsed = LLMService.parse_json_response(llm_result.get('content', ''))
-            if parsed:
-                report = parsed
-                report['generated_by'] = 'llm'
+        # 解析响应
+        try:
+            import re
+            json_match = re.search(r'\{[\s\S]*\}', response)
+            if json_match:
+                ai_analysis = json.loads(json_match.group())
             else:
-                report = _generate_local_summary(total_questions, total_correct, error_distribution)
+                ai_analysis = {
+                    'summary': response[:500],
+                    'main_issues': [],
+                    'suggestions': [],
+                    'capability_scores': {'recognition': 0, 'judgment': 0, 'overall': 0},
+                    'conclusion': ''
+                }
+        except json.JSONDecodeError:
+            ai_analysis = {
+                'summary': response[:500],
+                'main_issues': [],
+                'suggestions': [],
+                'capability_scores': {'recognition': 0, 'judgment': 0, 'overall': 0},
+                'conclusion': ''
+            }
         
         # 保存到任务数据
-        if 'overall_report' not in task_data or task_data['overall_report'] is None:
+        if 'overall_report' not in task_data:
             task_data['overall_report'] = {}
-        task_data['overall_report']['ai_analysis'] = report
+        task_data['overall_report']['ai_analysis'] = ai_analysis
         StorageService.save_batch_task(task_id, task_data)
         
         return jsonify({
             'success': True,
-            'report': report
+            'cached': False,
+            'report': ai_analysis
         })
-        
+    
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)})
+        return jsonify({
+            'success': False,
+            'error': f'生成报告失败: {str(e)}'
+        })
 
 
-def _generate_local_summary(total_questions, total_correct, error_distribution):
+def _select_typical_error_cases(all_errors, max_per_type=2, max_total=8):
+    """选取典型错误案例，每种错误类型最多选取指定数量"""
+    if not all_errors:
+        return []
+    
+    # 按错误类型分组
+    by_type = {}
+    for err in all_errors:
+        err_type = err.get('error_type', '未知错误')
+        if err_type not in by_type:
+            by_type[err_type] = []
+        by_type[err_type].append(err)
+    
+    # 每种类型选取最多 max_per_type 个
+    selected = []
+    for err_type, errors in by_type.items():
+        for err in errors[:max_per_type]:
+            base = err.get('base_effect', {})
+            ai = err.get('ai_result', {})
+            selected.append({
+                'index': base.get('index', '?'),
+                'error_type': err_type,
+                'base_answer': base.get('userAnswer', ''),
+                'ai_answer': ai.get('userAnswer', ''),
+                'base_correct': base.get('correct', ''),
+                'ai_correct': ai.get('correct', ''),
+                'standard_answer': base.get('answer', '') or base.get('mainAnswer', ''),
+                'explanation': err.get('explanation', '')
+            })
+            if len(selected) >= max_total:
+                break
+        if len(selected) >= max_total:
+            break
+    
+    return selected
+
+
+def _generate_local_summary(total_questions, total_correct, error_distribution, all_errors=None):
     """生成本地汇总报告（不调用 LLM）"""
     accuracy = total_correct / total_questions if total_questions > 0 else 0
     
@@ -3929,35 +3465,65 @@ def _generate_local_summary(total_questions, total_correct, error_distribution):
     top_issues = []
     for err_type, count in sorted(error_distribution.items(), key=lambda x: -x[1]):
         if count > 0:
-            top_issues.append({'issue': err_type, 'count': count})
+            severity = 'high' if '判断错误' in err_type or '幻觉' in err_type else 'medium'
+            top_issues.append({
+                'issue': err_type, 
+                'count': count, 
+                'severity': severity,
+                'description': f'共{count}次'
+            })
     
     # 生成建议
     recommendations = []
     if error_distribution.get('识别错误-判断正确', 0) > 0:
-        recommendations.append('优化 OCR 识别模型，提高文字识别准确率')
+        recommendations.append({'title': '优化OCR识别', 'detail': '提高文字识别准确率，减少识别偏差'})
     if error_distribution.get('识别正确-判断错误', 0) > 0:
-        recommendations.append('优化判断逻辑，改进答案比对算法')
+        recommendations.append({'title': '优化判断逻辑', 'detail': '改进答案比对算法，提高判断准确性'})
     if error_distribution.get('AI识别幻觉', 0) > 0:
-        recommendations.append('加强幻觉检测，避免 AI 脑补答案')
+        recommendations.append({'title': '加强幻觉检测', 'detail': '避免AI将错误答案识别为标准答案'})
     if not recommendations:
-        recommendations.append('整体表现良好，继续保持')
+        recommendations.append({'title': '保持现状', 'detail': '整体表现良好，继续保持'})
+    
+    # 生成错误案例分析
+    error_case_analysis = []
+    if all_errors:
+        for err in all_errors[:5]:
+            base = err.get('base_effect', {})
+            ai = err.get('ai_result', {})
+            error_case_analysis.append({
+                'index': base.get('index', '?'),
+                'error_type': err.get('error_type', '未知'),
+                'base_answer': base.get('userAnswer', ''),
+                'ai_answer': ai.get('userAnswer', ''),
+                'base_correct': base.get('correct', ''),
+                'ai_correct': ai.get('correct', ''),
+                'standard_answer': base.get('answer', ''),
+                'root_cause': err.get('explanation', '需要进一步分析')
+            })
     
     return {
         'overview': {
             'total': total_questions,
             'passed': total_correct,
             'failed': total_questions - total_correct,
-            'pass_rate': round(accuracy * 100, 1)
+            'pass_rate': round(accuracy * 100, 1),
+            'homework_count': 0
         },
         'capability_scores': {
-            'recognition': round(accuracy * 100, 1),
-            'judgment': round(accuracy * 100, 1),
-            'overall': round(accuracy * 100, 1)
+            'recognition': round(accuracy * 100),
+            'judgment': round(accuracy * 100),
+            'overall': round(accuracy * 100)
         },
         'top_issues': top_issues[:5],
+        'error_case_analysis': error_case_analysis,
+        'type_performance': {
+            'best': {'type': '未知', 'accuracy': 0},
+            'worst': {'type': '未知', 'accuracy': 0}
+        },
         'recommendations': recommendations,
-        'conclusion': f'AI 批改表现{"较差" if accuracy < 0.6 else "一般" if accuracy < 0.8 else "良好" if accuracy < 0.95 else "优秀"}，通过率 {accuracy * 100:.1f}%。{"需要重点优化。" if accuracy < 0.8 else ""}',
-        'generated_by': 'local'
+        'conclusion': f'AI批改表现{"较差" if accuracy < 0.6 else "一般" if accuracy < 0.8 else "良好" if accuracy < 0.95 else "优秀"}，准确率{accuracy * 100:.1f}%。{"需要重点优化。" if accuracy < 0.8 else ""}',
+        'generated_by': 'local',
+        'generated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
 
 
@@ -4167,6 +3733,36 @@ def batch_ai_evaluate(task_id):
         yield f"data: {json.dumps({'type': 'complete', 'overall_accuracy': overall_accuracy, 'total_questions': total_questions, 'correct_questions': total_correct, 'by_question_type': aggregated_type_stats, 'by_combined': aggregated_combined_stats})}\n\n"
     
     return Response(generate(), mimetype='text/event-stream')
+
+
+@batch_evaluation_bp.route('/tasks/<task_id>/remark', methods=['POST'])
+def update_task_remark(task_id):
+    """更新任务名称和备注"""
+    try:
+        task_data = StorageService.load_batch_task(task_id)
+        if not task_data:
+            return jsonify({'success': False, 'error': '任务不存在'})
+        
+        data = request.json
+        
+        # 更新名称（如果提供）
+        if 'name' in data:
+            task_data['name'] = data.get('name', '')
+        
+        # 更新备注（如果提供）
+        if 'remark' in data:
+            task_data['remark'] = data.get('remark', '')
+        
+        StorageService.save_batch_task(task_id, task_data)
+        
+        return jsonify({
+            'success': True, 
+            'name': task_data.get('name', ''),
+            'remark': task_data.get('remark', '')
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 
 @batch_evaluation_bp.route('/tasks/<task_id>/reset', methods=['POST'])
 def reset_batch_task(task_id):
@@ -4473,4 +4069,146 @@ def evaluate_single_semantic():
         return jsonify({'success': True, 'data': result})
         
     except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+# ========== 题目类型详情 API ==========
+
+@batch_evaluation_bp.route('/tasks/<task_id>/type-details', methods=['GET'])
+def get_type_details(task_id):
+    """
+    获取指定题目类型的详细题目列表
+    
+    Query参数:
+    - type: 题目类型 (choice/objective_fill/subjective)
+    - status: 筛选状态 (all/correct/error)，默认all
+    - page: 页码，默认1
+    - page_size: 每页数量，默认50
+    
+    返回按题目类型筛选的详细数据，支持分页
+    """
+    try:
+        question_type = request.args.get('type', '')
+        status_filter = request.args.get('status', 'all')
+        page = int(request.args.get('page', 1))
+        page_size = int(request.args.get('page_size', 50))
+        
+        if not question_type:
+            return jsonify({'success': False, 'error': '请指定题目类型'})
+        
+        if question_type not in ('choice', 'objective_fill', 'subjective'):
+            return jsonify({'success': False, 'error': '无效的题目类型'})
+        
+        task_data = StorageService.load_batch_task(task_id)
+        if not task_data:
+            return jsonify({'success': False, 'error': '任务不存在'})
+        
+        homework_items = task_data.get('homework_items', [])
+        
+        # 收集所有符合条件的题目
+        all_questions = []
+        
+        for hw_item in homework_items:
+            evaluation = hw_item.get('evaluation') or {}
+            errors = evaluation.get('errors', [])
+            
+            # 从 errors 中提取该类型的错误题目
+            for err in errors:
+                q_category = err.get('question_category', {})
+                
+                # 判断是否属于目标类型
+                is_target_type = False
+                if question_type == 'choice' and q_category.get('is_choice'):
+                    is_target_type = True
+                elif question_type == 'objective_fill' and q_category.get('is_fill'):
+                    is_target_type = True
+                elif question_type == 'subjective' and q_category.get('is_subjective'):
+                    is_target_type = True
+                
+                if not is_target_type:
+                    continue
+                
+                # 判断是否计入错误
+                error_type = err.get('error_type', '')
+                not_counted_types = ['格式差异', '识别题干-判断正确', '识别差异-判断正确']
+                is_error = error_type not in not_counted_types
+                
+                # 根据状态筛选
+                if status_filter == 'correct' and is_error:
+                    continue
+                if status_filter == 'error' and not is_error:
+                    continue
+                
+                # 构建题目详情
+                question_detail = {
+                    'homework_id': hw_item.get('homework_id'),
+                    'book_name': hw_item.get('book_name', ''),
+                    'page_num': hw_item.get('page_num'),
+                    'student_name': hw_item.get('student_name', ''),
+                    'index': err.get('index', ''),
+                    'error_type': error_type,
+                    'is_error': is_error,
+                    'severity': err.get('severity', 'medium'),
+                    'explanation': err.get('explanation', ''),
+                    'similarity': err.get('similarity'),
+                    'base_effect': err.get('base_effect', {}),
+                    'ai_result': err.get('ai_result', {}),
+                    'question_category': q_category
+                }
+                all_questions.append(question_detail)
+        
+        # 如果需要正确的题目，还需要从评估统计中补充
+        # 因为 errors 列表只包含有差异的题目，完全正确的题目不在其中
+        # 这里我们通过统计数据计算正确数
+        
+        # 统计信息
+        total_count = len(all_questions)
+        error_count = sum(1 for q in all_questions if q['is_error'])
+        correct_count = total_count - error_count
+        
+        # 从 overall_report 获取该类型的总数
+        overall_report = task_data.get('overall_report', {})
+        by_type = overall_report.get('by_question_type', {})
+        type_stats = by_type.get(question_type, {})
+        type_total = type_stats.get('total', 0)
+        type_correct = type_stats.get('correct', 0)
+        
+        # 分页
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+        paginated_questions = all_questions[start_idx:end_idx]
+        
+        # 按错误类型分组统计
+        error_type_dist = {}
+        for q in all_questions:
+            et = q['error_type']
+            error_type_dist[et] = error_type_dist.get(et, 0) + 1
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'question_type': question_type,
+                'type_name': {'choice': '选择题', 'objective_fill': '客观填空题', 'subjective': '主观题'}.get(question_type, question_type),
+                'stats': {
+                    'total': type_total,
+                    'correct': type_correct,
+                    'accuracy': type_stats.get('accuracy', 0),
+                    'in_errors_list': total_count,  # errors列表中的数量
+                    'error_count': error_count,
+                    'correct_in_list': correct_count  # errors列表中不计入错误的数量
+                },
+                'error_type_distribution': error_type_dist,
+                'questions': paginated_questions,
+                'pagination': {
+                    'page': page,
+                    'page_size': page_size,
+                    'total': total_count,
+                    'total_pages': (total_count + page_size - 1) // page_size if page_size > 0 else 0
+                }
+            }
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})

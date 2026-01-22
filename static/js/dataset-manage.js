@@ -2170,3 +2170,344 @@ function hideCorrectionModal(event) {
     correctionPage = null;
     aiResultData = null;
 }
+
+
+// ========== 全局效果矫正功能（多页码） ==========
+// 与单页效果矫正逻辑一致：只比对题号(index)和索引(tempIndex)是否匹配
+let globalCorrectionData = {};  // 存储所有页码的矫正数据
+let currentCorrectionPage = null;  // 当前选中的页码
+
+/**
+ * 显示全局效果矫正弹窗
+ * 左右对比所有页码的基准效果与AI批改结果的题号/tempIndex
+ */
+async function showEffectCorrectionModal() {
+    const pages = Object.keys(recognizeResults)
+        .filter(p => recognizeResults[p]?.success && recognizeResults[p]?.data?.length > 0)
+        .map(Number)
+        .sort((a, b) => a - b);
+    
+    if (pages.length === 0) {
+        alert('没有可用的识别结果，请先完成识别');
+        return;
+    }
+    
+    // 重置数据
+    globalCorrectionData = {};
+    
+    // 显示弹窗
+    document.getElementById('correctionModal').classList.add('show');
+    document.getElementById('correctionLoading').style.display = 'flex';
+    document.getElementById('correctionTableContainer').style.display = 'none';
+    document.getElementById('correctionEmpty').style.display = 'none';
+    
+    // 加载所有页码的AI批改结果
+    let totalMatched = 0;
+    let totalUnmatched = 0;
+    
+    for (const page of pages) {
+        const hw = selectedHomework[page];
+        if (!hw) continue;
+        
+        try {
+            const res = await fetch(`/api/dataset/homework-result/${hw.id}`);
+            const data = await res.json();
+            
+            if (data.success) {
+                const baseEffects = recognizeResults[page]?.data || [];
+                const aiResults = data.data.homework_result || [];
+                
+                // 统计匹配情况（只比对tempIndex）
+                const matched = countMatchedByTempIndex(baseEffects, aiResults);
+                const unmatched = countUnmatchedByTempIndex(baseEffects, aiResults);
+                
+                globalCorrectionData[page] = {
+                    baseEffects: baseEffects,
+                    aiResults: aiResults,
+                    matchedCount: matched,
+                    unmatchedCount: unmatched
+                };
+                
+                totalMatched += matched;
+                totalUnmatched += unmatched;
+            }
+        } catch (e) {
+            console.error(`加载第 ${page} 页AI批改结果失败:`, e);
+        }
+    }
+    
+    // 隐藏加载状态
+    document.getElementById('correctionLoading').style.display = 'none';
+    
+    // 更新统计信息
+    document.getElementById('correctionSummary').innerHTML = 
+        `匹配: <span class="match-count">${totalMatched}</span> 题 | 未匹配: <span class="diff-count">${totalUnmatched}</span> 题`;
+    
+    // 渲染页码标签
+    renderGlobalCorrectionPageTabs(pages);
+    
+    // 默认选中第一个有未匹配项的页码，或第一个页码
+    const firstUnmatchedPage = pages.find(p => globalCorrectionData[p]?.unmatchedCount > 0) || pages[0];
+    selectGlobalCorrectionPage(firstUnmatchedPage);
+}
+
+/**
+ * 统计匹配数量（按tempIndex）
+ */
+function countMatchedByTempIndex(baseEffects, aiResults) {
+    const aiTempIndexes = new Set(
+        aiResults.map(item => item.tempIndex).filter(t => t !== undefined && t !== null)
+    );
+    return baseEffects.filter(item => 
+        item.tempIndex !== undefined && item.tempIndex !== null && aiTempIndexes.has(item.tempIndex)
+    ).length;
+}
+
+/**
+ * 统计未匹配数量（按tempIndex）
+ */
+function countUnmatchedByTempIndex(baseEffects, aiResults) {
+    const aiTempIndexes = new Set(
+        aiResults.map(item => item.tempIndex).filter(t => t !== undefined && t !== null)
+    );
+    return baseEffects.filter(item => 
+        item.tempIndex === undefined || item.tempIndex === null || !aiTempIndexes.has(item.tempIndex)
+    ).length;
+}
+
+/**
+ * 获取行的匹配状态CSS类
+ */
+function getGlobalMatchClass(tempIndex, compareData) {
+    if (tempIndex === undefined || tempIndex === null) return 'row-unmatched';
+    const found = compareData.find(item => item.tempIndex === tempIndex);
+    return found ? 'row-matched' : 'row-unmatched';
+}
+
+/**
+ * 渲染页码标签
+ */
+function renderGlobalCorrectionPageTabs(pages) {
+    const container = document.getElementById('correctionPageTabs');
+    
+    container.innerHTML = pages.map(page => {
+        const data = globalCorrectionData[page];
+        const matchedCount = data?.matchedCount || 0;
+        const unmatchedCount = data?.unmatchedCount || 0;
+        
+        let badge = '';
+        if (unmatchedCount > 0) {
+            badge = `<span class="diff-badge">${unmatchedCount}</span>`;
+        } else {
+            badge = `<span class="match-badge">${matchedCount}</span>`;
+        }
+        
+        return `<div class="correction-page-tab" data-page="${page}" onclick="selectGlobalCorrectionPage(${page})">
+            第 ${page} 页 ${badge}
+        </div>`;
+    }).join('');
+}
+
+/**
+ * 选择页码
+ */
+function selectGlobalCorrectionPage(page) {
+    currentCorrectionPage = page;
+    
+    // 更新标签选中状态
+    document.querySelectorAll('.correction-page-tab').forEach(tab => {
+        tab.classList.toggle('active', parseInt(tab.dataset.page) === page);
+    });
+    
+    // 渲染左右对比表格
+    renderGlobalCorrectionSplitView(page);
+}
+
+/**
+ * 渲染左右对比视图（与单页效果矫正一致）
+ */
+function renderGlobalCorrectionSplitView(page) {
+    const data = globalCorrectionData[page];
+    if (!data) {
+        document.getElementById('correctionTableContainer').style.display = 'none';
+        document.getElementById('correctionEmpty').style.display = 'flex';
+        return;
+    }
+    
+    const baseEffects = data.baseEffects;
+    const aiResults = data.aiResults;
+    
+    document.getElementById('correctionTableContainer').style.display = 'block';
+    document.getElementById('correctionEmpty').style.display = 'none';
+    
+    // 渲染左右分栏对比表格
+    const container = document.getElementById('correctionTableContainer');
+    container.innerHTML = `
+        <div class="correction-split">
+            <div class="correction-left">
+                <div class="correction-panel-title">基准效果 (可编辑)</div>
+                <div class="correction-table-wrap">
+                    <table class="correction-table">
+                        <thead>
+                            <tr>
+                                <th style="width:80px;">题号</th>
+                                <th>手写答案</th>
+                                <th style="width:100px;">tempIndex</th>
+                            </tr>
+                        </thead>
+                        <tbody id="globalCorrectionBaseBody">
+                            ${baseEffects.map((item, idx) => `
+                                <tr data-idx="${idx}" class="${getGlobalMatchClass(item.tempIndex, aiResults)}">
+                                    <td>
+                                        <input type="text" class="correction-input" value="${escapeHtml(item.index || '')}" 
+                                               onchange="updateGlobalCorrectionCell(${page}, ${idx}, 'index', this.value)">
+                                    </td>
+                                    <td>
+                                        <textarea class="correction-textarea" 
+                                                  onchange="updateGlobalCorrectionCell(${page}, ${idx}, 'userAnswer', this.value)">${escapeHtml(item.userAnswer || '')}</textarea>
+                                    </td>
+                                    <td>
+                                        <input type="number" class="correction-input tempindex-input" 
+                                               value="${item.tempIndex !== undefined ? item.tempIndex : ''}" 
+                                               onchange="updateGlobalCorrectionCell(${page}, ${idx}, 'tempIndex', this.value === '' ? undefined : parseInt(this.value))">
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="correction-actions">
+                    <button class="btn-add-row" onclick="addGlobalCorrectionRow(${page})">+ 添加题目</button>
+                </div>
+            </div>
+            <div class="correction-right">
+                <div class="correction-panel-title">AI批改结果 (只读参考)</div>
+                <div class="correction-table-wrap">
+                    <table class="correction-table">
+                        <thead>
+                            <tr>
+                                <th style="width:80px;">题号</th>
+                                <th>手写答案</th>
+                                <th style="width:100px;">tempIndex</th>
+                            </tr>
+                        </thead>
+                        <tbody id="globalCorrectionAiBody">
+                            ${aiResults.map((item, idx) => `
+                                <tr data-idx="${idx}" class="${getGlobalMatchClass(item.tempIndex, baseEffects)}">
+                                    <td>${escapeHtml(item.index || '-')}</td>
+                                    <td class="ai-answer-cell">${escapeHtml(item.userAnswer || '-')}</td>
+                                    <td class="tempindex-cell">${item.tempIndex !== undefined ? item.tempIndex : '-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="correction-stats-bar">
+            <span class="stat-matched">匹配: ${data.matchedCount} 题</span>
+            <span class="stat-unmatched">未匹配: ${data.unmatchedCount} 题</span>
+        </div>
+    `;
+}
+
+/**
+ * 更新基准效果单元格
+ */
+function updateGlobalCorrectionCell(page, idx, field, value) {
+    if (!recognizeResults[page]?.data?.[idx]) return;
+    
+    recognizeResults[page].data[idx][field] = value;
+    
+    // 更新统计并重新渲染
+    const data = globalCorrectionData[page];
+    if (data) {
+        data.matchedCount = countMatchedByTempIndex(recognizeResults[page].data, data.aiResults);
+        data.unmatchedCount = countUnmatchedByTempIndex(recognizeResults[page].data, data.aiResults);
+        
+        // 更新全局统计
+        updateGlobalCorrectionSummary();
+        
+        // 更新页码标签
+        const pages = Object.keys(globalCorrectionData).map(Number).sort((a, b) => a - b);
+        renderGlobalCorrectionPageTabs(pages);
+        document.querySelector(`.correction-page-tab[data-page="${page}"]`)?.classList.add('active');
+        
+        // 重新渲染当前页
+        renderGlobalCorrectionSplitView(page);
+    }
+}
+
+/**
+ * 添加基准效果行
+ */
+function addGlobalCorrectionRow(page) {
+    if (!recognizeResults[page]) {
+        recognizeResults[page] = { success: true, data: [] };
+    }
+    
+    const data = recognizeResults[page].data;
+    const lastItem = data[data.length - 1];
+    const newIndex = lastItem ? (parseInt(lastItem.index) + 1).toString() : '1';
+    const newTempIndex = lastItem && lastItem.tempIndex !== undefined ? lastItem.tempIndex + 1 : 0;
+    
+    data.push({
+        index: newIndex,
+        userAnswer: '',
+        correct: 'yes',
+        tempIndex: newTempIndex
+    });
+    
+    // 更新统计并重新渲染
+    const corrData = globalCorrectionData[page];
+    if (corrData) {
+        corrData.matchedCount = countMatchedByTempIndex(data, corrData.aiResults);
+        corrData.unmatchedCount = countUnmatchedByTempIndex(data, corrData.aiResults);
+        updateGlobalCorrectionSummary();
+        
+        const pages = Object.keys(globalCorrectionData).map(Number).sort((a, b) => a - b);
+        renderGlobalCorrectionPageTabs(pages);
+        document.querySelector(`.correction-page-tab[data-page="${page}"]`)?.classList.add('active');
+        renderGlobalCorrectionSplitView(page);
+    }
+}
+
+/**
+ * 更新全局统计信息
+ */
+function updateGlobalCorrectionSummary() {
+    let totalMatched = 0;
+    let totalUnmatched = 0;
+    
+    Object.values(globalCorrectionData).forEach(data => {
+        totalMatched += data.matchedCount || 0;
+        totalUnmatched += data.unmatchedCount || 0;
+    });
+    
+    document.getElementById('correctionSummary').innerHTML = 
+        `匹配: <span class="match-count">${totalMatched}</span> 题 | 未匹配: <span class="diff-count">${totalUnmatched}</span> 题`;
+}
+
+/**
+ * 应用矫正修改
+ */
+function applyCorrectionChanges() {
+    // 数据已经实时更新到 recognizeResults 中
+    hideCorrectionModal();
+    
+    // 重新渲染识别结果
+    renderRecognizePreview();
+    checkCanSave();
+    
+    alert('矫正修改已应用');
+}
+
+/**
+ * 隐藏效果矫正弹窗
+ */
+function hideCorrectionModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('correctionModal').classList.remove('show');
+    globalCorrectionData = {};
+    currentCorrectionPage = null;
+}

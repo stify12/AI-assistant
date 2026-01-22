@@ -306,13 +306,51 @@ function switchTab(tab) {
 }
 
 // ========== 加载/显示/隐藏 ==========
-function showLoading(text) {
+function showLoading(text, subtext = '') {
     document.getElementById('loadingText').textContent = text || '处理中...';
+    const subtextEl = document.getElementById('loadingSubtext');
+    if (subtextEl) {
+        subtextEl.textContent = subtext;
+        subtextEl.style.display = subtext ? 'block' : 'none';
+    }
+    // 重置进度条为不确定模式
+    const progressBar = document.getElementById('loadingProgressBar');
+    if (progressBar) {
+        progressBar.classList.remove('determinate');
+        progressBar.style.width = '40%';
+    }
     document.getElementById('loadingOverlay').classList.add('show');
+}
+
+function updateLoadingProgress(percent, text, subtext) {
+    const progressBar = document.getElementById('loadingProgressBar');
+    if (progressBar) {
+        progressBar.classList.add('determinate');
+        progressBar.style.width = Math.min(100, Math.max(0, percent)) + '%';
+    }
+    if (text) {
+        document.getElementById('loadingText').textContent = text;
+    }
+    const subtextEl = document.getElementById('loadingSubtext');
+    if (subtextEl && subtext !== undefined) {
+        subtextEl.textContent = subtext;
+        subtextEl.style.display = subtext ? 'block' : 'none';
+    }
 }
 
 function hideLoading() {
     document.getElementById('loadingOverlay').classList.remove('show');
+    // 重置进度条
+    const progressBar = document.getElementById('loadingProgressBar');
+    if (progressBar) {
+        progressBar.classList.remove('determinate');
+        progressBar.style.width = '40%';
+    }
+    const subtextEl = document.getElementById('loadingSubtext');
+    if (subtextEl) {
+        subtextEl.textContent = '';
+        subtextEl.style.display = 'none';
+    }
 }
 
 function showModal(id) {
@@ -370,22 +408,88 @@ function renderTaskList() {
         return;
     }
     
-    container.innerHTML = taskList.map(task => `
-        <div class="task-item ${selectedTask?.task_id === task.task_id ? 'selected' : ''}">
-            <div class="task-item-content" onclick="selectTask('${task.task_id}')">
-                <div class="task-item-title">
-                    ${escapeHtml(task.name)}
-                    <span class="task-item-status status-${task.status}">${getStatusText(task.status)}</span>
+    // 按日期分组
+    const groupedTasks = groupTasksByDate(taskList);
+    
+    let html = '';
+    for (const [dateKey, tasks] of Object.entries(groupedTasks)) {
+        // 日期分隔线
+        html += `<div class="date-divider"><span>${dateKey}</span></div>`;
+        
+        // 该日期下的任务
+        html += tasks.map(task => {
+            const subjectId = task.subject_id !== undefined ? task.subject_id : '';
+            const timeOnly = formatTimeOnly(task.created_at);
+            
+            return `
+                <div class="task-item ${selectedTask?.task_id === task.task_id ? 'selected' : ''}" 
+                     data-subject="${subjectId}"
+                     data-task-id="${task.task_id}"
+                     onmouseenter="showTaskTooltip(event, '${task.task_id}')"
+                     onmouseleave="hideTaskTooltip()">
+                    <div class="task-item-content" onclick="selectTask('${task.task_id}')">
+                        <div class="task-item-header">
+                            <div class="task-item-title">
+                                <span class="task-item-title-text">${escapeHtml(task.name)}</span>
+                                <span class="task-item-status status-${task.status}">${getStatusText(task.status)}</span>
+                            </div>
+                            <span class="task-item-time">${timeOnly}</span>
+                        </div>
+                        <div class="task-item-meta">
+                            ${task.homework_count || 0} 个作业 | 
+                            ${task.test_condition_name ? task.test_condition_name + ' | ' : ''}
+                            ${task.status === 'completed' ? `准确率: ${(task.overall_accuracy * 100).toFixed(1)}%` : ''}
+                        </div>
+                    </div>
                 </div>
-                <div class="task-item-meta">
-                    ${task.homework_count || 0} 个作业 | 
-                    ${task.test_condition_name ? task.test_condition_name + ' | ' : ''}
-                    ${task.status === 'completed' ? `准确率: ${(task.overall_accuracy * 100).toFixed(1)}% | ` : ''}
-                    ${formatTime(task.created_at)}
-                </div>
-            </div>
-        </div>
-    `).join('');
+            `;
+        }).join('');
+    }
+    
+    container.innerHTML = html;
+}
+
+// 按日期分组任务
+function groupTasksByDate(tasks) {
+    const groups = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    tasks.forEach(task => {
+        const taskDate = new Date(task.created_at);
+        taskDate.setHours(0, 0, 0, 0);
+        
+        // 计算日期差
+        const diffDays = Math.floor((today - taskDate) / (1000 * 60 * 60 * 24));
+        
+        let dateKey;
+        if (diffDays === 0) {
+            dateKey = '今天';
+        } else if (diffDays === 1) {
+            dateKey = '昨天';
+        } else {
+            // 格式: M/DD
+            dateKey = `${taskDate.getMonth() + 1}/${String(taskDate.getDate()).padStart(2, '0')}`;
+        }
+        
+        if (!groups[dateKey]) {
+            groups[dateKey] = [];
+        }
+        groups[dateKey].push(task);
+    });
+    
+    return groups;
+}
+
+// 只返回时间部分 (HH:mm)
+function formatTimeOnly(timeStr) {
+    if (!timeStr) return '';
+    const date = new Date(timeStr);
+    return date.toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
 }
 
 function getStatusText(status) {
@@ -397,12 +501,27 @@ function getStatusText(status) {
     return map[status] || status;
 }
 
-async function selectTask(taskId) {
-    showLoading('加载任务详情...');
+async function selectTask(taskId, fullMode = false) {
+    showLoading('加载任务详情...', '正在获取数据');
+    
+    // 模拟进度动画
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 90) progress = 90;
+        updateLoadingProgress(progress, '加载任务详情...', '正在获取数据');
+    }, 100);
+    
     try {
-        const res = await fetch(`/api/batch/tasks/${taskId}`);
+        // 默认使用精简模式加载，加快速度
+        const slim = fullMode ? '0' : '1';
+        const res = await fetch(`/api/batch/tasks/${taskId}?slim=${slim}`);
+        
+        updateLoadingProgress(95, '加载任务详情...', '解析数据中');
         const data = await res.json();
+        
         if (data.success) {
+            updateLoadingProgress(100, '加载完成', '');
             selectedTask = data.data;
             renderTaskList();
             renderTaskDetail();
@@ -410,7 +529,9 @@ async function selectTask(taskId) {
     } catch (e) {
         alert('加载任务详情失败: ' + e.message);
     }
-    hideLoading();
+    
+    clearInterval(progressInterval);
+    setTimeout(hideLoading, 150);
 }
 
 function renderTaskDetail() {
@@ -426,6 +547,14 @@ function renderTaskDetail() {
     document.getElementById('taskDetailTitle').textContent = selectedTask.name;
     document.getElementById('taskDetailMeta').textContent = 
         `创建时间: ${formatTime(selectedTask.created_at)} | 状态: ${getStatusText(selectedTask.status)}`;
+    
+    // 显示备注
+    const remarkRow = document.getElementById('taskRemarkRow');
+    const remarkText = document.getElementById('taskRemarkText');
+    if (remarkRow && remarkText) {
+        remarkRow.style.display = 'flex';
+        remarkText.textContent = selectedTask.remark || '';
+    }
     
     // 按钮状态
     const isCompleted = selectedTask.status === 'completed';
@@ -497,64 +626,29 @@ function renderTaskDetail() {
     // 作业列表
     renderHomeworkList(selectedTask.homework_items || []);
     
-    // AI报告 - 显示已保存的报告
+    // AI报告 - 如果有缓存报告，显示简要信息和查看按钮
     if (selectedTask.overall_report?.ai_analysis) {
         document.getElementById('aiReport').style.display = 'block';
         const report = selectedTask.overall_report.ai_analysis;
-        
-        // 构建报告内容 - 兼容新旧字段名
-        let html = '';
-        
-        // 总体概览
         const overview = report.overview || {};
-        if (overview.total) {
-            html += `<div style="margin-bottom: 12px;">
-                <strong>总体概览：</strong>
-                总题目 ${overview.total} 题，正确 ${overview.passed} 题，错误 ${overview.failed} 题，准确率 ${overview.pass_rate}%
-            </div>`;
-        }
-        
-        // 能力评分
         const scores = report.capability_scores || {};
-        if (scores.overall !== undefined) {
-            html += `<div style="margin-bottom: 12px;">
-                <strong>能力评分：</strong>
-                识别能力 ${scores.recognition || 0}分 | 判断能力 ${scores.judgment || 0}分 | 综合评分 ${scores.overall || 0}分
-            </div>`;
-        }
+        const generatedAt = report.generated_at || '';
         
-        // 主要问题
-        const topIssues = report.top_issues || [];
-        if (topIssues.length > 0) {
-            html += `<div style="margin-bottom: 12px;">
-                <strong>主要问题：</strong><br>
-                ${topIssues.map(i => `- ${escapeHtml(i.issue || '')}：${i.count || 0}次`).join('<br>')}
-            </div>`;
-        }
-        
-        // 改进建议
-        const recommendations = report.recommendations || report.suggestions || [];
-        if (recommendations.length > 0) {
-            html += `<div style="margin-bottom: 12px;">
-                <strong>改进建议：</strong><br>
-                ${recommendations.map(s => '- ' + escapeHtml(s)).join('<br>')}
-            </div>`;
-        }
-        
-        // 总体结论
-        const conclusion = report.conclusion || report.summary || '';
-        if (conclusion) {
-            html += `<div>
-                <strong>总体结论：</strong>${escapeHtml(conclusion)}
-            </div>`;
-        }
-        
-        // 如果没有任何内容，显示原始数据
-        if (!html) {
-            html = `<pre style="white-space: pre-wrap; font-size: 13px;">${escapeHtml(JSON.stringify(report, null, 2))}</pre>`;
-        }
-        
-        document.getElementById('aiReportContent').innerHTML = html;
+        document.getElementById('aiReportContent').innerHTML = `
+            <div class="ai-report-summary">
+                <div class="summary-stats">
+                    <span>准确率 <strong>${overview.pass_rate || 0}%</strong></span>
+                    <span class="divider">|</span>
+                    <span>综合评分 <strong>${scores.overall || 0}</strong></span>
+                    <span class="divider">|</span>
+                    <span>错误 <strong>${overview.failed || 0}</strong> 题</span>
+                </div>
+                <div class="summary-actions">
+                    ${generatedAt ? `<span class="summary-time">生成于 ${generatedAt}</span>` : ''}
+                    <button class="btn btn-small btn-primary" onclick="generateAIReport()">查看完整报告</button>
+                </div>
+            </div>
+        `;
     } else {
         document.getElementById('aiReport').style.display = 'none';
     }
@@ -654,22 +748,22 @@ function renderOverallReport(report) {
             <div class="list-header">题目类型分类统计</div>
             <div class="type-stats-grid" style="display: flex; gap: 16px; flex-wrap: wrap;">
                 <div class="type-stats-section" style="flex: 1; min-width: 280px;">
-                    <table class="stats-table">
+                    <table class="stats-table type-clickable-table">
                         <thead><tr><th>类型</th><th>总数</th><th>正确</th><th>准确率</th></tr></thead>
                         <tbody>
-                            <tr>
+                            <tr class="clickable-row" onclick="showTypeDetail('choice')" title="点击查看详情">
                                 <td>选择题</td>
                                 <td>${choice.total || 0}</td>
                                 <td>${choice.correct || 0}</td>
                                 <td>${choice.total > 0 ? ((choice.accuracy || 0) * 100).toFixed(1) + '%' : '-'}</td>
                             </tr>
-                            <tr>
+                            <tr class="clickable-row" onclick="showTypeDetail('objective_fill')" title="点击查看详情">
                                 <td>客观填空题</td>
                                 <td>${objectiveFill.total || 0}</td>
                                 <td>${objectiveFill.correct || 0}</td>
                                 <td>${objectiveFill.total > 0 ? ((objectiveFill.accuracy || 0) * 100).toFixed(1) + '%' : '-'}</td>
                             </tr>
-                            <tr>
+                            <tr class="clickable-row" onclick="showTypeDetail('subjective')" title="点击查看详情">
                                 <td>主观题</td>
                                 <td>${subjective.total || 0}</td>
                                 <td>${subjective.correct || 0}</td>
@@ -1247,7 +1341,8 @@ function calculateAccuracyStats(completedItems) {
     console.log('Final stats:', { totalQuestions, recognitionCorrect, gradingCorrect });
     console.log('accuracyDetails:', window.accuracyDetails);
     
-    return {
+    // 保存计算结果到全局变量，供弹窗使用
+    const stats = {
         totalQuestions,
         recognitionCorrect: Math.max(0, recognitionCorrect),
         recognitionWrong: Math.max(0, totalQuestions - recognitionCorrect),
@@ -1256,6 +1351,9 @@ function calculateAccuracyStats(completedItems) {
         gradingWrong: Math.max(0, totalQuestions - gradingCorrect),
         gradingRate: totalQuestions > 0 ? (gradingCorrect / totalQuestions) * 100 : 0
     };
+    window.accuracyStats = stats;
+    
+    return stats;
 }
 
 // ========== 计算一致性（准确率标准差的反向指标） ==========
@@ -2076,7 +2174,16 @@ async function createTask() {
         }
     }
     
-    showLoading('创建任务中...');
+    showLoading('创建任务中...', `共 ${selectedHomeworkIds.size} 份作业`);
+    
+    // 模拟进度动画
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        progress += Math.random() * 10;
+        if (progress > 85) progress = 85;
+        updateLoadingProgress(progress, '创建任务中...', '正在处理作业数据');
+    }, 150);
+    
     try {
         const res = await fetch('/api/batch/tasks', {
             method: 'POST',
@@ -2090,18 +2197,27 @@ async function createTask() {
                 homework_ids: Array.from(selectedHomeworkIds)
             })
         });
+        
+        updateLoadingProgress(90, '创建任务中...', '保存任务数据');
         const data = await res.json();
         
         if (data.success) {
-            hideModal('createTaskModal');
-            await loadTaskList();
-            selectTask(data.task_id);
+            updateLoadingProgress(100, '创建成功', '');
+            clearInterval(progressInterval);
+            setTimeout(async () => {
+                hideLoading();
+                hideModal('createTaskModal');
+                await loadTaskList();
+                selectTask(data.task_id);
+            }, 200);
+            return;
         } else {
             alert('创建失败: ' + (data.error || '未知错误'));
         }
     } catch (e) {
         alert('创建失败: ' + e.message);
     }
+    clearInterval(progressInterval);
     hideLoading();
 }
 
@@ -3496,8 +3612,22 @@ function showAccuracyDetail(type, subType) {
 // 显示准确率汇总弹窗
 function showAccuracySummaryModal(type, correct, wrong, colorCorrect, colorWrong) {
     const typeName = type === 'recognition' ? '识别' : '批改';
-    const total = correct.length + wrong.length;
-    const rate = total > 0 ? ((correct.length / total) * 100).toFixed(1) : 0;
+    
+    // 使用计算出来的统计数字（从 window.accuracyStats 获取）
+    const stats = window.accuracyStats || {};
+    let correctCount, wrongCount, total, rate;
+    
+    if (type === 'recognition') {
+        correctCount = stats.recognitionCorrect || 0;
+        wrongCount = stats.recognitionWrong || 0;
+        total = stats.totalQuestions || 0;
+        rate = stats.recognitionRate || 0;
+    } else {
+        correctCount = stats.gradingCorrect || 0;
+        wrongCount = stats.gradingWrong || 0;
+        total = stats.totalQuestions || 0;
+        rate = stats.gradingRate || 0;
+    }
     
     const modal = document.createElement('div');
     modal.className = 'error-detail-modal';
@@ -3518,15 +3648,15 @@ function showAccuracySummaryModal(type, correct, wrong, colorCorrect, colorWrong
             <div class="error-detail-body">
                 <div class="accuracy-summary-stats" style="display: flex; gap: 16px; margin-bottom: 20px;">
                     <div class="accuracy-stat-card" style="flex: 1; background: #e3f9e5; padding: 16px; border-radius: 8px; text-align: center; cursor: pointer;" onclick="showAccuracyDetail('${type}', 'correct')">
-                        <div style="font-size: 24px; font-weight: 600; color: #1e7e34;">${correct.length}</div>
+                        <div style="font-size: 24px; font-weight: 600; color: #1e7e34;">${correctCount}</div>
                         <div style="font-size: 12px; color: #1e7e34;">${typeName}正确</div>
                     </div>
                     <div class="accuracy-stat-card" style="flex: 1; background: #ffeef0; padding: 16px; border-radius: 8px; text-align: center; cursor: pointer;" onclick="showAccuracyDetail('${type}', 'wrong')">
-                        <div style="font-size: 24px; font-weight: 600; color: #d73a49;">${wrong.length}</div>
+                        <div style="font-size: 24px; font-weight: 600; color: #d73a49;">${wrongCount}</div>
                         <div style="font-size: 12px; color: #d73a49;">${typeName}错误</div>
                     </div>
                     <div class="accuracy-stat-card" style="flex: 1; background: #f5f5f7; padding: 16px; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 24px; font-weight: 600; color: ${colorCorrect};">${rate}%</div>
+                        <div style="font-size: 24px; font-weight: 600; color: ${colorCorrect};">${rate.toFixed(1)}%</div>
                         <div style="font-size: 12px; color: #86868b;">准确率</div>
                     </div>
                 </div>
@@ -3618,85 +3748,356 @@ function truncateText(text, maxLen) {
     return text.length > maxLen ? text.substring(0, maxLen) + '...' : text;
 }
 
-// ========== AI报告 ==========
-async function generateAIReport() {
+// ========== AI报告弹窗 ==========
+let currentAIReport = null;
+
+function showAIReportModal() {
+    document.getElementById('aiReportModal').classList.add('show');
+}
+
+function hideAIReportModal() {
+    document.getElementById('aiReportModal').classList.remove('show');
+}
+
+async function generateAIReport(forceRegenerate = false) {
     if (!selectedTask) return;
     
-    showLoading('生成AI分析报告...');
+    // 显示弹窗
+    showAIReportModal();
+    
+    // 显示加载状态（带进度提示）
+    const loadingHtml = forceRegenerate ? `
+        <div class="ai-report-loading">
+            <div class="spinner"></div>
+            <div class="loading-title">正在调用 DeepSeek 大模型分析...</div>
+            <div class="loading-progress">
+                <div class="progress-steps">
+                    <div class="step active">收集数据</div>
+                    <div class="step active">调用AI模型</div>
+                    <div class="step">生成报告</div>
+                </div>
+            </div>
+            <div class="loading-hint">预计需要 10-30 秒，请耐心等待</div>
+        </div>
+    ` : `
+        <div class="ai-report-loading">
+            <div class="spinner"></div>
+            <div class="loading-title">正在加载分析报告...</div>
+        </div>
+    `;
+    document.getElementById('aiReportModalBody').innerHTML = loadingHtml;
+    document.getElementById('reportGeneratedTime').textContent = '';
+    
     try {
         const res = await fetch(`/api/batch/tasks/${selectedTask.task_id}/ai-report`, {
-            method: 'POST'
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ force: forceRegenerate })
         });
         const data = await res.json();
         
         if (data.success) {
-            document.getElementById('aiReport').style.display = 'block';
-            const report = data.report || {};
-            
-            // 构建报告内容 - 兼容新旧字段名
-            let html = '';
-            
-            // 总体概览
-            const overview = report.overview || {};
-            if (overview.total) {
-                html += `<div style="margin-bottom: 12px;">
-                    <strong>总体概览：</strong>
-                    总题目 ${overview.total} 题，正确 ${overview.passed} 题，错误 ${overview.failed} 题，准确率 ${overview.pass_rate}%
-                </div>`;
-            }
-            
-            // 能力评分
-            const scores = report.capability_scores || {};
-            if (scores.overall !== undefined) {
-                html += `<div style="margin-bottom: 12px;">
-                    <strong>能力评分：</strong>
-                    识别能力 ${scores.recognition || 0}分 | 判断能力 ${scores.judgment || 0}分 | 综合评分 ${scores.overall || 0}分
-                </div>`;
-            }
-            
-            // 主要问题
-            const topIssues = report.top_issues || [];
-            if (topIssues.length > 0) {
-                html += `<div style="margin-bottom: 12px;">
-                    <strong>主要问题：</strong><br>
-                    ${topIssues.map(i => `- ${escapeHtml(i.issue || '')}：${i.count || 0}次`).join('<br>')}
-                </div>`;
-            }
-            
-            // 改进建议
-            const recommendations = report.recommendations || report.suggestions || [];
-            if (recommendations.length > 0) {
-                html += `<div style="margin-bottom: 12px;">
-                    <strong>改进建议：</strong><br>
-                    ${recommendations.map(s => '- ' + escapeHtml(s)).join('<br>')}
-                </div>`;
-            }
-            
-            // 总体结论
-            const conclusion = report.conclusion || report.summary || '';
-            if (conclusion) {
-                html += `<div>
-                    <strong>总体结论：</strong>${escapeHtml(conclusion)}
-                </div>`;
-            }
-            
-            // 如果没有任何内容，显示原始数据
-            if (!html) {
-                html = `<pre style="white-space: pre-wrap; font-size: 13px;">${escapeHtml(JSON.stringify(report, null, 2))}</pre>`;
-            }
-            
-            document.getElementById('aiReportContent').innerHTML = html;
+            currentAIReport = data.report;
+            renderAIReportModal(data.report, data.cached);
             
             // 更新任务数据
             if (!selectedTask.overall_report) selectedTask.overall_report = {};
-            selectedTask.overall_report.ai_analysis = report;
+            selectedTask.overall_report.ai_analysis = data.report;
         } else {
-            alert('生成失败: ' + (data.error || '未知错误'));
+            document.getElementById('aiReportModalBody').innerHTML = `
+                <div class="ai-report-error">
+                    <div class="error-icon">!</div>
+                    <div class="error-title">AI分析失败</div>
+                    <div class="error-text">${escapeHtml(data.error || '未知错误')}</div>
+                    <button class="btn btn-primary" onclick="regenerateAIReport()">重试</button>
+                </div>
+            `;
         }
     } catch (e) {
-        alert('生成失败: ' + e.message);
+        document.getElementById('aiReportModalBody').innerHTML = `
+            <div class="ai-report-error">
+                <div class="error-icon">!</div>
+                <div class="error-title">请求失败</div>
+                <div class="error-text">${escapeHtml(e.message)}</div>
+                <button class="btn btn-primary" onclick="regenerateAIReport()">重试</button>
+            </div>
+        `;
     }
-    hideLoading();
+}
+
+function regenerateAIReport() {
+    generateAIReport(true);
+}
+
+function renderAIReportModal(report, cached) {
+    if (!report) return;
+    
+    const overview = report.overview || {};
+    const scores = report.capability_scores || {};
+    const topIssues = report.top_issues || [];
+    const errorCases = report.error_case_analysis || [];
+    const recommendations = report.recommendations || [];
+    const conclusion = report.conclusion || '';
+    const typePerf = report.type_performance || {};
+    
+    let html = '';
+    
+    // 评分卡片
+    html += `
+        <div class="ai-report-scores">
+            <div class="score-card highlight">
+                <div class="score-value">${overview.pass_rate || 0}%</div>
+                <div class="score-label">总准确率</div>
+            </div>
+            <div class="score-card">
+                <div class="score-value">${scores.recognition || 0}</div>
+                <div class="score-label">识别能力</div>
+            </div>
+            <div class="score-card">
+                <div class="score-value">${scores.judgment || 0}</div>
+                <div class="score-label">判断能力</div>
+            </div>
+            <div class="score-card">
+                <div class="score-value">${scores.overall || 0}</div>
+                <div class="score-label">综合评分</div>
+            </div>
+        </div>
+    `;
+    
+    // 数据概览
+    html += `
+        <div class="ai-report-section">
+            <div class="section-title">数据概览</div>
+            <div class="overview-stats">
+                <span>总题目 <strong>${overview.total || 0}</strong></span>
+                <span class="divider">|</span>
+                <span>正确 <strong>${overview.passed || 0}</strong></span>
+                <span class="divider">|</span>
+                <span>错误 <strong>${overview.failed || 0}</strong></span>
+                <span class="divider">|</span>
+                <span>作业数 <strong>${overview.homework_count || 0}</strong></span>
+            </div>
+        </div>
+    `;
+    
+    // 主要问题
+    if (topIssues.length > 0) {
+        html += `
+            <div class="ai-report-section">
+                <div class="section-title">主要问题</div>
+                <div class="issues-list">
+                    ${topIssues.map((issue, i) => `
+                        <div class="issue-item">
+                            <span class="issue-rank">${i + 1}</span>
+                            <span class="issue-name">${escapeHtml(issue.issue || '')}</span>
+                            <span class="issue-count">${issue.count || 0}次</span>
+                            <span class="issue-severity severity-${issue.severity || 'medium'}">${getSeverityText(issue.severity)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // 典型错误案例分析
+    if (errorCases.length > 0) {
+        html += `
+            <div class="ai-report-section">
+                <div class="section-title">典型错误案例分析</div>
+                <div class="error-cases">
+                    ${errorCases.map((c, i) => `
+                        <div class="error-case-card">
+                            <div class="case-header">
+                                <span class="case-index">案例${i + 1}: 第${escapeHtml(c.index || '?')}题</span>
+                                <span class="case-type">${escapeHtml(c.error_type || '')}</span>
+                            </div>
+                            <div class="case-comparison">
+                                <div class="case-row">
+                                    <span class="case-label">基准答案:</span>
+                                    <span class="case-value">${escapeHtml(c.base_answer || '-')}</span>
+                                </div>
+                                <div class="case-row">
+                                    <span class="case-label">AI识别:</span>
+                                    <span class="case-value">${escapeHtml(c.ai_answer || '-')}</span>
+                                </div>
+                                ${c.standard_answer ? `
+                                <div class="case-row">
+                                    <span class="case-label">标准答案:</span>
+                                    <span class="case-value">${escapeHtml(c.standard_answer)}</span>
+                                </div>
+                                ` : ''}
+                                <div class="case-row">
+                                    <span class="case-label">判断对比:</span>
+                                    <span class="case-value">基准=${c.base_correct || '-'}, AI=${c.ai_correct || '-'}</span>
+                                </div>
+                            </div>
+                            <div class="case-analysis">
+                                <div class="analysis-title">错误原因分析:</div>
+                                <div class="analysis-content">${escapeHtml(c.root_cause || '暂无分析')}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // 改进建议
+    if (recommendations.length > 0) {
+        html += `
+            <div class="ai-report-section">
+                <div class="section-title">改进建议</div>
+                <div class="recommendations-list">
+                    ${recommendations.map(rec => {
+                        if (typeof rec === 'string') {
+                            return `<div class="recommendation-item"><span class="rec-text">${escapeHtml(rec)}</span></div>`;
+                        }
+                        return `
+                            <div class="recommendation-item">
+                                <span class="rec-title">${escapeHtml(rec.title || '')}</span>
+                                <span class="rec-detail">${escapeHtml(rec.detail || '')}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // 总体结论
+    if (conclusion) {
+        html += `
+            <div class="ai-report-section">
+                <div class="section-title">总体结论</div>
+                <div class="conclusion-text">${escapeHtml(conclusion)}</div>
+            </div>
+        `;
+    }
+    
+    document.getElementById('aiReportModalBody').innerHTML = html;
+    
+    // 显示生成时间
+    const generatedAt = report.generated_at || '';
+    const cacheText = cached ? '(缓存)' : '(新生成)';
+    document.getElementById('reportGeneratedTime').textContent = generatedAt ? `生成时间: ${generatedAt} ${cacheText}` : '';
+}
+
+function getSeverityText(severity) {
+    const map = { 'high': '高', 'medium': '中', 'low': '低' };
+    return map[severity] || '中';
+}
+
+async function downloadReportScreenshot() {
+    if (!currentAIReport) {
+        alert('没有可下载的报告');
+        return;
+    }
+    
+    const modalBody = document.getElementById('aiReportModalBody');
+    if (!modalBody) {
+        alert('报告内容不存在');
+        return;
+    }
+    
+    // 显示加载提示
+    const downloadBtn = event.target;
+    const originalText = downloadBtn.textContent;
+    downloadBtn.textContent = '生成中...';
+    downloadBtn.disabled = true;
+    
+    try {
+        // 使用 html2canvas 生成截图
+        const canvas = await html2canvas(modalBody, {
+            backgroundColor: '#ffffff',
+            scale: 2, // 2倍清晰度
+            useCORS: true,
+            logging: false,
+            windowWidth: modalBody.scrollWidth,
+            windowHeight: modalBody.scrollHeight
+        });
+        
+        // 转换为图片并下载
+        const link = document.createElement('a');
+        const taskName = selectedTask?.name || 'AI分析报告';
+        const timestamp = new Date().toISOString().slice(0, 10);
+        link.download = `${taskName}_${timestamp}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        
+    } catch (e) {
+        console.error('截图失败:', e);
+        alert('截图生成失败: ' + e.message);
+    } finally {
+        downloadBtn.textContent = originalText;
+        downloadBtn.disabled = false;
+    }
+}
+
+// 保留复制报告功能（可选）
+function copyAIReport() {
+    if (!currentAIReport) {
+        alert('没有可复制的报告');
+        return;
+    }
+    
+    // 构建纯文本报告
+    const report = currentAIReport;
+    const overview = report.overview || {};
+    const scores = report.capability_scores || {};
+    const topIssues = report.top_issues || [];
+    const errorCases = report.error_case_analysis || [];
+    const recommendations = report.recommendations || [];
+    const conclusion = report.conclusion || '';
+    
+    let text = `AI 批改效果分析报告\n`;
+    text += `${'='.repeat(40)}\n\n`;
+    
+    text += `【数据概览】\n`;
+    text += `总准确率: ${overview.pass_rate || 0}%\n`;
+    text += `总题目: ${overview.total || 0} | 正确: ${overview.passed || 0} | 错误: ${overview.failed || 0}\n\n`;
+    
+    text += `【能力评分】\n`;
+    text += `识别能力: ${scores.recognition || 0} | 判断能力: ${scores.judgment || 0} | 综合评分: ${scores.overall || 0}\n\n`;
+    
+    if (topIssues.length > 0) {
+        text += `【主要问题】\n`;
+        topIssues.forEach((issue, i) => {
+            text += `${i + 1}. ${issue.issue}: ${issue.count}次\n`;
+        });
+        text += '\n';
+    }
+    
+    if (errorCases.length > 0) {
+        text += `【典型错误案例】\n`;
+        errorCases.forEach((c, i) => {
+            text += `案例${i + 1}: 第${c.index}题 (${c.error_type})\n`;
+            text += `  基准答案: ${c.base_answer}\n`;
+            text += `  AI识别: ${c.ai_answer}\n`;
+            text += `  错误原因: ${c.root_cause}\n\n`;
+        });
+    }
+    
+    if (recommendations.length > 0) {
+        text += `【改进建议】\n`;
+        recommendations.forEach(rec => {
+            if (typeof rec === 'string') {
+                text += `- ${rec}\n`;
+            } else {
+                text += `- ${rec.title}: ${rec.detail}\n`;
+            }
+        });
+        text += '\n';
+    }
+    
+    if (conclusion) {
+        text += `【总体结论】\n${conclusion}\n`;
+    }
+    
+    navigator.clipboard.writeText(text).then(() => {
+        alert('报告已复制到剪贴板');
+    }).catch(() => {
+        alert('复制失败，请手动复制');
+    });
 }
 
 // ========== Excel导出 ==========
@@ -5102,4 +5503,568 @@ function hideDatasetSelector() {
     hideModal('datasetSelectorModal');
     selectedDatasetId = null;
     currentSelectingHomeworkIds = [];
+}
+
+
+// ========== 题目类型详情功能 ==========
+
+// 当前查看的题目类型详情状态
+let typeDetailState = {
+    type: '',
+    status: 'all',
+    page: 1,
+    pageSize: 50,
+    loading: false
+};
+
+/**
+ * 显示题目类型详情弹窗
+ * @param {string} questionType - 题目类型: choice/objective_fill/subjective
+ */
+async function showTypeDetail(questionType) {
+    if (!selectedTask || !selectedTask.task_id) {
+        alert('请先选择任务');
+        return;
+    }
+    
+    typeDetailState.type = questionType;
+    typeDetailState.status = 'all';
+    typeDetailState.page = 1;
+    
+    // 显示弹窗
+    showModal('typeDetailModal');
+    
+    // 加载数据
+    await loadTypeDetailData();
+}
+
+/**
+ * 加载题目类型详情数据
+ */
+async function loadTypeDetailData() {
+    if (typeDetailState.loading) return;
+    
+    const container = document.getElementById('typeDetailContent');
+    if (!container) return;
+    
+    typeDetailState.loading = true;
+    container.innerHTML = `
+        <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <div>加载中...</div>
+        </div>
+    `;
+    
+    try {
+        const params = new URLSearchParams({
+            type: typeDetailState.type,
+            status: typeDetailState.status,
+            page: typeDetailState.page,
+            page_size: typeDetailState.pageSize
+        });
+        
+        const res = await fetch(`/api/batch/tasks/${selectedTask.task_id}/type-details?${params}`);
+        const data = await res.json();
+        
+        if (!data.success) {
+            container.innerHTML = `<div class="error-state">加载失败: ${escapeHtml(data.error || '未知错误')}</div>`;
+            return;
+        }
+        
+        renderTypeDetailContent(data.data);
+        
+    } catch (e) {
+        container.innerHTML = `<div class="error-state">加载失败: ${escapeHtml(e.message)}</div>`;
+    } finally {
+        typeDetailState.loading = false;
+    }
+}
+
+/**
+ * 渲染题目类型详情内容
+ */
+function renderTypeDetailContent(data) {
+    const container = document.getElementById('typeDetailContent');
+    if (!container) return;
+    
+    const stats = data.stats || {};
+    const questions = data.questions || [];
+    const pagination = data.pagination || {};
+    const errorDist = data.error_type_distribution || {};
+    
+    // 更新弹窗标题
+    const titleEl = document.getElementById('typeDetailTitle');
+    if (titleEl) {
+        titleEl.textContent = `${data.type_name || '题目'}详情`;
+    }
+    
+    // 构建HTML
+    let html = '';
+    
+    // 统计卡片
+    html += `
+        <div class="type-detail-stats">
+            <div class="stat-card highlight">
+                <div class="stat-value">${stats.total || 0}</div>
+                <div class="stat-label">总数</div>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-value">${stats.correct || 0}</div>
+                <div class="stat-label">正确</div>
+            </div>
+            <div class="stat-card error">
+                <div class="stat-value">${(stats.total || 0) - (stats.correct || 0)}</div>
+                <div class="stat-label">错误</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${stats.accuracy ? (stats.accuracy * 100).toFixed(1) + '%' : '-'}</div>
+                <div class="stat-label">准确率</div>
+            </div>
+        </div>
+    `;
+    
+    // 错误类型分布
+    if (Object.keys(errorDist).length > 0) {
+        html += `
+            <div class="error-dist-section">
+                <div class="section-subtitle">错误类型分布</div>
+                <div class="error-dist-tags">
+                    ${Object.entries(errorDist).map(([type, count]) => `
+                        <span class="error-dist-tag ${getErrorTypeClass(type)}">${escapeHtml(type)}: ${count}</span>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // 筛选器
+    html += `
+        <div class="type-detail-filter">
+            <select id="typeDetailStatusFilter" onchange="onTypeDetailFilterChange()">
+                <option value="all" ${typeDetailState.status === 'all' ? 'selected' : ''}>全部</option>
+                <option value="error" ${typeDetailState.status === 'error' ? 'selected' : ''}>仅错误</option>
+                <option value="correct" ${typeDetailState.status === 'correct' ? 'selected' : ''}>仅正确(有差异)</option>
+            </select>
+            <span class="filter-info">共 ${pagination.total || 0} 条记录</span>
+        </div>
+    `;
+    
+    // 题目列表
+    if (questions.length === 0) {
+        html += `
+            <div class="empty-state">
+                <div class="empty-state-text">暂无数据</div>
+            </div>
+        `;
+    } else {
+        html += `<div class="type-detail-list">`;
+        
+        for (const q of questions) {
+            const isError = q.is_error;
+            const baseEffect = q.base_effect || {};
+            const aiResult = q.ai_result || {};
+            
+            html += `
+                <div class="type-detail-item ${isError ? 'is-error' : 'is-correct'}">
+                    <div class="item-header">
+                        <span class="item-index">第${escapeHtml(q.index || '-')}题</span>
+                        <span class="item-source">${escapeHtml(q.book_name || '')} P${q.page_num || '-'}</span>
+                        <span class="error-type-tag ${getErrorTypeClass(q.error_type)}">${escapeHtml(q.error_type || '-')}</span>
+                        ${!isError ? '<span class="not-counted-tag">不计入错误</span>' : ''}
+                        ${q.similarity ? `<span class="similarity-tag">相似度: ${(q.similarity * 100).toFixed(1)}%</span>` : ''}
+                    </div>
+                    <div class="item-compare">
+                        <div class="compare-row">
+                            <span class="compare-label">基准答案:</span>
+                            <span class="compare-value base">${escapeHtml(baseEffect.userAnswer || '-')}</span>
+                            <span class="compare-correct ${baseEffect.correct === 'yes' ? 'yes' : 'no'}">${baseEffect.correct === 'yes' ? '对' : baseEffect.correct === 'no' ? '错' : '-'}</span>
+                        </div>
+                        <div class="compare-row">
+                            <span class="compare-label">AI识别:</span>
+                            <span class="compare-value ai">${escapeHtml(aiResult.userAnswer || '-')}</span>
+                            <span class="compare-correct ${aiResult.correct === 'yes' ? 'yes' : 'no'}">${aiResult.correct === 'yes' ? '对' : aiResult.correct === 'no' ? '错' : '-'}</span>
+                        </div>
+                    </div>
+                    ${q.explanation ? `<div class="item-explanation">${escapeHtml(q.explanation)}</div>` : ''}
+                </div>
+            `;
+        }
+        
+        html += `</div>`;
+        
+        // 分页
+        if (pagination.total_pages > 1) {
+            html += renderTypeDetailPagination(pagination);
+        }
+    }
+    
+    container.innerHTML = html;
+}
+
+/**
+ * 获取错误类型对应的CSS类
+ */
+function getErrorTypeClass(errorType) {
+    const classMap = {
+        '识别错误-判断正确': 'type-recognition-error',
+        '识别错误-判断错误': 'type-both-error',
+        '识别正确-判断错误': 'type-judgment-error',
+        '识别题干-判断正确': 'type-stem',
+        '识别差异-判断正确': 'type-fuzzy',
+        '格式差异': 'type-format',
+        '缺失题目': 'type-missing',
+        'AI识别幻觉': 'type-hallucination'
+    };
+    return classMap[errorType] || 'type-default';
+}
+
+/**
+ * 渲染分页组件
+ */
+function renderTypeDetailPagination(pagination) {
+    const { page, total_pages } = pagination;
+    
+    let html = '<div class="type-detail-pagination">';
+    
+    // 上一页
+    html += `<button class="pagination-btn" ${page <= 1 ? 'disabled' : ''} onclick="goTypeDetailPage(${page - 1})">上一页</button>`;
+    
+    // 页码
+    const maxVisible = 5;
+    let startPage = Math.max(1, page - Math.floor(maxVisible / 2));
+    let endPage = Math.min(total_pages, startPage + maxVisible - 1);
+    
+    if (endPage - startPage < maxVisible - 1) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+    
+    if (startPage > 1) {
+        html += `<button class="pagination-btn" onclick="goTypeDetailPage(1)">1</button>`;
+        if (startPage > 2) {
+            html += `<span class="pagination-ellipsis">...</span>`;
+        }
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button class="pagination-btn ${i === page ? 'active' : ''}" onclick="goTypeDetailPage(${i})">${i}</button>`;
+    }
+    
+    if (endPage < total_pages) {
+        if (endPage < total_pages - 1) {
+            html += `<span class="pagination-ellipsis">...</span>`;
+        }
+        html += `<button class="pagination-btn" onclick="goTypeDetailPage(${total_pages})">${total_pages}</button>`;
+    }
+    
+    // 下一页
+    html += `<button class="pagination-btn" ${page >= total_pages ? 'disabled' : ''} onclick="goTypeDetailPage(${page + 1})">下一页</button>`;
+    
+    html += '</div>';
+    return html;
+}
+
+/**
+ * 切换分页
+ */
+function goTypeDetailPage(page) {
+    typeDetailState.page = page;
+    loadTypeDetailData();
+}
+
+/**
+ * 筛选条件变化
+ */
+function onTypeDetailFilterChange() {
+    const select = document.getElementById('typeDetailStatusFilter');
+    if (select) {
+        typeDetailState.status = select.value;
+        typeDetailState.page = 1;
+        loadTypeDetailData();
+    }
+}
+
+/**
+ * 关闭题目类型详情弹窗
+ */
+function hideTypeDetailModal() {
+    hideModal('typeDetailModal');
+}
+
+
+// ========== 任务悬停气泡 ==========
+let taskTooltipEl = null;
+let taskTooltipPinned = false;
+let currentTooltipTaskId = null;
+
+/**
+ * 初始化气泡元素
+ */
+function initTaskTooltip() {
+    if (taskTooltipEl) return;
+    
+    taskTooltipEl = document.createElement('div');
+    taskTooltipEl.className = 'task-tooltip';
+    taskTooltipEl.innerHTML = `
+        <div class="task-tooltip-header">
+            <span class="task-tooltip-title">任务详情</span>
+            <button class="task-tooltip-close" onclick="closeTaskTooltip()">&times;</button>
+        </div>
+        <div class="task-tooltip-body"></div>
+        <div class="task-tooltip-remark" style="display:none;">
+            <div class="task-tooltip-remark-title">备注</div>
+            <div class="task-tooltip-remark-content"></div>
+        </div>
+    `;
+    
+    // 点击气泡固定显示
+    taskTooltipEl.addEventListener('click', (e) => {
+        if (e.target.closest('.task-tooltip-close')) return;
+        pinTaskTooltip();
+    });
+    
+    document.body.appendChild(taskTooltipEl);
+}
+
+/**
+ * 显示任务气泡
+ */
+function showTaskTooltip(event, taskId) {
+    if (taskTooltipPinned) return;
+    
+    initTaskTooltip();
+    
+    const task = taskList.find(t => t.task_id === taskId);
+    if (!task) return;
+    
+    currentTooltipTaskId = taskId;
+    
+    // 构建内容
+    const bodyEl = taskTooltipEl.querySelector('.task-tooltip-body');
+    const remarkEl = taskTooltipEl.querySelector('.task-tooltip-remark');
+    const remarkContentEl = taskTooltipEl.querySelector('.task-tooltip-remark-content');
+    
+    // 格式化创建时间
+    const createdAt = task.created_at ? formatTime(task.created_at) : '-';
+    
+    // 构建测试条件汇总（测试条件|学科|学生数|每人作业数）
+    let conditionParts = [];
+    if (task.test_condition_name) conditionParts.push(task.test_condition_name);
+    if (task.subject_name) conditionParts.push(task.subject_name);
+    if (task.student_count > 0) conditionParts.push(`${task.student_count} 个学生`);
+    if (task.homework_per_student > 0) conditionParts.push(`每人 ${task.homework_per_student} 份作业`);
+    const conditionSummary = conditionParts.join(' | ');
+    
+    // 构建信息行
+    let rows = `
+        <div class="task-tooltip-row">
+            <span class="task-tooltip-label">创建时间</span>
+            <span class="task-tooltip-value">${createdAt}</span>
+        </div>
+    `;
+    
+    if (task.book_name) {
+        rows += `
+            <div class="task-tooltip-row">
+                <span class="task-tooltip-label">书本名称</span>
+                <span class="task-tooltip-value">${escapeHtml(task.book_name)}</span>
+            </div>
+        `;
+    }
+    
+    if (task.page_range) {
+        rows += `
+            <div class="task-tooltip-row">
+                <span class="task-tooltip-label">页码范围</span>
+                <span class="task-tooltip-value">${escapeHtml(task.page_range)}</span>
+            </div>
+        `;
+    }
+    
+    rows += `
+        <div class="task-tooltip-row">
+            <span class="task-tooltip-label">作业数量</span>
+            <span class="task-tooltip-value">${task.homework_count || 0} 份</span>
+        </div>
+    `;
+    
+    // 测试条件汇总行
+    if (conditionSummary) {
+        rows += `
+            <div class="task-tooltip-row">
+                <span class="task-tooltip-label">测试条件</span>
+                <span class="task-tooltip-value">${escapeHtml(conditionSummary)}</span>
+            </div>
+        `;
+    }
+    
+    bodyEl.innerHTML = rows;
+    
+    // 备注区
+    if (task.remark) {
+        remarkContentEl.textContent = task.remark;
+        remarkEl.style.display = 'block';
+    } else {
+        remarkEl.style.display = 'none';
+    }
+    
+    // 定位气泡
+    positionTooltip(event);
+    
+    // 显示气泡
+    taskTooltipEl.classList.add('visible');
+}
+
+/**
+ * 隐藏任务气泡
+ */
+function hideTaskTooltip() {
+    if (taskTooltipPinned || !taskTooltipEl) return;
+    taskTooltipEl.classList.remove('visible');
+    currentTooltipTaskId = null;
+}
+
+/**
+ * 固定气泡显示
+ */
+function pinTaskTooltip() {
+    if (!taskTooltipEl) return;
+    taskTooltipPinned = true;
+    taskTooltipEl.classList.add('pinned');
+}
+
+/**
+ * 关闭固定的气泡
+ */
+function closeTaskTooltip() {
+    if (!taskTooltipEl) return;
+    taskTooltipPinned = false;
+    taskTooltipEl.classList.remove('pinned', 'visible');
+    currentTooltipTaskId = null;
+}
+
+/**
+ * 定位气泡（避免超出视口）
+ */
+function positionTooltip(event) {
+    if (!taskTooltipEl) return;
+    
+    const rect = event.currentTarget.getBoundingClientRect();
+    const tooltipWidth = 400;
+    const tooltipHeight = taskTooltipEl.offsetHeight || 250;
+    const padding = 12;
+    
+    let left = rect.right + padding;
+    let top = rect.top;
+    
+    // 检查右侧是否有足够空间
+    if (left + tooltipWidth > window.innerWidth) {
+        left = rect.left - tooltipWidth - padding;
+    }
+    
+    // 检查左侧是否有足够空间
+    if (left < 0) {
+        left = padding;
+    }
+    
+    // 检查底部是否超出
+    if (top + tooltipHeight > window.innerHeight) {
+        top = window.innerHeight - tooltipHeight - padding;
+    }
+    
+    // 检查顶部是否超出
+    if (top < padding) {
+        top = padding;
+    }
+    
+    taskTooltipEl.style.left = left + 'px';
+    taskTooltipEl.style.top = top + 'px';
+}
+
+// 点击页面其他地方关闭固定的气泡
+document.addEventListener('click', (e) => {
+    if (taskTooltipPinned && taskTooltipEl && !taskTooltipEl.contains(e.target) && !e.target.closest('.task-item')) {
+        closeTaskTooltip();
+    }
+});
+
+
+// ========== 任务备注编辑 ==========
+
+/**
+ * 显示备注编辑弹窗
+ */
+function showRemarkModal() {
+    if (!selectedTask) return;
+    
+    const nameInput = document.getElementById('taskNameEditInput');
+    const remarkInput = document.getElementById('remarkInput');
+    
+    if (nameInput) {
+        nameInput.value = selectedTask.name || '';
+    }
+    if (remarkInput) {
+        remarkInput.value = selectedTask.remark || '';
+    }
+    showModal('remarkModal');
+}
+
+/**
+ * 保存任务信息（名称和备注）
+ */
+async function saveTaskInfo() {
+    if (!selectedTask) return;
+    
+    const nameInput = document.getElementById('taskNameEditInput');
+    const remarkInput = document.getElementById('remarkInput');
+    
+    const name = nameInput ? nameInput.value.trim() : '';
+    const remark = remarkInput ? remarkInput.value.trim() : '';
+    
+    if (!name) {
+        alert('任务名称不能为空');
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/batch/tasks/${selectedTask.task_id}/remark`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, remark })
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+            // 更新本地数据
+            selectedTask.name = name;
+            selectedTask.remark = remark;
+            
+            // 更新任务列表中的数据
+            const taskInList = taskList.find(t => t.task_id === selectedTask.task_id);
+            if (taskInList) {
+                taskInList.name = name;
+                taskInList.remark = remark;
+            }
+            
+            // 更新显示
+            document.getElementById('taskDetailTitle').textContent = name;
+            const remarkText = document.getElementById('taskRemarkText');
+            if (remarkText) {
+                remarkText.textContent = remark;
+            }
+            
+            // 刷新任务列表显示
+            renderTaskList();
+            
+            hideModal('remarkModal');
+        } else {
+            alert('保存失败: ' + (data.error || '未知错误'));
+        }
+    } catch (e) {
+        alert('保存失败: ' + e.message);
+    }
+}
+
+// 兼容旧函数名
+function saveTaskRemark() {
+    saveTaskInfo();
 }

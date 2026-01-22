@@ -1,0 +1,20 @@
+{
+  "name": "文档清理同步",
+  "version": "1.0.0",
+  "description": "删除文件时自动更新文档，移除过时的引用和说明",
+  "when": {
+    "type": "fileDeleted",
+    "patterns": [
+      "routes/*.py",
+      "services/*.py",
+      "templates/*.html",
+      "static/css/*.css",
+      "static/js/*.js",
+      "knowledge_agent/*.py"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "检测到文件删除，执行文档清理任务：\n\n## 1. 更新 structure.md\n- 从项目结构中移除已删除的文件\n- 如果整个功能模块被删除，移除相关目录说明\n- 更新文件数量统计（如有）\n\n## 2. 更新 product.md\n如果删除的是功能模块：\n- 从「核心功能模块」章节移除对应功能\n- 检查是否有相关的学科映射或评估维度需要更新\n- 更新用户场景描述（如有影响）\n\n## 3. 检查孤立文件\n提醒检查是否有配套文件也需要删除：\n- 删除 routes/*.py → 检查对应的 template、CSS、JS 文件\n- 删除 templates/*.html → 检查对应的 CSS、JS 文件\n- 删除 services/*.py → 检查对应的测试文件\n\n## 4. 清理功能文档\n- 检查 .kiro/steering/ 是否有该功能的独立文档需要删除或更新\n- 搜索所有 steering 文档中对已删除文件的引用\n\n## 5. 检查代码引用\n提醒检查以下位置是否有对已删除文件的引用：\n- app.py 中的 Blueprint 注册\n- 其他文件中的 import 语句\n- 配置文件中的路径引用\n\n执行完成后，列出：\n1. 已更新的文档\n2. 可能需要删除的配套文件\n3. 需要手动检查的代码引用"
+  }
+}

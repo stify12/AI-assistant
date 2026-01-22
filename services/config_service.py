@@ -116,6 +116,7 @@ class ConfigService:
                 from services.database_service import AppDatabaseService
                 user_api_keys = AppDatabaseService.get_user_api_keys(user_id)
                 print(f"[Config] 加载用户 {user_id} 的配置: {list(user_api_keys.keys()) if user_api_keys else '无'}")
+                print(f"[Config] deepseek_api_key 是否存在: {bool(user_api_keys.get('deepseek_api_key'))}")
                 if user_api_keys:
                     # 用户配置覆盖默认配置
                     for key, value in user_api_keys.items():

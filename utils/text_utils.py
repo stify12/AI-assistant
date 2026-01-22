@@ -142,8 +142,10 @@ def normalize_answer(text):
     for punct in punctuation_to_remove:
         text = text.replace(punct, '')
     
-    # 7. 移除序号标记周围的多余空格（如 ① ② 等）
-    text = re.sub(r'\s*([①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮])\s*', r'\1', text)
+    # 7. 移除序号标记（如 ① ② 等圈号）- 这些不影响答案语义
+    circled_numbers = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ'
+    for c in circled_numbers:
+        text = text.replace(c, '')
     
     # 8. 移除所有空白字符（空格、换行等不影响答案语义）
     text = re.sub(r'\s+', '', text)
@@ -164,6 +166,73 @@ def normalize_answer_strict(text):
     
     # 移除所有标点符号
     text = re.sub(r'[^\w\u4e00-\u9fff]', '', text)
+    
+    return text
+
+
+def normalize_answer_science(text):
+    """
+    理科答案标准化（数学、物理、化学等）
+    保留小数点，因为 378 和 37.8 是不同的数值
+    
+    与 normalize_answer 的区别：
+    - 保留小数点 '.'
+    - 保留波浪号 '~'（表示范围，如 36~42）
+    - 保留负号 '-'（表示负数）
+    """
+    if not text:
+        return ''
+    
+    text = str(text).strip()
+    
+    # 1. 统一大小写
+    text = text.lower()
+    
+    # 2. 移除HTML标签（如 <br>）
+    text = re.sub(r'<[^>]+>', '', text)
+    
+    # 3. 将换行符和制表符替换为空格
+    text = text.replace('\\n', ' ').replace('\\r', ' ').replace('\\t', ' ')
+    text = text.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
+    
+    # 4. 移除markdown格式标记
+    text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)  # **bold**
+    text = re.sub(r'\*([^*]+)\*', r'\1', text)      # *italic*
+    text = re.sub(r'`([^`]+)`', r'\1', text)        # `code`
+    
+    # 5. 统一数学符号
+    math_symbol_map = {
+        '×': '*', '÷': '/', '−': '-', '＋': '+',
+        '＝': '=', '≠': '!=', '≤': '<=', '≥': '>=',
+        '√': 'sqrt', '∞': 'inf', 'π': 'pi',
+        '°': 'deg', '′': "'", '″': '"',
+        '～': '~',  # 全角波浪号转半角
+    }
+    for symbol, replacement in math_symbol_map.items():
+        text = text.replace(symbol, replacement)
+    
+    # 6. 移除不影响理科答案语义的标点符号
+    # 注意：保留 '.'（小数点）、'~'（范围）、'-'（负号，但需要特殊处理）
+    punctuation_to_remove = [
+        # 中文标点
+        '，', '。', '；', '：', '！', '？', '"', '"', ''', ''',
+        '（', '）', '【', '】', '《', '》', '、', '—', '…',
+        '·', '「', '」', '『', '』', '〈', '〉', '〔', '〕', '｛', '｝',
+        # 英文标点（不包括 '.'、'~'、'-'）
+        ',', ';', ':', '!', '?', '"', "'", '(', ')', '[', ']',
+        '{', '}', '<', '>', '_', '/', '\\', '|', '@', '#',
+        '$', '%', '^', '&', '`'
+    ]
+    for punct in punctuation_to_remove:
+        text = text.replace(punct, '')
+    
+    # 7. 移除序号标记
+    circled_numbers = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ'
+    for c in circled_numbers:
+        text = text.replace(c, '')
+    
+    # 8. 移除所有空白字符
+    text = re.sub(r'\s+', '', text)
     
     return text
 

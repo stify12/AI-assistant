@@ -274,6 +274,39 @@ class LLMService:
                 return json.loads(json_str)
         except Exception as e:
             print(f"[ExtractJSON] Failed to parse: {str(e)}")
-            pass
+            # 尝试修复 LaTeX 公式中的无效转义序列
+            try:
+                json_match = re.search(r'\[[\s\S]*\]', content)
+                if json_match:
+                    json_str = json_match.group()
+                    # 修复无效的反斜杠转义（LaTeX 公式常见问题）
+                    fixed_str = LLMService._fix_invalid_json_escapes(json_str)
+                    return json.loads(fixed_str)
+            except Exception as e2:
+                print(f"[ExtractJSON] Failed to parse after fix: {str(e2)}")
+                pass
         
         return None
+    
+    @staticmethod
+    def _fix_invalid_json_escapes(s):
+        """修复 JSON 字符串中的无效转义序列（如 LaTeX 公式中的 \\stackrel）"""
+        result = []
+        i = 0
+        while i < len(s):
+            if s[i] == '\\' and i + 1 < len(s):
+                next_char = s[i + 1]
+                # JSON 有效转义字符: \" \\ \/ \b \f \n \r \t \uXXXX
+                if next_char in '"\\\/bfnrtu':
+                    result.append(s[i])
+                    result.append(next_char)
+                    i += 2
+                else:
+                    # 无效转义，添加额外的反斜杠使其成为字面量
+                    result.append('\\\\')
+                    result.append(next_char)
+                    i += 2
+            else:
+                result.append(s[i])
+                i += 1
+        return ''.join(result)

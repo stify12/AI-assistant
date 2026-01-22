@@ -179,6 +179,7 @@
 
                 <!-- 保存按钮 -->
                 <div class="save-section" id="saveSection" style="display:none;">
+                    <button class="btn btn-secondary btn-large" onclick="showEffectCorrectionModal()">效果矫正</button>
                     <button class="btn btn-primary btn-large" onclick="saveDataset()">保存数据集</button>
                 </div>
             </div>
@@ -300,6 +301,45 @@
             <div class="duplicate-modal-footer">
                 <button class="btn btn-secondary" onclick="editExistingDataset()">编辑现有数据集</button>
                 <button class="btn btn-primary" onclick="continueCreateNew()">继续创建新数据集</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 效果矫正弹窗 -->
+    <div class="correction-modal" id="correctionModal" onclick="hideCorrectionModal(event)">
+        <div class="correction-modal-content" onclick="event.stopPropagation()">
+            <div class="correction-modal-header">
+                <h3>效果矫正</h3>
+                <div class="correction-header-actions">
+                    <span class="correction-summary" id="correctionSummary"></span>
+                    <button class="close-btn" onclick="hideCorrectionModal()">x</button>
+                </div>
+            </div>
+            <div class="correction-modal-body">
+                <!-- 页码选择标签 -->
+                <div class="correction-page-tabs" id="correctionPageTabs"></div>
+                
+                <!-- 对比区域 -->
+                <div class="correction-content">
+                    <div class="correction-loading" id="correctionLoading">
+                        <div class="spinner"></div>
+                        <span>加载AI批改结果...</span>
+                    </div>
+                    <div class="correction-table-container" id="correctionTableContainer" style="display:none;">
+                        <!-- 左右分栏内容由JS动态生成 -->
+                    </div>
+                    <div class="correction-empty" id="correctionEmpty" style="display:none;">
+                        <div class="empty-state-icon">--</div>
+                        <div class="empty-state-text">所有题目的tempIndex均已匹配</div>
+                    </div>
+                </div>
+            </div>
+            <div class="correction-modal-footer">
+                <div class="correction-footer-left"></div>
+                <div class="correction-footer-right">
+                    <button class="btn btn-secondary" onclick="hideCorrectionModal()">取消</button>
+                    <button class="btn btn-primary" onclick="applyCorrectionChanges()">应用修改</button>
+                </div>
             </div>
         </div>
     </div>
