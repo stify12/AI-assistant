@@ -1804,6 +1804,7 @@ def batch_tasks():
         test_condition_name = data.get('test_condition_name', '')
         homework_ids = data.get('homework_ids', [])
         fuzzy_threshold = data.get('fuzzy_threshold', 0.85)  # 语文主观题模糊匹配阈值，默认85%
+        collection_id = data.get('collection_id')  # 关联的合集ID
         
         if not homework_ids:
             return jsonify({'success': False, 'error': '请选择作业'})
@@ -1856,6 +1857,35 @@ def batch_tasks():
             # 按创建时间倒序排序，优先匹配最新创建的数据集 (Requirements 4.3, 5.3)
             datasets.sort(key=lambda ds: ds.get('created_at', ''), reverse=True)
             
+            # 如果指定了合集，构建合集匹配索引
+            collection_match_index = {}
+            collection_name = ''
+            if collection_id:
+                try:
+                    collection = AppDatabaseService.get_collection_with_datasets(collection_id)
+                    if collection:
+                        collection_name = collection.get('name', '')
+                        for ds in collection.get('datasets', []):
+                            ds_book_id = str(ds.get('book_id', '')) if ds.get('book_id') else ''
+                            ds_pages = ds.get('pages', [])
+                            for page in ds_pages:
+                                key = (ds_book_id, int(page))
+                                if key not in collection_match_index:
+                                    collection_match_index[key] = []
+                                collection_match_index[key].append({
+                                    'dataset_id': ds['dataset_id'],
+                                    'name': ds.get('name', ''),
+                                    'added_at': ds.get('added_at')
+                                })
+                        # 对每个 key 按 added_at 倒序排列
+                        for key in collection_match_index:
+                            collection_match_index[key].sort(
+                                key=lambda x: x.get('added_at') or '', 
+                                reverse=True
+                            )
+                except Exception as e:
+                    print(f"[CreateTask] 加载合集失败: {e}")
+            
             homework_items = []
             for row in rows:
                 book_id = str(row.get('book_id', '')) if row.get('book_id') else ''
@@ -1865,22 +1895,37 @@ def batch_tasks():
                 
                 matched_dataset = None
                 matched_dataset_name = ''  # 记录匹配的数据集名称
-                for ds in datasets:
-                    ds_book_id = str(ds.get('book_id', '')) if ds.get('book_id') else ''
-                    ds_pages = ds.get('pages', [])
-                    base_effects = ds.get('base_effects', {})
-                    
-                    # 同时检查整数和字符串形式的页码
-                    if ds_book_id == book_id and page_num_int is not None:
-                        # 检查数据集的 pages 数组
-                        page_in_pages = page_num_int in ds_pages or str(page_num_int) in [str(p) for p in ds_pages]
-                        # 检查数据集的 base_effects 是否包含该页码的数据
-                        page_in_effects = str(page_num_int) in base_effects
+                matched_collection = None
+                matched_collection_name = ''
+                
+                # 优先使用合集匹配
+                if collection_id and page_num_int is not None:
+                    key = (book_id, page_num_int)
+                    if key in collection_match_index and collection_match_index[key]:
+                        best_match = collection_match_index[key][0]
+                        matched_dataset = best_match['dataset_id']
+                        matched_dataset_name = best_match['name']
+                        matched_collection = collection_id
+                        matched_collection_name = collection_name
+                
+                # 如果合集没有匹配到，使用默认匹配逻辑
+                if not matched_dataset:
+                    for ds in datasets:
+                        ds_book_id = str(ds.get('book_id', '')) if ds.get('book_id') else ''
+                        ds_pages = ds.get('pages', [])
+                        base_effects = ds.get('base_effects', {})
                         
-                        if page_in_pages and page_in_effects:
-                            matched_dataset = ds.get('dataset_id')
-                            matched_dataset_name = ds.get('name', '')  # 获取数据集名称
-                            break
+                        # 同时检查整数和字符串形式的页码
+                        if ds_book_id == book_id and page_num_int is not None:
+                            # 检查数据集的 pages 数组
+                            page_in_pages = page_num_int in ds_pages or str(page_num_int) in [str(p) for p in ds_pages]
+                            # 检查数据集的 base_effects 是否包含该页码的数据
+                            page_in_effects = str(page_num_int) in base_effects
+                            
+                            if page_in_pages and page_in_effects:
+                                matched_dataset = ds.get('dataset_id')
+                                matched_dataset_name = ds.get('name', '')  # 获取数据集名称
+                                break
                 
                 homework_items.append({
                     'homework_id': row['id'],
@@ -1895,6 +1940,8 @@ def batch_tasks():
                     'data_value': row.get('data_value', '[]'),  # 题目类型信息来源
                     'matched_dataset': matched_dataset,
                     'matched_dataset_name': matched_dataset_name,  # 记录数据集名称
+                    'matched_collection': matched_collection,
+                    'matched_collection_name': matched_collection_name,
                     'status': 'matched' if matched_dataset else 'pending',
                     'accuracy': None,
                     'evaluation': None

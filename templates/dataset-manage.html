@@ -55,7 +55,20 @@
             <div class="dataset-overview" id="datasetOverview">
                 <div class="overview-header">
                     <div class="overview-title">数据集概览</div>
-                    <div class="overview-stats" id="overviewStats"></div>
+                    <div class="overview-header-actions">
+                        <button class="btn btn-secondary btn-small" onclick="showGlobalCollectionManager()">管理合集</button>
+                    </div>
+                </div>
+                <div class="overview-stats" id="overviewStats"></div>
+                <!-- 合集快捷入口 -->
+                <div class="overview-collections" id="overviewCollections">
+                    <div class="overview-collections-header">
+                        <span class="overview-collections-title">基准合集</span>
+                        <button class="btn btn-small btn-text" onclick="refreshOverviewCollections()">刷新</button>
+                    </div>
+                    <div class="overview-collections-list" id="overviewCollectionsList">
+                        <div class="empty-state"><div class="empty-state-text">加载中...</div></div>
+                    </div>
                 </div>
                 <div class="overview-book-list" id="overviewBookList">
                     <div class="empty-state"><div class="empty-state-text">加载中...</div></div>
@@ -79,6 +92,7 @@
                         <div class="detail-meta" id="bookMeta"></div>
                     </div>
                     <div class="detail-actions">
+                        <button class="btn btn-secondary" onclick="showBookCollectionModal()">管理合集</button>
                         <button class="btn btn-secondary" onclick="exportAllDatasets()">导出数据集</button>
                         <button class="btn btn-secondary" onclick="showImportModal()">导入数据集</button>
                         <button class="btn btn-primary" onclick="showAddDatasetPanel()">+ 添加数据集</button>
@@ -340,6 +354,112 @@
                     <button class="btn btn-secondary" onclick="hideCorrectionModal()">取消</button>
                     <button class="btn btn-primary" onclick="applyCorrectionChanges()">应用修改</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 合集管理弹窗 -->
+    <div class="collection-modal" id="collectionModal" onclick="hideCollectionModal(event)">
+        <div class="collection-modal-content" onclick="event.stopPropagation()">
+            <div class="collection-modal-header">
+                <h3 id="collectionModalTitle">基准合集管理</h3>
+                <button class="close-btn" onclick="hideCollectionModal()">x</button>
+            </div>
+            <div class="collection-modal-body">
+                <!-- 合集列表 -->
+                <div class="collection-list-section" id="collectionListSection">
+                    <div class="collection-list-header">
+                        <span class="collection-list-title">已创建的合集</span>
+                        <button class="btn btn-primary btn-small" onclick="showCreateCollectionForm()">+ 新建合集</button>
+                    </div>
+                    <div class="collection-list" id="collectionList">
+                        <div class="empty-state"><div class="empty-state-text">加载中...</div></div>
+                    </div>
+                </div>
+                
+                <!-- 新建/编辑合集表单 -->
+                <div class="collection-form-section" id="collectionFormSection" style="display:none;">
+                    <div class="collection-form-header">
+                        <span class="collection-form-title" id="collectionFormTitle">新建合集</span>
+                        <button class="btn btn-secondary btn-small" onclick="hideCollectionForm()">返回列表</button>
+                    </div>
+                    <div class="collection-form">
+                        <input type="hidden" id="editCollectionId">
+                        <div class="form-group">
+                            <label>合集名称 <span class="required">*</span></label>
+                            <input type="text" id="collectionNameInput" placeholder="如：七年级英语上册合集" maxlength="100">
+                        </div>
+                        <div class="form-group">
+                            <label>描述（可选）</label>
+                            <textarea id="collectionDescInput" placeholder="添加备注说明..." maxlength="500" rows="2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>包含的数据集</label>
+                            <div class="collection-datasets-tabs" id="collectionDatasetsTabs">
+                                <button class="tab-btn active" onclick="switchDatasetTab('current')">当前书本</button>
+                                <button class="tab-btn" onclick="switchDatasetTab('all')">全部数据集</button>
+                            </div>
+                            <div class="collection-datasets-filter">
+                                <input type="text" id="datasetFilterInput" placeholder="搜索数据集..." oninput="filterDatasetsForCollection()">
+                            </div>
+                            <div class="collection-datasets-list" id="collectionDatasetsList">
+                                <div class="empty-state"><div class="empty-state-text">加载中...</div></div>
+                            </div>
+                            <div class="collection-datasets-selected" id="collectionDatasetsSelected">
+                                已选择 <span id="selectedDatasetsCount">0</span> 个数据集
+                            </div>
+                        </div>
+                        <div class="collection-form-actions">
+                            <button class="btn btn-secondary" onclick="hideCollectionForm()">取消</button>
+                            <button class="btn btn-primary" onclick="saveCollection()">保存合集</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 合集详情 -->
+                <div class="collection-detail-section" id="collectionDetailSection" style="display:none;">
+                    <div class="collection-detail-header">
+                        <div class="collection-detail-info">
+                            <span class="collection-detail-name" id="collectionDetailName">合集名称</span>
+                            <span class="collection-detail-desc" id="collectionDetailDesc"></span>
+                        </div>
+                        <div class="collection-detail-actions">
+                            <button class="btn btn-secondary btn-small" onclick="editCurrentCollection()">编辑</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteCurrentCollection()">删除</button>
+                            <button class="btn btn-secondary btn-small" onclick="hideCollectionDetail()">返回列表</button>
+                        </div>
+                    </div>
+                    <div class="collection-detail-datasets">
+                        <div class="collection-detail-datasets-header">
+                            <span>包含的数据集 (<span id="collectionDatasetCount">0</span>)</span>
+                            <button class="btn btn-small btn-secondary" onclick="addCurrentBookDatasetsToCollection()">添加当前书本数据集</button>
+                        </div>
+                        <div class="collection-detail-datasets-list" id="collectionDetailDatasetsList">
+                            <div class="empty-state"><div class="empty-state-text">暂无数据集</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加数据集到合集弹窗 -->
+    <div class="add-to-collection-modal" id="addToCollectionModal" onclick="hideAddToCollectionModal(event)">
+        <div class="add-to-collection-modal-content" onclick="event.stopPropagation()">
+            <div class="add-to-collection-modal-header">
+                <h3>添加到合集</h3>
+                <button class="close-btn" onclick="hideAddToCollectionModal()">x</button>
+            </div>
+            <div class="add-to-collection-modal-body">
+                <div class="add-to-collection-dataset-info" id="addToCollectionDatasetInfo">
+                    数据集: <strong id="addToCollectionDatasetName"></strong>
+                </div>
+                <div class="add-to-collection-list" id="addToCollectionList">
+                    <div class="empty-state"><div class="empty-state-text">加载中...</div></div>
+                </div>
+            </div>
+            <div class="add-to-collection-modal-footer">
+                <button class="btn btn-secondary" onclick="hideAddToCollectionModal()">取消</button>
             </div>
         </div>
     </div>

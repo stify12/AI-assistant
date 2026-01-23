@@ -99,6 +99,10 @@
                             <div>
                                 <div class="section-title" id="taskDetailTitle">任务详情</div>
                                 <div class="section-desc" id="taskDetailMeta"></div>
+                                <div class="task-collection-row" id="taskCollectionRow" style="display:none;">
+                                    <span class="task-collection-label">已应用合集:</span>
+                                    <span class="task-collection-name" id="taskCollectionName"></span>
+                                </div>
                                 <div class="task-remark-row" id="taskRemarkRow" style="display:none;">
                                     <span class="task-remark-text" id="taskRemarkText"></span>
                                     <button class="btn-edit-remark" onclick="showRemarkModal()">编辑</button>
@@ -180,7 +184,10 @@
 
                         <!-- 作业列表 -->
                         <div class="homework-list-container">
-                            <div class="list-header">作业任务列表</div>
+                            <div class="list-header-row">
+                                <div class="list-header">作业任务列表</div>
+                                <button class="btn btn-secondary btn-small" onclick="showApplyCollectionModal()">一键应用合集</button>
+                            </div>
                             <div class="homework-list" id="homeworkList"></div>
                         </div>
 
@@ -280,6 +287,18 @@
                     <div class="empty-state">
                         <div class="empty-state-text">加载中...</div>
                     </div>
+                </div>
+                
+                <!-- 关联合集选择 -->
+                <div class="form-group" style="margin-top: 16px;">
+                    <label>关联基准合集（可选）</label>
+                    <div class="collection-select-row">
+                        <select id="taskCollectionSelect" onchange="onTaskCollectionChange()">
+                            <option value="">不使用合集</option>
+                        </select>
+                        <button class="btn btn-small btn-secondary" onclick="refreshCollectionsForTask()">刷新</button>
+                    </div>
+                    <div class="form-hint">选择合集后，创建任务时将自动为作业匹配数据集</div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -542,6 +561,72 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="hideModal('remarkModal')">取消</button>
                 <button class="btn btn-primary" onclick="saveTaskInfo()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 一键应用合集弹窗 -->
+    <div class="modal" id="applyCollectionModal" onclick="hideModal('applyCollectionModal', event)">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>一键应用合集</h3>
+                <button class="close-btn" onclick="hideModal('applyCollectionModal')">x</button>
+            </div>
+            <div class="modal-body">
+                <div class="apply-collection-desc">
+                    选择一个基准合集，将自动为当前任务的所有作业匹配对应的数据集
+                </div>
+                <div class="apply-collection-list" id="applyCollectionList">
+                    <div class="empty-state"><div class="empty-state-text">加载中...</div></div>
+                </div>
+                <div class="apply-collection-preview" id="applyCollectionPreview" style="display:none;">
+                    <div class="preview-title">匹配预览</div>
+                    <div class="preview-stats">
+                        <span class="preview-stat preview-stat-success">可匹配: <strong id="previewMatchedCount">0</strong></span>
+                        <span class="preview-stat preview-stat-warning">无法匹配: <strong id="previewUnmatchedCount">0</strong></span>
+                    </div>
+                </div>
+                <!-- 从当前任务创建合集 -->
+                <div class="create-collection-from-task" id="createCollectionFromTask" style="display:none;">
+                    <div class="create-collection-divider">
+                        <span>或</span>
+                    </div>
+                    <div class="create-collection-hint">
+                        当前任务已有 <strong id="taskMatchedDatasetCount">0</strong> 个作业匹配了数据集
+                    </div>
+                    <button class="btn btn-secondary" onclick="showCreateCollectionFromTaskModal()">从当前任务创建合集</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('applyCollectionModal')">取消</button>
+                <button class="btn btn-primary" id="confirmApplyCollectionBtn" onclick="confirmApplyCollection()" disabled>应用合集</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 从当前任务创建合集弹窗 -->
+    <div class="modal" id="createCollectionFromTaskModal" onclick="hideModal('createCollectionFromTaskModal', event)">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>从当前任务创建合集</h3>
+                <button class="close-btn" onclick="hideModal('createCollectionFromTaskModal')">x</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>合集名称 <span class="required">*</span></label>
+                    <input type="text" id="newCollectionFromTaskName" placeholder="输入合集名称">
+                </div>
+                <div class="form-group">
+                    <label>描述（可选）</label>
+                    <textarea id="newCollectionFromTaskDesc" rows="2" placeholder="输入描述"></textarea>
+                </div>
+                <div class="create-collection-info">
+                    <div class="info-item">将包含 <strong id="newCollectionDatasetCount">0</strong> 个数据集</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('createCollectionFromTaskModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmCreateCollectionFromTask()">创建合集</button>
             </div>
         </div>
     </div>

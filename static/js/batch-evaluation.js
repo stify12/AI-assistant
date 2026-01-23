@@ -548,6 +548,9 @@ function renderTaskDetail() {
     document.getElementById('taskDetailMeta').textContent = 
         `创建时间: ${formatTime(selectedTask.created_at)} | 状态: ${getStatusText(selectedTask.status)}`;
     
+    // 显示已应用的合集
+    updateTaskCollectionDisplay(selectedTask);
+    
     // 显示备注
     const remarkRow = document.getElementById('taskRemarkRow');
     const remarkText = document.getElementById('taskRemarkText');
@@ -1666,7 +1669,7 @@ function renderHomeworkList(items) {
         }
         
         return `
-            <div class="homework-item">
+            <div class="homework-item" data-homework-id="${item.homework_id}">
                 <div class="homework-item-content" onclick="showHomeworkDetail('${item.homework_id}')">
                     <div class="homework-item-title">
                         ${escapeHtml(item.book_name || '未知书本')} - 第${item.page_num || '-'}页
@@ -2153,6 +2156,7 @@ function updateSelectedCount() {
 async function createTask() {
     const name = document.getElementById('taskNameInput').value.trim();
     const subjectId = document.getElementById('hwSubjectFilter').value;
+    const collectionId = document.getElementById('taskCollectionSelect')?.value || '';
     
     // 验证必须选择学科
     if (!subjectId) {
@@ -2194,7 +2198,8 @@ async function createTask() {
                 test_condition_id: selectedConditionId,
                 test_condition_name: selectedConditionName,
                 fuzzy_threshold: fuzzyThreshold,
-                homework_ids: Array.from(selectedHomeworkIds)
+                homework_ids: Array.from(selectedHomeworkIds),
+                collection_id: collectionId || null
             })
         });
         
@@ -2793,6 +2798,15 @@ function completeBatchEvalProgress(success, fail, overallAccuracy) {
 // ========== 作业详情 ==========
 async function showHomeworkDetail(homeworkId) {
     if (!selectedTask) return;
+    
+    // 高亮选中的作业项
+    document.querySelectorAll('.homework-item').forEach(el => {
+        el.classList.remove('selected');
+    });
+    const selectedItem = document.querySelector(`.homework-item[data-homework-id="${homeworkId}"]`);
+    if (selectedItem) {
+        selectedItem.classList.add('selected');
+    }
     
     showLoading('加载评估详情...');
     try {
@@ -6582,5 +6596,383 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
         observer.observe(datasetModal, { attributes: true });
+    }
+});
+
+
+// ========== 一键应用合集功能 ==========
+
+let selectedApplyCollectionId = null;
+
+/**
+ * 显示一键应用合集弹窗
+ */
+function showApplyCollectionModal() {
+    if (!currentTaskId) {
+        alert('请先选择一个任务');
+        return;
+    }
+    
+    selectedApplyCollectionId = null;
+    document.getElementById('applyCollectionPreview').style.display = 'none';
+    document.getElementById('confirmApplyCollectionBtn').disabled = true;
+    
+    showModal('applyCollectionModal');
+    loadCollectionsForApply();
+}
+
+/**
+ * 加载合集列表（用于一键应用）
+ */
+async function loadCollectionsForApply() {
+    const container = document.getElementById('applyCollectionList');
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载中...</div></div>';
+    
+    try {
+        const res = await fetch('/api/batch/collections');
+        const data = await res.json();
+        
+        if (data.success) {
+            renderCollectionsForApply(data.data || []);
+        } else {
+            container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载失败</div></div>';
+        }
+    } catch (e) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载失败: ' + e.message + '</div></div>';
+    }
+}
+
+/**
+ * 渲染合集列表（用于一键应用）
+ */
+function renderCollectionsForApply(collections) {
+    const container = document.getElementById('applyCollectionList');
+    
+    if (!collections || collections.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-text">暂无合集</div>
+                <button class="btn btn-secondary btn-small" onclick="hideModal('applyCollectionModal'); showCollectionManager();" style="margin-top: 12px;">去创建合集</button>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = collections.map(col => `
+        <div class="apply-collection-item ${selectedApplyCollectionId === col.collection_id ? 'selected' : ''}" 
+             onclick="selectCollectionForApply('${col.collection_id}')">
+            <div class="apply-collection-item-info">
+                <div class="apply-collection-item-name">${escapeHtml(col.name)}</div>
+                <div class="apply-collection-item-meta">
+                    ${col.dataset_count || 0} 个数据集
+                    ${col.description ? ' · ' + escapeHtml(col.description.substring(0, 40)) + (col.description.length > 40 ? '...' : '') : ''}
+                </div>
+            </div>
+            <div class="apply-collection-item-check"></div>
+        </div>
+    `).join('');
+}
+
+/**
+ * 选择要应用的合集
+ */
+async function selectCollectionForApply(collectionId) {
+    selectedApplyCollectionId = collectionId;
+    
+    // 更新选中状态
+    document.querySelectorAll('.apply-collection-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    event.currentTarget.classList.add('selected');
+    
+    // 加载匹配预览
+    await loadApplyCollectionPreview(collectionId);
+}
+
+/**
+ * 加载合集匹配预览
+ */
+async function loadApplyCollectionPreview(collectionId) {
+    const previewEl = document.getElementById('applyCollectionPreview');
+    const confirmBtn = document.getElementById('confirmApplyCollectionBtn');
+    
+    previewEl.style.display = 'block';
+    document.getElementById('previewMatchedCount').textContent = '...';
+    document.getElementById('previewUnmatchedCount').textContent = '...';
+    confirmBtn.disabled = true;
+    
+    try {
+        const res = await fetch(`/api/batch/collections/${collectionId}/match-preview?task_id=${currentTaskId}`);
+        const data = await res.json();
+        
+        if (data.success && data.data) {
+            document.getElementById('previewMatchedCount').textContent = data.data.matched_count || 0;
+            document.getElementById('previewUnmatchedCount').textContent = data.data.unmatched_count || 0;
+            
+            // 只有有匹配的才能应用
+            confirmBtn.disabled = (data.data.matched_count || 0) === 0;
+        } else {
+            document.getElementById('previewMatchedCount').textContent = '0';
+            document.getElementById('previewUnmatchedCount').textContent = '-';
+        }
+    } catch (e) {
+        console.error('加载匹配预览失败:', e);
+        document.getElementById('previewMatchedCount').textContent = '-';
+        document.getElementById('previewUnmatchedCount').textContent = '-';
+    }
+}
+
+/**
+ * 确认应用合集
+ */
+async function confirmApplyCollection() {
+    if (!selectedApplyCollectionId || !currentTaskId) {
+        return;
+    }
+    
+    const confirmBtn = document.getElementById('confirmApplyCollectionBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = '应用中...';
+    
+    try {
+        const res = await fetch(`/api/batch/tasks/${currentTaskId}/select-collection`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: selectedApplyCollectionId })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            hideModal('applyCollectionModal');
+            
+            // 刷新任务详情
+            loadTaskDetail(currentTaskId);
+            
+            alert(`合集应用成功！\n匹配: ${data.matched_count} 个作业\n未匹配: ${data.unmatched_count} 个作业`);
+        } else {
+            alert('应用失败: ' + (data.error || '未知错误'));
+        }
+    } catch (e) {
+        alert('应用失败: ' + e.message);
+    } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '应用合集';
+    }
+}
+
+
+// ========== 任务创建时关联合集 ==========
+
+/**
+ * 加载合集列表（用于任务创建）
+ */
+async function loadCollectionsForTaskCreate() {
+    const select = document.getElementById('taskCollectionSelect');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">不使用合集</option><option value="" disabled>加载中...</option>';
+    
+    try {
+        const res = await fetch('/api/batch/collections');
+        const data = await res.json();
+        
+        select.innerHTML = '<option value="">不使用合集</option>';
+        
+        if (data.success && data.data) {
+            data.data.forEach(col => {
+                const option = document.createElement('option');
+                option.value = col.collection_id;
+                option.textContent = `${col.name} (${col.dataset_count || 0}个数据集)`;
+                select.appendChild(option);
+            });
+        }
+    } catch (e) {
+        console.error('加载合集列表失败:', e);
+        select.innerHTML = '<option value="">不使用合集</option>';
+    }
+}
+
+/**
+ * 刷新合集列表
+ */
+function refreshCollectionsForTask() {
+    loadCollectionsForTaskCreate();
+}
+
+/**
+ * 合集选择变化
+ */
+function onTaskCollectionChange() {
+    // 可以在这里添加预览逻辑
+}
+
+// 在显示创建任务弹窗时加载合集
+const originalShowCreateTaskModal = typeof showCreateTaskModal === 'function' ? showCreateTaskModal : null;
+
+// ========== 显示任务已应用的合集 ==========
+
+/**
+ * 更新任务详情中的合集显示
+ */
+function updateTaskCollectionDisplay(taskData) {
+    const row = document.getElementById('taskCollectionRow');
+    const nameEl = document.getElementById('taskCollectionName');
+    
+    if (!row || !nameEl) return;
+    
+    // 检查任务中是否有应用合集的作业
+    const homeworkItems = taskData.homework_items || [];
+    const collectionNames = new Set();
+    
+    homeworkItems.forEach(item => {
+        if (item.matched_collection_name) {
+            collectionNames.add(item.matched_collection_name);
+        }
+    });
+    
+    if (collectionNames.size > 0) {
+        nameEl.textContent = [...collectionNames].join(', ');
+        row.style.display = 'flex';
+    } else {
+        row.style.display = 'none';
+    }
+}
+
+// ========== 从当前任务创建合集 ==========
+
+let taskMatchedDatasets = [];  // 当前任务已匹配的数据集
+
+/**
+ * 显示一键应用合集弹窗（增强版）
+ */
+const originalShowApplyCollectionModal = showApplyCollectionModal;
+showApplyCollectionModal = async function() {
+    if (!currentTaskId) {
+        alert('请先选择一个任务');
+        return;
+    }
+    
+    selectedApplyCollectionId = null;
+    document.getElementById('applyCollectionPreview').style.display = 'none';
+    document.getElementById('confirmApplyCollectionBtn').disabled = true;
+    
+    showModal('applyCollectionModal');
+    loadCollectionsForApply();
+    
+    // 检查当前任务已匹配的数据集
+    await checkTaskMatchedDatasets();
+};
+
+/**
+ * 检查当前任务已匹配的数据集
+ */
+async function checkTaskMatchedDatasets() {
+    const createSection = document.getElementById('createCollectionFromTask');
+    const countEl = document.getElementById('taskMatchedDatasetCount');
+    
+    if (!createSection || !countEl) return;
+    
+    try {
+        const res = await fetch(`/api/batch/tasks/${currentTaskId}`);
+        const data = await res.json();
+        
+        if (data.success && data.task) {
+            const homeworkItems = data.task.homework_items || [];
+            const datasetIds = new Set();
+            
+            homeworkItems.forEach(item => {
+                if (item.matched_dataset) {
+                    datasetIds.add(item.matched_dataset);
+                }
+            });
+            
+            taskMatchedDatasets = [...datasetIds];
+            
+            if (taskMatchedDatasets.length > 0) {
+                countEl.textContent = homeworkItems.filter(item => item.matched_dataset).length;
+                createSection.style.display = 'block';
+            } else {
+                createSection.style.display = 'none';
+            }
+        }
+    } catch (e) {
+        console.error('检查任务数据集失败:', e);
+        createSection.style.display = 'none';
+    }
+}
+
+/**
+ * 显示从当前任务创建合集弹窗
+ */
+function showCreateCollectionFromTaskModal() {
+    if (taskMatchedDatasets.length === 0) {
+        alert('当前任务没有已匹配的数据集');
+        return;
+    }
+    
+    document.getElementById('newCollectionFromTaskName').value = '';
+    document.getElementById('newCollectionFromTaskDesc').value = '';
+    document.getElementById('newCollectionDatasetCount').textContent = taskMatchedDatasets.length;
+    
+    showModal('createCollectionFromTaskModal');
+}
+
+/**
+ * 确认从当前任务创建合集
+ */
+async function confirmCreateCollectionFromTask() {
+    const name = document.getElementById('newCollectionFromTaskName').value.trim();
+    const desc = document.getElementById('newCollectionFromTaskDesc').value.trim();
+    
+    if (!name) {
+        alert('请输入合集名称');
+        return;
+    }
+    
+    if (taskMatchedDatasets.length === 0) {
+        alert('没有可添加的数据集');
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/batch/collections', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: name,
+                description: desc,
+                dataset_ids: taskMatchedDatasets
+            })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            hideModal('createCollectionFromTaskModal');
+            hideModal('applyCollectionModal');
+            alert(`合集"${name}"创建成功，包含 ${taskMatchedDatasets.length} 个数据集`);
+        } else {
+            alert('创建失败: ' + (data.error || '未知错误'));
+        }
+    } catch (e) {
+        alert('创建失败: ' + e.message);
+    }
+}
+
+// 初始化：在创建任务弹窗显示时加载合集
+document.addEventListener('DOMContentLoaded', function() {
+    const createTaskModal = document.getElementById('createTaskModal');
+    if (createTaskModal) {
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'class') {
+                    if (createTaskModal.classList.contains('show')) {
+                        loadCollectionsForTaskCreate();
+                    }
+                }
+            });
+        });
+        observer.observe(createTaskModal, { attributes: true });
     }
 });

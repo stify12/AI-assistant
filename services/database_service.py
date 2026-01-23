@@ -693,11 +693,12 @@ class AppDatabaseService:
             return None
         
         # 获取关联的数据集ID列表
+        # 使用 COLLATE 解决字符集排序规则不匹配问题
         sql = """
             SELECT cd.dataset_id, d.name, d.book_id, d.book_name, d.pages, 
                    d.question_count, d.created_at as dataset_created_at, cd.added_at
             FROM collection_datasets cd
-            LEFT JOIN datasets d ON cd.dataset_id = d.dataset_id
+            LEFT JOIN datasets d ON cd.dataset_id COLLATE utf8mb4_general_ci = d.dataset_id COLLATE utf8mb4_general_ci
             WHERE cd.collection_id = %s
             ORDER BY cd.added_at DESC
         """

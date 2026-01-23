@@ -204,6 +204,7 @@ function renderBookDetail() {
                     <div class="dataset-meta">页码: ${ds.pages?.join(', ') || '-'} | ${ds.question_count || 0} 题 | 创建于 ${formatTime(ds.created_at)}</div>
                 </div>
                 <div class="dataset-actions">
+                    <button class="btn btn-small btn-secondary" onclick="showAddToCollectionModal('${ds.dataset_id}', '${escapeHtml(ds.name || '')}')">加入合集</button>
                     <button class="btn btn-small btn-secondary" onclick="exportDataset('${ds.dataset_id}')">导出</button>
                     <button class="btn btn-small btn-secondary" onclick="viewDataset('${ds.dataset_id}')">查看</button>
                     <button class="btn btn-small btn-primary" onclick="editDataset('${ds.dataset_id}')">编辑</button>
@@ -2511,3 +2512,731 @@ function hideCorrectionModal(e) {
     globalCorrectionData = {};
     currentCorrectionPage = null;
 }
+
+
+// ========== 合集管理功能 ==========
+
+let allDatasetsForCollection = [];  // 所有数据集（用于合集编辑）
+let selectedDatasetIds = new Set();  // 选中的数据集ID
+let currentCollectionId = null;  // 当前查看/编辑的合集ID
+let currentDatasetTab = 'current';  // 当前数据集标签页: 'current' 或 'all'
+
+/**
+ * 显示书本合集管理弹窗
+ */
+function showBookCollectionModal() {
+    if (!selectedBook) {
+        alert('请先选择一个书本');
+        return;
+    }
+    document.getElementById('collectionModalTitle').textContent = `${selectedBook.book_name} - 合集管理`;
+    showCollectionManager();
+}
+
+/**
+ * 显示合集管理弹窗
+ */
+function showCollectionManager() {
+    document.getElementById('collectionModal').classList.add('show');
+    showCollectionList();
+    loadCollections();
+}
+
+/**
+ * 隐藏合集管理弹窗
+ */
+function hideCollectionModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('collectionModal').classList.remove('show');
+    currentCollectionId = null;
+}
+
+/**
+ * 显示合集列表
+ */
+function showCollectionList() {
+    document.getElementById('collectionListSection').style.display = 'flex';
+    document.getElementById('collectionFormSection').style.display = 'none';
+    document.getElementById('collectionDetailSection').style.display = 'none';
+}
+
+/**
+ * 加载合集列表
+ */
+async function loadCollections() {
+    const container = document.getElementById('collectionList');
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载中...</div></div>';
+    
+    try {
+        const res = await fetch('/api/batch/collections');
+        const data = await res.json();
+        
+        if (data.success) {
+            renderCollectionList(data.data || []);
+        } else {
+            container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载失败</div></div>';
+        }
+    } catch (e) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载失败: ' + e.message + '</div></div>';
+    }
+}
+
+/**
+ * 渲染合集列表
+ */
+function renderCollectionList(collections) {
+    const container = document.getElementById('collectionList');
+    
+    if (!collections || collections.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">暂无合集，点击上方按钮创建</div></div>';
+        return;
+    }
+    
+    container.innerHTML = collections.map(col => `
+        <div class="collection-card" onclick="showCollectionDetail('${col.collection_id}')">
+            <div class="collection-card-info">
+                <div class="collection-card-name">${escapeHtml(col.name)}</div>
+                <div class="collection-card-meta">
+                    ${col.dataset_count || 0} 个数据集
+                    ${col.description ? ' · ' + escapeHtml(col.description.substring(0, 30)) + (col.description.length > 30 ? '...' : '') : ''}
+                </div>
+            </div>
+            <div class="collection-card-actions">
+                <button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); editCollection('${col.collection_id}')">编辑</button>
+                <button class="btn btn-danger btn-small" onclick="event.stopPropagation(); deleteCollection('${col.collection_id}', '${escapeHtml(col.name)}')">删除</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+/**
+ * 显示新建合集表单
+ */
+function showCreateCollectionForm() {
+    currentCollectionId = null;
+    currentDatasetTab = 'current';
+    document.getElementById('editCollectionId').value = '';
+    document.getElementById('collectionFormTitle').textContent = '新建合集';
+    document.getElementById('collectionNameInput').value = '';
+    document.getElementById('collectionDescInput').value = '';
+    selectedDatasetIds = new Set();
+    
+    // 重置标签页
+    document.querySelectorAll('.collection-datasets-tabs .tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector('.collection-datasets-tabs .tab-btn').classList.add('active');
+    
+    document.getElementById('collectionListSection').style.display = 'none';
+    document.getElementById('collectionFormSection').style.display = 'flex';
+    document.getElementById('collectionDetailSection').style.display = 'none';
+    
+    loadAllDatasetsForCollection();
+}
+
+/**
+ * 切换数据集标签页
+ */
+function switchDatasetTab(tab) {
+    currentDatasetTab = tab;
+    document.querySelectorAll('.collection-datasets-tabs .tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.currentTarget.classList.add('active');
+    renderDatasetsForCollection();
+}
+
+/**
+ * 隐藏合集表单
+ */
+function hideCollectionForm() {
+    showCollectionList();
+    loadCollections();
+}
+
+/**
+ * 加载所有数据集（用于合集编辑）
+ */
+async function loadAllDatasetsForCollection() {
+    const container = document.getElementById('collectionDatasetsList');
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载中...</div></div>';
+    
+    try {
+        const res = await fetch('/api/batch/datasets');
+        const data = await res.json();
+        
+        if (data.success) {
+            allDatasetsForCollection = data.data || [];
+            renderDatasetsForCollection();
+        } else {
+            container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载失败</div></div>';
+        }
+    } catch (e) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载失败</div></div>';
+    }
+}
+
+/**
+ * 筛选数据集
+ */
+function filterDatasetsForCollection() {
+    renderDatasetsForCollection();
+}
+
+/**
+ * 渲染数据集列表（用于合集编辑）
+ */
+function renderDatasetsForCollection() {
+    const container = document.getElementById('collectionDatasetsList');
+    const filterText = (document.getElementById('datasetFilterInput').value || '').toLowerCase();
+    
+    let datasets = allDatasetsForCollection;
+    
+    // 按标签页筛选
+    if (currentDatasetTab === 'current' && selectedBook) {
+        datasets = datasets.filter(ds => ds.book_id === selectedBook.book_id);
+    }
+    
+    // 按搜索文本筛选
+    if (filterText) {
+        datasets = datasets.filter(ds => 
+            (ds.name || '').toLowerCase().includes(filterText) ||
+            (ds.book_name || '').toLowerCase().includes(filterText)
+        );
+    }
+    
+    if (!datasets || datasets.length === 0) {
+        const emptyMsg = currentDatasetTab === 'current' && selectedBook 
+            ? '当前书本暂无数据集' 
+            : '暂无数据集';
+        container.innerHTML = `<div class="empty-state"><div class="empty-state-text">${emptyMsg}</div></div>`;
+        updateSelectedDatasetsCount();
+        return;
+    }
+    
+    container.innerHTML = datasets.map(ds => {
+        const isSelected = selectedDatasetIds.has(ds.dataset_id);
+        const pages = ds.pages || [];
+        const pageStr = pages.length > 0 ? `P${pages[0]}${pages.length > 1 ? '-' + pages[pages.length - 1] : ''}` : '';
+        
+        return `
+            <div class="collection-dataset-item ${isSelected ? 'selected' : ''}" onclick="toggleDatasetSelection('${ds.dataset_id}')">
+                <input type="checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleDatasetSelection('${ds.dataset_id}')">
+                <div class="collection-dataset-item-info">
+                    <div class="collection-dataset-item-name">${escapeHtml(ds.name || ds.dataset_id)}</div>
+                    <div class="collection-dataset-item-meta">${escapeHtml(ds.book_name || '')} ${pageStr} · ${ds.question_count || 0}题</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    updateSelectedDatasetsCount();
+}
+
+/**
+ * 切换数据集选择
+ */
+function toggleDatasetSelection(datasetId) {
+    if (selectedDatasetIds.has(datasetId)) {
+        selectedDatasetIds.delete(datasetId);
+    } else {
+        selectedDatasetIds.add(datasetId);
+    }
+    renderDatasetsForCollection();
+}
+
+/**
+ * 更新已选择数据集数量
+ */
+function updateSelectedDatasetsCount() {
+    document.getElementById('selectedDatasetsCount').textContent = selectedDatasetIds.size;
+}
+
+/**
+ * 保存合集
+ */
+async function saveCollection() {
+    const name = document.getElementById('collectionNameInput').value.trim();
+    const description = document.getElementById('collectionDescInput').value.trim();
+    const editId = document.getElementById('editCollectionId').value;
+    
+    if (!name) {
+        alert('请输入合集名称');
+        return;
+    }
+    
+    showLoading('保存中...');
+    
+    try {
+        let res;
+        if (editId) {
+            // 更新合集
+            res = await fetch(`/api/batch/collections/${editId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, description })
+            });
+            
+            if (res.ok) {
+                // 更新数据集关联
+                const currentDatasets = await getCollectionDatasetIds(editId);
+                const toAdd = [...selectedDatasetIds].filter(id => !currentDatasets.includes(id));
+                const toRemove = currentDatasets.filter(id => !selectedDatasetIds.has(id));
+                
+                // 添加新数据集
+                if (toAdd.length > 0) {
+                    await fetch(`/api/batch/collections/${editId}/datasets`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ dataset_ids: toAdd })
+                    });
+                }
+                
+                // 移除数据集
+                for (const dsId of toRemove) {
+                    await fetch(`/api/batch/collections/${editId}/datasets/${dsId}`, {
+                        method: 'DELETE'
+                    });
+                }
+            }
+        } else {
+            // 创建新合集
+            res = await fetch('/api/batch/collections', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    description,
+                    dataset_ids: [...selectedDatasetIds]
+                })
+            });
+        }
+        
+        const data = await res.json();
+        hideLoading();
+        
+        if (data.success) {
+            hideCollectionForm();
+        } else {
+            alert('保存失败: ' + (data.error || '未知错误'));
+        }
+    } catch (e) {
+        hideLoading();
+        alert('保存失败: ' + e.message);
+    }
+}
+
+/**
+ * 获取合集当前的数据集ID列表
+ */
+async function getCollectionDatasetIds(collectionId) {
+    try {
+        const res = await fetch(`/api/batch/collections/${collectionId}`);
+        const data = await res.json();
+        if (data.success && data.data && data.data.datasets) {
+            return data.data.datasets.map(ds => ds.dataset_id);
+        }
+    } catch (e) {
+        console.error('获取合集数据集失败:', e);
+    }
+    return [];
+}
+
+/**
+ * 编辑合集
+ */
+async function editCollection(collectionId) {
+    currentCollectionId = collectionId;
+    document.getElementById('editCollectionId').value = collectionId;
+    document.getElementById('collectionFormTitle').textContent = '编辑合集';
+    
+    showLoading('加载中...');
+    
+    try {
+        const res = await fetch(`/api/batch/collections/${collectionId}`);
+        const data = await res.json();
+        
+        if (data.success && data.data) {
+            const col = data.data;
+            document.getElementById('collectionNameInput').value = col.name || '';
+            document.getElementById('collectionDescInput').value = col.description || '';
+            
+            // 设置已选择的数据集
+            selectedDatasetIds = new Set((col.datasets || []).map(ds => ds.dataset_id));
+            
+            document.getElementById('collectionListSection').style.display = 'none';
+            document.getElementById('collectionFormSection').style.display = 'flex';
+            document.getElementById('collectionDetailSection').style.display = 'none';
+            
+            await loadAllDatasetsForCollection();
+        } else {
+            alert('加载合集失败');
+        }
+    } catch (e) {
+        alert('加载合集失败: ' + e.message);
+    }
+    
+    hideLoading();
+}
+
+/**
+ * 删除合集
+ */
+async function deleteCollection(collectionId, name) {
+    if (!confirm(`确定要删除合集"${name}"吗？\n\n删除后不可恢复，但不会影响其中的数据集。`)) {
+        return;
+    }
+    
+    showLoading('删除中...');
+    
+    try {
+        const res = await fetch(`/api/batch/collections/${collectionId}`, {
+            method: 'DELETE'
+        });
+        const data = await res.json();
+        
+        hideLoading();
+        
+        if (data.success) {
+            loadCollections();
+        } else {
+            alert('删除失败: ' + (data.error || '未知错误'));
+        }
+    } catch (e) {
+        hideLoading();
+        alert('删除失败: ' + e.message);
+    }
+}
+
+/**
+ * 显示合集详情
+ */
+async function showCollectionDetail(collectionId) {
+    currentCollectionId = collectionId;
+    
+    showLoading('加载中...');
+    
+    try {
+        const res = await fetch(`/api/batch/collections/${collectionId}`);
+        const data = await res.json();
+        
+        hideLoading();
+        
+        if (data.success && data.data) {
+            const col = data.data;
+            
+            document.getElementById('collectionDetailName').textContent = col.name || '';
+            document.getElementById('collectionDetailDesc').textContent = col.description || '';
+            document.getElementById('collectionDatasetCount').textContent = (col.datasets || []).length;
+            
+            renderCollectionDetailDatasets(col.datasets || []);
+            
+            document.getElementById('collectionListSection').style.display = 'none';
+            document.getElementById('collectionFormSection').style.display = 'none';
+            document.getElementById('collectionDetailSection').style.display = 'flex';
+        } else {
+            alert('加载合集详情失败');
+        }
+    } catch (e) {
+        hideLoading();
+        alert('加载合集详情失败: ' + e.message);
+    }
+}
+
+/**
+ * 渲染合集详情中的数据集列表
+ */
+function renderCollectionDetailDatasets(datasets) {
+    const container = document.getElementById('collectionDetailDatasetsList');
+    
+    if (!datasets || datasets.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">暂无数据集</div></div>';
+        return;
+    }
+    
+    container.innerHTML = datasets.map(ds => {
+        const pages = ds.pages || [];
+        const pageStr = pages.length > 0 ? `P${pages[0]}${pages.length > 1 ? '-' + pages[pages.length - 1] : ''}` : '';
+        
+        return `
+            <div class="collection-detail-dataset-card">
+                <div class="collection-detail-dataset-info">
+                    <div class="collection-detail-dataset-name">${escapeHtml(ds.name || ds.dataset_id)}</div>
+                    <div class="collection-detail-dataset-meta">${escapeHtml(ds.book_name || '')} ${pageStr} · ${ds.question_count || 0}题</div>
+                </div>
+                <div class="collection-detail-dataset-actions">
+                    <button class="btn-remove" onclick="removeDatasetFromCollection('${ds.dataset_id}')">移除</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * 从合集中移除数据集
+ */
+async function removeDatasetFromCollection(datasetId) {
+    if (!currentCollectionId) return;
+    
+    if (!confirm('确定要从合集中移除此数据集吗？')) {
+        return;
+    }
+    
+    showLoading('移除中...');
+    
+    try {
+        const res = await fetch(`/api/batch/collections/${currentCollectionId}/datasets/${datasetId}`, {
+            method: 'DELETE'
+        });
+        const data = await res.json();
+        
+        hideLoading();
+        
+        if (data.success) {
+            showCollectionDetail(currentCollectionId);
+        } else {
+            alert('移除失败: ' + (data.error || '未知错误'));
+        }
+    } catch (e) {
+        hideLoading();
+        alert('移除失败: ' + e.message);
+    }
+}
+
+/**
+ * 隐藏合集详情
+ */
+function hideCollectionDetail() {
+    showCollectionList();
+    loadCollections();
+}
+
+/**
+ * 编辑当前合集
+ */
+function editCurrentCollection() {
+    if (currentCollectionId) {
+        editCollection(currentCollectionId);
+    }
+}
+
+/**
+ * 删除当前合集
+ */
+function deleteCurrentCollection() {
+    if (currentCollectionId) {
+        const name = document.getElementById('collectionDetailName').textContent;
+        deleteCollection(currentCollectionId, name);
+    }
+}
+
+/**
+ * 添加当前书本的数据集到合集
+ */
+async function addCurrentBookDatasetsToCollection() {
+    if (!currentCollectionId || !selectedBook) {
+        alert('请先选择书本和合集');
+        return;
+    }
+    
+    // 获取当前书本的所有数据集
+    const bookDatasets = allDatasetsForCollection.filter(ds => ds.book_id === selectedBook.book_id);
+    
+    if (bookDatasets.length === 0) {
+        alert('当前书本暂无数据集');
+        return;
+    }
+    
+    // 获取合集中已有的数据集
+    const existingIds = await getCollectionDatasetIds(currentCollectionId);
+    const newIds = bookDatasets
+        .map(ds => ds.dataset_id)
+        .filter(id => !existingIds.includes(id));
+    
+    if (newIds.length === 0) {
+        alert('当前书本的数据集已全部在合集中');
+        return;
+    }
+    
+    if (!confirm(`确定要将当前书本的 ${newIds.length} 个数据集添加到合集吗？`)) {
+        return;
+    }
+    
+    showLoading('添加中...');
+    
+    try {
+        const res = await fetch(`/api/batch/collections/${currentCollectionId}/datasets`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dataset_ids: newIds })
+        });
+        
+        const data = await res.json();
+        hideLoading();
+        
+        if (data.success) {
+            showCollectionDetail(currentCollectionId);
+            alert(`成功添加 ${data.added_count || newIds.length} 个数据集`);
+        } else {
+            alert('添加失败: ' + (data.error || '未知错误'));
+        }
+    } catch (e) {
+        hideLoading();
+        alert('添加失败: ' + e.message);
+    }
+}
+
+
+// ========== 概览页面合集功能 ==========
+
+/**
+ * 显示全局合集管理（从概览页面进入）
+ */
+function showGlobalCollectionManager() {
+    document.getElementById('collectionModalTitle').textContent = '基准合集管理';
+    showCollectionManager();
+}
+
+/**
+ * 加载概览页面的合集列表
+ */
+async function loadOverviewCollections() {
+    const container = document.getElementById('overviewCollectionsList');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载中...</div></div>';
+    
+    try {
+        const res = await fetch('/api/batch/collections');
+        const data = await res.json();
+        
+        if (data.success && data.data && data.data.length > 0) {
+            container.innerHTML = data.data.map(col => `
+                <div class="overview-collection-tag" onclick="showCollectionDetail('${col.collection_id}'); showCollectionManager();">
+                    <span>${escapeHtml(col.name)}</span>
+                    <span class="tag-count">${col.dataset_count || 0}个</span>
+                </div>
+            `).join('');
+        } else {
+            container.innerHTML = '<div class="empty-state" style="padding: 12px;"><div class="empty-state-text">暂无合集</div></div>';
+        }
+    } catch (e) {
+        container.innerHTML = '<div class="empty-state" style="padding: 12px;"><div class="empty-state-text">加载失败</div></div>';
+    }
+}
+
+/**
+ * 刷新概览页面合集
+ */
+function refreshOverviewCollections() {
+    loadOverviewCollections();
+}
+
+// ========== 添加数据集到合集 ==========
+
+let addToCollectionDatasetId = null;
+
+/**
+ * 显示添加到合集弹窗
+ */
+async function showAddToCollectionModal(datasetId, datasetName) {
+    addToCollectionDatasetId = datasetId;
+    document.getElementById('addToCollectionDatasetName').textContent = datasetName || datasetId;
+    document.getElementById('addToCollectionModal').classList.add('show');
+    
+    await loadCollectionsForAddTo(datasetId);
+}
+
+/**
+ * 隐藏添加到合集弹窗
+ */
+function hideAddToCollectionModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('addToCollectionModal').classList.remove('show');
+    addToCollectionDatasetId = null;
+}
+
+/**
+ * 加载合集列表（用于添加数据集）
+ */
+async function loadCollectionsForAddTo(datasetId) {
+    const container = document.getElementById('addToCollectionList');
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载中...</div></div>';
+    
+    try {
+        const res = await fetch('/api/batch/collections');
+        const data = await res.json();
+        
+        if (!data.success || !data.data || data.data.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-text">暂无合集</div>
+                    <button class="btn btn-secondary btn-small" onclick="hideAddToCollectionModal(); showGlobalCollectionManager();" style="margin-top: 12px;">去创建合集</button>
+                </div>
+            `;
+            return;
+        }
+        
+        // 检查每个合集是否已包含该数据集
+        const collectionsWithStatus = await Promise.all(data.data.map(async col => {
+            try {
+                const detailRes = await fetch(`/api/batch/collections/${col.collection_id}`);
+                const detailData = await detailRes.json();
+                const hasDataset = detailData.success && detailData.data && 
+                    detailData.data.datasets && 
+                    detailData.data.datasets.some(ds => ds.dataset_id === datasetId);
+                return { ...col, hasDataset };
+            } catch (e) {
+                return { ...col, hasDataset: false };
+            }
+        }));
+        
+        container.innerHTML = collectionsWithStatus.map(col => `
+            <div class="add-to-collection-item">
+                <div class="add-to-collection-item-info">
+                    <div class="add-to-collection-item-name">${escapeHtml(col.name)}</div>
+                    <div class="add-to-collection-item-meta">${col.dataset_count || 0} 个数据集</div>
+                </div>
+                ${col.hasDataset 
+                    ? '<span class="added-badge">已添加</span>'
+                    : `<button class="btn-add" onclick="addDatasetToCollection('${col.collection_id}', '${escapeHtml(col.name)}')">添加</button>`
+                }
+            </div>
+        `).join('');
+    } catch (e) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载失败</div></div>';
+    }
+}
+
+/**
+ * 添加数据集到指定合集
+ */
+async function addDatasetToCollection(collectionId, collectionName) {
+    if (!addToCollectionDatasetId) return;
+    
+    try {
+        const res = await fetch(`/api/batch/collections/${collectionId}/datasets`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dataset_ids: [addToCollectionDatasetId] })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            // 刷新列表
+            await loadCollectionsForAddTo(addToCollectionDatasetId);
+            // 刷新概览页面合集
+            loadOverviewCollections();
+        } else {
+            alert('添加失败: ' + (data.error || '未知错误'));
+        }
+    } catch (e) {
+        alert('添加失败: ' + e.message);
+    }
+}
+
+// 页面加载时加载概览合集
+document.addEventListener('DOMContentLoaded', function() {
+    loadOverviewCollections();
+});

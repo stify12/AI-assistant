@@ -183,6 +183,13 @@ body {
     background: #f5f5f7;
 }
 
+/* 作业项选中状态 - 黑边框高亮 */
+.homework-item.selected {
+    border: 2px solid #1d1d1f;
+    background: #f9f9f9;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .task-item-title, .book-item-title, .dataset-item-title, .homework-item-title {
     font-size: 14px;
     font-weight: 500;
@@ -5655,4 +5662,204 @@ body {
 .btn-use-collection:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+
+/* ========== 作业列表标题行 ========== */
+.list-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+/* ========== 一键应用合集弹窗 ========== */
+.apply-collection-desc {
+    font-size: 14px;
+    color: #86868b;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #f5f5f7;
+    border-radius: 8px;
+}
+
+.apply-collection-list {
+    max-height: 300px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.apply-collection-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    background: #f5f5f7;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.apply-collection-item:hover {
+    background: #ebebed;
+}
+
+.apply-collection-item.selected {
+    border-color: #1d1d1f;
+    background: #fff;
+}
+
+.apply-collection-item-info {
+    flex: 1;
+}
+
+.apply-collection-item-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: #1d1d1f;
+    margin-bottom: 4px;
+}
+
+.apply-collection-item-meta {
+    font-size: 12px;
+    color: #86868b;
+}
+
+.apply-collection-item-check {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #d2d2d7;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.apply-collection-item.selected .apply-collection-item-check {
+    background: #1d1d1f;
+    border-color: #1d1d1f;
+}
+
+.apply-collection-item.selected .apply-collection-item-check::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    border-radius: 50%;
+}
+
+/* 匹配预览 */
+.apply-collection-preview {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: #e3f2fd;
+    border-radius: 10px;
+}
+
+.apply-collection-preview .preview-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1565c0;
+    margin-bottom: 8px;
+}
+
+.apply-collection-preview .preview-stats {
+    display: flex;
+    gap: 20px;
+    font-size: 14px;
+}
+
+.apply-collection-preview .preview-stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.apply-collection-preview .preview-stat-success {
+    color: #1e7e34;
+}
+
+.apply-collection-preview .preview-stat-warning {
+    color: #e65100;
+}
+
+.apply-collection-preview .preview-stat strong {
+    font-weight: 600;
+}
+
+
+/* ========== 任务关联合集选择 ========== */
+.collection-select-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.collection-select-row select {
+    flex: 1;
+}
+
+/* ========== 任务详情合集显示 ========== */
+.task-collection-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #e3f2fd;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.task-collection-label {
+    color: #1565c0;
+}
+
+.task-collection-name {
+    font-weight: 500;
+    color: #1d1d1f;
+}
+
+/* ========== 从当前任务创建合集 ========== */
+.create-collection-from-task {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e5e5;
+    text-align: center;
+}
+
+.create-collection-divider {
+    font-size: 13px;
+    color: #86868b;
+    margin-bottom: 12px;
+}
+
+.create-collection-hint {
+    font-size: 13px;
+    color: #424245;
+    margin-bottom: 12px;
+}
+
+.create-collection-hint strong {
+    color: #1d1d1f;
+}
+
+.create-collection-info {
+    padding: 12px;
+    background: #f5f5f7;
+    border-radius: 8px;
+    margin-top: 12px;
+}
+
+.create-collection-info .info-item {
+    font-size: 14px;
+    color: #424245;
+}
+
+.create-collection-info .info-item strong {
+    color: #1d1d1f;
 }
