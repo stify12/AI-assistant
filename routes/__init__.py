@@ -15,6 +15,7 @@ def register_blueprints(app):
     from .data_analysis import data_analysis_bp
     from .batch_evaluation import batch_evaluation_bp
     from .dataset_manage import dataset_manage_bp
+    from .collection_manage import collection_manage_bp
     from .ai_eval import ai_eval_bp
     from .dashboard import dashboard_bp
     from .test_plans import test_plans_bp
@@ -31,6 +32,7 @@ def register_blueprints(app):
     app.register_blueprint(data_analysis_bp)
     app.register_blueprint(batch_evaluation_bp, url_prefix='/api/batch')
     app.register_blueprint(dataset_manage_bp)
+    app.register_blueprint(collection_manage_bp)  # 基准合集管理（API路径已在路由中定义）
     app.register_blueprint(ai_eval_bp)
     
     # 注册测试计划看板路由（无前缀，API路径已在路由中定义）

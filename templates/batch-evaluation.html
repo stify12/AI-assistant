@@ -381,6 +381,19 @@
                 <div class="selector-info" id="selectorInfo">
                     <!-- 显示当前作业信息 -->
                 </div>
+                <!-- 合集快速选择 -->
+                <div class="collection-quick-select" id="collectionQuickSelect">
+                    <div class="collection-select-header">
+                        <span class="collection-select-label">使用基准合集快速匹配</span>
+                        <button class="btn btn-small btn-secondary" onclick="showCollectionManager()">管理合集</button>
+                    </div>
+                    <div class="collection-select-list" id="collectionSelectList">
+                        <div class="empty-state"><div class="empty-state-text">加载中...</div></div>
+                    </div>
+                </div>
+                <div class="dataset-selector-divider">
+                    <span>或选择单个数据集</span>
+                </div>
                 <div class="dataset-selector-list" id="matchingDatasetList">
                     <div class="empty-state">
                         <div class="empty-state-text">加载中...</div>
@@ -390,6 +403,81 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="hideModal('datasetSelectorModal')">取消</button>
                 <button class="btn btn-primary" id="confirmDatasetBtn" onclick="confirmDatasetSelection()" disabled>确认选择</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 基准合集管理弹窗 -->
+    <div class="modal" id="collectionManagerModal" onclick="hideModal('collectionManagerModal', event)">
+        <div class="modal-content modal-large" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>基准合集管理</h3>
+                <button class="close-btn" onclick="hideModal('collectionManagerModal')">x</button>
+            </div>
+            <div class="modal-body">
+                <div class="collection-manager-header">
+                    <button class="btn btn-primary" onclick="showCreateCollectionModal()">新建合集</button>
+                </div>
+                <div class="collection-list" id="collectionManagerList">
+                    <div class="empty-state"><div class="empty-state-text">加载中...</div></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('collectionManagerModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新建/编辑合集弹窗 -->
+    <div class="modal" id="collectionEditModal" onclick="hideModal('collectionEditModal', event)">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 id="collectionEditTitle">新建合集</h3>
+                <button class="close-btn" onclick="hideModal('collectionEditModal')">x</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>合集名称 <span class="required">*</span></label>
+                    <input type="text" id="collectionNameInput" placeholder="输入合集名称">
+                </div>
+                <div class="form-group">
+                    <label>合集描述</label>
+                    <textarea id="collectionDescInput" rows="3" placeholder="输入合集描述（可选）"></textarea>
+                </div>
+                <div class="form-group" id="collectionDatasetsGroup">
+                    <label>包含的数据集</label>
+                    <div class="collection-datasets-list" id="collectionDatasetsList">
+                        <div class="empty-state"><div class="empty-state-text">暂无数据集</div></div>
+                    </div>
+                    <button class="btn btn-small btn-secondary" onclick="showAddDatasetToCollectionModal()" style="margin-top: 8px;">添加数据集</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('collectionEditModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveCollection()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加数据集到合集弹窗 -->
+    <div class="modal" id="addDatasetToCollectionModal" onclick="hideModal('addDatasetToCollectionModal', event)">
+        <div class="modal-content modal-large" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>添加数据集到合集</h3>
+                <button class="close-btn" onclick="hideModal('addDatasetToCollectionModal')">x</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>搜索数据集</label>
+                    <input type="text" id="datasetSearchInput" placeholder="输入数据集名称搜索" oninput="filterDatasetsForCollection()">
+                </div>
+                <div class="dataset-add-list" id="datasetAddList">
+                    <div class="empty-state"><div class="empty-state-text">加载中...</div></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('addDatasetToCollectionModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmAddDatasetsToCollection()">添加选中</button>
             </div>
         </div>
     </div>

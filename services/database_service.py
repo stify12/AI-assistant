@@ -663,3 +663,125 @@ class AppDatabaseService:
                      VALUES (%s, %s, %s, %s, %s, %s, %s)"""
             now = datetime.now()
             return AppDatabaseService.execute_insert(sql, (session_id, user_id, session_type, title, messages_json, now, now))
+
+
+    # ========== 基准合集相关操作 ==========
+    
+    @staticmethod
+    def get_collections():
+        """获取所有合集列表"""
+        sql = """
+            SELECT c.*, COUNT(cd.dataset_id) as dataset_count
+            FROM dataset_collections c
+            LEFT JOIN collection_datasets cd ON c.collection_id = cd.collection_id
+            GROUP BY c.collection_id
+            ORDER BY c.created_at DESC
+        """
+        return AppDatabaseService.execute_query(sql)
+    
+    @staticmethod
+    def get_collection(collection_id):
+        """获取单个合集"""
+        sql = "SELECT * FROM dataset_collections WHERE collection_id = %s"
+        return AppDatabaseService.execute_one(sql, (collection_id,))
+    
+    @staticmethod
+    def get_collection_with_datasets(collection_id):
+        """获取合集及其包含的数据集列表"""
+        collection = AppDatabaseService.get_collection(collection_id)
+        if not collection:
+            return None
+        
+        # 获取关联的数据集ID列表
+        sql = """
+            SELECT cd.dataset_id, d.name, d.book_id, d.book_name, d.pages, 
+                   d.question_count, d.created_at as dataset_created_at, cd.added_at
+            FROM collection_datasets cd
+            LEFT JOIN datasets d ON cd.dataset_id = d.dataset_id
+            WHERE cd.collection_id = %s
+            ORDER BY cd.added_at DESC
+        """
+        datasets = AppDatabaseService.execute_query(sql, (collection_id,))
+        
+        # 解析 pages JSON
+        for ds in datasets:
+            if ds.get('pages'):
+                try:
+                    ds['pages'] = json.loads(ds['pages']) if isinstance(ds['pages'], str) else ds['pages']
+                except:
+                    ds['pages'] = []
+        
+        collection['datasets'] = datasets
+        return collection
+    
+    @staticmethod
+    def create_collection(collection_id, name, description=None):
+        """创建合集"""
+        sql = """INSERT INTO dataset_collections (collection_id, name, description, created_at, updated_at) 
+                 VALUES (%s, %s, %s, %s, %s)"""
+        now = datetime.now()
+        return AppDatabaseService.execute_insert(sql, (collection_id, name, description, now, now))
+    
+    @staticmethod
+    def update_collection(collection_id, **kwargs):
+        """更新合集"""
+        if not kwargs:
+            return 0
+        kwargs['updated_at'] = datetime.now()
+        set_parts = []
+        params = []
+        for key, value in kwargs.items():
+            set_parts.append(f"{key} = %s")
+            params.append(value)
+        params.append(collection_id)
+        sql = f"UPDATE dataset_collections SET {', '.join(set_parts)} WHERE collection_id = %s"
+        return AppDatabaseService.execute_update(sql, tuple(params))
+    
+    @staticmethod
+    def delete_collection(collection_id):
+        """删除合集及其关联"""
+        # 先删除关联
+        AppDatabaseService.execute_update(
+            "DELETE FROM collection_datasets WHERE collection_id = %s", (collection_id,)
+        )
+        # 再删除合集
+        return AppDatabaseService.execute_update(
+            "DELETE FROM dataset_collections WHERE collection_id = %s", (collection_id,)
+        )
+    
+    @staticmethod
+    def add_dataset_to_collection(collection_id, dataset_id):
+        """添加数据集到合集"""
+        sql = """INSERT IGNORE INTO collection_datasets (collection_id, dataset_id, added_at) 
+                 VALUES (%s, %s, %s)"""
+        return AppDatabaseService.execute_insert(sql, (collection_id, dataset_id, datetime.now()))
+    
+    @staticmethod
+    def remove_dataset_from_collection(collection_id, dataset_id):
+        """从合集移除数据集"""
+        sql = "DELETE FROM collection_datasets WHERE collection_id = %s AND dataset_id = %s"
+        return AppDatabaseService.execute_update(sql, (collection_id, dataset_id))
+    
+    @staticmethod
+    def get_collection_dataset_ids(collection_id):
+        """获取合集中的数据集ID列表"""
+        sql = "SELECT dataset_id FROM collection_datasets WHERE collection_id = %s"
+        rows = AppDatabaseService.execute_query(sql, (collection_id,))
+        return [row['dataset_id'] for row in rows]
+    
+    @staticmethod
+    def batch_add_datasets_to_collection(collection_id, dataset_ids):
+        """批量添加数据集到合集"""
+        if not dataset_ids:
+            return 0
+        now = datetime.now()
+        count = 0
+        for dataset_id in dataset_ids:
+            try:
+                sql = """INSERT IGNORE INTO collection_datasets (collection_id, dataset_id, added_at) 
+                         VALUES (%s, %s, %s)"""
+                AppDatabaseService.execute_insert(sql, (collection_id, dataset_id, now))
+                count += 1
+            except:
+                pass
+        return count
