@@ -23,6 +23,18 @@ def index():
     return render_template('index.html')
 
 
+@common_bp.route('/index-new')
+def index_new():
+    """优化版首页（模块化架构）"""
+    return render_template('index-new.html')
+
+
+@common_bp.route('/chat')
+def chat():
+    """AI 对话页面 (原首页功能迁移)"""
+    return render_template('chat.html')
+
+
 @common_bp.route('/subject-grading')
 def subject_grading():
     return render_template('subject-grading.html')

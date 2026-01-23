@@ -16,6 +16,8 @@ def register_blueprints(app):
     from .batch_evaluation import batch_evaluation_bp
     from .dataset_manage import dataset_manage_bp
     from .ai_eval import ai_eval_bp
+    from .dashboard import dashboard_bp
+    from .test_plans import test_plans_bp
     
     # 注册通用路由（无前缀）
     app.register_blueprint(common_bp)
@@ -30,3 +32,9 @@ def register_blueprints(app):
     app.register_blueprint(batch_evaluation_bp, url_prefix='/api/batch')
     app.register_blueprint(dataset_manage_bp)
     app.register_blueprint(ai_eval_bp)
+    
+    # 注册测试计划看板路由（无前缀，API路径已在路由中定义）
+    app.register_blueprint(dashboard_bp)
+    
+    # 注册测试计划路由（无前缀，API路径已在路由中定义）
+    app.register_blueprint(test_plans_bp)

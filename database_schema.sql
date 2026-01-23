@@ -431,3 +431,274 @@ CREATE TABLE `optimization_logs` (
 -- 16. export_records - 导出记录
 -- 17. test_conditions - 测试条件
 -- 18. optimization_logs - 优化日志
+
+
+-- =====================================================
+-- 测试计划看板相关表 (test-plan-dashboard)
+-- 创建时间: 2026-01-23
+-- =====================================================
+
+-- =====================================================
+-- 19. 测试计划表
+-- =====================================================
+DROP TABLE IF EXISTS `test_plans`;
+CREATE TABLE `test_plans` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `plan_id` VARCHAR(36) NOT NULL UNIQUE COMMENT '计划唯一标识',
+    `name` VARCHAR(200) NOT NULL COMMENT '计划名称',
+    `description` TEXT COMMENT '计划描述',
+    `subject_ids` JSON COMMENT '目标学科ID列表 [0,2,3]',
+    `target_count` INT DEFAULT 0 COMMENT '目标测试数量',
+    `completed_count` INT DEFAULT 0 COMMENT '已完成数量',
+    `status` ENUM('draft', 'active', 'completed', 'archived') DEFAULT 'draft' COMMENT '状态',
+    `start_date` DATE COMMENT '开始日期',
+    `end_date` DATE COMMENT '结束日期',
+    `schedule_config` JSON COMMENT '调度配置 {type:"daily"|"weekly"|"cron", time:"09:00", cron:"", enabled:true}',
+    `ai_generated` TINYINT(1) DEFAULT 0 COMMENT '是否AI生成',
+    `assignee_id` INT COMMENT '负责人ID (关联users表)',
+    -- 工作流相关字段 (2026-01-23 新增)
+    `task_keyword` VARCHAR(200) COMMENT '任务名称关键字，用于匹配 zp_homework_publish.content',
+    `keyword_match_type` ENUM('exact', 'fuzzy', 'regex') DEFAULT 'fuzzy' COMMENT '匹配类型: exact=精确, fuzzy=模糊, regex=正则',
+    `matched_publish_ids` JSON COMMENT '匹配到的发布ID列表 ["publish_id_1", "publish_id_2"]',
+    `workflow_status` JSON COMMENT '工作流各步骤状态 {dataset:{status,dataset_id,...}, homework_match:{...}, evaluation:{...}, report:{...}}',
+    `auto_execute` TINYINT(1) DEFAULT 0 COMMENT '是否自动执行（批改完成后自动评估）',
+    `grading_threshold` INT DEFAULT 100 COMMENT '批改完成度阈值（百分比），达到后触发评估',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX `idx_status` (`status`),
+    INDEX `idx_assignee` (`assignee_id`),
+    INDEX `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测试计划表';
+
+-- =====================================================
+-- 20. 测试计划-数据集关联表
+-- =====================================================
+DROP TABLE IF EXISTS `test_plan_datasets`;
+CREATE TABLE `test_plan_datasets` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `plan_id` VARCHAR(36) NOT NULL COMMENT '计划ID',
+    `dataset_id` VARCHAR(36) NOT NULL COMMENT '数据集ID',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    UNIQUE KEY `uk_plan_dataset` (`plan_id`, `dataset_id`),
+    INDEX `idx_plan_id` (`plan_id`),
+    INDEX `idx_dataset_id` (`dataset_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测试计划-数据集关联表';
+
+-- =====================================================
+-- 21. 测试计划-批量任务关联表
+-- =====================================================
+DROP TABLE IF EXISTS `test_plan_tasks`;
+CREATE TABLE `test_plan_tasks` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `plan_id` VARCHAR(36) NOT NULL COMMENT '计划ID',
+    `task_id` VARCHAR(36) NOT NULL COMMENT '批量任务ID',
+    `task_status` ENUM('pending', 'processing', 'completed', 'failed') DEFAULT 'pending' COMMENT '任务状态',
+    `accuracy` DECIMAL(5,4) COMMENT '任务准确率',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY `uk_plan_task` (`plan_id`, `task_id`),
+    INDEX `idx_plan_id` (`plan_id`),
+    INDEX `idx_task_id` (`task_id`),
+    INDEX `idx_task_status` (`task_status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测试计划-批量任务关联表';
+
+-- =====================================================
+-- 22. 每日统计缓存表
+-- =====================================================
+DROP TABLE IF EXISTS `daily_statistics`;
+CREATE TABLE `daily_statistics` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `stat_date` DATE NOT NULL COMMENT '统计日期',
+    `subject_id` INT COMMENT '学科ID，NULL表示全部',
+    `task_count` INT DEFAULT 0 COMMENT '任务数',
+    `homework_count` INT DEFAULT 0 COMMENT '作业数',
+    `question_count` INT DEFAULT 0 COMMENT '题目数',
+    `correct_count` INT DEFAULT 0 COMMENT '正确数',
+    `accuracy` DECIMAL(5,4) DEFAULT 0 COMMENT '准确率',
+    `error_distribution` JSON COMMENT '错误类型分布 {"识别错误-判断错误":10,...}',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY `uk_date_subject` (`stat_date`, `subject_id`),
+    INDEX `idx_stat_date` (`stat_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='每日统计缓存表';
+
+-- =====================================================
+-- 23. 错误样本库
+-- =====================================================
+DROP TABLE IF EXISTS `error_samples`;
+CREATE TABLE `error_samples` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `sample_id` VARCHAR(36) NOT NULL UNIQUE COMMENT '样本唯一标识',
+    `task_id` VARCHAR(36) NOT NULL COMMENT '批量任务ID',
+    `homework_id` VARCHAR(50) NOT NULL COMMENT '作业ID',
+    `book_id` VARCHAR(50) COMMENT '书本ID',
+    `book_name` VARCHAR(200) COMMENT '书本名称',
+    `page_num` INT COMMENT '页码',
+    `question_index` VARCHAR(50) NOT NULL COMMENT '题号',
+    `error_type` VARCHAR(50) NOT NULL COMMENT '错误类型',
+    `base_answer` TEXT COMMENT '基准答案',
+    `base_user` TEXT COMMENT '基准用户答案',
+    `hw_user` TEXT COMMENT 'AI识别答案',
+    `status` ENUM('pending', 'analyzed', 'fixed') DEFAULT 'pending' COMMENT '状态',
+    `notes` TEXT COMMENT '分析备注',
+    `cluster_id` VARCHAR(36) COMMENT '聚类ID',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX `idx_task_id` (`task_id`),
+    INDEX `idx_error_type` (`error_type`),
+    INDEX `idx_status` (`status`),
+    INDEX `idx_cluster_id` (`cluster_id`),
+    INDEX `idx_book_page` (`book_id`, `page_num`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='错误样本库';
+
+-- =====================================================
+-- 24. 测试日报表
+-- =====================================================
+DROP TABLE IF EXISTS `daily_reports`;
+CREATE TABLE `daily_reports` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `report_id` VARCHAR(36) NOT NULL UNIQUE COMMENT '日报唯一标识',
+    `report_date` DATE NOT NULL COMMENT '日报日期',
+    `task_completed` INT DEFAULT 0 COMMENT '完成任务数',
+    `task_planned` INT DEFAULT 0 COMMENT '计划任务数',
+    `accuracy` DECIMAL(5,4) DEFAULT 0 COMMENT '当日准确率',
+    `accuracy_change` DECIMAL(5,4) DEFAULT 0 COMMENT '准确率变化（与昨日对比）',
+    `accuracy_week_change` DECIMAL(5,4) DEFAULT 0 COMMENT '准确率变化（与上周同日对比）',
+    `top_errors` JSON COMMENT '主要错误类型 Top 5 [{type,count},...]',
+    `new_error_types` JSON COMMENT '今日新增错误类型',
+    `high_freq_errors` JSON COMMENT '高频错误题目 [{index,count,book_name},...]',
+    `tomorrow_plan` JSON COMMENT '明日计划任务列表',
+    `anomalies` JSON COMMENT '异常情况列表',
+    `model_version` VARCHAR(100) COMMENT '当日使用的AI模型版本',
+    `ai_summary` TEXT COMMENT 'AI生成的总结',
+    `raw_content` TEXT COMMENT '完整日报内容（Markdown）',
+    `generated_by` ENUM('auto', 'manual') DEFAULT 'auto' COMMENT '生成方式',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    UNIQUE KEY `uk_report_date` (`report_date`),
+    INDEX `idx_report_date` (`report_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测试日报表';
+
+-- =====================================================
+-- 25. 测试计划分配表
+-- =====================================================
+DROP TABLE IF EXISTS `test_plan_assignments`;
+CREATE TABLE `test_plan_assignments` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `plan_id` VARCHAR(36) NOT NULL COMMENT '计划ID',
+    `user_id` INT NOT NULL COMMENT '用户ID',
+    `role` ENUM('owner', 'member') DEFAULT 'member' COMMENT '角色',
+    `status` ENUM('pending', 'in_progress', 'completed') DEFAULT 'pending' COMMENT '状态',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY `uk_plan_user` (`plan_id`, `user_id`),
+    INDEX `idx_user_id` (`user_id`),
+    INDEX `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测试计划分配表';
+
+-- =====================================================
+-- 26. 测试计划评论表
+-- =====================================================
+DROP TABLE IF EXISTS `test_plan_comments`;
+CREATE TABLE `test_plan_comments` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `comment_id` VARCHAR(36) NOT NULL UNIQUE COMMENT '评论唯一标识',
+    `plan_id` VARCHAR(36) NOT NULL COMMENT '计划ID',
+    `user_id` INT NOT NULL COMMENT '用户ID',
+    `content` TEXT NOT NULL COMMENT '评论内容',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX `idx_plan_id` (`plan_id`),
+    INDEX `idx_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测试计划评论表';
+
+-- =====================================================
+-- 27. 测试计划执行日志表
+-- =====================================================
+DROP TABLE IF EXISTS `test_plan_logs`;
+CREATE TABLE `test_plan_logs` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `log_id` VARCHAR(36) NOT NULL UNIQUE COMMENT '日志唯一标识',
+    `plan_id` VARCHAR(36) NOT NULL COMMENT '计划ID',
+    `task_id` VARCHAR(36) COMMENT '关联的批量任务ID',
+    `action` VARCHAR(50) NOT NULL COMMENT '操作类型: scheduled_run, manual_run, status_change',
+    `details` JSON COMMENT '详细信息',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX `idx_plan_id` (`plan_id`),
+    INDEX `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测试计划执行日志表';
+
+-- =====================================================
+-- 28. 异常记录表
+-- =====================================================
+DROP TABLE IF EXISTS `anomaly_logs`;
+CREATE TABLE `anomaly_logs` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `anomaly_id` VARCHAR(36) NOT NULL UNIQUE COMMENT '异常唯一标识',
+    `task_id` VARCHAR(36) NOT NULL COMMENT '批量任务ID',
+    `anomaly_type` VARCHAR(50) NOT NULL COMMENT '异常类型: accuracy_drop, task_failed',
+    `severity` ENUM('low', 'medium', 'high') DEFAULT 'medium' COMMENT '严重程度',
+    `threshold` DECIMAL(5,4) COMMENT '触发阈值',
+    `actual_value` DECIMAL(5,4) COMMENT '实际值',
+    `expected_value` DECIMAL(5,4) COMMENT '期望值',
+    `details` JSON COMMENT '详细信息',
+    `acknowledged` TINYINT(1) DEFAULT 0 COMMENT '是否已确认',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX `idx_task_id` (`task_id`),
+    INDEX `idx_anomaly_type` (`anomaly_type`),
+    INDEX `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='异常记录表';
+
+-- =====================================================
+-- 29. 优化建议表
+-- =====================================================
+DROP TABLE IF EXISTS `optimization_suggestions`;
+CREATE TABLE `optimization_suggestions` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `suggestion_id` VARCHAR(36) NOT NULL UNIQUE COMMENT '建议唯一标识',
+    `title` VARCHAR(200) NOT NULL COMMENT '标题',
+    `problem_description` TEXT COMMENT '问题描述',
+    `affected_scope` JSON COMMENT '影响范围 {subjects:[],question_types:[]}',
+    `solution` TEXT COMMENT '优化方案',
+    `status` ENUM('pending', 'in_progress', 'completed', 'rejected') DEFAULT 'pending' COMMENT '状态',
+    `priority` ENUM('low', 'medium', 'high') DEFAULT 'medium' COMMENT '优先级',
+    `source_task_ids` JSON COMMENT '来源任务ID列表',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX `idx_status` (`status`),
+    INDEX `idx_priority` (`priority`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='优化建议表';
+
+-- =====================================================
+-- 完成提示 (更新)
+-- =====================================================
+-- 数据库表创建完成！
+-- 共创建 29 张表：
+-- 0. users - 用户表
+-- 1. sys_config - 系统配置
+-- 2. prompt_templates - 提示词模板
+-- 3. datasets - 数据集
+-- 4. baseline_effects - 基准效果
+-- 5. batch_tasks - 批量评估任务
+-- 6. batch_task_items - 批量任务作业项
+-- 7. evaluation_errors - 评估错误详情
+-- 8. prompt_tasks - Prompt优化任务
+-- 9. analysis_tasks - 数据分析任务
+-- 10. analysis_files - 分析任务文件
+-- 11. chat_sessions - 会话记录
+-- 12. knowledge_documents - 知识库文档
+-- 13. knowledge_tasks - 知识库任务
+-- 14. model_stats - 模型调用统计
+-- 15. operation_logs - 操作日志
+-- 16. export_records - 导出记录
+-- 17. test_conditions - 测试条件
+-- 18. optimization_logs - 优化日志
+-- 19. test_plans - 测试计划表
+-- 20. test_plan_datasets - 测试计划-数据集关联表
+-- 21. test_plan_tasks - 测试计划-批量任务关联表
+-- 22. daily_statistics - 每日统计缓存表
+-- 23. error_samples - 错误样本库
+-- 24. daily_reports - 测试日报表
+-- 25. test_plan_assignments - 测试计划分配表
+-- 26. test_plan_comments - 测试计划评论表
+-- 27. test_plan_logs - 测试计划执行日志表
+-- 28. anomaly_logs - 异常记录表
+-- 29. optimization_suggestions - 优化建议表

@@ -3,19 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 助手</title>
-    <link rel="stylesheet" href="/static/css/common.css">
-    <link rel="stylesheet" href="/static/css/index.css">
-    <script src="https://cdn.bootcdn.net/ajax/libs/marked/9.1.6/marked.min.js"></script>
+    <title>测试计划看板 - AI效果分析平台</title>
+    <link rel="stylesheet" href="/static/css/common.css?v=20260123">
+    <link rel="stylesheet" href="/static/css/index.css?v=20260123">
 </head>
 <body>
-    <!-- 左侧快捷入口栏（初始状态）/ 历史对话栏（对话状态） -->
+    <!-- 左侧边栏导航 - 悬停展开效果 -->
     <aside class="sidebar" id="sidebar">
-        <!-- 快捷入口视图（初始状态显示） -->
-        <div class="sidebar-welcome" id="sidebarWelcome">
+        <div class="sidebar-welcome">
             <div class="sidebar-brand">
                 <div class="brand-icon">
-                    <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                 </div>
                 <span class="brand-text">AI 效果分析</span>
             </div>
@@ -24,23 +22,21 @@
                 <div class="nav-label">核心功能</div>
                 <a href="/subject-grading" class="nav-card featured">
                     <div class="nav-card-icon">
-                        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
                     </div>
                     <div class="nav-card-body">
                         <div class="nav-card-title">学科批改评估</div>
                         <div class="nav-card-desc">多学科作业批改效果分析</div>
                     </div>
-                    <svg class="nav-card-arrow" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
                 </a>
                 <a href="/batch-evaluation" class="nav-card">
                     <div class="nav-card-icon">
-                        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l4.59-4.58L18 11l-6 6z"/></svg>
+                        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l4.59-4.58L18 11l-6 6z"/></svg>
                     </div>
                     <div class="nav-card-body">
                         <div class="nav-card-title">批量评估</div>
                         <div class="nav-card-desc">批量对比AI批改结果</div>
                     </div>
-                    <svg class="nav-card-arrow" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
                 </a>
             </div>
             
@@ -49,509 +45,808 @@
                 <div class="nav-tools-compact">
                     <a href="/knowledge-agent" class="nav-tool-item" title="知识点类题">
                         <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3z"/></svg>
-                        <span>知识点</span>
+                        <span>知识点类题</span>
                     </a>
                     <a href="/data-analysis" class="nav-tool-item" title="数据分析">
                         <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
-                        <span>分析</span>
+                        <span>数据分析</span>
                     </a>
                     <a href="/prompt-optimize" class="nav-tool-item" title="提示词优化">
                         <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg>
-                        <span>提示词</span>
+                        <span>提示词优化</span>
                     </a>
                     <a href="/dataset-manage" class="nav-tool-item" title="数据集管理">
                         <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/></svg>
-                        <span>数据集</span>
+                        <span>数据集管理</span>
                     </a>
-                </div>
-            </div>
-            
-            <!-- 优化日志 -->
-            <div class="nav-section opt-logs-section">
-                <div class="nav-label">
-                    <span>优化日志</span>
-                    <button class="add-log-btn" onclick="showAddLogModal()" title="添加日志">+</button>
-                </div>
-                <div class="opt-logs-list" id="optLogsList">
-                    <div class="opt-logs-empty">暂无日志</div>
                 </div>
             </div>
             
             <div class="sidebar-footer">
-                <button class="footer-btn" onclick="showSettings()">
-                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
-                    设置
-                </button>
-            </div>
-        </div>
-        
-        <!-- 历史对话视图（对话状态显示） -->
-        <div class="sidebar-history" id="sidebarHistory" style="display:none;">
-            <div class="history-header">
-                <button class="new-chat-btn" onclick="startNewChat()">
-                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                    新对话
-                </button>
-                <button class="toggle-history-btn" onclick="toggleHistorySidebar()">
-                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
-                </button>
-            </div>
-            <div class="history-search">
-                <input type="text" id="historySearch" placeholder="搜索对话..." oninput="filterHistory()">
-            </div>
-            <div class="history-list" id="historyList"></div>
-            
-            <!-- 底部快捷入口（折叠状态） -->
-            <div class="history-quick-nav">
-                <a href="/subject-grading" class="quick-nav-btn" title="学科批改评估">
-                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-                </a>
-                <a href="/batch-evaluation" class="quick-nav-btn" title="批量评估">
-                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l4.59-4.58L18 11l-6 6z"/></svg>
-                </a>
-                <a href="/knowledge-agent" class="quick-nav-btn" title="知识点类题">
-                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3z"/></svg>
-                </a>
-                <a href="/data-analysis" class="quick-nav-btn" title="数据分析">
-                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
-                </a>
-                <button class="quick-nav-btn" onclick="showSettings()" title="设置">
-                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg>
+                <button class="footer-btn" onclick="navigateTo('/chat')">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                    <span>对话</span>
                 </button>
             </div>
         </div>
     </aside>
 
     <!-- 主内容区 -->
-    <div class="main-wrapper" id="mainWrapper">
-        <!-- 顶部栏 -->
+    <main class="main-content">
+        <!-- 顶部栏 (US-1.4, US-9) -->
         <header class="top-bar">
-            <button class="menu-btn" onclick="toggleHistorySidebar()">
+            <button class="menu-btn" id="menuBtn" onclick="toggleSidebar()">
                 <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
             </button>
-            <div class="model-selector">
-                <select id="currentModelSelect" onchange="onModelSelectChange()">
-                    <optgroup label="视觉识别">
-                        <option value="doubao-1-5-vision-pro-32k-250115">Vision Pro</option>
-                        <option value="doubao-seed-1-6-vision-250815">Seed Vision</option>
-                        <option value="doubao-seed-1-6-251015">Seed 1.6</option>
-                        <option value="doubao-seed-1-8-251228">Seed 1.8</option>
-                        <option value="doubao-seed-1-6-thinking-250715">Seed Thinking</option>
-                        <option value="qwen-vl-plus">Qwen VL</option>
-                    </optgroup>
-                    <optgroup label="日常聊天">
-                        <option value="gpt-5-chat-latest">GPT-5 Chat</option>
-                        <option value="gpt-5.2">GPT-5.2</option>
-                        <option value="gpt-5.1">GPT-5.1</option>
-                        <option value="gpt-5-mini">GPT-5 Mini</option>
-                        <option value="gpt-4.1">GPT-4.1</option>
-                        <option value="grok-4">Grok-4</option>
-                        <option value="gemini-3-pro-preview">Gemini 3 Pro</option>
-                        <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
-                        <option value="gemini-3-flash-preview-nothinking">Gemini 3 Flash NoThink</option>
-                        <option value="gemini-3-flash-preview-thinking">Gemini 3 Flash Think</option>
-                        <option value="deepseek-v3.2">DeepSeek V3.2</option>
-                    </optgroup>
-                </select>
+            <div class="sync-info">
+                <span class="sync-label">最后同步:</span>
+                <span class="sync-time" id="lastSyncTime">--</span>
             </div>
-            <button class="tools-btn" onclick="toggleToolsSidebar()">工具</button>
-            <button class="first-principles-btn" id="firstPrinciplesBtn" onclick="toggleFirstPrinciplesMode()">第一性原理</button>
-            <!-- 用户头像按钮 -->
-            <div class="user-avatar-wrapper" id="userAvatarWrapper">
-                <button class="user-avatar-btn" id="userAvatarBtn" onclick="toggleUserMenu()">
-                    <svg class="avatar-icon" id="avatarIcon" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                    <span class="avatar-letter" id="avatarLetter" style="display:none;"></span>
-                </button>
-                <div class="user-dropdown" id="userDropdown">
-                    <div class="user-dropdown-header" id="userDropdownHeader"></div>
-                    <button class="user-dropdown-item" onclick="handleLogout()">退出登录</button>
-                </div>
+            <button class="refresh-btn" id="refreshBtn" onclick="refreshDashboard()">
+                <svg class="refresh-icon" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                <span>刷新</span>
+            </button>
+            <div class="search-box">
+                <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <input type="text" id="searchInput" placeholder="搜索任务、数据集..." autocomplete="off">
+                <div class="search-results" id="searchResults" style="display:none;"></div>
             </div>
         </header>
 
-        <!-- 对话内容区 -->
-        <div class="chat-container" id="chatContainer">
-            <div class="chat-welcome" id="chatWelcome">
-                <h1 id="welcomeTitle">有什么可以帮你的?</h1>
-                <p id="welcomeDesc">选择模型开始对话，支持图片识别与日常聊天</p>
+        <!-- 统计概览区 (US-2) -->
+        <section class="stats-section">
+            <div class="stat-card" id="datasetCard" onclick="navigateTo('/dataset-manage')">
+                <div class="stat-card-skeleton" id="datasetSkeleton">
+                    <div class="skeleton-value"></div>
+                    <div class="skeleton-label"></div>
+                    <div class="skeleton-detail"></div>
+                </div>
+                <div class="stat-card-content" id="datasetContent" style="display:none;">
+                    <div class="stat-value" id="datasetTotal">0</div>
+                    <div class="stat-label">数据集总数</div>
+                    <div class="stat-detail" id="datasetBySubject">--</div>
+                </div>
             </div>
-            <div class="chat-messages" id="chatMessages"></div>
+            <div class="stat-card" id="taskCard" onclick="navigateTo('/batch-evaluation')">
+                <div class="stat-card-skeleton" id="taskSkeleton">
+                    <div class="skeleton-value"></div>
+                    <div class="skeleton-label"></div>
+                    <div class="skeleton-detail"></div>
+                </div>
+                <div class="stat-card-content" id="taskContent" style="display:none;">
+                    <div class="stat-value" id="taskTotal">0</div>
+                    <div class="stat-label">批量任务</div>
+                    <div class="stat-detail" id="taskByTime">
+                        <span class="time-filter active" data-range="today" onclick="event.stopPropagation();switchTaskRange('today')">今日</span>
+                        <span class="time-filter" data-range="week" onclick="event.stopPropagation();switchTaskRange('week')">本周</span>
+                        <span class="time-filter" data-range="month" onclick="event.stopPropagation();switchTaskRange('month')">本月</span>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card" id="questionCard">
+                <div class="stat-card-skeleton" id="questionSkeleton">
+                    <div class="skeleton-value"></div>
+                    <div class="skeleton-label"></div>
+                    <div class="skeleton-detail"></div>
+                </div>
+                <div class="stat-card-content" id="questionContent" style="display:none;">
+                    <div class="stat-value" id="questionTotal">0</div>
+                    <div class="stat-label">题目总数</div>
+                    <div class="stat-detail" id="questionDetail">已测试 0 / 总计 0</div>
+                </div>
+            </div>
+            <div class="stat-card" id="accuracyCard">
+                <div class="stat-card-skeleton" id="accuracySkeleton">
+                    <div class="skeleton-value"></div>
+                    <div class="skeleton-label"></div>
+                    <div class="skeleton-detail"></div>
+                </div>
+                <div class="stat-card-content" id="accuracyContent" style="display:none;">
+                    <div class="stat-value">
+                        <span id="accuracyValue">--</span>
+                        <span class="trend-arrow" id="accuracyTrend"></span>
+                    </div>
+                    <div class="stat-label">整体准确率</div>
+                    <div class="stat-detail" id="accuracyCompare">与上周对比 --</div>
+                    <div class="stat-source" id="accuracySource" title="数据来源：批量评估任务中已完成评估的作业"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 主体内容区 -->
+        <div class="dashboard-body">
+            <!-- 左侧：测试计划流程图区 -->
+            <section class="plan-section">
+                <div class="section-header">
+                    <h2 class="section-title">今日测试计划</h2>
+                    <div class="plan-controls">
+                        <select class="plan-filter" id="planStatusFilter" onchange="filterPlans()">
+                            <option value="all">全部状态</option>
+                            <option value="draft">草稿</option>
+                            <option value="active">进行中</option>
+                            <option value="completed">已完成</option>
+                            <option value="archived">已归档</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="openCreatePlanModal()">
+                            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                            <span>新建计划</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="plan-list" id="planList">
+                    <!-- 骨架屏 -->
+                    <div class="plan-skeleton" id="planListSkeleton">
+                        <div class="plan-card-skeleton"></div>
+                        <div class="plan-card-skeleton"></div>
+                    </div>
+                    <!-- 测试计划列表内容 -->
+                    <div class="plan-list-content" id="planListContent" style="display:none;"></div>
+                </div>
+            </section>
+
+            <!-- 右侧：数据集概览 + 学科分析 -->
+            <div class="right-panel">
+                <!-- 数据集统计概览（简化版） -->
+                <section class="dataset-stats-section">
+                    <div class="section-header">
+                        <h2 class="section-title">数据集概览</h2>
+                        <button class="btn btn-ai" onclick="openAIPlanModal()" title="AI生成测试计划">
+                            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5z"/></svg>
+                            <span>AI生成计划</span>
+                        </button>
+                    </div>
+                    
+                    <!-- 统计卡片 -->
+                    <div class="dataset-stats-grid">
+                        <div class="mini-stat-card">
+                            <div class="mini-stat-value" id="datasetTotalValue">0</div>
+                            <div class="mini-stat-label">数据集数</div>
+                        </div>
+                        <div class="mini-stat-card">
+                            <div class="mini-stat-value" id="datasetQuestionValue">0</div>
+                            <div class="mini-stat-label">总题目数</div>
+                        </div>
+                        <div class="mini-stat-card">
+                            <div class="mini-stat-value" id="datasetAccuracyValue">--</div>
+                            <div class="mini-stat-label">平均准确率</div>
+                        </div>
+                        <div class="mini-stat-card">
+                            <div class="mini-stat-value" id="datasetUsageValue">0</div>
+                            <div class="mini-stat-label">本周使用</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 图表区 -->
+                    <div class="dataset-charts-row">
+                        <div class="chart-container pie-container">
+                            <canvas id="datasetPieChart" width="140" height="140"></canvas>
+                            <div class="pie-legend" id="datasetPieLegend"></div>
+                        </div>
+                        <div class="chart-container usage-container">
+                            <div class="chart-title">准确率 Top5</div>
+                            <div class="usage-top5" id="datasetUsageTop5">
+                                <div class="loading-text">加载中...</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 学科分析区（简化版） -->
+                <section class="subject-analysis-section">
+                    <div class="section-header">
+                        <h2 class="section-title">学科评估分析</h2>
+                        <div class="subject-controls">
+                            <button class="btn btn-text" onclick="exportSubjectReport()">
+                                <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                                导出
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="subject-skeleton" id="subjectSkeleton">
+                        <div class="skeleton-chart"></div>
+                    </div>
+                    
+                    <div class="subject-content" id="subjectContent" style="display:none;">
+                        <!-- 学科准确率列表 -->
+                        <div class="subject-list" id="subjectList"></div>
+                    </div>
+                </section>
+            </div>
         </div>
 
-        <!-- 输入区域 -->
-        <div class="input-area">
-            <!-- 思考程度选择器 -->
-            <div class="reasoning-selector" id="reasoningSelector" style="display:none;">
-                <span class="reasoning-label">思考程度:</span>
-                <div class="reasoning-options">
-                    <button class="reasoning-btn" data-level="minimal" onclick="setReasoningLevel('minimal')">不思考</button>
-                    <button class="reasoning-btn" data-level="low" onclick="setReasoningLevel('low')">低</button>
-                    <button class="reasoning-btn active" data-level="medium" onclick="setReasoningLevel('medium')">中</button>
-                    <button class="reasoning-btn" data-level="high" onclick="setReasoningLevel('high')">高</button>
+        <!-- 问题热点图区 (US-11) -->
+        <section class="heatmap-section" id="heatmapSection">
+            <div class="heatmap-header">
+                <h2 class="section-title">问题热点图</h2>
+                <div class="heatmap-controls">
+                    <select class="heatmap-filter" id="heatmapSubjectFilter" onchange="filterHeatmap()">
+                        <option value="">全部学科</option>
+                        <option value="0">英语</option>
+                        <option value="1">语文</option>
+                        <option value="2">数学</option>
+                        <option value="3">物理</option>
+                        <option value="4">化学</option>
+                        <option value="5">生物</option>
+                        <option value="6">地理</option>
+                    </select>
+                    <select class="heatmap-filter" id="heatmapDaysFilter" onchange="filterHeatmap()">
+                        <option value="7">最近7天</option>
+                        <option value="30">最近30天</option>
+                        <option value="0">全部</option>
+                    </select>
                 </div>
             </div>
-            <div class="input-box">
-                <div class="input-preview" id="inputPreview" style="display:none;">
-                    <img id="inputPreviewImg">
-                    <button class="preview-remove" onclick="removeInputImage()">×</button>
+            
+            <!-- 统计摘要 -->
+            <div class="heatmap-summary" id="heatmapSummary" style="display:none;">
+                <div class="heatmap-summary-item">
+                    <span class="heatmap-summary-value" id="heatmapTotalErrors">0</span>
+                    <span class="heatmap-summary-label">总错误数</span>
                 </div>
-                <div class="input-row">
-                    <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="上传图片">
-                        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                <div class="heatmap-summary-item">
+                    <span class="heatmap-summary-value" id="heatmapBookCount">0</span>
+                    <span class="heatmap-summary-label">涉及书本</span>
+                </div>
+                <div class="heatmap-summary-item">
+                    <span class="heatmap-summary-value" id="heatmapTimeRange">--</span>
+                    <span class="heatmap-summary-label">时间范围</span>
+                </div>
+            </div>
+            
+            <!-- 热点图容器 -->
+            <div class="heatmap-container" id="heatmapContainer">
+                <!-- 骨架屏 -->
+                <div class="heatmap-skeleton" id="heatmapSkeleton">
+                    <div class="heatmap-skeleton-item"></div>
+                    <div class="heatmap-skeleton-item"></div>
+                    <div class="heatmap-skeleton-item"></div>
+                </div>
+                <!-- 热点图内容 -->
+                <div class="heatmap-content" id="heatmapContent" style="display:none;"></div>
+            </div>
+            
+            <!-- 图例 -->
+            <div class="heatmap-legend">
+                <div class="heatmap-legend-item">
+                    <span class="heatmap-legend-color critical"></span>
+                    <span>严重 (>=10)</span>
+                </div>
+                <div class="heatmap-legend-item">
+                    <span class="heatmap-legend-color high"></span>
+                    <span>较高 (5-9)</span>
+                </div>
+                <div class="heatmap-legend-item">
+                    <span class="heatmap-legend-color medium"></span>
+                    <span>中等 (2-4)</span>
+                </div>
+                <div class="heatmap-legend-item">
+                    <span class="heatmap-legend-color low"></span>
+                    <span>较低 (1)</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 日报区 (US-14) -->
+        <section class="reports-section" id="reportsSection">
+            <div class="section-header">
+                <h2 class="section-title">测试日报</h2>
+                <div class="reports-controls">
+                    <button class="btn btn-primary" onclick="generateDailyReport()">
+                        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                        <span>生成今日日报</span>
                     </button>
-                    <input type="file" id="fileInput" accept="image/*" hidden>
-                    <textarea id="promptInput" placeholder="输入消息..." rows="1"></textarea>
-                    <div class="parallel-input-wrapper" title="并行处理次数">
-                        <input type="number" id="parallelCount" min="1" max="10" value="1" class="parallel-input">
-                        <span class="parallel-suffix">x</span>
-                    </div>
-                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-                        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </div>
+            </div>
+            
+            <!-- 日报列表 -->
+            <div class="reports-list" id="reportsList">
+                <div class="reports-skeleton" id="reportsListSkeleton">
+                    <div class="report-item-skeleton"></div>
+                    <div class="report-item-skeleton"></div>
+                    <div class="report-item-skeleton"></div>
+                </div>
+                <div class="reports-list-content" id="reportsListContent" style="display:none;"></div>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="reports-pagination" id="reportsPagination" style="display:none;">
+                <button class="pagination-btn" id="reportsPrevBtn" onclick="loadReportsPage('prev')" disabled>上一页</button>
+                <span class="pagination-info" id="reportsPaginationInfo">1 / 1</span>
+                <button class="pagination-btn" id="reportsNextBtn" onclick="loadReportsPage('next')" disabled>下一页</button>
+            </div>
+        </section>
+
+        <!-- 趋势分析区 (US-15) -->
+        <section class="trends-section" id="trendsSection">
+            <div class="section-header">
+                <h2 class="section-title">趋势分析</h2>
+                <div class="trends-controls">
+                    <select id="trendsDaysFilter" class="form-select" onchange="filterTrends()">
+                        <option value="7">近7天</option>
+                        <option value="30">近30天</option>
+                        <option value="90">近90天</option>
+                    </select>
+                    <select id="trendsSubjectFilter" class="form-select" onchange="filterTrends()">
+                        <option value="">全部学科</option>
+                        <option value="0">英语</option>
+                        <option value="1">语文</option>
+                        <option value="2">数学</option>
+                        <option value="3">物理</option>
+                        <option value="4">化学</option>
+                        <option value="5">生物</option>
+                        <option value="6">地理</option>
+                    </select>
+                    <button class="btn btn-secondary" onclick="exportTrends()">
+                        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        <span>导出CSV</span>
                     </button>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- 右侧工具栏 -->
-    <aside class="tools-sidebar" id="toolsSidebar">
-        <div class="tools-header">
-            <h3>工具箱</h3>
-            <button class="tools-close" onclick="toggleToolsSidebar()">×</button>
-        </div>
-        
-        <!-- MCP工具管理 -->
-        <div class="tools-section">
-            <div class="tools-label">联网搜索</div>
-            <div class="mcp-tool-toggle">
-                <label class="toggle-switch">
-                    <input type="checkbox" id="useToolsToggle" checked onchange="toggleUseTools()">
-                    <span class="toggle-slider"></span>
-                </label>
-                <span class="toggle-label">自动联网</span>
-            </div>
-            <div class="mcp-tools-list" id="mcpToolsList"></div>
-            <button class="tools-add-btn" onclick="showAddMcpTool()">+ 添加HTTP工具</button>
-        </div>
-        
-        <div class="tools-divider"></div>
-        
-        <!-- MCP服务器管理 -->
-        <div class="tools-section">
-            <div class="tools-label">MCP 服务器</div>
-            <div class="mcp-servers-list" id="mcpServersList"></div>
-            <button class="tools-add-btn" onclick="showAddMcpServer()">+ 添加MCP服务器</button>
-        </div>
-        
-        <div class="tools-divider"></div>
-        
-        <div class="tools-section">
-            <div class="tools-label">题号识别</div>
-            <textarea class="tools-textarea" id="extractPrompt" rows="3" placeholder="自定义识别提示词...">识别图片中每道题目的题号和前15个字符，输出JSON数组：[{"index":"题号","content":"内容"}]</textarea>
-            <div class="tools-upload" id="extractUploadZone" onclick="document.getElementById('extractFileInput').click()">
-                点击上传图片
-            </div>
-            <input type="file" id="extractFileInput" accept="image/*" hidden>
-            <div class="tools-preview" id="extractPreview" style="display:none;">
-                <img id="extractPreviewImg">
-                <button onclick="removeExtractImage()">×</button>
-            </div>
-            <button class="tools-action-btn" id="startExtractBtn" onclick="startExtract()" disabled>开始识别</button>
-            <div class="tools-result" id="questionsResult"></div>
-        </div>
-        
-        <div class="tools-divider"></div>
-        
-        <div class="tools-section">
-            <div class="tools-label">提示词模板</div>
-            <div class="tools-prompt-list" id="promptList"></div>
-            <button class="tools-add-btn" onclick="showAddPrompt()">+ 添加模板</button>
-        </div>
-    </aside>
-
-    <!-- MCP工具编辑弹窗 -->
-    <div class="modal" id="mcpToolModal">
-        <div class="modal-content" style="max-width:480px;">
-            <h3 id="mcpToolModalTitle">添加自定义工具</h3>
-            <div class="form-group">
-                <label>工具名称</label>
-                <input type="text" id="mcpToolName" placeholder="例如：天气查询">
-            </div>
-            <div class="form-group">
-                <label>工具描述</label>
-                <input type="text" id="mcpToolDesc" placeholder="描述工具的功能，模型会根据此判断何时调用">
-            </div>
-            <div class="form-group">
-                <label>API 地址</label>
-                <input type="text" id="mcpToolUrl" placeholder="https://api.example.com/search">
-            </div>
-            <div class="form-group">
-                <label>请求方法</label>
-                <select id="mcpToolMethod">
-                    <option value="GET">GET</option>
-                    <option value="POST">POST</option>
-                </select>
-            </div>
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="hideMcpToolModal()">取消</button>
-                <button class="btn-save" onclick="saveMcpTool()">保存</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MCP服务器配置弹窗 -->
-    <div class="modal" id="mcpServerModal">
-        <div class="modal-content" style="max-width:520px;">
-            <h3>添加 MCP 服务器</h3>
-            <div class="form-group">
-                <label>服务器名称</label>
-                <input type="text" id="mcpServerName" placeholder="例如：trends-hub">
-            </div>
-            <div class="form-group">
-                <label>启动命令</label>
-                <input type="text" id="mcpServerCommand" value="npx" placeholder="npx / uvx / node">
-            </div>
-            <div class="form-group">
-                <label>命令参数（每行一个）</label>
-                <textarea id="mcpServerArgs" rows="3" placeholder="-y&#10;mcp-trends-hub@1.6.0"></textarea>
-            </div>
-            <div class="form-group">
-                <label>环境变量（JSON格式，可选）</label>
-                <textarea id="mcpServerEnv" rows="2" placeholder='{"API_KEY": "xxx"}'></textarea>
-            </div>
-            <div class="mcp-config-hint">
-                <p>示例配置：</p>
-                <pre>命令: npx
-参数:
--y
-mcp-trends-hub@1.6.0</pre>
-            </div>
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="hideMcpServerModal()">取消</button>
-                <button class="btn-save" onclick="saveMcpServer()">保存</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 设置弹窗 -->
-    <div class="modal" id="settingsModal">
-        <div class="modal-content" style="max-width: 600px;">
-            <h3>系统设置</h3>
             
-            <!-- 设置标签页 -->
-            <div class="settings-tabs">
-                <button class="settings-tab active" onclick="switchSettingsTab('api')">API 密钥</button>
-                <button class="settings-tab" onclick="switchSettingsTab('database')">数据库</button>
+            <!-- 趋势图 -->
+            <div class="trends-chart-container">
+                <div class="trends-skeleton" id="trendsSkeleton">
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line"></div>
+                </div>
+                <div class="trends-content" id="trendsContent" style="display:none;">
+                    <canvas id="trendsCanvas" width="800" height="300"></canvas>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 创建测试计划弹窗 (增强版 - 支持工作流配置) -->
+    <div class="modal" id="createPlanModal" onclick="onCreatePlanModalBackdropClick(event)" style="display:none;">
+        <div class="modal-content create-plan-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">新建测试计划</h3>
+                <button class="modal-close" onclick="closeCreatePlanModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
             </div>
             
-            <!-- API 密钥配置 -->
-            <div class="settings-panel" id="settingsPanel_api">
-                <div class="settings-section">
-                    <div class="settings-section-title">
-                        豆包 API（视觉识别）
-                        <a href="https://console.volcengine.com/ark" target="_blank" class="api-link">获取密钥</a>
-                    </div>
+            <div class="modal-body">
+                <!-- 基本信息 -->
+                <div class="form-section">
+                    <div class="form-section-title">基本信息</div>
+                    
                     <div class="form-group">
-                        <label>API Key</label>
-                        <input type="password" id="apiKey" placeholder="输入豆包 API Key">
+                        <label class="form-label" for="createPlanName">计划名称 <span class="required">*</span></label>
+                        <input type="text" id="createPlanName" class="form-input" placeholder="如：物理温度章节测试">
                     </div>
+                    
                     <div class="form-group">
-                        <label>API URL</label>
-                        <input type="text" id="apiUrl" value="https://ark.cn-beijing.volces.com/api/v3/chat/completions">
+                        <label class="form-label" for="createPlanDescription">计划描述</label>
+                        <textarea id="createPlanDescription" class="form-textarea" rows="2" placeholder="描述测试目标和范围"></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="createPlanSubject">目标学科</label>
+                            <select id="createPlanSubject" class="form-select">
+                                <option value="">请选择学科</option>
+                                <option value="0">英语</option>
+                                <option value="1">语文</option>
+                                <option value="2">数学</option>
+                                <option value="3">物理</option>
+                                <option value="4">化学</option>
+                                <option value="5">生物</option>
+                                <option value="6">地理</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="createPlanTarget">目标测试量</label>
+                            <input type="number" id="createPlanTarget" class="form-input" value="30" min="1" max="100">
+                        </div>
                     </div>
                 </div>
-                <div class="settings-section">
-                    <div class="settings-section-title">
-                        GPT API（日常聊天）
-                        <a href="https://api.gpt.ge" target="_blank" class="api-link">获取密钥</a>
-                    </div>
-                    <div class="form-group">
-                        <label>GPT API Key</label>
-                        <input type="password" id="gptApiKey" placeholder="输入 GPT API Key">
-                    </div>
-                    <div class="form-group">
-                        <label>GPT API URL</label>
-                        <input type="text" id="gptApiUrl" value="https://api.gpt.ge/v1/chat/completions">
-                    </div>
-                </div>
-                <div class="settings-section">
-                    <div class="settings-section-title">
-                        DeepSeek（评估分析）
-                        <a href="https://platform.deepseek.com" target="_blank" class="api-link">获取密钥</a>
-                    </div>
-                    <div class="form-group">
-                        <label>DeepSeek API Key</label>
-                        <input type="password" id="deepseekApiKey" placeholder="输入 DeepSeek API Key">
-                    </div>
-                </div>
-                <div class="settings-section">
-                    <div class="settings-section-title">
-                        通义千问（可选）
-                        <a href="https://dashscope.console.aliyun.com" target="_blank" class="api-link">获取密钥</a>
-                    </div>
-                    <div class="form-group">
-                        <label>Qwen API Key</label>
-                        <input type="password" id="qwenApiKey" placeholder="输入 DashScope API Key">
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 数据库配置 -->
-            <div class="settings-panel" id="settingsPanel_database" style="display:none;">
-                <!-- 主数据库配置已移至服务器环境变量 -->
-                <input type="hidden" id="mysqlHost">
-                <input type="hidden" id="mysqlPort" value="3306">
-                <input type="hidden" id="mysqlUser">
-                <input type="hidden" id="mysqlPassword">
-                <input type="hidden" id="mysqlDatabase">
                 
-                <div class="settings-section">
-                    <div class="settings-section-title">应用数据库（存储评估结果）</div>
-                    <div class="form-row">
-                        <div class="form-group" style="flex:2;">
-                            <label>主机地址</label>
-                            <input type="text" id="appMysqlHost" placeholder="留空则不使用">
+                <!-- 作业匹配配置 -->
+                <div class="form-section">
+                    <div class="form-section-title">作业匹配配置</div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="createPlanKeyword">任务关键字 <span class="required">*</span></label>
+                        <div class="input-with-button">
+                            <input type="text" id="createPlanKeyword" class="form-input" placeholder="如：p97-98、物理八上第三章">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="previewKeywordMatch()" id="previewMatchBtn">
+                                <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                                预览匹配
+                            </button>
                         </div>
-                        <div class="form-group" style="flex:1;">
-                            <label>端口</label>
-                            <input type="number" id="appMysqlPort" value="3306">
+                        <span class="form-hint">输入作业发布任务的关键字，用于匹配 zpsmart 系统中的作业</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="createPlanMatchType">匹配方式</label>
+                        <select id="createPlanMatchType" class="form-select">
+                            <option value="fuzzy">模糊匹配（推荐）</option>
+                            <option value="exact">精确匹配</option>
+                            <option value="regex">正则表达式</option>
+                        </select>
+                        <span class="form-hint">模糊匹配：包含关键字即可；精确匹配：完全相同；正则：支持正则表达式</span>
+                    </div>
+                    
+                    <!-- 匹配预览结果区域 -->
+                    <div class="match-preview-container" id="matchPreviewContainer" style="display:none;">
+                        <div class="match-preview-header">
+                            <span class="match-preview-title">匹配预览结果</span>
+                            <span class="match-preview-count" id="matchPreviewCount">0 条匹配</span>
+                        </div>
+                        <div class="match-preview-stats" id="matchPreviewStats">
+                            <div class="match-stat-item">
+                                <span class="match-stat-value" id="matchTotalHomework">0</span>
+                                <span class="match-stat-label">总作业数</span>
+                            </div>
+                            <div class="match-stat-item">
+                                <span class="match-stat-value" id="matchTotalGraded">0</span>
+                                <span class="match-stat-label">已批改</span>
+                            </div>
+                            <div class="match-stat-item">
+                                <span class="match-stat-value" id="matchGradingProgress">0%</span>
+                                <span class="match-stat-label">批改进度</span>
+                            </div>
+                        </div>
+                        <div class="match-preview-list" id="matchPreviewList">
+                            <!-- 动态渲染匹配结果 -->
                         </div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>用户名</label>
-                            <input type="text" id="appMysqlUser" placeholder="数据库用户名">
+                </div>
+                
+                <!-- 数据集配置 -->
+                <div class="form-section">
+                    <div class="form-section-title">数据集配置</div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="createPlanDataset">关联数据集</label>
+                        <select id="createPlanDataset" class="form-select">
+                            <option value="">请选择数据集（可选）</option>
+                            <!-- 动态加载数据集列表 -->
+                        </select>
+                        <span class="form-hint">选择用于评估的基准数据集，不选则需要在执行时手动配置</span>
+                    </div>
+                </div>
+                
+                <!-- 高级设置（可折叠） -->
+                <div class="form-section collapsible" id="advancedSettingsSection">
+                    <div class="form-section-header" onclick="toggleAdvancedSettings()">
+                        <span class="form-section-title">高级设置</span>
+                        <svg class="collapse-icon" id="advancedSettingsIcon" viewBox="0 0 24 24" width="20" height="20">
+                            <path fill="currentColor" d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                        </svg>
+                    </div>
+                    <div class="form-section-content" id="advancedSettingsContent" style="display:none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="createPlanGradingThreshold">批改完成阈值</label>
+                                <div class="input-with-suffix">
+                                    <input type="number" id="createPlanGradingThreshold" class="form-input" value="100" min="0" max="100">
+                                    <span class="input-suffix">%</span>
+                                </div>
+                                <span class="form-hint">批改进度达到此阈值后自动进入评估阶段</span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">自动执行</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="createPlanAutoExecute">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="form-hint">开启后，批改完成自动开始评估</span>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>密码</label>
-                            <input type="password" id="appMysqlPassword" placeholder="数据库密码">
-                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCreatePlanModal()">取消</button>
+                <button class="btn btn-primary" onclick="createTestPlan()" id="createPlanSubmitBtn">创建计划</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 流程节点详情弹窗 -->
+    <div class="modal" id="workflowNodeModal" onclick="onWorkflowNodeModalBackdropClick(event)" style="display:none;">
+        <div class="modal-content workflow-node-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title" id="workflowNodeTitle">节点详情</h3>
+                <button class="modal-close" onclick="closeWorkflowNodeModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            
+            <div class="modal-body" id="workflowNodeContent">
+                <!-- 动态内容 -->
+            </div>
+            
+            <div class="modal-footer" id="workflowNodeFooter">
+                <button class="btn btn-secondary" onclick="closeWorkflowNodeModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- AI生成测试计划弹窗 (US-7) -->
+    <div class="modal" id="aiPlanModal" onclick="onModalBackdropClick(event)" style="display:none;">
+        <div class="modal-content ai-plan-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">AI 生成测试计划</h3>
+                <button class="modal-close" onclick="closeAIPlanModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            
+            <!-- 表单区域 -->
+            <div class="modal-body" id="aiPlanForm">
+                <div class="form-group">
+                    <label class="form-label">选择数据集 <span class="required">*</span></label>
+                    <div class="dataset-checkbox-list" id="aiPlanDatasetList">
+                        <div class="loading-text">加载数据集...</div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="aiPlanSampleCount">测试样本数</label>
+                        <input type="number" id="aiPlanSampleCount" class="form-input" 
+                               value="30" min="1" max="100" placeholder="默认30份">
+                        <span class="form-hint">模拟学生作业数量（1-100）</span>
                     </div>
                     <div class="form-group">
-                        <label>数据库名</label>
-                        <input type="text" id="appMysqlDatabase" placeholder="数据库名称">
+                        <label class="form-label" for="aiPlanSubject">目标学科</label>
+                        <select id="aiPlanSubject" class="form-select">
+                            <option value="">自动识别</option>
+                            <option value="0">英语</option>
+                            <option value="1">语文</option>
+                            <option value="2">数学</option>
+                            <option value="3">物理</option>
+                            <option value="4">化学</option>
+                            <option value="5">生物</option>
+                            <option value="6">地理</option>
+                        </select>
                     </div>
-                    <button class="btn-test" onclick="testDatabaseConnection('app')">测试连接</button>
                 </div>
             </div>
             
-            <div class="settings-status" id="settingsStatus"></div>
+            <!-- 结果区域 -->
+            <div class="modal-body ai-plan-result" id="aiPlanResult" style="display:none;">
+                <div class="form-group">
+                    <label class="form-label" for="aiPlanName">计划名称 <span class="required">*</span></label>
+                    <input type="text" id="aiPlanName" class="form-input" placeholder="输入计划名称">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="aiPlanDescription">计划描述</label>
+                    <textarea id="aiPlanDescription" class="form-textarea" rows="2" placeholder="输入计划描述"></textarea>
+                </div>
+                
+                <div class="plan-section">
+                    <h4 class="plan-section-title">测试目标</h4>
+                    <ul class="plan-list objectives-list" id="aiPlanObjectives"></ul>
+                </div>
+                
+                <div class="plan-section">
+                    <h4 class="plan-section-title">测试步骤</h4>
+                    <ol class="plan-list steps-list" id="aiPlanSteps"></ol>
+                </div>
+                
+                <div class="plan-row">
+                    <div class="plan-section">
+                        <h4 class="plan-section-title">预期时长</h4>
+                        <div class="plan-duration" id="aiPlanDuration">--</div>
+                    </div>
+                </div>
+                
+                <div class="plan-section">
+                    <h4 class="plan-section-title">验收标准</h4>
+                    <ul class="plan-list criteria-list" id="aiPlanCriteria"></ul>
+                </div>
+            </div>
             
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="hideSettings()">取消</button>
-                <button class="btn-save" onclick="saveSettings()">保存配置</button>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAIPlanModal()">取消</button>
+                <button class="btn btn-secondary" id="backToFormBtn" onclick="backToAIPlanForm()" style="display:none;">返回修改</button>
+                <button class="btn btn-primary" id="generateAIPlanBtn" onclick="generateAIPlan()" disabled>生成计划</button>
+                <button class="btn btn-primary" id="saveAIPlanBtn" onclick="saveAIPlan()" style="display:none;">保存计划</button>
             </div>
         </div>
     </div>
 
-    <!-- 提示词编辑弹窗 -->
-    <div class="modal" id="promptModal">
-        <div class="modal-content" style="max-width:520px;">
-            <h3 id="promptModalTitle">添加提示词模板</h3>
-            <div class="form-group">
-                <label>模板名称</label>
-                <input type="text" id="newPromptName" placeholder="例如：答案识别">
+    <!-- 热点图错误详情弹窗 (US-11.3) -->
+    <div class="modal" id="heatmapDetailModal" onclick="onHeatmapDetailModalBackdropClick(event)" style="display:none;">
+        <div class="modal-content heatmap-detail-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">错误详情</h3>
+                <button class="modal-close" onclick="closeHeatmapDetailModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
             </div>
-            <div class="form-group">
-                <label>提示词内容</label>
-                <textarea id="newPromptContent" rows="10" placeholder="直接输入提示词内容..."></textarea>
-            </div>
-            <div class="optimize-row">
-                <button class="optimize-btn" id="optimizeBtn" onclick="optimizePrompt()">AI优化</button>
-                <span class="optimize-hint">使用 Qwen3-Max 优化提示词</span>
-            </div>
-            <div id="optimizeResult" class="optimize-result" style="display:none;">
-                <div class="optimize-result-header">
-                    <span>优化建议</span>
-                    <button class="apply-btn" onclick="applyOptimizedPrompt()">应用</button>
+            
+            <div class="modal-body">
+                <div class="heatmap-detail-header">
+                    <span class="heatmap-detail-title" id="heatmapDetailTitle">--</span>
+                    <span class="heatmap-detail-badge heatmap-error-badge" id="heatmapDetailBadge">0 次错误</span>
                 </div>
-                <div id="optimizeContent" class="optimize-content"></div>
-            </div>
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="hideAddPrompt()">取消</button>
-                <button class="btn-save" onclick="savePrompt()">保存</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 图片放大弹窗 -->
-    <div class="image-modal" id="imageModal" onclick="hideImageModal()">
-        <img id="modalImg" src="">
-    </div>
-
-    <!-- 登录弹窗 -->
-    <div class="modal" id="loginModal">
-        <div class="modal-content login-modal-content">
-            <h3>登录</h3>
-            <p class="login-hint">没有账号？输入用户名密码自动注册</p>
-            <div class="form-group">
-                <label>用户名</label>
-                <input type="text" id="loginUsername" placeholder="请输入用户名" autocomplete="username">
-            </div>
-            <div class="form-group">
-                <label>密码</label>
-                <input type="password" id="loginPassword" placeholder="请输入密码" autocomplete="current-password">
-            </div>
-            <div class="form-group remember-group">
-                <label class="checkbox-label">
-                    <input type="checkbox" id="loginRemember" checked>
-                    <span>记住登录</span>
-                </label>
-            </div>
-            <div class="login-error" id="loginError" style="display:none;"></div>
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="hideLoginModal()">取消</button>
-                <button class="btn-save login-btn" id="loginBtn" onclick="handleLogin()">登录</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 添加优化日志弹窗 -->
-    <div class="modal" id="addLogModal">
-        <div class="modal-content" style="max-width:400px;">
-            <h3>添加优化日志</h3>
-            <div class="form-row">
-                <div class="form-group" style="flex:2;">
-                    <label>日期</label>
-                    <input type="date" id="logDate">
-                </div>
-                <div class="form-group" style="flex:1;">
-                    <label>时间</label>
-                    <input type="time" id="logTime">
+                
+                <div class="heatmap-error-list" id="heatmapErrorList">
+                    <div class="loading-text">加载中...</div>
                 </div>
             </div>
-            <div class="form-group">
-                <label>分类</label>
-                <select id="logCategory">
-                    <option value="general">通用</option>
-                    <option value="accuracy">准确率</option>
-                    <option value="performance">性能</option>
-                    <option value="feature">功能</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>内容</label>
-                <textarea id="logContent" rows="3" placeholder="例如：优化了物理学科批改准确率"></textarea>
-            </div>
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="hideAddLogModal()">取消</button>
-                <button class="btn-save" onclick="saveOptLog()">保存</button>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeHeatmapDetailModal()">关闭</button>
             </div>
         </div>
     </div>
 
-    <!-- 查看日志详情弹窗 -->
-    <div class="modal" id="viewLogModal">
-        <div class="modal-content log-detail-modal">
-            <div class="log-detail-header">
-                <span class="log-detail-date" id="viewLogDate"></span>
-                <span class="log-detail-category" id="viewLogCategory"></span>
-                <button class="modal-close" onclick="hideViewLogModal()">&times;</button>
+    <!-- 调度配置弹窗 (US-10) -->
+    <div class="modal" id="scheduleModal" onclick="onScheduleModalBackdropClick(event)" style="display:none;">
+
+    <!-- 日报详情弹窗 (US-14) -->
+    <div class="modal" id="reportDetailModal" onclick="onReportDetailModalBackdropClick(event)" style="display:none;">
+        <div class="modal-content report-detail-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">日报详情</h3>
+                <button class="modal-close" onclick="closeReportDetailModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
             </div>
-            <div class="log-detail-content" id="viewLogContent"></div>
+            
+            <div class="modal-body report-detail-body">
+                <div class="report-detail-header">
+                    <span class="report-detail-date" id="reportDetailDate">--</span>
+                    <span class="report-detail-badge" id="reportDetailBadge">--</span>
+                </div>
+                
+                <!-- AI总结 -->
+                <div class="report-summary-section">
+                    <h4 class="report-section-title">AI总结</h4>
+                    <div class="report-ai-summary" id="reportDetailSummary">--</div>
+                </div>
+                
+                <!-- 统计数据 -->
+                <div class="report-stats-grid">
+                    <div class="report-stat-item">
+                        <span class="report-stat-value" id="reportDetailCompleted">0</span>
+                        <span class="report-stat-label">完成任务</span>
+                    </div>
+                    <div class="report-stat-item">
+                        <span class="report-stat-value" id="reportDetailPlanned">0</span>
+                        <span class="report-stat-label">计划任务</span>
+                    </div>
+                    <div class="report-stat-item">
+                        <span class="report-stat-value" id="reportDetailAccuracy">--</span>
+                        <span class="report-stat-label">准确率</span>
+                    </div>
+                    <div class="report-stat-item">
+                        <span class="report-stat-value" id="reportDetailChange">--</span>
+                        <span class="report-stat-label">较昨日</span>
+                    </div>
+                </div>
+                
+                <!-- 主要错误类型 -->
+                <div class="report-errors-section">
+                    <h4 class="report-section-title">主要错误类型 Top 5</h4>
+                    <div class="report-errors-list" id="reportDetailErrors">--</div>
+                </div>
+                
+                <!-- 新增错误类型 -->
+                <div class="report-new-errors-section" id="reportNewErrorsSection" style="display:none;">
+                    <h4 class="report-section-title">新增错误类型</h4>
+                    <div class="report-new-errors-list" id="reportDetailNewErrors"></div>
+                </div>
+                
+                <!-- 高频错误题目 -->
+                <div class="report-high-freq-section" id="reportHighFreqSection" style="display:none;">
+                    <h4 class="report-section-title">高频错误题目</h4>
+                    <div class="report-high-freq-list" id="reportDetailHighFreq"></div>
+                </div>
+                
+                <!-- 异常情况 -->
+                <div class="report-anomalies-section" id="reportAnomaliesSection" style="display:none;">
+                    <h4 class="report-section-title">异常情况</h4>
+                    <div class="report-anomalies-list" id="reportDetailAnomalies"></div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeReportDetailModal()">关闭</button>
+                <button class="btn btn-primary" onclick="exportDailyReport()">
+                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                    <span>导出 Word</span>
+                </button>
+            </div>
         </div>
     </div>
 
-    <script src="/static/js/index.js"></script>
+    <!-- 调度配置弹窗 (US-10) -->
+        <div class="modal-content schedule-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">调度配置</h3>
+                <button class="modal-close" onclick="closeScheduleModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <input type="hidden" id="schedulePlanId">
+                
+                <!-- 调度开关 -->
+                <div class="form-group schedule-toggle-group">
+                    <label class="form-label">启用自动调度</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="scheduleEnabled" onchange="onScheduleEnabledChange()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                
+                <!-- 调度配置表单 -->
+                <div class="schedule-config" id="scheduleConfig">
+                    <div class="form-group">
+                        <label class="form-label" for="scheduleType">调度类型</label>
+                        <select id="scheduleType" class="form-select" onchange="onScheduleTypeChange()">
+                            <option value="daily">每天执行</option>
+                            <option value="weekly">每周执行</option>
+                            <option value="cron">自定义 Cron</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="scheduleTime">执行时间</label>
+                        <input type="time" id="scheduleTime" class="form-input" value="09:00">
+                    </div>
+                    
+                    <div class="form-group" id="weeklyDayGroup" style="display:none;">
+                        <label class="form-label" for="scheduleDayOfWeek">执行日期</label>
+                        <select id="scheduleDayOfWeek" class="form-select">
+                            <option value="0">周一</option>
+                            <option value="1">周二</option>
+                            <option value="2">周三</option>
+                            <option value="3">周四</option>
+                            <option value="4">周五</option>
+                            <option value="5">周六</option>
+                            <option value="6">周日</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="cronGroup" style="display:none;">
+                        <label class="form-label" for="scheduleCron">Cron 表达式</label>
+                        <input type="text" id="scheduleCron" class="form-input" placeholder="0 9 * * *">
+                        <span class="form-hint">格式: 分 时 日 月 周 (如: 0 9 * * * 表示每天9点)</span>
+                    </div>
+                </div>
+                
+                <!-- 下次执行时间 -->
+                <div class="schedule-next-run" id="scheduleNextRunSection">
+                    <div class="next-run-label">下次执行时间</div>
+                    <div class="next-run-time" id="scheduleNextRun">--</div>
+                </div>
+                
+                <!-- 执行日志 -->
+                <div class="schedule-logs-section">
+                    <div class="section-header-small">
+                        <h4 class="section-title-small">执行日志</h4>
+                        <button class="btn btn-text" onclick="refreshScheduleLogs()">刷新</button>
+                    </div>
+                    <div class="schedule-logs" id="scheduleLogs">
+                        <div class="empty-text">暂无执行记录</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeScheduleModal()">取消</button>
+                <button class="btn btn-warning" id="executeNowBtn" onclick="executeScheduleNow()">立即执行</button>
+                <button class="btn btn-primary" id="saveScheduleBtn" onclick="saveScheduleConfig()">保存配置</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/static/js/index.js?v=20260123"></script>
 </body>
 </html>

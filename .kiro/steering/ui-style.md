@@ -77,7 +77,17 @@
 
 ### 表单
 ```css
-input, select, textarea { padding: 10px 12px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; }
+/* 所有输入框、筛选框统一为白底黑字 */
+input, select, textarea { 
+    padding: 10px 12px; 
+    background: #ffffff;      /* 白色背景 */
+    border: 1px solid #d2d2d7; 
+    border-radius: 8px; 
+    font-size: 14px;
+    color: #1d1d1f;           /* 黑色文字 */
+}
+
+/* 注意: 无论深色主题还是浅色主题，表单输入框都使用白底黑字 */
 ```
 
 ### 标签/徽章
