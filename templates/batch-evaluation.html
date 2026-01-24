@@ -7,16 +7,17 @@
     <!-- 预加载关键资源 -->
     <link rel="preload" href="/static/css/common.css?v=20260124" as="style">
     <link rel="preload" href="/static/css/batch-evaluation.css?v=20260124" as="style">
-    <link rel="preload" href="/static/js/batch-evaluation.js?v=20260124" as="script">
     <!-- 样式表 -->
     <link rel="stylesheet" href="/static/css/common.css?v=20260124">
     <link rel="stylesheet" href="/static/css/batch-evaluation.css?v=20260124">
-    <!-- 第三方库延迟加载 -->
-    <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
+    <!-- Chart.js 需要同步加载(页面初始化依赖) -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <!-- html2canvas 延迟加载(仅导出时使用) -->
     <script src="https://cdn.bootcdn.net/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
     <!-- 首屏关键CSS -->
     <style>
-        .loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999}
+        .loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.95);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9999}
+        .loading-overlay.show{display:flex}
         .loading-container{text-align:center}
         .loading-icon{width:48px;height:48px;margin:0 auto 16px}
         .loading-icon-circle{width:100%;height:100%;border:3px solid #e5e5e5;border-top-color:#1d1d1f;border-radius:50%;animation:spin 0.8s linear infinite}
