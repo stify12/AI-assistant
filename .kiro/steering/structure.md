@@ -6,13 +6,15 @@
 ├── config.example.json    # 配置文件模板
 ├── prompts.json           # AI提示词配置
 ├── database_schema.sql    # 数据库表结构
+├── automation_config.json # 自动化调度配置
 │
 ├── routes/                # Flask蓝图路由
 │   ├── __init__.py        # 蓝图注册
 │   ├── common.py          # 通用路由 (首页、配置、会话)
 │   ├── auth.py            # 用户认证
+│   ├── dashboard.py       # 测试计划看板 (概览/任务/数据集/学科/计划CRUD)
 │   ├── batch_evaluation.py # 批量评估
-│   ├── batch_compare.py   # 批量对比
+│   ├── batch_compare.py   # 批量对比分析
 │   ├── subject_grading.py # 学科批改
 │   ├── data_analysis.py   # 数据分析
 │   ├── dataset_manage.py  # 数据集管理
@@ -20,7 +22,20 @@
 │   ├── prompt_manage.py   # Prompt管理
 │   ├── ai_eval.py         # AI评估
 │   ├── chat.py            # 对话功能
-│   └── model_recommend.py # 模型推荐
+│   ├── model_recommend.py # 模型推荐
+│   ├── automation.py      # 自动化调度
+│   ├── anomaly.py         # 异常检测
+│   ├── clustering.py      # 聚类分析
+│   ├── drilldown.py       # 下钻分析
+│   ├── error_samples.py   # 错误样本管理
+│   ├── error_correlation.py # 错误关联分析
+│   ├── error_mark.py      # 错误标记
+│   ├── best_practice.py   # 最佳实践推荐
+│   ├── optimization.py    # 优化建议
+│   ├── saved_filter.py    # 保存筛选器
+│   ├── task_assignment.py # 任务分配
+│   ├── image_compare.py   # 图片对比
+│   └── analysis.py        # 通用分析
 │
 ├── services/              # 业务服务层
 │   ├── config_service.py  # 配置管理
@@ -29,7 +44,22 @@
 │   ├── session_service.py # 会话管理
 │   ├── storage_service.py # 文件/数据库存储 (USE_DB_STORAGE控制)
 │   ├── auth_service.py    # 认证服务
-│   └── physics_eval.py    # 物理评估服务
+│   ├── physics_eval.py    # 物理评估服务
+│   ├── chemistry_eval.py  # 化学评估服务
+│   ├── dashboard_service.py # 看板服务 (统计/缓存/计划管理)
+│   ├── automation_service.py # 自动化调度服务
+│   ├── anomaly_service.py # 异常检测服务
+│   ├── clustering_service.py # 聚类分析服务
+│   ├── drilldown_service.py # 下钻分析服务
+│   ├── error_sample_service.py # 错误样本服务
+│   ├── error_correlation_service.py # 错误关联服务
+│   ├── batch_compare_service.py # 批量对比服务
+│   ├── best_practice_service.py # 最佳实践服务
+│   ├── optimization_service.py # 优化建议服务
+│   ├── saved_filter_service.py # 筛选器服务
+│   ├── task_assignment_service.py # 任务分配服务
+│   ├── ai_analysis_service.py # AI分析服务
+│   └── excel_export_service.py # Excel导出服务
 │
 ├── knowledge_agent/       # 知识点类题生成模块
 │   ├── routes.py          # API路由
@@ -55,7 +85,7 @@
 ├── static/
 │   ├── css/               # 样式文件
 │   │   ├── common.css     # 公共样式
-│   │   ├── index.css      # 首页样式
+│   │   ├── index.css      # 首页样式 (含Dashboard看板)
 │   │   ├── compare.css    # 对比页样式
 │   │   ├── batch-evaluation.css
 │   │   ├── subject-grading.css
@@ -63,9 +93,13 @@
 │   │   ├── data-analysis.css
 │   │   ├── dataset-manage.css
 │   │   ├── knowledge-agent.css
-│   │   └── prompt-optimize.css
+│   │   ├── prompt-optimize.css
+│   │   └── modules/       # 模块化CSS
+│   │       ├── batch-compare.css
+│   │       ├── drilldown.css
+│   │       └── virtual-scroll.css
 │   └── js/                # JavaScript文件
-│       ├── index.js
+│       ├── index.js       # 首页JS (含Dashboard看板)
 │       ├── compare.js
 │       ├── batch-evaluation.js
 │       ├── subject-grading.js
@@ -73,12 +107,31 @@
 │       ├── data-analysis.js
 │       ├── dataset-manage.js
 │       ├── knowledge-agent.js
-│       └── prompt-optimize.js
+│       ├── prompt-optimize.js
+│       └── modules/       # 模块化JS
+│           ├── ab-test.js
+│           ├── anomaly-detection.js
+│           ├── batch-compare.js
+│           ├── best-practice.js
+│           ├── clustering.js
+│           ├── coverage-analysis.js
+│           ├── drilldown.js
+│           ├── error-samples.js
+│           ├── export-progress.js
+│           ├── image-compare.js
+│           ├── optimization.js
+│           └── virtual-scroll.js
 │
 ├── tests/                 # 测试文件
 │   ├── test_dataset_api.py    # 数据集API测试 (含属性测试)
 │   ├── test_physics_eval.py   # 物理评估测试
 │   └── test_*.py              # 其他测试文件
+│
+├── migrations/            # 数据库迁移脚本
+│   ├── 00_init_schema.sql     # 初始化表结构
+│   ├── add_ai_analysis_tables.sql  # AI分析相关表
+│   ├── add_error_analysis_tables.sql # 错误分析相关表
+│   └── run_migration.py       # 迁移执行脚本
 │
 ├── datasets/              # 数据集存储 (JSON)
 ├── batch_tasks/           # 批量任务存储
@@ -90,7 +143,7 @@
 ├── exports/               # 导出文件
 ├── knowledge_uploads/     # 知识点图片上传
 ├── analysis_files/        # 分析文件上传
-└── baseline_effects/      # 基准效果数据
+└── saved_filters/         # 保存的筛选器
 ```
 
 ## 架构模式
