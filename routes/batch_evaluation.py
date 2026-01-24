@@ -18,12 +18,23 @@ from services.llm_service import LLMService
 from services.semantic_eval_service import SemanticEvalService
 from services.physics_eval import normalize_physics_markdown
 from services.chemistry_eval import normalize_chemistry_markdown
+from services.ai_analysis_service import AIAnalysisService
 from utils.text_utils import normalize_answer, normalize_answer_science, has_format_diff, calculate_similarity, is_fuzzy_match
 
 batch_evaluation_bp = Blueprint('batch_evaluation', __name__)
 
 DATASETS_DIR = 'datasets'
 BATCH_TASKS_DIR = 'batch_tasks'
+
+# 初始化 AI 分析服务
+_analysis_service = None
+
+def get_analysis_service():
+    """获取分析服务单例"""
+    global _analysis_service
+    if _analysis_service is None:
+        _analysis_service = AIAnalysisService()
+    return _analysis_service
 
 
 # ========== 辅助函数 ==========
@@ -2440,6 +2451,13 @@ def batch_evaluate(task_id):
         
         StorageService.save_batch_task(task_id, task_data)
         
+        # 自动触发 AI 分析
+        try:
+            analysis_service = get_analysis_service()
+            analysis_service.trigger_analysis(task_id)
+        except Exception as e:
+            print(f"[AI分析] 自动触发分析失败: {e}")
+        
         yield f"data: {json.dumps({'type': 'complete', 'overall_accuracy': overall_accuracy, 'by_question_type': aggregated_type_stats, 'by_combined': aggregated_combined_stats})}\n\n"
     
     return Response(generate(), mimetype='text/event-stream')
@@ -3423,7 +3441,18 @@ def generate_ai_report(task_id):
 """
         
         user_id = get_current_user_id()
-        response = LLMService.call_deepseek(analysis_prompt, user_id=user_id)
+        llm_result = LLMService.call_deepseek(analysis_prompt, user_id=user_id)
+        
+        # 检查LLM调用是否成功
+        if isinstance(llm_result, dict):
+            if 'error' in llm_result:
+                return jsonify({
+                    'success': False,
+                    'error': f'LLM调用失败: {llm_result["error"]}'
+                })
+            response = llm_result.get('content', '')
+        else:
+            response = str(llm_result)
         
         # 解析响应
         try:
@@ -3776,6 +3805,13 @@ def batch_ai_evaluate(task_id):
         }
         
         StorageService.save_batch_task(task_id, task_data)
+        
+        # 自动触发 AI 分析
+        try:
+            analysis_service = get_analysis_service()
+            analysis_service.trigger_analysis(task_id)
+        except Exception as e:
+            print(f"[AI分析] 自动触发分析失败: {e}")
         
         yield f"data: {json.dumps({'type': 'complete', 'overall_accuracy': overall_accuracy, 'total_questions': total_questions, 'correct_questions': total_correct, 'by_question_type': aggregated_type_stats, 'by_combined': aggregated_combined_stats})}\n\n"
     

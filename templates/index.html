@@ -153,8 +153,8 @@
             </div>
         </section>
 
-        <!-- 主体内容区 -->
-        <div class="dashboard-body">
+        <!-- 主体内容区：第一行 - 测试计划(70%) + 高级工具(30%) -->
+        <div class="dashboard-row-1">
             <!-- 左侧：测试计划流程图区 -->
             <section class="plan-section">
                 <div class="section-header">
@@ -184,79 +184,100 @@
                 </div>
             </section>
 
-            <!-- 右侧：数据集概览 + 学科分析 -->
-            <div class="right-panel">
-                <!-- 数据集统计概览（简化版） -->
-                <section class="dataset-stats-section">
-                    <div class="section-header">
-                        <h2 class="section-title">数据集概览</h2>
-                        <button class="btn btn-ai" onclick="openAIPlanModal()" title="AI生成测试计划">
-                            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5z"/></svg>
-                            <span>AI生成计划</span>
-                        </button>
+            <!-- 右侧：高级分析工具 -->
+            <section class="advanced-tools-section" id="advancedToolsSection">
+                <div class="section-header">
+                    <h2 class="section-title">高级分析</h2>
+                </div>
+                <div class="tools-grid-vertical">
+                    <!-- 错误样本库 -->
+                    <div class="tool-card" onclick="openErrorSamplesModal()">
+                        <div class="tool-card-icon">
+                            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 9h-2v2H9v-2H7v-2h2V7h2v2h2v2zm-1-7.5V9h4.5L12 3.5z"/></svg>
+                        </div>
+                        <div class="tool-card-content">
+                            <div class="tool-card-name">错误样本</div>
+                            <div class="tool-card-desc">查看批改错误案例</div>
+                        </div>
+                        <div class="tool-card-badge" id="errorSampleCount">0</div>
                     </div>
                     
-                    <!-- 统计卡片 -->
-                    <div class="dataset-stats-grid">
-                        <div class="mini-stat-card">
-                            <div class="mini-stat-value" id="datasetTotalValue">0</div>
-                            <div class="mini-stat-label">数据集数</div>
+                    <!-- 异常检测 -->
+                    <div class="tool-card" onclick="openAnomalyModal()">
+                        <div class="tool-card-icon warning">
+                            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
                         </div>
-                        <div class="mini-stat-card">
-                            <div class="mini-stat-value" id="datasetQuestionValue">0</div>
-                            <div class="mini-stat-label">总题目数</div>
+                        <div class="tool-card-content">
+                            <div class="tool-card-name">异常检测</div>
+                            <div class="tool-card-desc">发现异常评分模式</div>
                         </div>
-                        <div class="mini-stat-card">
-                            <div class="mini-stat-value" id="datasetAccuracyValue">--</div>
-                            <div class="mini-stat-label">平均准确率</div>
+                        <div class="tool-card-badge warning" id="anomalyCount">0</div>
+                    </div>
+                    
+                    <!-- 错误聚类 -->
+                    <div class="tool-card" onclick="openClusteringModal()">
+                        <div class="tool-card-icon">
+                            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><circle cx="8" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="16" cy="12" r="2" fill="currentColor"/></svg>
                         </div>
-                        <div class="mini-stat-card">
-                            <div class="mini-stat-value" id="datasetUsageValue">0</div>
-                            <div class="mini-stat-label">本周使用</div>
+                        <div class="tool-card-content">
+                            <div class="tool-card-name">错误聚类</div>
+                            <div class="tool-card-desc">按类型归类错误</div>
+                        </div>
+                        <div class="tool-card-badge" id="clusterCount">0</div>
+                    </div>
+                    
+                    <!-- 优化建议 -->
+                    <div class="tool-card" onclick="openOptimizationModal()">
+                        <div class="tool-card-icon">
+                            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6A4.997 4.997 0 017 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1z"/></svg>
+                        </div>
+                        <div class="tool-card-content">
+                            <div class="tool-card-name">优化建议</div>
+                            <div class="tool-card-desc">AI改进建议</div>
+                        </div>
+                        <div class="tool-card-badge" id="suggestionCount">0</div>
+                    </div>
+                    
+                    <!-- 批次对比 -->
+                    <div class="tool-card" onclick="openBatchCompareModal()">
+                        <div class="tool-card-icon">
+                            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M10 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h5v2h2V1h-2v2zm0 15H5l5-6v6zm9-15h-5v2h5v13l-5-6v9h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+                        </div>
+                        <div class="tool-card-content">
+                            <div class="tool-card-name">批次对比</div>
+                            <div class="tool-card-desc">对比不同批次结果</div>
                         </div>
                     </div>
                     
-                    <!-- 图表区 -->
-                    <div class="dataset-charts-row">
-                        <div class="chart-container pie-container">
-                            <canvas id="datasetPieChart" width="140" height="140"></canvas>
-                            <div class="pie-legend" id="datasetPieLegend"></div>
+                    <!-- 数据下钻 -->
+                    <div class="tool-card" onclick="openDrilldownModal()">
+                        <div class="tool-card-icon">
+                            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
                         </div>
-                        <div class="chart-container usage-container">
-                            <div class="chart-title">准确率 Top5</div>
-                            <div class="usage-top5" id="datasetUsageTop5">
-                                <div class="loading-text">加载中...</div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 学科分析区（简化版） -->
-                <section class="subject-analysis-section">
-                    <div class="section-header">
-                        <h2 class="section-title">学科评估分析</h2>
-                        <div class="subject-controls">
-                            <button class="btn btn-text" onclick="exportSubjectReport()">
-                                <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                                导出
-                            </button>
+                        <div class="tool-card-content">
+                            <div class="tool-card-name">数据下钻</div>
+                            <div class="tool-card-desc">深入分析数据</div>
                         </div>
                     </div>
                     
-                    <div class="subject-skeleton" id="subjectSkeleton">
-                        <div class="skeleton-chart"></div>
+                    <!-- 自动化管理 -->
+                    <div class="tool-card" onclick="openAutomationModal()">
+                        <div class="tool-card-icon">
+                            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                        </div>
+                        <div class="tool-card-content">
+                            <div class="tool-card-name">自动化管理</div>
+                            <div class="tool-card-desc">管理自动化任务</div>
+                        </div>
                     </div>
-                    
-                    <div class="subject-content" id="subjectContent" style="display:none;">
-                        <!-- 学科准确率列表 -->
-                        <div class="subject-list" id="subjectList"></div>
-                    </div>
-                </section>
-            </div>
+                </div>
+            </section>
         </div>
 
-        <!-- 问题热点图区 (US-11) -->
-        <section class="heatmap-section" id="heatmapSection">
+        <!-- 第二行：热点图(60%) + 数据集概览/学科分析(40%) -->
+        <div class="dashboard-row-2">
+            <!-- 左侧：问题热点图 -->
+            <section class="heatmap-section" id="heatmapSection">
             <div class="heatmap-header">
                 <h2 class="section-title">问题热点图</h2>
                 <div class="heatmap-controls">
@@ -327,6 +348,79 @@
             </div>
         </section>
 
+            <!-- 右侧：数据集概览 + 学科分析 -->
+            <div class="right-panel">
+                <!-- 数据集统计概览 -->
+                <section class="dataset-stats-section">
+                    <div class="section-header">
+                        <h2 class="section-title">数据集概览</h2>
+                        <button class="btn btn-ai" onclick="openAIPlanModal()" title="AI生成测试计划">
+                            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5z"/></svg>
+                            <span>AI生成计划</span>
+                        </button>
+                    </div>
+                    
+                    <!-- 统计卡片 -->
+                    <div class="dataset-stats-grid">
+                        <div class="mini-stat-card">
+                            <div class="mini-stat-value" id="datasetTotalValue">0</div>
+                            <div class="mini-stat-label">数据集数</div>
+                        </div>
+                        <div class="mini-stat-card">
+                            <div class="mini-stat-value" id="datasetQuestionValue">0</div>
+                            <div class="mini-stat-label">总题目数</div>
+                        </div>
+                        <div class="mini-stat-card">
+                            <div class="mini-stat-value" id="datasetAccuracyValue">--</div>
+                            <div class="mini-stat-label">平均准确率</div>
+                        </div>
+                        <div class="mini-stat-card">
+                            <div class="mini-stat-value" id="datasetUsageValue">0</div>
+                            <div class="mini-stat-label">本周使用</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 图表区 -->
+                    <div class="dataset-charts-row">
+                        <div class="chart-container pie-container">
+                            <canvas id="datasetPieChart" width="140" height="140"></canvas>
+                            <div class="pie-legend" id="datasetPieLegend"></div>
+                        </div>
+                        <div class="chart-container usage-container">
+                            <div class="chart-title">准确率 Top5</div>
+                            <div class="usage-top5" id="datasetUsageTop5">
+                                <div class="loading-text">加载中...</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 学科分析区 -->
+                <section class="subject-analysis-section">
+                    <div class="section-header">
+                        <h2 class="section-title">学科评估分析</h2>
+                        <div class="subject-controls">
+                            <button class="btn btn-text" onclick="exportSubjectReport()">
+                                <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                                导出
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="subject-skeleton" id="subjectSkeleton">
+                        <div class="skeleton-chart"></div>
+                    </div>
+                    
+                    <div class="subject-content" id="subjectContent" style="display:none;">
+                        <!-- 学科准确率列表 -->
+                        <div class="subject-list" id="subjectList"></div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- 第三行：日报 + 趋势 -->
+        <div class="dashboard-row-3">
         <!-- 日报区 (US-14) -->
         <section class="reports-section" id="reportsSection">
             <div class="section-header">
@@ -396,6 +490,7 @@
                 </div>
             </div>
         </section>
+        </div>
     </main>
 
     <!-- 创建测试计划弹窗 (增强版 - 支持工作流配置) -->
@@ -847,6 +942,332 @@
         </div>
     </div>
 
-    <script type="module" src="/static/js/index.js?v=20260123"></script>
+    <!-- 错误样本库弹窗 -->
+    <div class="modal" id="errorSamplesModal" onclick="onErrorSamplesModalBackdropClick(event)" style="display:none;">
+        <div class="modal-content modal-lg" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">错误样本库</h3>
+                <button class="modal-close" onclick="closeErrorSamplesModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- 统计卡片 -->
+                <div class="stats-row">
+                    <div class="stat-card-mini"><span class="stat-value" id="errorSampleTotal">0</span><span class="stat-label">总样本</span></div>
+                    <div class="stat-card-mini"><span class="stat-value" id="errorSamplePending">0</span><span class="stat-label">待分析</span></div>
+                    <div class="stat-card-mini"><span class="stat-value" id="errorSampleAnalyzed">0</span><span class="stat-label">已分析</span></div>
+                    <div class="stat-card-mini"><span class="stat-value" id="errorSampleFixed">0</span><span class="stat-label">已修复</span></div>
+                </div>
+                <!-- 筛选器 -->
+                <div class="filter-row">
+                    <select id="errorTypeFilter" class="form-select-sm" onchange="filterErrorSamples()">
+                        <option value="">全部类型</option>
+                        <option value="漏批">漏批</option>
+                        <option value="误批">误批</option>
+                        <option value="评分偏差">评分偏差</option>
+                    </select>
+                    <select id="errorStatusFilter" class="form-select-sm" onchange="filterErrorSamples()">
+                        <option value="">全部状态</option>
+                        <option value="pending">待分析</option>
+                        <option value="analyzed">已分析</option>
+                        <option value="fixed">已修复</option>
+                    </select>
+                </div>
+                <!-- 样本列表 -->
+                <div class="sample-list" id="errorSampleList">
+                    <div class="empty-state">暂无错误样本数据</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeErrorSamplesModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 异常检测弹窗 -->
+    <div class="modal" id="anomalyModal" onclick="onAnomalyModalBackdropClick(event)" style="display:none;">
+        <div class="modal-content modal-md" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">异常检测</h3>
+                <button class="modal-close" onclick="closeAnomalyModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="stats-row">
+                    <div class="stat-card-mini"><span class="stat-value" id="anomalyTotal">0</span><span class="stat-label">总异常</span></div>
+                    <div class="stat-card-mini warning"><span class="stat-value" id="anomalyUnconfirmed">0</span><span class="stat-label">未确认</span></div>
+                    <div class="stat-card-mini"><span class="stat-value" id="anomalyToday">0</span><span class="stat-label">今日新增</span></div>
+                </div>
+                <div class="anomaly-list" id="anomalyList">
+                    <div class="empty-state">暂无异常记录</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAnomalyModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 错误聚类弹窗 -->
+    <div class="modal" id="clusteringModal" onclick="onClusteringModalBackdropClick(event)" style="display:none;">
+        <div class="modal-content modal-md" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">错误聚类分析</h3>
+                <button class="modal-close" onclick="closeClusteringModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="cluster-list" id="clusterList">
+                    <div class="empty-state">暂无聚类数据，请先进行批量评估</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeClusteringModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 优化建议弹窗 -->
+    <div class="modal" id="optimizationModal" onclick="onOptimizationModalBackdropClick(event)" style="display:none;">
+        <div class="modal-content modal-md" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">优化建议</h3>
+                <button class="modal-close" onclick="closeOptimizationModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="suggestion-list" id="suggestionList">
+                    <div class="empty-state">暂无优化建议</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeOptimizationModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批次对比弹窗 -->
+    <div class="modal" id="batchCompareModal" onclick="onBatchCompareModalBackdropClick(event)" style="display:none;">
+        <div class="modal-content modal-lg" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">批次对比</h3>
+                <button class="modal-close" onclick="closeBatchCompareModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- 批次选择器 -->
+                <div class="compare-selector">
+                    <div class="compare-select-group">
+                        <label class="form-label">批次 A</label>
+                        <select id="compareTaskA" class="form-select" onchange="onCompareTaskChange()">
+                            <option value="">选择批量评估任务</option>
+                        </select>
+                    </div>
+                    <div class="compare-vs">VS</div>
+                    <div class="compare-select-group">
+                        <label class="form-label">批次 B</label>
+                        <select id="compareTaskB" class="form-select" onchange="onCompareTaskChange()">
+                            <option value="">选择批量评估任务</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- 对比结果 -->
+                <div class="compare-result" id="compareResult" style="display:none;">
+                    <div class="compare-summary">
+                        <div class="compare-card">
+                            <div class="compare-card-title">批次 A</div>
+                            <div class="compare-card-value" id="compareAccA">--</div>
+                            <div class="compare-card-label">准确率</div>
+                        </div>
+                        <div class="compare-diff">
+                            <span class="diff-arrow" id="compareDiffArrow">-</span>
+                            <span class="diff-value" id="compareDiffValue">--</span>
+                        </div>
+                        <div class="compare-card">
+                            <div class="compare-card-title">批次 B</div>
+                            <div class="compare-card-value" id="compareAccB">--</div>
+                            <div class="compare-card-label">准确率</div>
+                        </div>
+                    </div>
+                    <div class="compare-details" id="compareDetails"></div>
+                </div>
+                <div class="empty-state" id="compareEmpty">请选择两个批量评估任务进行对比</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeBatchCompareModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据下钻弹窗 -->
+    <div class="modal" id="drilldownModal" onclick="onDrilldownModalBackdropClick(event)" style="display:none;">
+        <div class="modal-content modal-lg" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">数据下钻分析</h3>
+                <button class="modal-close" onclick="closeDrilldownModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- 维度选择器 -->
+                <div class="drilldown-nav">
+                    <button class="drilldown-nav-btn active" data-dimension="subject" onclick="switchDrilldownDimension('subject')">按学科</button>
+                    <button class="drilldown-nav-btn" data-dimension="book" onclick="switchDrilldownDimension('book')">按书本</button>
+                    <button class="drilldown-nav-btn" data-dimension="question_type" onclick="switchDrilldownDimension('question_type')">按错误类型</button>
+                </div>
+                <!-- 面包屑 -->
+                <div class="drilldown-breadcrumb" id="drilldownBreadcrumb">
+                    <span class="breadcrumb-item active">全部</span>
+                </div>
+                <!-- 数据列表 -->
+                <div class="drilldown-list" id="drilldownList">
+                    <div class="empty-state">加载中...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDrilldownModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI 分析报告弹窗 -->
+    <div class="modal" id="analysisReportModal" onclick="onAnalysisReportModalBackdropClick(event)" style="display:none;">
+        <div class="modal-content modal-lg" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">AI 智能分析报告</h3>
+                <button class="modal-close" onclick="closeAnalysisReportModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- 报告状态 -->
+                <div id="analysisReportStatus" class="analysis-status">
+                    <div class="loading-spinner"></div>
+                    <span>加载中...</span>
+                </div>
+                
+                <!-- 报告内容 -->
+                <div id="analysisReportContent" style="display:none;">
+                    <!-- 概览 -->
+                    <div class="analysis-section">
+                        <h4 class="analysis-section-title">概览</h4>
+                        <div class="analysis-summary" id="analysisSummary">
+                            <div class="summary-stats">
+                                <div class="stat-card">
+                                    <div class="stat-value" id="summaryTotalErrors">--</div>
+                                    <div class="stat-label">错误总数</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value" id="summaryErrorRate">--</div>
+                                    <div class="stat-label">错误率</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value" id="summaryFocusCount">--</div>
+                                    <div class="stat-label">重点关注</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 层级分析 -->
+                    <div class="analysis-section">
+                        <h4 class="analysis-section-title">层级分析</h4>
+                        <div class="analysis-drilldown">
+                            <div class="drilldown-tabs">
+                                <button class="drilldown-tab active" data-level="subject" onclick="switchAnalysisLevel('subject')">按学科</button>
+                                <button class="drilldown-tab" data-level="book" onclick="switchAnalysisLevel('book')">按书本</button>
+                                <button class="drilldown-tab" data-level="page" onclick="switchAnalysisLevel('page')">按页码</button>
+                            </div>
+                            <div class="drilldown-content" id="analysisDrilldownContent">
+                                <!-- 动态内容 -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 错误模式 -->
+                    <div class="analysis-section">
+                        <h4 class="analysis-section-title">错误模式</h4>
+                        <div class="error-patterns" id="analysisErrorPatterns">
+                            <!-- 动态内容 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 根因分析 -->
+                    <div class="analysis-section">
+                        <h4 class="analysis-section-title">根因分析</h4>
+                        <div class="root-causes" id="analysisRootCauses">
+                            <!-- 动态内容 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 优化建议 -->
+                    <div class="analysis-section">
+                        <h4 class="analysis-section-title">优化建议</h4>
+                        <div class="suggestions" id="analysisSuggestions">
+                            <!-- 动态内容 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAnalysisReportModal()">关闭</button>
+                <button class="btn btn-primary" onclick="triggerAnalysis()" id="triggerAnalysisBtn">重新分析</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自动化管理弹窗 -->
+    <div class="modal" id="automationModal" onclick="onAutomationModalBackdropClick(event)" style="display:none;">
+        <div class="modal-content modal-md" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">自动化任务管理</h3>
+                <button class="modal-close" onclick="closeAutomationModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- 全局控制 -->
+                <div class="automation-controls">
+                    <div class="control-row">
+                        <span class="control-label">全局状态</span>
+                        <div class="control-actions">
+                            <button class="btn btn-sm btn-secondary" onclick="pauseAllAutomation()" id="pauseAllBtn">暂停全部</button>
+                            <button class="btn btn-sm btn-primary" onclick="resumeAllAutomation()" id="resumeAllBtn">恢复全部</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 队列状态 -->
+                <div class="automation-section">
+                    <h4 class="section-title">队列状态</h4>
+                    <div class="queue-status" id="automationQueueStatus">
+                        <div class="queue-stats">
+                            <span class="queue-stat">等待: <strong id="queueWaiting">0</strong></span>
+                            <span class="queue-stat">执行中: <strong id="queueRunning">0</strong></span>
+                        </div>
+                        <button class="btn btn-sm btn-warning" onclick="clearAutomationQueue()">清空队列</button>
+                    </div>
+                </div>
+                
+                <!-- 任务列表 -->
+                <div class="automation-section">
+                    <h4 class="section-title">任务配置</h4>
+                    <div class="automation-tasks" id="automationTaskList">
+                        <!-- 动态内容 -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAutomationModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/static/js/index.js?v=20260124"></script>
 </body>
 </html>

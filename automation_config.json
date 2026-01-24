@@ -1,0 +1,24 @@
+{
+    "ai_analysis": {
+        "enabled": true,
+        "trigger_delay": 10,
+        "max_concurrent": 2,
+        "timeout": 300,
+        "model": "deepseek-v3.2",
+        "temperature": 0.3,
+        "analysis_depth": "full"
+    },
+    "daily_report": {
+        "enabled": true,
+        "cron": "0 18 * * *",
+        "time_range": "today"
+    },
+    "stats_snapshot": {
+        "enabled": true,
+        "cron": "0 0 * * *",
+        "retention_days": 30
+    },
+    "global": {
+        "paused": false
+    }
+}

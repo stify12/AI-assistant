@@ -1,0 +1,150 @@
+/**
+ * 虚拟滚动样式 (US-31)
+ */
+
+/* 虚拟滚动容器 */
+.virtual-scroll-container {
+    height: 400px;
+    overflow: auto;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.virtual-scroll-content {
+    position: relative;
+}
+
+.virtual-scroll-viewport {
+    position: absolute;
+    left: 0;
+    right: 0;
+}
+
+.virtual-scroll-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.virtual-scroll-item:hover {
+    background: #f5f5f7;
+}
+
+/* 任务列表项 */
+.task-item {
+    height: 72px;
+}
+
+.task-item-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.task-item-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1d1d1f;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.task-item-meta {
+    display: flex;
+    gap: 12px;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #86868b;
+}
+
+.task-item-stats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.task-accuracy {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+/* 错误列表项 */
+.error-item {
+    height: 80px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.error-item-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.error-item-question {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1d1d1f;
+}
+
+.error-item-content {
+    display: flex;
+    gap: 20px;
+    font-size: 12px;
+}
+
+.error-answer {
+    color: #86868b;
+}
+
+.error-answer .label {
+    color: #1d1d1f;
+    font-weight: 500;
+}
+
+/* 状态标签 */
+.status-tag {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.status-tag.completed {
+    background: #e3f9e5;
+    color: #1e7e34;
+}
+
+.status-tag.running {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.status-tag.failed {
+    background: #ffeef0;
+    color: #d73a49;
+}
+
+.status-tag.pending {
+    background: #f5f5f7;
+    color: #86868b;
+}
+
+/* 空状态 */
+.virtual-scroll-container .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: #86868b;
+    font-size: 14px;
+}

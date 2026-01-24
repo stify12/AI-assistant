@@ -1,62 +1,29 @@
-# MySQL 低内存优化配置
-# 适用于 1-2GB 内存的服务器
-# 将此文件内容添加到 /etc/mysql/conf.d/optimize.cnf 或 /etc/my.cnf.d/optimize.cnf
+# MySQL低内存优化配置
+# 适用于896MB内存服务器
 
 [mysqld]
-# ========== 内存优化 ==========
-# InnoDB 缓冲池 - 最重要的内存设置，设为可用内存的 25-50%
-innodb_buffer_pool_size = 256M
+# 内存限制
+innodb_buffer_pool_size=64M
+key_buffer_size=16M
+query_cache_size=0
+query_cache_type=0
 
-# 减少每个连接的内存占用
-sort_buffer_size = 256K
-read_buffer_size = 256K
-read_rnd_buffer_size = 512K
-join_buffer_size = 256K
-thread_stack = 256K
+# 连接限制
+max_connections=30
+thread_cache_size=4
 
-# 临时表大小
-tmp_table_size = 16M
-max_heap_table_size = 16M
+# 临时表
+tmp_table_size=16M
+max_heap_table_size=16M
 
-# ========== 连接优化 ==========
-# 最大连接数（根据实际需求调整）
-max_connections = 50
+# InnoDB优化
+innodb_log_buffer_size=8M
+innodb_flush_log_at_trx_commit=2
+innodb_flush_method=O_DIRECT
 
-# 连接超时
-wait_timeout = 300
-interactive_timeout = 300
+# 禁用性能模式节省内存
+performance_schema=OFF
 
-# ========== InnoDB 优化 ==========
-# 日志文件大小
-innodb_log_file_size = 48M
-innodb_log_buffer_size = 8M
-
-# 刷新策略（2 = 每秒刷新，性能更好但可能丢失1秒数据）
-innodb_flush_log_at_trx_commit = 2
-
-# 禁用双写缓冲（如果使用 SSD 可以禁用）
-# innodb_doublewrite = 0
-
-# 文件每表（便于管理和回收空间）
-innodb_file_per_table = 1
-
-# ========== 查询缓存（MySQL 8.0 已移除）==========
-# MySQL 5.7 及以下版本可启用
-# query_cache_type = 1
-# query_cache_size = 16M
-
-# ========== 其他优化 ==========
-# 禁用性能模式（节省内存）
-performance_schema = OFF
-
-# 表缓存
-table_open_cache = 200
-table_definition_cache = 400
-
-# 跳过名称解析（加快连接）
-skip-name-resolve
-
-# 慢查询日志（调试用，生产可关闭）
-slow_query_log = 0
-# slow_query_log_file = /var/log/mysql/slow.log
-# long_query_time = 2
+# 字符集
+character-set-server=utf8mb4
+collation-server=utf8mb4_unicode_ci

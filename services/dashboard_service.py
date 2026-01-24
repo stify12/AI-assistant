@@ -2799,3 +2799,322 @@ class DashboardService:
             return f'<mark>{match.group(0)}</mark>'
         
         return pattern.sub(replace_with_mark, text)
+
+
+    # ========== 高级分析工具服务方法 ==========
+    
+    @staticmethod
+    def get_advanced_tools_stats() -> Dict[str, Any]:
+        """
+        获取高级分析工具统计数据
+        
+        从批量评估任务中聚合各工具的统计数据。
+        
+        Returns:
+            dict: 包含各工具统计数据
+        """
+        cache_key = 'advanced_tools_stats'
+        cached = DashboardService.get_cached(cache_key)
+        if cached is not None:
+            return cached
+        
+        result = {
+            'error_samples': {
+                'total': 0,
+                'pending': 0,
+                'analyzed': 0,
+                'fixed': 0
+            },
+            'anomalies': {
+                'total': 0,
+                'unconfirmed': 0,
+                'today': 0
+            },
+            'clusters': {
+                'total': 0
+            },
+            'suggestions': {
+                'total': 0,
+                'pending': 0
+            }
+        }
+        
+        try:
+            all_tasks = DashboardService._load_all_batch_tasks()
+            today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            
+            # 统计错误样本（AI评分与期望评分不一致的作业）
+            error_types_count = {}
+            
+            for task in all_tasks:
+                task_time_str = task.get('created_at', '')
+                is_today = False
+                if task_time_str:
+                    try:
+                        task_time = datetime.fromisoformat(task_time_str.replace('Z', '+00:00'))
+                        if task_time.tzinfo:
+                            task_time = task_time.replace(tzinfo=None)
+                        is_today = task_time >= today
+                    except:
+                        pass
+                
+                for hw_item in task.get('homework_items', []):
+                    if hw_item.get('status') != 'completed':
+                        continue
+                    
+                    evaluation = hw_item.get('evaluation') or {}
+                    errors = evaluation.get('errors') or []
+                    
+                    for error in errors:
+                        result['error_samples']['total'] += 1
+                        result['error_samples']['pending'] += 1  # 默认待分析
+                        
+                        # 统计错误类型用于聚类
+                        error_type = error.get('error_type', '其他')
+                        error_types_count[error_type] = error_types_count.get(error_type, 0) + 1
+                        
+                        # 检测异常（评分偏差过大）
+                        ai_score = error.get('ai_score', 0)
+                        expected_score = error.get('expected_score', 0)
+                        if abs(ai_score - expected_score) > 5:
+                            result['anomalies']['total'] += 1
+                            result['anomalies']['unconfirmed'] += 1
+                            if is_today:
+                                result['anomalies']['today'] += 1
+            
+            # 聚类数量 = 不同错误类型的数量
+            result['clusters']['total'] = len(error_types_count)
+            
+            # 建议数量 = 基于错误类型生成的建议
+            result['suggestions']['total'] = min(len(error_types_count), 10)
+            result['suggestions']['pending'] = result['suggestions']['total']
+            
+            DashboardService.set_cached(cache_key, result, ttl=60)
+            
+        except Exception as e:
+            print(f"[Dashboard] 获取高级工具统计失败: {e}")
+        
+        return result
+    
+    @staticmethod
+    def get_batch_tasks_for_compare() -> List[Dict[str, Any]]:
+        """
+        获取可用于对比的批量评估任务列表
+        
+        Returns:
+            list: 任务列表
+        """
+        result = []
+        
+        try:
+            all_tasks = DashboardService._load_all_batch_tasks()
+            
+            for task in all_tasks:
+                if task.get('status') != 'completed':
+                    continue
+                
+                overall_report = task.get('overall_report') or {}
+                
+                # 推断学科
+                subject_id = None
+                subject_name = '未知'
+                for hw_item in task.get('homework_items', []):
+                    book_name = hw_item.get('book_name', '')
+                    inferred = DashboardService._infer_subject_from_book_name(book_name)
+                    if inferred is not None:
+                        subject_id = inferred
+                        subject_name = SUBJECT_MAP.get(subject_id, '未知')
+                        break
+                
+                result.append({
+                    'task_id': task.get('task_id', ''),
+                    'name': task.get('name', ''),
+                    'subject_id': subject_id,
+                    'subject_name': subject_name,
+                    'accuracy': overall_report.get('overall_accuracy', 0),
+                    'total_questions': overall_report.get('total_questions', 0),
+                    'created_at': task.get('created_at', '')
+                })
+            
+            # 按创建时间倒序
+            result.sort(key=lambda x: x['created_at'], reverse=True)
+            
+        except Exception as e:
+            print(f"[Dashboard] 获取批量任务列表失败: {e}")
+        
+        return result
+    
+    @staticmethod
+    def get_batch_compare(task_id_1: str, task_id_2: str) -> Dict[str, Any]:
+        """
+        对比两个批量评估任务的评估结果
+        
+        Args:
+            task_id_1: 第一个任务ID
+            task_id_2: 第二个任务ID
+            
+        Returns:
+            dict: 对比结果
+        """
+        def load_task_data(task_id: str) -> Dict[str, Any]:
+            """加载单个任务的数据"""
+            filepath = os.path.join(StorageService.BATCH_TASKS_DIR, f'{task_id}.json')
+            if not os.path.exists(filepath):
+                raise ValueError(f'任务不存在: {task_id}')
+            
+            with open(filepath, 'r', encoding='utf-8') as f:
+                task = json.load(f)
+            
+            overall_report = task.get('overall_report') or {}
+            
+            # 统计错误类型分布
+            error_distribution = {}
+            for hw_item in task.get('homework_items', []):
+                evaluation = hw_item.get('evaluation') or {}
+                for error in evaluation.get('errors') or []:
+                    error_type = error.get('error_type', '其他')
+                    error_distribution[error_type] = error_distribution.get(error_type, 0) + 1
+            
+            return {
+                'task_id': task.get('task_id', ''),
+                'name': task.get('name', ''),
+                'accuracy': overall_report.get('overall_accuracy', 0),
+                'total_questions': overall_report.get('total_questions', 0),
+                'correct_count': overall_report.get('correct_questions', 0),
+                'error_distribution': error_distribution,
+                'created_at': task.get('created_at', '')
+            }
+        
+        task1 = load_task_data(task_id_1)
+        task2 = load_task_data(task_id_2)
+        
+        # 计算对比结果
+        accuracy_diff = round(task2['accuracy'] - task1['accuracy'], 4)
+        
+        # 计算错误类型变化
+        all_error_types = set(task1['error_distribution'].keys()) | set(task2['error_distribution'].keys())
+        error_changes = {}
+        for error_type in all_error_types:
+            count1 = task1['error_distribution'].get(error_type, 0)
+            count2 = task2['error_distribution'].get(error_type, 0)
+            error_changes[error_type] = count2 - count1
+        
+        return {
+            'task1': task1,
+            'task2': task2,
+            'comparison': {
+                'accuracy_diff': accuracy_diff,
+                'improvement': accuracy_diff > 0,
+                'error_changes': error_changes
+            }
+        }
+    
+    @staticmethod
+    def get_drilldown(dimension: str, parent_id: str = None) -> Dict[str, Any]:
+        """
+        获取数据下钻分析结果
+        
+        基于批量评估任务数据进行多维度聚合分析。
+        
+        Args:
+            dimension: 维度 subject|book|page|question_type
+            parent_id: 父级ID，用于下钻
+            
+        Returns:
+            dict: 下钻数据
+        """
+        result = {
+            'dimension': dimension,
+            'parent_id': parent_id,
+            'items': []
+        }
+        
+        try:
+            all_tasks = DashboardService._load_all_batch_tasks()
+            
+            # 聚合数据
+            aggregated = {}
+            
+            for task in all_tasks:
+                for hw_item in task.get('homework_items', []):
+                    if hw_item.get('status') != 'completed':
+                        continue
+                    
+                    evaluation = hw_item.get('evaluation') or {}
+                    total_questions = evaluation.get('total_questions', 0)
+                    correct_count = evaluation.get('correct_count', 0)
+                    error_count = total_questions - correct_count
+                    
+                    book_name = hw_item.get('book_name', '')
+                    page_num = hw_item.get('page_num', '')
+                    subject_id = DashboardService._infer_subject_from_book_name(book_name)
+                    
+                    # 根据维度聚合
+                    if dimension == 'subject':
+                        if subject_id is None:
+                            continue
+                        key = str(subject_id)
+                        name = SUBJECT_MAP.get(subject_id, '未知')
+                        has_children = True
+                    elif dimension == 'book':
+                        # 如果有 parent_id，筛选学科
+                        if parent_id and subject_id != int(parent_id):
+                            continue
+                        key = book_name
+                        name = book_name
+                        has_children = True
+                    elif dimension == 'page':
+                        # 如果有 parent_id，筛选书本
+                        if parent_id and book_name != parent_id:
+                            continue
+                        key = f"{book_name}_P{page_num}"
+                        name = f"第{page_num}页"
+                        has_children = False
+                    elif dimension == 'question_type':
+                        # 按错误类型聚合
+                        for error in evaluation.get('errors') or []:
+                            error_type = error.get('error_type', '其他')
+                            if error_type not in aggregated:
+                                aggregated[error_type] = {
+                                    'id': error_type,
+                                    'name': error_type,
+                                    'total_questions': 0,
+                                    'correct_count': 0,
+                                    'error_count': 0,
+                                    'has_children': False
+                                }
+                            aggregated[error_type]['error_count'] += 1
+                        continue
+                    else:
+                        continue
+                    
+                    if key not in aggregated:
+                        aggregated[key] = {
+                            'id': key,
+                            'name': name,
+                            'total_questions': 0,
+                            'correct_count': 0,
+                            'error_count': 0,
+                            'has_children': has_children
+                        }
+                    
+                    aggregated[key]['total_questions'] += total_questions
+                    aggregated[key]['correct_count'] += correct_count
+                    aggregated[key]['error_count'] += error_count
+            
+            # 计算准确率并排序
+            items = list(aggregated.values())
+            for item in items:
+                if item['total_questions'] > 0:
+                    item['accuracy'] = round(item['correct_count'] / item['total_questions'], 4)
+                else:
+                    item['accuracy'] = 0
+            
+            # 按错误数降序排列
+            items.sort(key=lambda x: x['error_count'], reverse=True)
+            result['items'] = items
+            
+        except Exception as e:
+            print(f"[Dashboard] 获取数据下钻失败: {e}")
+        
+        return result

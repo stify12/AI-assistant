@@ -2289,3 +2289,242 @@ def search():
             'success': False,
             'error': '搜索失败，请稍后重试'
         }), 500
+
+
+# ========== 高级分析工具 API ==========
+
+@dashboard_bp.route('/api/dashboard/advanced-tools/stats', methods=['GET'])
+def get_advanced_tools_stats():
+    """
+    获取高级分析工具统计数据
+    
+    从批量评估任务中聚合各工具的统计数据，用于更新看板徽章。
+    
+    Returns:
+        JSON: {
+            success: bool,
+            data: {
+                error_samples: {
+                    total: int,      # 总错误样本数
+                    pending: int,    # 待分析数
+                    analyzed: int,   # 已分析数
+                    fixed: int       # 已修复数
+                },
+                anomalies: {
+                    total: int,      # 总异常数
+                    unconfirmed: int,# 未确认数
+                    today: int       # 今日异常数
+                },
+                clusters: {
+                    total: int       # 聚类总数
+                },
+                suggestions: {
+                    total: int,      # 总建议数
+                    pending: int     # 待处理数
+                }
+            }
+        }
+        
+    Example:
+        GET /api/dashboard/advanced-tools/stats
+    """
+    try:
+        # 从批量评估任务中聚合统计数据
+        data = DashboardService.get_advanced_tools_stats()
+        
+        return jsonify({
+            'success': True,
+            'data': data
+        })
+        
+    except Exception as e:
+        print(f"[Dashboard] 获取高级工具统计失败: {e}")
+        return jsonify({
+            'success': False,
+            'error': '获取统计数据失败，请稍后重试'
+        }), 500
+
+
+@dashboard_bp.route('/api/dashboard/batch-compare', methods=['GET'])
+def get_batch_compare():
+    """
+    获取批次对比数据
+    
+    对比两个批量评估任务的评估结果。
+    
+    Query Parameters:
+        task_id_1: 第一个批量评估任务ID (必填)
+        task_id_2: 第二个批量评估任务ID (必填)
+        
+    Returns:
+        JSON: {
+            success: bool,
+            data: {
+                task1: {
+                    task_id: string,
+                    name: string,
+                    accuracy: float,
+                    total_questions: int,
+                    correct_count: int,
+                    error_distribution: {error_type: count}
+                },
+                task2: {
+                    task_id: string,
+                    name: string,
+                    accuracy: float,
+                    total_questions: int,
+                    correct_count: int,
+                    error_distribution: {error_type: count}
+                },
+                comparison: {
+                    accuracy_diff: float,
+                    improvement: bool,
+                    error_changes: {error_type: diff}
+                }
+            }
+        }
+        
+    Example:
+        GET /api/dashboard/batch-compare?task_id_1=xxx&task_id_2=yyy
+    """
+    try:
+        task_id_1 = request.args.get('task_id_1', '').strip()
+        task_id_2 = request.args.get('task_id_2', '').strip()
+        
+        # 参数校验
+        if not task_id_1:
+            return jsonify({
+                'success': False,
+                'error': 'task_id_1 不能为空'
+            }), 400
+        
+        if not task_id_2:
+            return jsonify({
+                'success': False,
+                'error': 'task_id_2 不能为空'
+            }), 400
+        
+        # 调用服务层获取对比数据
+        data = DashboardService.get_batch_compare(task_id_1, task_id_2)
+        
+        return jsonify({
+            'success': True,
+            'data': data
+        })
+        
+    except ValueError as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
+    except Exception as e:
+        print(f"[Dashboard] 获取批次对比数据失败: {e}")
+        return jsonify({
+            'success': False,
+            'error': '获取对比数据失败，请稍后重试'
+        }), 500
+
+
+@dashboard_bp.route('/api/dashboard/batch-tasks', methods=['GET'])
+def get_batch_tasks_for_compare():
+    """
+    获取可用于对比的批量评估任务列表
+    
+    Returns:
+        JSON: {
+            success: bool,
+            data: [{
+                task_id: string,
+                name: string,
+                subject_id: int,
+                subject_name: string,
+                accuracy: float,
+                total_questions: int,
+                created_at: string
+            }]
+        }
+        
+    Example:
+        GET /api/dashboard/batch-tasks
+    """
+    try:
+        data = DashboardService.get_batch_tasks_for_compare()
+        
+        return jsonify({
+            'success': True,
+            'data': data
+        })
+        
+    except Exception as e:
+        print(f"[Dashboard] 获取批量任务列表失败: {e}")
+        return jsonify({
+            'success': False,
+            'error': '获取任务列表失败，请稍后重试'
+        }), 500
+
+
+@dashboard_bp.route('/api/dashboard/drilldown', methods=['GET'])
+def get_drilldown():
+    """
+    获取数据下钻分析结果
+    
+    基于批量评估任务数据进行多维度聚合分析。
+    
+    Query Parameters:
+        dimension: 维度，可选值 subject|book|page|question_type (必填)
+        parent_id: 父级ID，用于下钻 (可选)
+        
+    Returns:
+        JSON: {
+            success: bool,
+            data: {
+                dimension: string,
+                parent_id: string,
+                items: [{
+                    id: string,
+                    name: string,
+                    total_questions: int,
+                    correct_count: int,
+                    error_count: int,
+                    accuracy: float,
+                    has_children: bool
+                }]
+            }
+        }
+        
+    Example:
+        GET /api/dashboard/drilldown?dimension=subject
+        GET /api/dashboard/drilldown?dimension=book&parent_id=3
+    """
+    try:
+        dimension = request.args.get('dimension', '').strip()
+        parent_id = request.args.get('parent_id', '').strip()
+        
+        # 维度参数校验
+        valid_dimensions = ['subject', 'book', 'page', 'question_type']
+        if not dimension:
+            return jsonify({
+                'success': False,
+                'error': 'dimension 不能为空'
+            }), 400
+        
+        if dimension not in valid_dimensions:
+            return jsonify({
+                'success': False,
+                'error': f'无效的维度: {dimension}，可选值: {", ".join(valid_dimensions)}'
+            }), 400
+        
+        # 调用服务层获取下钻数据
+        data = DashboardService.get_drilldown(dimension, parent_id if parent_id else None)
+        
+        return jsonify({
+            'success': True,
+            'data': data
+        })
+        
+    except Exception as e:
+        print(f"[Dashboard] 获取数据下钻失败: {e}")
+        return jsonify({
+            'success': False,
+            'error': '获取下钻数据失败，请稍后重试'
+        }), 500

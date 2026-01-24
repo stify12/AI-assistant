@@ -1,25 +1,50 @@
 version: '3.8'
 
 services:
+  # MySQL数据库服务
+  mysql:
+    image: mysql:5.7
+    container_name: ai-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass123
+      MYSQL_DATABASE: aiuser
+      MYSQL_USER: aiuser
+      MYSQL_PASSWORD: aipass123
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql_optimize.cnf:/etc/mysql/conf.d/optimize.cnf:ro
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "3307:3306"  # 映射到3307避免冲突
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpass123"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # Flask应用服务
   ai-grading:
     build: .
     container_name: ai-grading-platform
+    depends_on:
+      mysql:
+        condition: service_healthy
     ports:
       - "5000:5000"
     volumes:
-      # ========== 热更新：挂载代码目录 ==========
-      # Python 代码（修改后需重启容器生效）
       - ./app.py:/app/app.py
       - ./routes:/app/routes
       - ./services:/app/services
       - ./utils:/app/utils
       - ./knowledge_agent:/app/knowledge_agent
-      
-      # 前端代码（修改后刷新浏览器即可生效）
       - ./templates:/app/templates
       - ./static:/app/static
-      
-      # ========== 持久化数据目录 ==========
       - ./datasets:/app/datasets
       - ./batch_tasks:/app/batch_tasks
       - ./baseline_effects:/app/baseline_effects
@@ -30,31 +55,21 @@ services:
       - ./knowledge_uploads:/app/knowledge_uploads
       - ./analysis_files:/app/analysis_files
       - ./analysis_tasks:/app/analysis_tasks
-      
-      # ========== 配置文件 ==========
+      - ./best_practices:/app/best_practices
+      - ./saved_filters:/app/saved_filters
       - ./prompts.json:/app/prompts.json
       - ./config.json:/app/config.json
+
     environment:
       - FLASK_ENV=production
       - TZ=Asia/Shanghai
       - USE_DB_STORAGE=true
-      # API密钥（从.env文件或命令行传入）
-      - DOUBAO_API_KEY=${DOUBAO_API_KEY}
-      - DOUBAO_API_URL=${DOUBAO_API_URL:-https://ark.cn-beijing.volces.com/api/v3/chat/completions}
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-      - QWEN_API_KEY=${QWEN_API_KEY}
-      # 主数据库配置
-      - MYSQL_HOST=${MYSQL_HOST}
-      - MYSQL_PORT=${MYSQL_PORT:-3306}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      # 应用数据库配置（可选）
-      - APP_MYSQL_HOST=${APP_MYSQL_HOST}
-      - APP_MYSQL_PORT=${APP_MYSQL_PORT:-3306}
-      - APP_MYSQL_USER=${APP_MYSQL_USER}
-      - APP_MYSQL_PASSWORD=${APP_MYSQL_PASSWORD}
-      - APP_MYSQL_DATABASE=${APP_MYSQL_DATABASE}
+      # 应用数据库 - 使用Docker MySQL
+      - APP_MYSQL_HOST=mysql
+      - APP_MYSQL_PORT=3306
+      - APP_MYSQL_USER=aiuser
+      - APP_MYSQL_PASSWORD=aipass123
+      - APP_MYSQL_DATABASE=aiuser
     env_file:
       - .env
     restart: unless-stopped
@@ -63,3 +78,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+volumes:
+  mysql_data:
+    driver: local

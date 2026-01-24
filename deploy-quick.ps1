@@ -2,6 +2,7 @@
 $SSH_KEY = "$env:USERPROFILE\.ssh\id_ed25519_baota"
 $SERVER = "root@47.82.64.147"
 $REMOTE_PATH = "/www/wwwroot/ai-grading/Ai"
+$SSH_EXE = "C:\Windows\System32\OpenSSH\ssh.exe"
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  AI Grading Platform - Quick Deploy" -ForegroundColor Cyan
@@ -30,7 +31,7 @@ $items = @(
     "app.py", "requirements.txt", "Dockerfile",
     "docker-compose.yml", "docker-compose.dev.yml",
     "prompts.json", "config.example.json", "database_schema.sql",
-    "routes", "services", "utils", "templates", "static", "knowledge_agent", "tests"
+    "routes", "services", "utils", "templates", "static", "knowledge_agent", "tests", "migrations"
 )
 
 # Check which items exist
@@ -75,7 +76,7 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host ""
 Write-Host "[3/3] Restarting container..." -ForegroundColor Cyan
 
-$restartResult = ssh -i $SSH_KEY $SERVER "docker restart ai-grading-platform" 2>&1
+$restartResult = & $SSH_EXE -i $SSH_KEY $SERVER "docker restart ai-grading-platform" 2>&1
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "  Container restarted successfully" -ForegroundColor Green
@@ -86,5 +87,5 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "========================================" -ForegroundColor Green
 } else {
     Write-Host "[Warning] Container restart may have failed: $restartResult" -ForegroundColor Yellow
-    Write-Host "Please check manually: ssh -i $SSH_KEY $SERVER 'docker ps'" -ForegroundColor Yellow
+    Write-Host "Please check manually: & $SSH_EXE -i $SSH_KEY $SERVER 'docker ps'" -ForegroundColor Yellow
 }

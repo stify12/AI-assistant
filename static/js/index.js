@@ -1216,4 +1216,899 @@ window.exportDailyReport = exportDailyReport;
 window.filterTrends = filterTrends;
 window.exportTrends = exportTrends;
 
-console.log('[Dashboard] 模块化看板初始化完成 v20260123');
+// ========== 高级分析工具 ==========
+
+// 高级工具状态
+let advancedToolsData = {
+    errorSamples: [],
+    anomalies: [],
+    clusters: [],
+    suggestions: [],
+    batchTasks: [],
+    drilldownDimension: 'subject',
+    drilldownParentId: null
+};
+
+/**
+ * 加载高级工具统计数据
+ */
+async function loadAdvancedToolsStats() {
+    try {
+        const res = await fetch('/api/dashboard/advanced-tools/stats').then(r => r.json());
+        
+        if (res.success && res.data) {
+            const data = res.data;
+            
+            // 更新错误样本徽章
+            const errorBadge = document.getElementById('errorSampleCount');
+            if (errorBadge) errorBadge.textContent = data.error_samples?.total || 0;
+            
+            // 更新异常徽章
+            const anomalyBadge = document.getElementById('anomalyCount');
+            if (anomalyBadge) {
+                const count = data.anomalies?.unconfirmed || 0;
+                anomalyBadge.textContent = count;
+                if (count > 0) anomalyBadge.classList.add('warning');
+            }
+            
+            // 更新聚类徽章
+            const clusterBadge = document.getElementById('clusterCount');
+            if (clusterBadge) clusterBadge.textContent = data.clusters?.total || 0;
+            
+            // 更新建议徽章
+            const suggestionBadge = document.getElementById('suggestionCount');
+            if (suggestionBadge) suggestionBadge.textContent = data.suggestions?.pending || 0;
+        }
+    } catch (e) {
+        console.warn('[AdvancedTools] 加载统计失败:', e);
+    }
+}
+
+// ========== 错误样本库弹窗 ==========
+async function openErrorSamplesModal() {
+    document.getElementById('errorSamplesModal').style.display = 'flex';
+    await loadErrorSamples();
+}
+
+function closeErrorSamplesModal() {
+    document.getElementById('errorSamplesModal').style.display = 'none';
+}
+
+function onErrorSamplesModalBackdropClick(e) {
+    if (e.target === e.currentTarget) closeErrorSamplesModal();
+}
+
+async function loadErrorSamples() {
+    try {
+        const res = await fetch('/api/dashboard/advanced-tools/stats').then(r => r.json());
+        if (res.success && res.data) {
+            const stats = res.data.error_samples;
+            document.getElementById('errorSampleTotal').textContent = stats.total || 0;
+            document.getElementById('errorSamplePending').textContent = stats.pending || 0;
+            document.getElementById('errorSampleAnalyzed').textContent = stats.analyzed || 0;
+            document.getElementById('errorSampleFixed').textContent = stats.fixed || 0;
+        }
+        
+        // 加载样本列表（从批量评估任务中提取）
+        const tasksRes = await fetch('/api/dashboard/tasks?page_size=50').then(r => r.json());
+        if (tasksRes.success) {
+            renderErrorSampleList(tasksRes.data?.tasks || []);
+        }
+    } catch (e) {
+        console.error('[ErrorSamples] 加载失败:', e);
+        showToast('加载错误样本失败', 'error');
+    }
+}
+
+function renderErrorSampleList(tasks) {
+    const container = document.getElementById('errorSampleList');
+    if (!tasks.length) {
+        container.innerHTML = '<div class="empty-state">暂无错误样本数据</div>';
+        return;
+    }
+    
+    // 从任务中提取有错误的样本
+    let html = '';
+    tasks.forEach(task => {
+        if (task.accuracy < 1) {
+            html += `
+                <div class="sample-item" onclick="navigateTo('/batch-evaluation?task=${task.task_id}')">
+                    <div class="sample-info">
+                        <span class="sample-name">${escapeHtml(task.name)}</span>
+                        <span class="sample-meta">${task.formatted_time || ''}</span>
+                    </div>
+                    <div class="sample-stats">
+                        <span class="sample-accuracy ${task.accuracy < 0.8 ? 'low' : ''}">${(task.accuracy * 100).toFixed(1)}%</span>
+                        <span class="sample-errors">${task.total_questions - task.correct_questions} 错误</span>
+                    </div>
+                </div>
+            `;
+        }
+    });
+    
+    container.innerHTML = html || '<div class="empty-state">暂无错误样本数据</div>';
+}
+
+function filterErrorSamples() {
+    loadErrorSamples();
+}
+
+// ========== 异常检测弹窗 ==========
+async function openAnomalyModal() {
+    document.getElementById('anomalyModal').style.display = 'flex';
+    await loadAnomalies();
+}
+
+function closeAnomalyModal() {
+    document.getElementById('anomalyModal').style.display = 'none';
+}
+
+function onAnomalyModalBackdropClick(e) {
+    if (e.target === e.currentTarget) closeAnomalyModal();
+}
+
+async function loadAnomalies() {
+    try {
+        const res = await fetch('/api/dashboard/advanced-tools/stats').then(r => r.json());
+        if (res.success && res.data) {
+            const stats = res.data.anomalies;
+            document.getElementById('anomalyTotal').textContent = stats.total || 0;
+            document.getElementById('anomalyUnconfirmed').textContent = stats.unconfirmed || 0;
+            document.getElementById('anomalyToday').textContent = stats.today || 0;
+            
+            // 渲染异常列表
+            const container = document.getElementById('anomalyList');
+            if (stats.total === 0) {
+                container.innerHTML = '<div class="empty-state">暂无异常记录</div>';
+            } else {
+                container.innerHTML = `
+                    <div class="anomaly-item">
+                        <div class="anomaly-icon warning">!</div>
+                        <div class="anomaly-info">
+                            <div class="anomaly-title">检测到 ${stats.total} 个评分异常</div>
+                            <div class="anomaly-desc">其中 ${stats.unconfirmed} 个未确认，今日新增 ${stats.today} 个</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    } catch (e) {
+        console.error('[Anomaly] 加载失败:', e);
+        showToast('加载异常数据失败', 'error');
+    }
+}
+
+// ========== 错误聚类弹窗 ==========
+async function openClusteringModal() {
+    document.getElementById('clusteringModal').style.display = 'flex';
+    await loadClusters();
+}
+
+function closeClusteringModal() {
+    document.getElementById('clusteringModal').style.display = 'none';
+}
+
+function onClusteringModalBackdropClick(e) {
+    if (e.target === e.currentTarget) closeClusteringModal();
+}
+
+async function loadClusters() {
+    try {
+        const res = await fetch('/api/dashboard/drilldown?dimension=question_type').then(r => r.json());
+        const container = document.getElementById('clusterList');
+        
+        if (res.success && res.data?.items?.length) {
+            let html = '';
+            res.data.items.forEach(item => {
+                html += `
+                    <div class="cluster-item">
+                        <div class="cluster-name">${escapeHtml(item.name)}</div>
+                        <div class="cluster-count">${item.error_count} 个错误</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<div class="empty-state">暂无聚类数据，请先进行批量评估</div>';
+        }
+    } catch (e) {
+        console.error('[Clustering] 加载失败:', e);
+        showToast('加载聚类数据失败', 'error');
+    }
+}
+
+// ========== 优化建议弹窗 ==========
+async function openOptimizationModal() {
+    document.getElementById('optimizationModal').style.display = 'flex';
+    await loadSuggestions();
+}
+
+function closeOptimizationModal() {
+    document.getElementById('optimizationModal').style.display = 'none';
+}
+
+function onOptimizationModalBackdropClick(e) {
+    if (e.target === e.currentTarget) closeOptimizationModal();
+}
+
+async function loadSuggestions() {
+    try {
+        const res = await fetch('/api/dashboard/drilldown?dimension=question_type').then(r => r.json());
+        const container = document.getElementById('suggestionList');
+        
+        if (res.success && res.data?.items?.length) {
+            let html = '';
+            res.data.items.slice(0, 5).forEach((item, idx) => {
+                html += `
+                    <div class="suggestion-item">
+                        <div class="suggestion-priority ${idx === 0 ? 'high' : 'medium'}">P${idx + 1}</div>
+                        <div class="suggestion-content">
+                            <div class="suggestion-title">优化「${escapeHtml(item.name)}」类型错误</div>
+                            <div class="suggestion-desc">当前有 ${item.error_count} 个此类错误，建议检查相关评分规则</div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<div class="empty-state">暂无优化建议</div>';
+        }
+    } catch (e) {
+        console.error('[Suggestions] 加载失败:', e);
+        showToast('加载优化建议失败', 'error');
+    }
+}
+
+// ========== 批次对比弹窗 ==========
+async function openBatchCompareModal() {
+    document.getElementById('batchCompareModal').style.display = 'flex';
+    document.getElementById('compareResult').style.display = 'none';
+    document.getElementById('compareEmpty').style.display = 'block';
+    await loadBatchTasksForCompare();
+}
+
+function closeBatchCompareModal() {
+    document.getElementById('batchCompareModal').style.display = 'none';
+}
+
+function onBatchCompareModalBackdropClick(e) {
+    if (e.target === e.currentTarget) closeBatchCompareModal();
+}
+
+async function loadBatchTasksForCompare() {
+    try {
+        const res = await fetch('/api/dashboard/batch-tasks').then(r => r.json());
+        if (res.success) {
+            advancedToolsData.batchTasks = res.data || [];
+            const options = advancedToolsData.batchTasks.map(t => 
+                `<option value="${t.task_id}">${escapeHtml(t.name)} (${(t.accuracy * 100).toFixed(1)}%)</option>`
+            ).join('');
+            
+            document.getElementById('compareTaskA').innerHTML = '<option value="">选择批量评估任务</option>' + options;
+            document.getElementById('compareTaskB').innerHTML = '<option value="">选择批量评估任务</option>' + options;
+        }
+    } catch (e) {
+        console.error('[BatchCompare] 加载任务列表失败:', e);
+    }
+}
+
+async function onCompareTaskChange() {
+    const taskA = document.getElementById('compareTaskA').value;
+    const taskB = document.getElementById('compareTaskB').value;
+    
+    if (!taskA || !taskB) {
+        document.getElementById('compareResult').style.display = 'none';
+        document.getElementById('compareEmpty').style.display = 'block';
+        return;
+    }
+    
+    if (taskA === taskB) {
+        showToast('请选择不同的任务进行对比', 'warning');
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/dashboard/batch-compare?task_id_1=${taskA}&task_id_2=${taskB}`).then(r => r.json());
+        if (res.success) {
+            renderCompareResult(res.data);
+        } else {
+            showToast(res.error || '对比失败', 'error');
+        }
+    } catch (e) {
+        console.error('[BatchCompare] 对比失败:', e);
+        showToast('对比失败', 'error');
+    }
+}
+
+function renderCompareResult(data) {
+    document.getElementById('compareEmpty').style.display = 'none';
+    document.getElementById('compareResult').style.display = 'block';
+    
+    // 准确率
+    document.getElementById('compareAccA').textContent = (data.task1.accuracy * 100).toFixed(1) + '%';
+    document.getElementById('compareAccB').textContent = (data.task2.accuracy * 100).toFixed(1) + '%';
+    
+    // 差值
+    const diff = data.comparison.accuracy_diff;
+    const diffEl = document.getElementById('compareDiffValue');
+    const arrowEl = document.getElementById('compareDiffArrow');
+    
+    diffEl.textContent = (Math.abs(diff) * 100).toFixed(1) + '%';
+    if (diff > 0) {
+        arrowEl.textContent = '+';
+        arrowEl.className = 'diff-arrow up';
+    } else if (diff < 0) {
+        arrowEl.textContent = '-';
+        arrowEl.className = 'diff-arrow down';
+    } else {
+        arrowEl.textContent = '=';
+        arrowEl.className = 'diff-arrow';
+    }
+    
+    // 详情
+    let detailsHtml = '<div class="compare-error-changes"><h4>错误类型变化</h4>';
+    for (const [type, change] of Object.entries(data.comparison.error_changes || {})) {
+        const changeClass = change < 0 ? 'improved' : change > 0 ? 'worsened' : '';
+        const changeText = change > 0 ? `+${change}` : change.toString();
+        detailsHtml += `
+            <div class="error-change-item ${changeClass}">
+                <span class="error-type">${escapeHtml(type)}</span>
+                <span class="error-change">${changeText}</span>
+            </div>
+        `;
+    }
+    detailsHtml += '</div>';
+    document.getElementById('compareDetails').innerHTML = detailsHtml;
+}
+
+// ========== 数据下钻弹窗 ==========
+async function openDrilldownModal() {
+    document.getElementById('drilldownModal').style.display = 'flex';
+    advancedToolsData.drilldownDimension = 'subject';
+    advancedToolsData.drilldownParentId = null;
+    updateDrilldownNav();
+    await loadDrilldownData();
+}
+
+function closeDrilldownModal() {
+    document.getElementById('drilldownModal').style.display = 'none';
+}
+
+function onDrilldownModalBackdropClick(e) {
+    if (e.target === e.currentTarget) closeDrilldownModal();
+}
+
+function switchDrilldownDimension(dimension) {
+    advancedToolsData.drilldownDimension = dimension;
+    advancedToolsData.drilldownParentId = null;
+    updateDrilldownNav();
+    loadDrilldownData();
+}
+
+function updateDrilldownNav() {
+    document.querySelectorAll('.drilldown-nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.dimension === advancedToolsData.drilldownDimension);
+    });
+    document.getElementById('drilldownBreadcrumb').innerHTML = '<span class="breadcrumb-item active">全部</span>';
+}
+
+async function loadDrilldownData() {
+    const container = document.getElementById('drilldownList');
+    container.innerHTML = '<div class="empty-state">加载中...</div>';
+    
+    try {
+        let url = `/api/dashboard/drilldown?dimension=${advancedToolsData.drilldownDimension}`;
+        if (advancedToolsData.drilldownParentId) {
+            url += `&parent_id=${advancedToolsData.drilldownParentId}`;
+        }
+        
+        const res = await fetch(url).then(r => r.json());
+        if (res.success && res.data?.items?.length) {
+            let html = '';
+            res.data.items.forEach(item => {
+                const accClass = item.accuracy < 0.8 ? 'low' : item.accuracy < 0.9 ? 'medium' : 'high';
+                html += `
+                    <div class="drilldown-item" ${item.has_children ? `onclick="drilldownTo('${item.id}')"` : ''}>
+                        <div class="drilldown-name">${escapeHtml(item.name)}</div>
+                        <div class="drilldown-stats">
+                            <span class="drilldown-accuracy ${accClass}">${(item.accuracy * 100).toFixed(1)}%</span>
+                            <span class="drilldown-count">${item.total_questions} 题</span>
+                            <span class="drilldown-errors">${item.error_count} 错误</span>
+                        </div>
+                        ${item.has_children ? '<span class="drilldown-arrow">></span>' : ''}
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<div class="empty-state">暂无数据</div>';
+        }
+    } catch (e) {
+        console.error('[Drilldown] 加载失败:', e);
+        container.innerHTML = '<div class="empty-state">加载失败</div>';
+    }
+}
+
+function drilldownTo(parentId) {
+    advancedToolsData.drilldownParentId = parentId;
+    
+    // 更新面包屑
+    const breadcrumb = document.getElementById('drilldownBreadcrumb');
+    breadcrumb.innerHTML += ` > <span class="breadcrumb-item active">${escapeHtml(parentId)}</span>`;
+    
+    // 切换到下一级维度
+    const dimensions = ['subject', 'book', 'page'];
+    const currentIdx = dimensions.indexOf(advancedToolsData.drilldownDimension);
+    if (currentIdx < dimensions.length - 1) {
+        advancedToolsData.drilldownDimension = dimensions[currentIdx + 1];
+    }
+    
+    loadDrilldownData();
+}
+
+// 最佳实践弹窗
+function openBestPracticeModal() {
+    showToast('最佳实践功能开发中...', 'info');
+}
+
+// 保存筛选弹窗
+function openSavedFiltersModal() {
+    showToast('保存筛选功能开发中...', 'info');
+}
+
+// 导出高级工具函数到 window
+window.openErrorSamplesModal = openErrorSamplesModal;
+window.closeErrorSamplesModal = closeErrorSamplesModal;
+window.onErrorSamplesModalBackdropClick = onErrorSamplesModalBackdropClick;
+window.filterErrorSamples = filterErrorSamples;
+
+window.openAnomalyModal = openAnomalyModal;
+window.closeAnomalyModal = closeAnomalyModal;
+window.onAnomalyModalBackdropClick = onAnomalyModalBackdropClick;
+
+window.openClusteringModal = openClusteringModal;
+window.closeClusteringModal = closeClusteringModal;
+window.onClusteringModalBackdropClick = onClusteringModalBackdropClick;
+
+window.openOptimizationModal = openOptimizationModal;
+window.closeOptimizationModal = closeOptimizationModal;
+window.onOptimizationModalBackdropClick = onOptimizationModalBackdropClick;
+
+window.openBatchCompareModal = openBatchCompareModal;
+window.closeBatchCompareModal = closeBatchCompareModal;
+window.onBatchCompareModalBackdropClick = onBatchCompareModalBackdropClick;
+window.onCompareTaskChange = onCompareTaskChange;
+
+window.openDrilldownModal = openDrilldownModal;
+window.closeDrilldownModal = closeDrilldownModal;
+window.onDrilldownModalBackdropClick = onDrilldownModalBackdropClick;
+window.switchDrilldownDimension = switchDrilldownDimension;
+window.drilldownTo = drilldownTo;
+
+window.openBestPracticeModal = openBestPracticeModal;
+window.openSavedFiltersModal = openSavedFiltersModal;
+
+// ========== AI 分析报告 ==========
+let currentAnalysisTaskId = null;
+
+function openAnalysisReportModal(taskId) {
+    currentAnalysisTaskId = taskId;
+    document.getElementById('analysisReportModal').style.display = 'flex';
+    document.getElementById('analysisReportStatus').style.display = 'flex';
+    document.getElementById('analysisReportContent').style.display = 'none';
+    loadAnalysisReport(taskId);
+}
+
+function closeAnalysisReportModal() {
+    document.getElementById('analysisReportModal').style.display = 'none';
+    currentAnalysisTaskId = null;
+}
+
+function onAnalysisReportModalBackdropClick(event) {
+    if (event.target.id === 'analysisReportModal') {
+        closeAnalysisReportModal();
+    }
+}
+
+async function loadAnalysisReport(taskId) {
+    try {
+        const response = await fetch(`/api/analysis/report/${taskId}`);
+        const data = await response.json();
+        
+        if (!data.success) {
+            showAnalysisError(data.error || '加载失败');
+            return;
+        }
+        
+        if (!data.report) {
+            document.getElementById('analysisReportStatus').innerHTML = `
+                <div class="empty-state">
+                    <p>暂无分析报告</p>
+                    <button class="btn btn-primary" onclick="triggerAnalysis()">开始分析</button>
+                </div>
+            `;
+            return;
+        }
+        
+        renderAnalysisReport(data.report);
+    } catch (error) {
+        console.error('加载分析报告失败:', error);
+        showAnalysisError('网络错误');
+    }
+}
+
+function showAnalysisError(message) {
+    document.getElementById('analysisReportStatus').innerHTML = `
+        <div class="error-state">
+            <p>${message}</p>
+            <button class="btn btn-secondary" onclick="loadAnalysisReport(currentAnalysisTaskId)">重试</button>
+        </div>
+    `;
+}
+
+function renderAnalysisReport(report) {
+    document.getElementById('analysisReportStatus').style.display = 'none';
+    document.getElementById('analysisReportContent').style.display = 'block';
+    
+    const summary = report.summary || {};
+    document.getElementById('summaryTotalErrors').textContent = summary.total_errors || 0;
+    document.getElementById('summaryErrorRate').textContent = ((summary.error_rate || 0) * 100).toFixed(1) + '%';
+    document.getElementById('summaryFocusCount').textContent = summary.focus_count || 0;
+    
+    // 渲染层级分析
+    renderDrilldownData(report.drill_down_data);
+    
+    // 渲染错误模式
+    renderErrorPatterns(report.error_patterns || []);
+    
+    // 渲染根因分析
+    renderRootCauses(report.root_causes || []);
+    
+    // 渲染优化建议
+    renderSuggestions(report.suggestions || []);
+}
+
+function renderDrilldownData(drillDownData) {
+    const container = document.getElementById('analysisDrilldownContent');
+    const bySubject = drillDownData?.by_subject || [];
+    
+    if (bySubject.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无数据</div>';
+        return;
+    }
+    
+    let html = '<div class="drilldown-list">';
+    bySubject.forEach(item => {
+        const isFocus = item.is_focus ? 'focus' : '';
+        html += `
+            <div class="drilldown-item ${isFocus}">
+                <div class="item-name">${item.name || item.subject || '--'}</div>
+                <div class="item-stats">
+                    <span class="stat-error">${item.error_count || 0} 错误</span>
+                    <span class="stat-rate">${((item.error_rate || 0) * 100).toFixed(1)}%</span>
+                </div>
+                ${item.is_focus ? '<span class="focus-tag">重点关注</span>' : ''}
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function switchAnalysisLevel(level) {
+    document.querySelectorAll('.drilldown-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.level === level);
+    });
+    // TODO: 加载对应层级数据
+}
+
+function renderErrorPatterns(patterns) {
+    const container = document.getElementById('analysisErrorPatterns');
+    
+    if (patterns.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无错误模式数据</div>';
+        return;
+    }
+    
+    let html = '';
+    patterns.forEach(pattern => {
+        const severityClass = pattern.severity === 'high' ? 'severity-high' : 
+                             pattern.severity === 'medium' ? 'severity-medium' : 'severity-low';
+        html += `
+            <div class="pattern-card ${severityClass}">
+                <div class="pattern-header">
+                    <span class="pattern-type">${pattern.type || '--'}</span>
+                    <span class="pattern-count">${pattern.count || 0} 次</span>
+                </div>
+                <div class="pattern-rate">${((pattern.rate || 0) * 100).toFixed(1)}%</div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function renderRootCauses(causes) {
+    const container = document.getElementById('analysisRootCauses');
+    
+    if (causes.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无根因分析数据</div>';
+        return;
+    }
+    
+    let html = '<div class="causes-list">';
+    causes.forEach(cause => {
+        const isPrimary = cause.is_primary ? 'primary' : '';
+        html += `
+            <div class="cause-item ${isPrimary}">
+                <div class="cause-name">${cause.name || cause.type || '--'}</div>
+                <div class="cause-stats">
+                    <span class="cause-count">${cause.count || 0} 个</span>
+                    <span class="cause-rate">${((cause.percentage || 0)).toFixed(1)}%</span>
+                </div>
+                ${cause.is_primary ? '<span class="primary-tag">主要问题</span>' : ''}
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function renderSuggestions(suggestions) {
+    const container = document.getElementById('analysisSuggestions');
+    
+    if (suggestions.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无优化建议</div>';
+        return;
+    }
+    
+    let html = '<div class="suggestions-list">';
+    suggestions.forEach((suggestion, index) => {
+        const priorityClass = suggestion.priority === 'high' ? 'priority-high' : 
+                             suggestion.priority === 'medium' ? 'priority-medium' : 'priority-low';
+        html += `
+            <div class="suggestion-card ${priorityClass}">
+                <div class="suggestion-header">
+                    <span class="suggestion-index">${index + 1}</span>
+                    <span class="suggestion-title">${suggestion.title || '--'}</span>
+                    <span class="suggestion-priority">${suggestion.priority || 'low'}</span>
+                </div>
+                <div class="suggestion-desc">${suggestion.description || ''}</div>
+                ${suggestion.expected_effect ? `<div class="suggestion-effect">预期效果: ${suggestion.expected_effect}</div>` : ''}
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+async function triggerAnalysis() {
+    if (!currentAnalysisTaskId) return;
+    
+    const btn = document.getElementById('triggerAnalysisBtn');
+    btn.disabled = true;
+    btn.textContent = '分析中...';
+    
+    try {
+        const response = await fetch(`/api/analysis/trigger/${currentAnalysisTaskId}`, {
+            method: 'POST'
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('analysisReportStatus').innerHTML = `
+                <div class="loading-spinner"></div>
+                <span>分析任务已加入队列，位置 ${data.position}</span>
+            `;
+            document.getElementById('analysisReportStatus').style.display = 'flex';
+            document.getElementById('analysisReportContent').style.display = 'none';
+            
+            // 轮询检查状态
+            pollAnalysisStatus();
+        } else {
+            alert(data.error || '触发分析失败');
+        }
+    } catch (error) {
+        console.error('触发分析失败:', error);
+        alert('网络错误');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '重新分析';
+    }
+}
+
+async function pollAnalysisStatus() {
+    if (!currentAnalysisTaskId) return;
+    
+    try {
+        const response = await fetch(`/api/analysis/status/${currentAnalysisTaskId}`);
+        const data = await response.json();
+        
+        if (data.success && data.status) {
+            if (data.status.status === 'completed') {
+                loadAnalysisReport(currentAnalysisTaskId);
+            } else if (data.status.status === 'failed') {
+                showAnalysisError(data.status.message || '分析失败');
+            } else {
+                // 继续轮询
+                setTimeout(pollAnalysisStatus, 3000);
+            }
+        }
+    } catch (error) {
+        console.error('检查分析状态失败:', error);
+    }
+}
+
+// ========== 自动化管理 ==========
+function openAutomationModal() {
+    document.getElementById('automationModal').style.display = 'flex';
+    loadAutomationTasks();
+    loadQueueStatus();
+}
+
+function closeAutomationModal() {
+    document.getElementById('automationModal').style.display = 'none';
+}
+
+function onAutomationModalBackdropClick(event) {
+    if (event.target.id === 'automationModal') {
+        closeAutomationModal();
+    }
+}
+
+async function loadAutomationTasks() {
+    const container = document.getElementById('automationTaskList');
+    container.innerHTML = '<div class="loading">加载中...</div>';
+    
+    try {
+        const response = await fetch('/api/automation/tasks');
+        const data = await response.json();
+        
+        if (!data.success) {
+            container.innerHTML = `<div class="error-state">${data.error || '加载失败'}</div>`;
+            return;
+        }
+        
+        renderAutomationTasks(data.tasks || []);
+    } catch (error) {
+        console.error('加载自动化任务失败:', error);
+        container.innerHTML = '<div class="error-state">网络错误</div>';
+    }
+}
+
+function renderAutomationTasks(tasks) {
+    const container = document.getElementById('automationTaskList');
+    
+    if (tasks.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无自动化任务</div>';
+        return;
+    }
+    
+    let html = '';
+    tasks.forEach(task => {
+        const statusClass = task.enabled ? 'enabled' : 'disabled';
+        html += `
+            <div class="automation-task-item ${statusClass}">
+                <div class="task-info">
+                    <span class="task-name">${task.name || task.task_type}</span>
+                    <span class="task-desc">${task.description || ''}</span>
+                </div>
+                <div class="task-controls">
+                    <label class="switch">
+                        <input type="checkbox" ${task.enabled ? 'checked' : ''} 
+                               onchange="toggleAutomationTask('${task.task_type}', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+async function loadQueueStatus() {
+    try {
+        const response = await fetch('/api/automation/queue');
+        const data = await response.json();
+        
+        if (data.success && data.queue) {
+            document.getElementById('queueWaiting').textContent = data.queue.waiting || 0;
+            document.getElementById('queueRunning').textContent = (data.queue.running || []).length;
+            
+            // 更新暂停/恢复按钮状态
+            const isPaused = data.queue.paused;
+            document.getElementById('pauseAllBtn').disabled = isPaused;
+            document.getElementById('resumeAllBtn').disabled = !isPaused;
+        }
+    } catch (error) {
+        console.error('加载队列状态失败:', error);
+    }
+}
+
+async function toggleAutomationTask(taskType, enabled) {
+    try {
+        const response = await fetch(`/api/automation/tasks/${taskType}/config`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled })
+        });
+        const data = await response.json();
+        
+        if (!data.success) {
+            alert(data.error || '更新失败');
+            loadAutomationTasks(); // 刷新
+        }
+    } catch (error) {
+        console.error('更新任务配置失败:', error);
+        alert('网络错误');
+    }
+}
+
+async function pauseAllAutomation() {
+    try {
+        const response = await fetch('/api/automation/pause', { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+            loadQueueStatus();
+        } else {
+            alert(data.error || '暂停失败');
+        }
+    } catch (error) {
+        console.error('暂停失败:', error);
+        alert('网络错误');
+    }
+}
+
+async function resumeAllAutomation() {
+    try {
+        const response = await fetch('/api/automation/resume', { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+            loadQueueStatus();
+        } else {
+            alert(data.error || '恢复失败');
+        }
+    } catch (error) {
+        console.error('恢复失败:', error);
+        alert('网络错误');
+    }
+}
+
+async function clearAutomationQueue() {
+    if (!confirm('确定要清空队列吗？')) return;
+    
+    try {
+        const response = await fetch('/api/automation/queue/clear', { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+            loadQueueStatus();
+        } else {
+            alert(data.error || '清空失败');
+        }
+    } catch (error) {
+        console.error('清空队列失败:', error);
+        alert('网络错误');
+    }
+}
+
+// 导出 AI 分析函数
+window.openAnalysisReportModal = openAnalysisReportModal;
+window.closeAnalysisReportModal = closeAnalysisReportModal;
+window.onAnalysisReportModalBackdropClick = onAnalysisReportModalBackdropClick;
+window.triggerAnalysis = triggerAnalysis;
+window.switchAnalysisLevel = switchAnalysisLevel;
+
+// 导出自动化管理函数
+window.openAutomationModal = openAutomationModal;
+window.closeAutomationModal = closeAutomationModal;
+window.onAutomationModalBackdropClick = onAutomationModalBackdropClick;
+window.pauseAllAutomation = pauseAllAutomation;
+window.resumeAllAutomation = resumeAllAutomation;
+window.clearAutomationQueue = clearAutomationQueue;
+
+// 页面加载后延迟加载高级工具统计
+setTimeout(loadAdvancedToolsStats, 2000);
+
+console.log('[Dashboard] 模块化看板初始化完成 v20260124');
