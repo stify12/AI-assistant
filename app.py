@@ -5,7 +5,7 @@ Flask 应用初始化和蓝图注册
 import os
 import secrets
 import atexit
-from flask import Flask
+from flask import Flask, request, send_from_directory
 from datetime import timedelta
 
 # 创建 Flask 应用实例
@@ -15,6 +15,25 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'ai-grading-platform-secret-key-2026')
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
+
+# 静态文件缓存配置 - 提升加载速度
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000  # 1年缓存
+
+
+@app.after_request
+def add_cache_headers(response):
+    """为静态资源添加缓存头，提升加载速度"""
+    if request.path.startswith('/static/'):
+        # CSS/JS 文件使用版本号控制，可以长期缓存
+        if request.path.endswith(('.css', '.js')):
+            response.headers['Cache-Control'] = 'public, max-age=31536000'  # 1年
+        # 图片等资源
+        elif request.path.endswith(('.png', '.jpg', '.jpeg', '.gif', '.ico', '.svg', '.woff', '.woff2')):
+            response.headers['Cache-Control'] = 'public, max-age=31536000'  # 1年
+    # API 响应不缓存
+    elif request.path.startswith('/api/'):
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return response
 
 # 注册所有路由蓝图
 from routes import register_blueprints

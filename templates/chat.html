@@ -4,9 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 助手</title>
-    <link rel="stylesheet" href="/static/css/common.css">
-    <link rel="stylesheet" href="/static/css/chat.css">
-    <script src="https://cdn.bootcdn.net/ajax/libs/marked/9.1.6/marked.min.js"></script>
+    <!-- 预加载关键资源 -->
+    <link rel="preload" href="/static/css/common.css?v=20260124" as="style">
+    <link rel="preload" href="/static/css/chat.css?v=20260124" as="style">
+    <link rel="preload" href="/static/js/chat.js?v=20260124" as="script">
+    <!-- 样式表 -->
+    <link rel="stylesheet" href="/static/css/common.css?v=20260124">
+    <link rel="stylesheet" href="/static/css/chat.css?v=20260124">
+    <!-- 第三方库延迟加载 -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/marked/9.1.6/marked.min.js" defer></script>
 </head>
 <body>
     <!-- 左侧快捷入口栏（初始状态）/ 历史对话栏（对话状态） -->

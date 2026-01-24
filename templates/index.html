@@ -4,8 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>测试计划看板 - AI效果分析平台</title>
-    <link rel="stylesheet" href="/static/css/common.css?v=20260123">
-    <link rel="stylesheet" href="/static/css/index.css?v=20260123">
+    <!-- DNS 预解析 -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <!-- 关键CSS预加载 -->
+    <link rel="preload" href="/static/css/common.css?v=20260124" as="style">
+    <link rel="preload" href="/static/css/index.css?v=20260124" as="style">
+    <!-- 关键JS预加载 -->
+    <link rel="preload" href="/static/js/index.js?v=20260124" as="script">
+    <!-- 样式表 -->
+    <link rel="stylesheet" href="/static/css/common.css?v=20260124">
+    <link rel="stylesheet" href="/static/css/index.css?v=20260124">
+    <!-- 首屏关键CSS内联 -->
+    <style>
+        /* 骨架屏样式 - 避免布局抖动 */
+        .stat-card-skeleton{display:flex;flex-direction:column;gap:8px;padding:16px}
+        .skeleton-value,.skeleton-label,.skeleton-detail{background:linear-gradient(90deg,#2a2a2a 25%,#333 50%,#2a2a2a 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px}
+        .skeleton-value{height:32px;width:60%}
+        .skeleton-label{height:14px;width:80%}
+        .skeleton-detail{height:12px;width:50%}
+        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    </style>
 </head>
 <body>
     <!-- 左侧边栏导航 - 悬停展开效果 -->
