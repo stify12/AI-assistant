@@ -2308,6 +2308,7 @@ async function startBatchEvaluation() {
             
             selectedTask = resetData.data;
             renderTaskDetail();
+            hideLoading();  // 重置完成后隐藏加载状态
         } catch (e) {
             hideLoading();
             alert('重置任务失败: ' + e.message);
