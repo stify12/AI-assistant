@@ -1,5 +1,5 @@
 """
-AI 智能数据分析服务
+AI 智能数据分析服务（增强版）
 
 提供批量评估任务的智能分析功能，包括：
 - 错误样本收集
@@ -7,14 +7,20 @@ AI 智能数据分析服务
 - 错误模式识别
 - 根因分析
 - 优化建议生成
+- 快速本地统计（毫秒级响应）
+- LLM 深度分析（并行调用）
+- 结果缓存（基于数据哈希）
+- 异常检测（批改不一致）
 """
 import os
 import json
 import uuid
 import time
+import hashlib
 import threading
+import asyncio
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 from collections import defaultdict
 
 from .storage_service import StorageService
@@ -48,14 +54,19 @@ ROOT_CAUSE_TYPES = {
 
 
 class AIAnalysisService:
-    """AI 数据分析服务"""
+    """AI 数据分析服务（增强版）"""
     
     # 分析队列
-    _queue: List[str] = []
-    _running: Dict[str, dict] = {}
-    _max_concurrent: int = 2
+    _queue: List[dict] = []  # [{task_id, priority, created_at, job_id}]
+    _running: Dict[str, dict] = {}  # {task_id: {progress, started_at, step, job_id}}
+    _max_concurrent: int = 10
     _lock = threading.Lock()
     _paused: bool = False
+    
+    # 最近完成/失败的任务
+    _recent_completed: List[dict] = []
+    _recent_failed: List[dict] = []
+    _max_recent: int = 10
     
     # 配置文件路径
     CONFIG_PATH = 'automation_config.json'
@@ -112,70 +123,120 @@ class AIAnalysisService:
         return config['ai_analysis']
     
     @classmethod
-    def trigger_analysis(cls, task_id: str) -> dict:
+    def trigger_analysis(cls, task_id: str, priority: str = 'medium') -> dict:
         """
         触发任务分析
         
         Args:
             task_id: 批量评估任务ID
+            priority: 优先级 high|medium|low
             
         Returns:
-            dict: {queued: bool, position: int, message: str}
+            dict: {queued: bool, position: int, job_id: str, message: str}
         """
         config = cls.get_config()
         
         # 检查是否启用
         if not config.get('enabled', True):
-            return {'queued': False, 'position': -1, 'message': 'AI 分析已禁用'}
+            return {'queued': False, 'position': -1, 'job_id': None, 'message': 'AI 分析已禁用'}
         
         # 检查是否暂停
         if cls._paused:
-            return {'queued': False, 'position': -1, 'message': '自动化任务已暂停'}
+            return {'queued': False, 'position': -1, 'job_id': None, 'message': '自动化任务已暂停'}
+        
+        job_id = f"job_{uuid.uuid4().hex[:8]}"
         
         with cls._lock:
             # 检查是否已在队列或正在执行
-            if task_id in cls._queue:
-                position = cls._queue.index(task_id) + 1
-                return {'queued': True, 'position': position, 'message': f'任务已在队列中，位置 {position}'}
+            for item in cls._queue:
+                if item.get('task_id') == task_id:
+                    position = cls._queue.index(item) + 1
+                    return {'queued': True, 'position': position, 'job_id': item.get('job_id'), 'message': f'任务已在队列中，位置 {position}'}
             
             if task_id in cls._running:
-                return {'queued': True, 'position': 0, 'message': '任务正在分析中'}
+                return {'queued': True, 'position': 0, 'job_id': cls._running[task_id].get('job_id'), 'message': '任务正在分析中'}
             
-            # 加入队列
-            cls._queue.append(task_id)
-            position = len(cls._queue)
+            # 加入队列（按优先级排序）
+            priority_order = {'high': 0, 'medium': 1, 'low': 2}
+            queue_item = {
+                'task_id': task_id,
+                'priority': priority,
+                'priority_order': priority_order.get(priority, 1),
+                'created_at': datetime.now().isoformat(),
+                'job_id': job_id
+            }
+            
+            # 插入到合适位置
+            insert_pos = len(cls._queue)
+            for i, item in enumerate(cls._queue):
+                if item.get('priority_order', 1) > queue_item['priority_order']:
+                    insert_pos = i
+                    break
+            cls._queue.insert(insert_pos, queue_item)
+            position = insert_pos + 1
             
             # 尝试启动处理
             cls._try_process_queue()
             
-            return {'queued': True, 'position': position, 'message': f'分析任务已加入队列，位置 {position}'}
+            return {'queued': True, 'position': position, 'job_id': job_id, 'message': f'分析任务已加入队列，位置 {position}'}
     
     @classmethod
     def _try_process_queue(cls):
         """尝试处理队列中的任务"""
         config = cls.get_config()
-        max_concurrent = config.get('max_concurrent', 2)
+        max_concurrent = config.get('max_concurrent', 10)
         
         while len(cls._running) < max_concurrent and cls._queue and not cls._paused:
-            task_id = cls._queue.pop(0)
+            queue_item = cls._queue.pop(0)
+            task_id = queue_item.get('task_id')
+            job_id = queue_item.get('job_id')
+            
             cls._running[task_id] = {
                 'started_at': datetime.now().isoformat(),
-                'progress': 0
+                'progress': 0,
+                'step': '初始化...',
+                'job_id': job_id
             }
             
             # 启动分析线程
-            thread = threading.Thread(target=cls._analyze_task_thread, args=(task_id,))
+            thread = threading.Thread(target=cls._analyze_task_thread, args=(task_id, job_id))
             thread.daemon = True
             thread.start()
     
     @classmethod
-    def _analyze_task_thread(cls, task_id: str):
+    def _analyze_task_thread(cls, task_id: str, job_id: str = None):
         """分析任务线程"""
+        start_time = time.time()
         try:
             cls.analyze_task(task_id)
+            duration = int(time.time() - start_time)
+            
+            # 记录完成
+            with cls._lock:
+                cls._recent_completed.insert(0, {
+                    'task_id': task_id,
+                    'job_id': job_id,
+                    'completed_at': datetime.now().isoformat(),
+                    'duration': duration
+                })
+                cls._recent_completed = cls._recent_completed[:cls._max_recent]
+                
         except Exception as e:
             print(f"[AIAnalysis] 分析任务 {task_id} 失败: {e}")
             cls._save_failed_report(task_id, str(e))
+            duration = int(time.time() - start_time)
+            
+            # 记录失败
+            with cls._lock:
+                cls._recent_failed.insert(0, {
+                    'task_id': task_id,
+                    'job_id': job_id,
+                    'error': str(e),
+                    'failed_at': datetime.now().isoformat(),
+                    'duration': duration
+                })
+                cls._recent_failed = cls._recent_failed[:cls._max_recent]
+                
         finally:
             with cls._lock:
                 if task_id in cls._running:
@@ -958,3 +1019,500 @@ class AIAnalysisService:
             'status': 'none',
             'message': '暂无分析记录'
         }
+
+    
+    # ============================================
+    # 快速统计方法（毫秒级响应）
+    # ============================================
+    
+    @classmethod
+    def get_quick_stats(cls, task_id: str) -> dict:
+        """
+        获取快速本地统计（毫秒级响应，< 100ms）
+        
+        Returns:
+            dict: {
+                total_errors: int,
+                total_questions: int,
+                error_rate: float,
+                error_type_distribution: {...},
+                subject_distribution: {...},
+                book_distribution: {...},
+                question_type_distribution: {...},
+                clusters: [{cluster_key, count, samples}]
+            }
+        """
+        start_time = time.time()
+        
+        # 加载任务数据
+        task_data = cls._load_task(task_id)
+        if not task_data:
+            return {'error': '任务不存在', 'total_errors': 0, 'total_questions': 0}
+        
+        # 收集错误样本
+        error_samples = cls._collect_error_samples(task_data)
+        
+        # 统计总题目数
+        total_questions = 0
+        for hw_item in task_data.get('homework_items', []):
+            evaluation = hw_item.get('evaluation') or {}
+            total_questions += evaluation.get('total_questions', 0)
+        
+        total_errors = len(error_samples)
+        error_rate = total_errors / total_questions if total_questions > 0 else 0
+        
+        # 错误类型分布
+        error_type_dist = defaultdict(int)
+        for sample in error_samples:
+            error_type_dist[sample.get('error_type', '其他')] += 1
+        
+        # 学科分布
+        subject_dist = defaultdict(int)
+        for sample in error_samples:
+            subject_id = sample.get('subject_id')
+            if subject_id is not None:
+                subject_name = SUBJECT_MAP.get(subject_id, '未知')
+                subject_dist[subject_name] += 1
+        
+        # 书本分布
+        book_dist = defaultdict(int)
+        for sample in error_samples:
+            book_name = sample.get('book_name', '未知')
+            book_dist[book_name] += 1
+        
+        # 初步聚类（按 error_type + book + page_range）
+        clusters = cls._generate_quick_clusters(error_samples)
+        
+        duration_ms = int((time.time() - start_time) * 1000)
+        
+        return {
+            'total_errors': total_errors,
+            'total_questions': total_questions,
+            'error_rate': round(error_rate, 4),
+            'error_type_distribution': dict(error_type_dist),
+            'subject_distribution': dict(subject_dist),
+            'book_distribution': dict(book_dist),
+            'clusters': clusters,
+            'duration_ms': duration_ms
+        }
+    
+    @classmethod
+    def _generate_quick_clusters(cls, error_samples: List[dict]) -> List[dict]:
+        """
+        生成快速聚类（本地计算，不调用 LLM）
+        
+        聚类键: error_type + book_name + page_range
+        """
+        cluster_map = defaultdict(list)
+        
+        for sample in error_samples:
+            error_type = sample.get('error_type', '其他')
+            book_name = sample.get('book_name', '未知')
+            page_num = sample.get('page_num', 0)
+            
+            # 计算页码范围（每10页一组）
+            page_range_start = (page_num // 10) * 10
+            page_range = f"{page_range_start}-{page_range_start + 9}"
+            
+            cluster_key = f"{error_type}_{book_name}_{page_range}"
+            cluster_map[cluster_key].append(sample)
+        
+        # 转换为列表并排序
+        clusters = []
+        for cluster_key, samples in cluster_map.items():
+            parts = cluster_key.split('_', 2)
+            clusters.append({
+                'cluster_key': cluster_key,
+                'error_type': parts[0] if len(parts) > 0 else '未知',
+                'book_name': parts[1] if len(parts) > 1 else '未知',
+                'page_range': parts[2] if len(parts) > 2 else '未知',
+                'sample_count': len(samples),
+                'samples': samples[:10]  # 只保留前10个样本
+            })
+        
+        # 按样本数排序
+        clusters.sort(key=lambda x: x['sample_count'], reverse=True)
+        
+        return clusters
+    
+    # ============================================
+    # 缓存机制
+    # ============================================
+    
+    @classmethod
+    def _compute_data_hash(cls, data: Any) -> str:
+        """计算数据哈希值"""
+        data_str = json.dumps(data, sort_keys=True, ensure_ascii=False)
+        return hashlib.sha256(data_str.encode()).hexdigest()[:16]
+    
+    @classmethod
+    def get_cached_analysis(cls, task_id: str, analysis_type: str = 'task', target_id: str = None) -> dict:
+        """
+        获取缓存的分析结果
+        
+        Args:
+            task_id: 任务ID
+            analysis_type: sample|cluster|task|subject|book|question_type|trend|compare
+            target_id: 目标ID（如聚类ID、学科名等）
+            
+        Returns:
+            dict: {
+                quick_stats: {...},
+                llm_analysis: {...} or None,
+                analysis_status: pending|analyzing|completed|stale,
+                data_hash: str,
+                updated_at: str
+            }
+        """
+        # 获取快速统计
+        quick_stats = cls.get_quick_stats(task_id)
+        if quick_stats.get('error'):
+            return {'error': quick_stats.get('error')}
+        
+        # 计算当前数据哈希
+        current_hash = cls._compute_data_hash({
+            'total_errors': quick_stats.get('total_errors'),
+            'error_type_distribution': quick_stats.get('error_type_distribution'),
+            'clusters_count': len(quick_stats.get('clusters', []))
+        })
+        
+        # 查询缓存
+        target = target_id or task_id
+        try:
+            sql = """
+                SELECT result_id, analysis_data, data_hash, status, updated_at
+                FROM analysis_results
+                WHERE analysis_type = %s AND target_id = %s AND task_id = %s
+                ORDER BY updated_at DESC
+                LIMIT 1
+            """
+            result = AppDatabaseService.execute_query(sql, (analysis_type, target, task_id))
+            
+            if result:
+                row = result[0]
+                cached_hash = row.get('data_hash', '')
+                
+                # 检查缓存是否有效
+                if cached_hash == current_hash and row.get('status') == 'completed':
+                    return {
+                        'quick_stats': quick_stats,
+                        'llm_analysis': json.loads(row.get('analysis_data', '{}')) if row.get('analysis_data') else None,
+                        'analysis_status': 'completed',
+                        'data_hash': current_hash,
+                        'updated_at': row.get('updated_at').isoformat() if row.get('updated_at') else None,
+                        'cache_hit': True
+                    }
+                elif row.get('status') == 'analyzing':
+                    return {
+                        'quick_stats': quick_stats,
+                        'llm_analysis': None,
+                        'analysis_status': 'analyzing',
+                        'data_hash': current_hash,
+                        'updated_at': None,
+                        'cache_hit': False
+                    }
+                else:
+                    # 缓存过期
+                    return {
+                        'quick_stats': quick_stats,
+                        'llm_analysis': json.loads(row.get('analysis_data', '{}')) if row.get('analysis_data') else None,
+                        'analysis_status': 'stale',
+                        'data_hash': current_hash,
+                        'updated_at': row.get('updated_at').isoformat() if row.get('updated_at') else None,
+                        'cache_hit': False
+                    }
+        except Exception as e:
+            print(f"[AIAnalysis] 查询缓存失败: {e}")
+        
+        # 无缓存
+        return {
+            'quick_stats': quick_stats,
+            'llm_analysis': None,
+            'analysis_status': 'pending',
+            'data_hash': current_hash,
+            'updated_at': None,
+            'cache_hit': False
+        }
+    
+    @classmethod
+    def _save_analysis_result(cls, task_id: str, analysis_type: str, target_id: str, 
+                              analysis_data: dict, data_hash: str, token_usage: int = 0):
+        """保存分析结果到缓存"""
+        try:
+            result_id = str(uuid.uuid4())[:8]
+            sql = """
+                INSERT INTO analysis_results 
+                (result_id, analysis_type, target_id, task_id, analysis_data, data_hash, status, token_usage, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, 'completed', %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                analysis_data = VALUES(analysis_data),
+                data_hash = VALUES(data_hash),
+                status = 'completed',
+                token_usage = VALUES(token_usage),
+                updated_at = VALUES(updated_at)
+            """
+            now = datetime.now()
+            AppDatabaseService.execute_insert(sql, (
+                result_id, analysis_type, target_id, task_id,
+                json.dumps(analysis_data, ensure_ascii=False),
+                data_hash, token_usage, now, now
+            ))
+        except Exception as e:
+            print(f"[AIAnalysis] 保存分析结果失败: {e}")
+    
+    # ============================================
+    # 异常检测
+    # ============================================
+    
+    @classmethod
+    def detect_anomalies(cls, task_id: str) -> List[dict]:
+        """
+        检测异常模式（重点：批改不一致）
+        
+        Returns:
+            list: [{
+                anomaly_id: str,
+                anomaly_type: str,
+                severity: str,
+                base_user_answer: str,
+                correct_cases: [...],
+                incorrect_cases: [...],
+                inconsistency_rate: float,
+                description: str,
+                suggested_action: str
+            }]
+        """
+        task_data = cls._load_task(task_id)
+        if not task_data:
+            return []
+        
+        anomalies = []
+        
+        # 1. 检测批改不一致（同一 base_user 答案，不同批改结果）
+        inconsistent = cls._detect_inconsistent_grading(task_data)
+        anomalies.extend(inconsistent)
+        
+        # 2. 检测连续错误（同一页码连续多题错误）
+        continuous = cls._detect_continuous_errors(task_data)
+        anomalies.extend(continuous)
+        
+        # 3. 检测批量缺失（整页或整本缺失）
+        missing = cls._detect_batch_missing(task_data)
+        anomalies.extend(missing)
+        
+        return anomalies
+    
+    @classmethod
+    def _detect_inconsistent_grading(cls, task_data: dict) -> List[dict]:
+        """检测批改不一致"""
+        # 按 base_user 答案分组
+        answer_groups = defaultdict(list)
+        
+        for hw_item in task_data.get('homework_items', []):
+            if hw_item.get('status') != 'completed':
+                continue
+            
+            evaluation = hw_item.get('evaluation') or {}
+            questions = evaluation.get('questions') or []
+            
+            for q in questions:
+                base_user = q.get('base_user', '')
+                if not base_user or len(base_user) < 2:
+                    continue
+                
+                answer_groups[base_user].append({
+                    'homework_id': hw_item.get('homework_id', ''),
+                    'question_index': q.get('question_index', 0),
+                    'ai_result': q.get('ai_result', ''),
+                    'is_correct': q.get('is_correct', True),
+                    'ai_answer': q.get('ai_answer', ''),
+                    'expected_answer': q.get('expected_answer', '')
+                })
+        
+        anomalies = []
+        
+        for base_user, cases in answer_groups.items():
+            if len(cases) < 2:
+                continue
+            
+            # 分离正确和错误案例
+            correct_cases = [c for c in cases if c.get('is_correct', True)]
+            incorrect_cases = [c for c in cases if not c.get('is_correct', True)]
+            
+            if correct_cases and incorrect_cases:
+                total = len(cases)
+                inconsistency_rate = len(incorrect_cases) / total
+                
+                # 判断严重程度
+                if inconsistency_rate > 0.5:
+                    severity = 'critical'
+                elif inconsistency_rate > 0.3:
+                    severity = 'high'
+                elif inconsistency_rate > 0.1:
+                    severity = 'medium'
+                else:
+                    severity = 'low'
+                
+                anomalies.append({
+                    'anomaly_id': f"a_{uuid.uuid4().hex[:8]}",
+                    'anomaly_type': 'inconsistent_grading',
+                    'severity': severity,
+                    'base_user_answer': base_user[:200],
+                    'correct_cases': correct_cases[:5],
+                    'incorrect_cases': incorrect_cases[:5],
+                    'inconsistency_rate': round(inconsistency_rate, 4),
+                    'description': f"同一答案 '{base_user[:50]}...' 在 {total} 次出现中有 {len(incorrect_cases)} 次被错误判定",
+                    'suggested_action': '检查评分 Prompt 对该类答案的处理逻辑'
+                })
+        
+        # 按不一致率排序，取 Top 10
+        anomalies.sort(key=lambda x: x['inconsistency_rate'], reverse=True)
+        return anomalies[:10]
+    
+    @classmethod
+    def _detect_continuous_errors(cls, task_data: dict) -> List[dict]:
+        """检测连续错误"""
+        anomalies = []
+        
+        # 按作业分组检测
+        for hw_item in task_data.get('homework_items', []):
+            if hw_item.get('status') != 'completed':
+                continue
+            
+            evaluation = hw_item.get('evaluation') or {}
+            errors = evaluation.get('errors') or []
+            
+            if len(errors) >= 5:
+                # 检查是否连续
+                error_indices = sorted([e.get('question_index', 0) for e in errors])
+                max_continuous = 1
+                current_continuous = 1
+                
+                for i in range(1, len(error_indices)):
+                    if error_indices[i] == error_indices[i-1] + 1:
+                        current_continuous += 1
+                        max_continuous = max(max_continuous, current_continuous)
+                    else:
+                        current_continuous = 1
+                
+                if max_continuous >= 3:
+                    anomalies.append({
+                        'anomaly_id': f"a_{uuid.uuid4().hex[:8]}",
+                        'anomaly_type': 'continuous_error',
+                        'severity': 'high' if max_continuous >= 5 else 'medium',
+                        'base_user_answer': '',
+                        'correct_cases': [],
+                        'incorrect_cases': [],
+                        'inconsistency_rate': 0,
+                        'description': f"作业 {hw_item.get('homework_id', '')} 存在 {max_continuous} 道连续错误",
+                        'suggested_action': '检查该页面的 OCR 识别质量或评分逻辑'
+                    })
+        
+        return anomalies[:5]
+    
+    @classmethod
+    def _detect_batch_missing(cls, task_data: dict) -> List[dict]:
+        """检测批量缺失"""
+        anomalies = []
+        
+        # 统计每本书的题目数
+        book_stats = defaultdict(lambda: {'total': 0, 'missing': 0})
+        
+        for hw_item in task_data.get('homework_items', []):
+            if hw_item.get('status') != 'completed':
+                continue
+            
+            book_name = hw_item.get('book_name', '未知')
+            evaluation = hw_item.get('evaluation') or {}
+            errors = evaluation.get('errors') or []
+            
+            book_stats[book_name]['total'] += evaluation.get('total_questions', 0)
+            
+            for error in errors:
+                if error.get('error_type') == '缺失题目':
+                    book_stats[book_name]['missing'] += 1
+        
+        for book_name, stats in book_stats.items():
+            if stats['total'] > 0 and stats['missing'] > 0:
+                missing_rate = stats['missing'] / stats['total']
+                if missing_rate > 0.1:
+                    anomalies.append({
+                        'anomaly_id': f"a_{uuid.uuid4().hex[:8]}",
+                        'anomaly_type': 'batch_missing',
+                        'severity': 'critical' if missing_rate > 0.3 else 'high',
+                        'base_user_answer': '',
+                        'correct_cases': [],
+                        'incorrect_cases': [],
+                        'inconsistency_rate': round(missing_rate, 4),
+                        'description': f"书本 '{book_name}' 有 {stats['missing']}/{stats['total']} 题缺失（{missing_rate*100:.1f}%）",
+                        'suggested_action': '检查该书本的题目识别和定位逻辑'
+                    })
+        
+        return anomalies
+    
+    # ============================================
+    # 队列状态管理
+    # ============================================
+    
+    @classmethod
+    def get_analysis_queue_status(cls) -> dict:
+        """
+        获取分析队列状态
+        
+        Returns:
+            dict: {
+                waiting: int,
+                running: [{task_id, progress, step, started_at, job_id}],
+                recent_completed: [{task_id, completed_at, duration, job_id}],
+                recent_failed: [{task_id, error, failed_at, job_id}]
+            }
+        """
+        with cls._lock:
+            return {
+                'waiting': len(cls._queue),
+                'waiting_tasks': [
+                    {'task_id': item.get('task_id'), 'priority': item.get('priority'), 'job_id': item.get('job_id')}
+                    for item in cls._queue
+                ],
+                'running': [
+                    {'task_id': tid, **info}
+                    for tid, info in cls._running.items()
+                ],
+                'recent_completed': list(cls._recent_completed),
+                'recent_failed': list(cls._recent_failed),
+                'paused': cls._paused
+            }
+    
+    @classmethod
+    def cancel_analysis(cls, job_id: str) -> dict:
+        """
+        取消排队中的分析任务
+        
+        Args:
+            job_id: 任务的 job_id
+            
+        Returns:
+            dict: {success: bool, message: str}
+        """
+        with cls._lock:
+            # 查找并移除
+            for i, item in enumerate(cls._queue):
+                if item.get('job_id') == job_id:
+                    cls._queue.pop(i)
+                    return {'success': True, 'message': f'任务 {job_id} 已取消'}
+            
+            # 检查是否正在运行
+            for task_id, info in cls._running.items():
+                if info.get('job_id') == job_id:
+                    return {'success': False, 'message': f'任务 {job_id} 正在执行中，无法取消'}
+        
+        return {'success': False, 'message': f'未找到任务 {job_id}'}
+    
+    @classmethod
+    def _update_progress(cls, task_id: str, progress: int, step: str = None):
+        """更新进度"""
+        with cls._lock:
+            if task_id in cls._running:
+                cls._running[task_id]['progress'] = progress
+                if step:
+                    cls._running[task_id]['step'] = step

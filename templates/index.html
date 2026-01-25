@@ -14,6 +14,7 @@
     <!-- 样式表 -->
     <link rel="stylesheet" href="/static/css/common.css?v=20260124">
     <link rel="stylesheet" href="/static/css/index.css?v=20260124">
+    <link rel="stylesheet" href="/static/css/dataset-optimize.css?v=20260125">
     <!-- 首屏关键CSS内联 -->
     <style>
         /* 骨架屏样式 - 避免布局抖动 */
@@ -80,10 +81,25 @@
                 </div>
             </div>
             
+            <!-- 优化日志区域 -->
+            <div class="nav-section opt-logs-section">
+                <div class="nav-label">
+                    <span>优化日志</span>
+                    <button class="add-log-btn" onclick="showAddOptLogModal()" title="添加日志">+</button>
+                </div>
+                <div class="opt-logs-list" id="optLogsList">
+                    <div class="opt-logs-empty">暂无日志</div>
+                </div>
+            </div>
+            
             <div class="sidebar-footer">
                 <button class="footer-btn" onclick="navigateTo('/chat')">
                     <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
                     <span>对话</span>
+                </button>
+                <button class="footer-btn" onclick="openGlobalSettingsModal()">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg>
+                    <span>设置</span>
                 </button>
             </div>
         </div>
@@ -113,18 +129,24 @@
 
         <!-- 统计概览区 (US-2) -->
         <section class="stats-section">
-            <div class="stat-card" id="datasetCard" onclick="navigateTo('/dataset-manage')">
-                <div class="stat-card-skeleton" id="datasetSkeleton">
+            <!-- 1. 整体错误率（原准确率位置移到第一位） -->
+            <div class="stat-card stat-card-error" id="errorRateCard">
+                <div class="stat-card-skeleton" id="errorRateSkeleton">
                     <div class="skeleton-value"></div>
                     <div class="skeleton-label"></div>
                     <div class="skeleton-detail"></div>
                 </div>
-                <div class="stat-card-content" id="datasetContent" style="display:none;">
-                    <div class="stat-value" id="datasetTotal">0</div>
-                    <div class="stat-label">数据集总数</div>
-                    <div class="stat-detail" id="datasetBySubject">--</div>
+                <div class="stat-card-content" id="errorRateContent" style="display:none;">
+                    <div class="stat-value">
+                        <span id="errorRateValue">--</span>
+                        <span class="trend-arrow" id="errorRateTrend"></span>
+                    </div>
+                    <div class="stat-label">整体错误率</div>
+                    <div class="stat-detail" id="errorRateCompare">与昨日对比 --</div>
+                    <div class="stat-source" id="errorRateSource" title="数据来源：批量评估任务中已完成评估的作业"></div>
                 </div>
             </div>
+            <!-- 2. 批量任务 -->
             <div class="stat-card" id="taskCard" onclick="navigateTo('/batch-evaluation')">
                 <div class="stat-card-skeleton" id="taskSkeleton">
                     <div class="skeleton-value"></div>
@@ -141,6 +163,7 @@
                     </div>
                 </div>
             </div>
+            <!-- 3. 题目总数 -->
             <div class="stat-card" id="questionCard">
                 <div class="stat-card-skeleton" id="questionSkeleton">
                     <div class="skeleton-value"></div>
@@ -153,20 +176,18 @@
                     <div class="stat-detail" id="questionDetail">已测试 0 / 总计 0</div>
                 </div>
             </div>
-            <div class="stat-card" id="accuracyCard">
-                <div class="stat-card-skeleton" id="accuracySkeleton">
+            <!-- 4. 数据集总数（移到最后，优化显示） -->
+            <div class="stat-card" id="datasetCard" onclick="navigateTo('/dataset-manage')">
+                <div class="stat-card-skeleton" id="datasetSkeleton">
                     <div class="skeleton-value"></div>
                     <div class="skeleton-label"></div>
                     <div class="skeleton-detail"></div>
                 </div>
-                <div class="stat-card-content" id="accuracyContent" style="display:none;">
-                    <div class="stat-value">
-                        <span id="accuracyValue">--</span>
-                        <span class="trend-arrow" id="accuracyTrend"></span>
-                    </div>
-                    <div class="stat-label">整体准确率</div>
-                    <div class="stat-detail" id="accuracyCompare">与上周对比 --</div>
-                    <div class="stat-source" id="accuracySource" title="数据来源：批量评估任务中已完成评估的作业"></div>
+                <div class="stat-card-content" id="datasetContent" style="display:none;">
+                    <div class="stat-value" id="datasetTotal">0</div>
+                    <div class="stat-label">数据集总数</div>
+                    <div class="stat-detail" id="datasetBySubject">--</div>
+                    <div class="stat-source" id="datasetWeekNew"></div>
                 </div>
             </div>
         </section>
@@ -292,81 +313,51 @@
             </section>
         </div>
 
-        <!-- 第二行：热点图(60%) + 数据集概览/学科分析(40%) -->
+        <!-- 第二行：学科评估分析(60%) + 数据集概览(40%) -->
         <div class="dashboard-row-2">
-            <!-- 左侧：问题热点图 -->
-            <section class="heatmap-section" id="heatmapSection">
-            <div class="heatmap-header">
-                <h2 class="section-title">问题热点图</h2>
-                <div class="heatmap-controls">
-                    <select class="heatmap-filter" id="heatmapSubjectFilter" onchange="filterHeatmap()">
-                        <option value="">全部学科</option>
-                        <option value="0">英语</option>
-                        <option value="1">语文</option>
-                        <option value="2">数学</option>
-                        <option value="3">物理</option>
-                        <option value="4">化学</option>
-                        <option value="5">生物</option>
-                        <option value="6">地理</option>
-                    </select>
-                    <select class="heatmap-filter" id="heatmapDaysFilter" onchange="filterHeatmap()">
-                        <option value="7">最近7天</option>
-                        <option value="30">最近30天</option>
-                        <option value="0">全部</option>
-                    </select>
+            <!-- 左侧：学科评估分析（原热点图位置） -->
+            <section class="subject-analysis-section-main" id="subjectAnalysisSection">
+                <div class="section-header">
+                    <h2 class="section-title">学科评估分析</h2>
+                    <div class="subject-controls">
+                        <button class="btn btn-text" onclick="exportSubjectReport()">
+                            <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                            导出
+                        </button>
+                    </div>
                 </div>
-            </div>
-            
-            <!-- 统计摘要 -->
-            <div class="heatmap-summary" id="heatmapSummary" style="display:none;">
-                <div class="heatmap-summary-item">
-                    <span class="heatmap-summary-value" id="heatmapTotalErrors">0</span>
-                    <span class="heatmap-summary-label">总错误数</span>
+                
+                <div class="subject-skeleton" id="subjectSkeleton">
+                    <div class="skeleton-chart"></div>
                 </div>
-                <div class="heatmap-summary-item">
-                    <span class="heatmap-summary-value" id="heatmapBookCount">0</span>
-                    <span class="heatmap-summary-label">涉及书本</span>
+                
+                <div class="subject-content" id="subjectContent" style="display:none;">
+                    <!-- 学科统计摘要 -->
+                    <div class="subject-summary">
+                        <div class="subject-summary-item">
+                            <span class="subject-summary-value" id="subjectTotalCount">0</span>
+                            <span class="subject-summary-label">学科数</span>
+                        </div>
+                        <div class="subject-summary-item">
+                            <span class="subject-summary-value" id="subjectTaskCount">0</span>
+                            <span class="subject-summary-label">总任务</span>
+                        </div>
+                        <div class="subject-summary-item">
+                            <span class="subject-summary-value" id="subjectQuestionCount">0</span>
+                            <span class="subject-summary-label">总题目</span>
+                        </div>
+                        <div class="subject-summary-item">
+                            <span class="subject-summary-value" id="subjectAvgAccuracy">--</span>
+                            <span class="subject-summary-label">平均准确率</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 学科准确率列表 -->
+                    <div class="subject-list-main" id="subjectList"></div>
                 </div>
-                <div class="heatmap-summary-item">
-                    <span class="heatmap-summary-value" id="heatmapTimeRange">--</span>
-                    <span class="heatmap-summary-label">时间范围</span>
-                </div>
-            </div>
-            
-            <!-- 热点图容器 -->
-            <div class="heatmap-container" id="heatmapContainer">
-                <!-- 骨架屏 -->
-                <div class="heatmap-skeleton" id="heatmapSkeleton">
-                    <div class="heatmap-skeleton-item"></div>
-                    <div class="heatmap-skeleton-item"></div>
-                    <div class="heatmap-skeleton-item"></div>
-                </div>
-                <!-- 热点图内容 -->
-                <div class="heatmap-content" id="heatmapContent" style="display:none;"></div>
-            </div>
-            
-            <!-- 图例 -->
-            <div class="heatmap-legend">
-                <div class="heatmap-legend-item">
-                    <span class="heatmap-legend-color critical"></span>
-                    <span>严重 (>=10)</span>
-                </div>
-                <div class="heatmap-legend-item">
-                    <span class="heatmap-legend-color high"></span>
-                    <span>较高 (5-9)</span>
-                </div>
-                <div class="heatmap-legend-item">
-                    <span class="heatmap-legend-color medium"></span>
-                    <span>中等 (2-4)</span>
-                </div>
-                <div class="heatmap-legend-item">
-                    <span class="heatmap-legend-color low"></span>
-                    <span>较低 (1)</span>
-                </div>
-            </div>
-        </section>
+            </section>
 
-            <!-- 右侧：数据集概览 + 学科分析 -->
+            <!-- 右侧：数据集概览 -->
             <div class="right-panel">
                 <!-- 数据集统计概览 -->
                 <section class="dataset-stats-section">
@@ -398,40 +389,12 @@
                         </div>
                     </div>
                     
-                    <!-- 图表区 -->
-                    <div class="dataset-charts-row">
-                        <div class="chart-container pie-container">
-                            <canvas id="datasetPieChart" width="140" height="140"></canvas>
-                            <div class="pie-legend" id="datasetPieLegend"></div>
+                    <!-- 图表区 - 学科分布饼图 -->
+                    <div class="dataset-chart-area">
+                        <div class="pie-chart-wrapper">
+                            <canvas id="datasetPieChart" width="180" height="180"></canvas>
                         </div>
-                        <div class="chart-container usage-container">
-                            <div class="chart-title">准确率 Top5</div>
-                            <div class="usage-top5" id="datasetUsageTop5">
-                                <div class="loading-text">加载中...</div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 学科分析区 -->
-                <section class="subject-analysis-section">
-                    <div class="section-header">
-                        <h2 class="section-title">学科评估分析</h2>
-                        <div class="subject-controls">
-                            <button class="btn btn-text" onclick="exportSubjectReport()">
-                                <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                                导出
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="subject-skeleton" id="subjectSkeleton">
-                        <div class="skeleton-chart"></div>
-                    </div>
-                    
-                    <div class="subject-content" id="subjectContent" style="display:none;">
-                        <!-- 学科准确率列表 -->
-                        <div class="subject-list" id="subjectList"></div>
+                        <div class="pie-legend-wrapper" id="datasetPieLegend"></div>
                     </div>
                 </section>
             </div>
@@ -1286,6 +1249,103 @@
         </div>
     </div>
 
-    <script type="module" src="/static/js/index.js?v=20260124"></script>
+    <!-- 添加优化日志弹窗 -->
+    <div class="modal" id="addOptLogModal" onclick="onAddOptLogModalBackdropClick(event)" style="display:none;">
+        <div class="modal-content modal-sm" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">添加优化日志</h3>
+                <button class="modal-close" onclick="closeAddOptLogModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>分类</label>
+                    <select id="optLogCategory" class="form-select">
+                        <option value="general">通用</option>
+                        <option value="accuracy">准确率</option>
+                        <option value="performance">性能</option>
+                        <option value="feature">功能</option>
+                        <option value="bugfix">修复</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>内容</label>
+                    <textarea id="optLogContent" rows="4" placeholder="输入优化内容，每行一条..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAddOptLogModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveOptLog()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 全局设置弹窗 -->
+    <div class="modal" id="globalSettingsModal" onclick="onGlobalSettingsModalBackdropClick(event)" style="display:none;">
+        <div class="modal-content modal-md" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">全局设置</h3>
+                <button class="modal-close" onclick="closeGlobalSettingsModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- 模型设置 -->
+                <div class="settings-section">
+                    <h4 class="settings-section-title">默认模型</h4>
+                    <div class="settings-row">
+                        <label class="settings-label">视觉模型</label>
+                        <select class="settings-select" id="settingsVisionModel">
+                            <option value="doubao-seed-1-8-251228">Seed 1.8</option>
+                            <option value="doubao-seed-1-6-vision-250815">Seed 1.6 Vision</option>
+                            <option value="doubao-1-5-vision-pro-32k-250115">Vision Pro 1.5</option>
+                        </select>
+                    </div>
+                    <div class="settings-row">
+                        <label class="settings-label">文本模型</label>
+                        <select class="settings-select" id="settingsTextModel">
+                            <option value="deepseek-v3.2">DeepSeek V3.2</option>
+                            <option value="deepseek-chat">DeepSeek Chat</option>
+                            <option value="qwen3-max">Qwen3 Max</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- 通知设置 -->
+                <div class="settings-section">
+                    <h4 class="settings-section-title">通知</h4>
+                    <div class="settings-row">
+                        <label class="settings-label">任务完成通知</label>
+                        <div class="settings-toggle active" id="settingsNotifyComplete" onclick="toggleGlobalSetting('notifyComplete')"></div>
+                    </div>
+                    <div class="settings-row">
+                        <label class="settings-label">错误提醒</label>
+                        <div class="settings-toggle active" id="settingsNotifyError" onclick="toggleGlobalSetting('notifyError')"></div>
+                    </div>
+                </div>
+                
+                <!-- 显示设置 -->
+                <div class="settings-section">
+                    <h4 class="settings-section-title">显示</h4>
+                    <div class="settings-row">
+                        <label class="settings-label">自动刷新间隔</label>
+                        <select class="settings-select" id="settingsRefreshInterval">
+                            <option value="30">30秒</option>
+                            <option value="60">1分钟</option>
+                            <option value="300">5分钟</option>
+                            <option value="0">关闭</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeGlobalSettingsModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveGlobalSettings()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/static/js/index.js?v=20260125_v2"></script>
 </body>
 </html>

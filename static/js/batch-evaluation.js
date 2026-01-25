@@ -177,10 +177,12 @@ function normalizeMarkdownFormula(text) {
 // ========== 初始化 ==========
 document.addEventListener('DOMContentLoaded', () => {
     loadEvalSettings();
-    loadTestConditions().then(() => {
-        loadTaskList();
-    });
-    loadBookList();
+    // 首屏只加载必要数据：测试条件和任务列表
+    // loadBookList 延迟到新建任务弹窗打开时加载
+    Promise.all([
+        loadTestConditions(),
+        loadTaskList()
+    ]).catch(e => console.error('初始化加载失败:', e));
 });
 
 
@@ -582,6 +584,7 @@ function renderTaskDetail() {
     
     document.getElementById('exportBtn').disabled = !isCompleted;
     document.getElementById('aiReportBtn').disabled = !isCompleted;
+    document.getElementById('viewAnalysisBtn').disabled = !isCompleted;
     
     // 显示/隐藏重新评估按钮
     const reEvalBtn = document.getElementById('reEvalBtn');
@@ -876,6 +879,13 @@ function destroyBatchCharts() {
 
 // ========== 渲染总体报告图表 ==========
 function renderOverallCharts(report) {
+    // 检查 Chart.js 是否已加载
+    if (typeof Chart === 'undefined') {
+        // Chart.js 尚未加载，延迟重试
+        setTimeout(() => renderOverallCharts(report), 100);
+        return;
+    }
+    
     destroyBatchCharts();
     
     // 1. 错误类型分布饼图
@@ -3771,6 +3781,12 @@ function showAIReportModal() {
 
 function hideAIReportModal() {
     document.getElementById('aiReportModal').classList.remove('show');
+}
+
+// 查看 AI 智能分析报告
+function viewAnalysisReport() {
+    if (!selectedTask) return;
+    window.open(`/analysis-report/${selectedTask.task_id}`, '_blank');
 }
 
 async function generateAIReport(forceRegenerate = false) {

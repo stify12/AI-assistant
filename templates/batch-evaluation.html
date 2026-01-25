@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>批量评估</title>
     <!-- 预加载关键资源 -->
-    <link rel="preload" href="/static/css/common.css?v=20260124" as="style">
-    <link rel="preload" href="/static/css/batch-evaluation.css?v=20260124" as="style">
+    <link rel="preload" href="/static/css/common.css?v=20260125" as="style">
+    <link rel="preload" href="/static/css/batch-evaluation.css?v=20260125" as="style">
     <!-- 样式表 -->
-    <link rel="stylesheet" href="/static/css/common.css?v=20260124">
-    <link rel="stylesheet" href="/static/css/batch-evaluation.css?v=20260124">
-    <!-- Chart.js 需要同步加载(页面初始化依赖) -->
-    <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/static/css/common.css?v=20260125">
+    <link rel="stylesheet" href="/static/css/batch-evaluation.css?v=20260125">
+    <!-- Chart.js 延迟加载(仅图表渲染时需要) -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
     <!-- html2canvas 延迟加载(仅导出时使用) -->
     <script src="https://cdn.bootcdn.net/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
     <!-- 首屏关键CSS -->
@@ -129,6 +129,7 @@
                                 <button class="btn btn-secondary" id="reEvalBtn" onclick="reEvaluateCurrentTask()" style="display:none;">重新评估</button>
                                 <button class="btn btn-secondary" id="exportBtn" onclick="exportExcel()" disabled>导出Excel</button>
                                 <button class="btn btn-secondary" id="aiReportBtn" onclick="generateAIReport()" disabled>AI分析</button>
+                                <button class="btn btn-secondary" id="viewAnalysisBtn" onclick="viewAnalysisReport()" disabled>查看分析</button>
                                 <button class="btn btn-warning" id="resetTaskBtn" onclick="resetBatchTask()" style="display:none;">重置任务</button>
                                 <button class="btn btn-danger" onclick="deleteCurrentTask()">删除任务</button>
                             </div>

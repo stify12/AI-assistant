@@ -601,3 +601,175 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+
+// ==================== 优化日志功能 ====================
+
+// 显示优化日志弹窗
+function showOptimizationLogs() {
+    document.getElementById('optimizationLogsModal').classList.add('show');
+    loadOptimizationLogs();
+}
+
+// 隐藏优化日志弹窗
+function hideOptimizationLogs() {
+    document.getElementById('optimizationLogsModal').classList.remove('show');
+}
+
+// 加载优化日志
+async function loadOptimizationLogs() {
+    const logsList = document.getElementById('optimizationLogsList');
+    
+    try {
+        const response = await fetch('/api/optimization/suggestions?limit=20');
+        const result = await response.json();
+        
+        if (!result.success || !result.suggestions || result.suggestions.length === 0) {
+            logsList.innerHTML = `
+                <div class="empty-logs">
+                    <svg viewBox="0 0 24 24" width="48" height="48"><path fill="currentColor" d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
+                    <p>暂无优化日志</p>
+                </div>
+            `;
+            return;
+        }
+        
+        logsList.innerHTML = result.suggestions.map(log => `
+            <div class="optimization-log-item">
+                <div class="log-header">
+                    <span class="log-title">${escapeHtml(log.title)}</span>
+                    <span class="log-status ${log.status}">${getLogStatusText(log.status)}</span>
+                </div>
+                <div class="log-content">${escapeHtml(log.problem_description || log.suggestion_content || '')}</div>
+                <div class="log-time">${formatLogTime(log.created_at)}</div>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('加载优化日志失败:', error);
+        logsList.innerHTML = `
+            <div class="empty-logs">
+                <svg viewBox="0 0 24 24" width="48" height="48"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                <p>加载失败，请稍后重试</p>
+            </div>
+        `;
+    }
+}
+
+// 获取日志状态文本
+function getLogStatusText(status) {
+    const statusMap = {
+        'pending': '待处理',
+        'applied': '已应用',
+        'rejected': '已拒绝',
+        'in_progress': '处理中'
+    };
+    return statusMap[status] || status;
+}
+
+// 格式化日志时间
+function formatLogTime(timeStr) {
+    if (!timeStr) return '';
+    const date = new Date(timeStr);
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 60000) return '刚刚';
+    if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+    if (diff < 604800000) return Math.floor(diff / 86400000) + '天前';
+    
+    return date.toLocaleDateString('zh-CN');
+}
+
+// ==================== 设置功能 ====================
+
+// 设置状态
+let settingsState = {
+    analysisModel: 'deepseek-v3.2',
+    autoSummary: true,
+    includeRawData: false
+};
+
+// 显示设置弹窗
+function showSettingsModal() {
+    document.getElementById('settingsModal').classList.add('show');
+    loadSettings();
+}
+
+// 隐藏设置弹窗
+function hideSettingsModal() {
+    document.getElementById('settingsModal').classList.remove('show');
+}
+
+// 加载设置
+function loadSettings() {
+    // 从 localStorage 加载设置
+    const saved = localStorage.getItem('dataAnalysisSettings');
+    if (saved) {
+        try {
+            settingsState = JSON.parse(saved);
+        } catch (e) {}
+    }
+    
+    // 更新 UI
+    document.getElementById('settingsAnalysisModel').value = settingsState.analysisModel || 'deepseek-v3.2';
+    
+    const autoSummaryToggle = document.getElementById('settingsAutoSummary');
+    autoSummaryToggle.classList.toggle('active', settingsState.autoSummary !== false);
+    
+    const includeRawDataToggle = document.getElementById('settingsIncludeRawData');
+    includeRawDataToggle.classList.toggle('active', settingsState.includeRawData === true);
+}
+
+// 切换设置开关
+function toggleSetting(key) {
+    const toggle = document.getElementById('settings' + key.charAt(0).toUpperCase() + key.slice(1));
+    toggle.classList.toggle('active');
+    settingsState[key] = toggle.classList.contains('active');
+}
+
+// 保存设置
+function saveSettings() {
+    settingsState.analysisModel = document.getElementById('settingsAnalysisModel').value;
+    
+    // 保存到 localStorage
+    localStorage.setItem('dataAnalysisSettings', JSON.stringify(settingsState));
+    
+    hideSettingsModal();
+    
+    // 显示保存成功提示
+    showToast('设置已保存');
+}
+
+// 显示提示
+function showToast(message) {
+    // 创建 toast 元素
+    let toast = document.querySelector('.toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1d1d1f;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        `;
+        document.body.appendChild(toast);
+    }
+    
+    toast.textContent = message;
+    toast.style.opacity = '1';
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+    }, 2000);
+}

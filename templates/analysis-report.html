@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 分析报告</title>
+    <link rel="stylesheet" href="/static/css/analysis-report.css">
+</head>
+<body>
+    <div class="page-container">
+        <!-- 页面头部 -->
+        <header class="page-header">
+            <div class="header-left">
+                <a href="/batch-evaluation" class="back-btn">返回</a>
+                <h1 class="page-title">AI 分析报告</h1>
+                <span class="task-id" id="taskId"></span>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-secondary" id="refreshBtn">刷新分析</button>
+                <button class="btn btn-primary" id="exportBtn">导出报告</button>
+            </div>
+        </header>
+
+        <!-- 概览卡片区 -->
+        <section class="overview-section">
+            <div class="stat-card" id="totalErrorsCard">
+                <div class="stat-value">
+                    <span class="value" id="totalErrors">--</span>
+                    <span class="trend" id="totalErrorsTrend"></span>
+                </div>
+                <div class="stat-label">总错误数</div>
+            </div>
+            <div class="stat-card" id="errorRateCard">
+                <div class="stat-value">
+                    <span class="value" id="errorRate">--</span>
+                    <span class="trend" id="errorRateTrend"></span>
+                </div>
+                <div class="stat-label">错误率</div>
+            </div>
+            <div class="stat-card" id="pendingCard">
+                <div class="stat-value">
+                    <span class="value" id="pendingCount">--</span>
+                </div>
+                <div class="stat-label">待处理</div>
+            </div>
+            <div class="stat-card" id="fixedCard">
+                <div class="stat-value">
+                    <span class="value" id="fixedCount">--</span>
+                </div>
+                <div class="stat-label">已修复</div>
+            </div>
+            <div class="stat-card status-card" id="statusCard">
+                <div class="stat-value">
+                    <span class="status-indicator" id="statusIndicator"></span>
+                    <span class="value" id="analysisStatus">--</span>
+                </div>
+                <div class="stat-label">分析状态</div>
+            </div>
+        </section>
+
+        <!-- 执行摘要区 -->
+        <section class="section summary-section">
+            <h2 class="section-title">执行摘要</h2>
+            <div class="summary-content" id="summaryContent">
+                <div class="skeleton skeleton-text long"></div>
+                <div class="skeleton skeleton-text medium"></div>
+                <div class="skeleton skeleton-text short"></div>
+            </div>
+        </section>
+
+        <!-- 图表区 -->
+        <section class="section chart-section">
+            <div class="section-header">
+                <h2 class="section-title">错误分布</h2>
+                <div class="chart-tabs">
+                    <button class="chart-tab active" data-chart="pie">饼图</button>
+                    <button class="chart-tab" data-chart="sankey">桑基图</button>
+                    <button class="chart-tab" data-chart="heatmap">热力图</button>
+                    <button class="chart-tab" data-chart="radar">雷达图</button>
+                </div>
+            </div>
+            <div class="chart-container" id="chartContainer">
+                <div class="skeleton skeleton-chart"></div>
+            </div>
+        </section>
+
+        <!-- 维度分析 Tab 区 -->
+        <section class="section dimension-section">
+            <div class="dimension-tabs">
+                <button class="dimension-tab active" data-dimension="subject">学科</button>
+                <button class="dimension-tab" data-dimension="book">书本</button>
+                <button class="dimension-tab" data-dimension="question-type">题型</button>
+                <button class="dimension-tab" data-dimension="trend">时间趋势</button>
+                <button class="dimension-tab" data-dimension="compare">批次对比</button>
+            </div>
+            <div class="dimension-content" id="dimensionContent">
+                <div class="skeleton skeleton-list"></div>
+            </div>
+        </section>
+
+        <!-- Top 5 聚类列表 -->
+        <section class="section clusters-section">
+            <div class="section-header">
+                <h2 class="section-title">Top 5 错误聚类</h2>
+                <a href="#" class="view-all-link" id="viewAllClusters">查看全部</a>
+            </div>
+            <div class="clusters-list" id="clustersList">
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+            </div>
+        </section>
+
+        <!-- 异常提醒区 -->
+        <section class="section anomalies-section" id="anomaliesSection" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">异常提醒</h2>
+                <span class="anomaly-badge" id="anomalyBadge">0</span>
+            </div>
+            <div class="anomalies-list" id="anomaliesList"></div>
+        </section>
+
+        <!-- 优化建议列表 -->
+        <section class="section suggestions-section">
+            <div class="section-header">
+                <h2 class="section-title">优化建议</h2>
+                <a href="#" class="view-all-link" id="viewAllSuggestions">查看全部</a>
+            </div>
+            <div class="suggestions-list" id="suggestionsList">
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- 进度弹窗 -->
+    <div class="modal" id="progressModal" style="display: none;">
+        <div class="modal-content">
+            <h3>正在分析...</h3>
+            <div id="progressRingContainer"></div>
+            <p class="progress-step" id="progressStep">初始化...</p>
+            <p class="progress-eta" id="progressEta" style="font-size: 12px; color: #86868b;"></p>
+            <button class="btn btn-secondary" id="cancelAnalysis">取消</button>
+        </div>
+    </div>
+
+    <!-- 导出弹窗 -->
+    <div class="modal" id="exportModal" style="display: none;">
+        <div class="modal-content">
+            <h3>导出报告</h3>
+            <div class="export-options">
+                <label class="export-option">
+                    <input type="radio" name="exportFormat" value="excel" checked>
+                    <span>Excel 格式</span>
+                </label>
+                <label class="export-option">
+                    <input type="radio" name="exportFormat" value="pdf">
+                    <span>PDF 格式</span>
+                </label>
+            </div>
+            <div class="export-sections">
+                <label><input type="checkbox" value="summary" checked> 摘要</label>
+                <label><input type="checkbox" value="clusters" checked> 聚类分析</label>
+                <label><input type="checkbox" value="samples" checked> 错误样本</label>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="cancelExport">取消</button>
+                <button class="btn btn-primary" id="confirmExport">导出</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 组件脚本 -->
+    <script src="/static/js/components/toast.js"></script>
+    <script src="/static/js/components/skeleton.js"></script>
+    <script src="/static/js/components/progress.js"></script>
+    <script src="/static/js/components/confirm.js"></script>
+    <script src="/static/js/components/empty-state.js"></script>
+    <script src="/static/js/utils/performance.js"></script>
+    <script src="/static/js/analysis-report.js"></script>
+</body>
+</html>

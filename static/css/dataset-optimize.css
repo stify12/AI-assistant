@@ -1,0 +1,208 @@
+
+/* ========== 数据集概览优化 (US-Task) ========== */
+
+/* 1. 核心指标网格 (2x2) */
+.dataset-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.metric-card {
+    background: var(--bg-page);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.metric-card:hover {
+    background: #fff;
+    box-shadow: var(--shadow-sm);
+    border-color: var(--border-light);
+    transform: translateY(-2px);
+}
+
+.metric-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+    margin-bottom: 4px;
+}
+
+.metric-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.metric-card.highlight .metric-value {
+    color: var(--status-completed-text);
+}
+
+/* 2. 内容包装器 */
+.dataset-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1;
+    min-height: 0;
+}
+
+/* 2.1 分布图表区域 */
+.dataset-distribution {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px;
+    background: #fff;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+}
+
+.dataset-pie-wrapper {
+    flex-shrink: 0;
+    width: 120px;
+    height: 120px;
+    position: relative;
+}
+
+.dataset-legend-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.legend-item-compact {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.legend-text {
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60px;
+}
+
+.legend-val {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-left: auto;
+}
+
+/* 2.2 最近数据集列表 */
+.recent-datasets-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.recent-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.view-all-link {
+    font-size: 12px;
+    color: var(--status-processing-text);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.view-all-link:hover {
+    text-decoration: underline;
+}
+
+.recent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    overflow-y: auto;
+    max-height: 200px;
+}
+
+.recent-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.recent-item:hover {
+    border-color: var(--status-processing-text);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transform: translateX(2px);
+}
+
+.recent-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.recent-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recent-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.recent-meta-divider {
+    width: 1px;
+    height: 8px;
+    background: var(--border-light);
+}
+
+.recent-action {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    padding: 4px;
+    color: var(--text-muted);
+}
+
+.recent-item:hover .recent-action {
+    opacity: 1;
+}
+
+.recent-action:hover {
+    color: var(--status-processing-text);
+}

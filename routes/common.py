@@ -45,6 +45,24 @@ def batch_evaluation():
     return render_template('batch-evaluation.html')
 
 
+@common_bp.route('/analysis-report/<task_id>')
+def analysis_report(task_id):
+    """AI 分析报告页面"""
+    return render_template('analysis-report.html')
+
+
+@common_bp.route('/error-samples')
+def error_samples():
+    """错误样本库页面"""
+    return render_template('error-samples.html')
+
+
+@common_bp.route('/cluster-detail/<cluster_id>')
+def cluster_detail(cluster_id):
+    """聚类详情页面"""
+    return render_template('cluster-detail.html')
+
+
 # ========== 配置 API ==========
 
 @common_bp.route('/api/config', methods=['GET', 'POST'])

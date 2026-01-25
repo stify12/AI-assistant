@@ -170,15 +170,31 @@ class StorageService:
     
     @staticmethod
     def save_batch_task(task_id, task_data):
-        """保存批量任务"""
+        """保存批量任务，并使相关缓存失效"""
         filepath = StorageService.get_file_path(StorageService.BATCH_TASKS_DIR, task_id)
         StorageService.save_json(filepath, task_data)
+        
+        # 使任务相关缓存失效
+        try:
+            from .dashboard_service import DashboardService
+            DashboardService.invalidate_task_related_cache()
+        except Exception as e:
+            print(f"[Storage] 清除缓存失败: {e}")
     
     @staticmethod
     def delete_batch_task(task_id):
-        """删除批量任务"""
+        """删除批量任务，并使相关缓存失效"""
         filepath = StorageService.get_file_path(StorageService.BATCH_TASKS_DIR, task_id)
-        return StorageService.delete_file(filepath)
+        result = StorageService.delete_file(filepath)
+        
+        # 使任务相关缓存失效
+        try:
+            from .dashboard_service import DashboardService
+            DashboardService.invalidate_task_related_cache()
+        except Exception as e:
+            print(f"[Storage] 清除缓存失败: {e}")
+        
+        return result
     
     @staticmethod
     def list_batch_tasks():
@@ -271,6 +287,7 @@ class StorageService:
         保存数据集
         
         支持 name 字段，如果未提供或为空则自动生成默认名称
+        保存后自动使数据集相关缓存失效
         """
         # 处理 name 字段：如果未提供或为空，生成默认名称
         name = data.get('name', '').strip() if data.get('name') else ''
@@ -327,11 +344,25 @@ class StorageService:
                         'bvalue': effect.get('bvalue', '4')
                     })
                 AppDatabaseService.save_baseline_effects(dataset_id, int(page_num), formatted_effects)
+            
+            # 使数据集相关缓存失效
+            try:
+                from .dashboard_service import DashboardService
+                DashboardService.invalidate_dataset_related_cache()
+            except Exception as e:
+                print(f"[Storage] 清除缓存失败: {e}")
             return
         
         # 文件存储模式
         filepath = StorageService.get_file_path(StorageService.DATASETS_DIR, dataset_id)
         StorageService.save_json(filepath, data)
+        
+        # 使数据集相关缓存失效
+        try:
+            from .dashboard_service import DashboardService
+            DashboardService.invalidate_dataset_related_cache()
+        except Exception as e:
+            print(f"[Storage] 清除缓存失败: {e}")
     
     @staticmethod
     def delete_dataset(dataset_id):
@@ -359,7 +390,15 @@ class StorageService:
         获取所有数据集的摘要信息（不加载base_effects详情，提升性能）
         
         包含 name 字段，对于无 name 的旧数据自动生成默认名称
+        使用 DashboardService 缓存，TTL 30分钟
         """
+        # 使用 DashboardService 的缓存
+        from .dashboard_service import DashboardService
+        cache_key = 'datasets_summary'
+        cached = DashboardService.get_cached(cache_key)
+        if cached is not None:
+            return cached
+        
         if USE_DB_STORAGE:
             from .database_service import AppDatabaseService
             # 直接查询数据库，一次性获取所有需要的字段
@@ -397,6 +436,9 @@ class StorageService:
                     'description': row.get('description', ''),
                     'created_at': row['created_at'].isoformat() if row.get('created_at') else ''
                 })
+            
+            # 缓存结果
+            DashboardService.set_cached(cache_key, result)
             return result
         
         # 文件存储模式：只读取必要字段

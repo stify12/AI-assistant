@@ -45,9 +45,21 @@ class DashboardService:
         _cache_ttl: 默认缓存过期时间（秒），默认5分钟
     """
     
-    # 内存缓存 (5分钟TTL)
+    # 内存缓存
     _cache: Dict[str, Dict[str, Any]] = {}
-    _cache_ttl: int = 300  # 5分钟
+    _cache_ttl: int = 300  # 默认5分钟
+    
+    # 分级缓存TTL配置（秒）
+    CACHE_TTL_CONFIG = {
+        'all_batch_tasks': 1800,      # 批量任务数据：30分钟（数据量大，变化不频繁）
+        'datasets_summary': 1800,      # 数据集摘要：30分钟
+        'datasets_overview': 900,      # 数据集概览：15分钟
+        'subjects_overview': 900,      # 学科概览：15分钟
+        'overview': 300,               # 概览统计：5分钟（需要较新数据）
+        'heatmap': 600,                # 热点图：10分钟
+        'trends': 600,                 # 趋势数据：10分钟
+        'default': 300                 # 默认：5分钟
+    }
     
     # ========== 缓存管理方法 (US-29) ==========
     
@@ -76,24 +88,48 @@ class DashboardService:
         return None
     
     @staticmethod
+    def _get_cache_ttl(key: str) -> int:
+        """
+        根据缓存键获取对应的TTL
+        
+        Args:
+            key: 缓存键名
+            
+        Returns:
+            int: 缓存过期时间（秒）
+        """
+        # 精确匹配
+        if key in DashboardService.CACHE_TTL_CONFIG:
+            return DashboardService.CACHE_TTL_CONFIG[key]
+        
+        # 前缀匹配
+        for prefix, ttl in DashboardService.CACHE_TTL_CONFIG.items():
+            if key.startswith(prefix):
+                return ttl
+        
+        return DashboardService.CACHE_TTL_CONFIG.get('default', 300)
+    
+    @staticmethod
     def set_cached(key: str, value: Any, ttl: int = None) -> None:
         """
         设置缓存数据 (US-29.1)
         
         将数据存储到内存缓存中，并设置过期时间。
+        支持分级TTL配置，不同类型数据使用不同的缓存时间。
         
         Args:
             key: 缓存键名
             value: 要缓存的数据
-            ttl: 缓存过期时间（秒），默认使用 _cache_ttl (300秒)
+            ttl: 缓存过期时间（秒），如果为None则根据key自动选择
         """
         if ttl is None:
-            ttl = DashboardService._cache_ttl
+            ttl = DashboardService._get_cache_ttl(key)
         
         DashboardService._cache[key] = {
             'data': value,
             'expires_at': time.time() + ttl,
-            'cached_at': datetime.now().isoformat()
+            'cached_at': datetime.now().isoformat(),
+            'ttl': ttl
         }
     
     @staticmethod
@@ -110,6 +146,57 @@ class DashboardService:
             DashboardService._cache.clear()
         elif key in DashboardService._cache:
             del DashboardService._cache[key]
+    
+    @staticmethod
+    def invalidate_task_related_cache() -> None:
+        """
+        使任务相关的缓存失效
+        
+        当批量任务创建、更新或删除时调用此方法，
+        清除所有依赖任务数据的缓存。
+        """
+        keys_to_clear = []
+        for key in list(DashboardService._cache.keys()):
+            # 清除任务相关的缓存
+            if any(prefix in key for prefix in [
+                'all_batch_tasks',
+                'overview',
+                'datasets_overview',
+                'subjects_overview',
+                'heatmap',
+                'trends',
+                'advanced_tools'
+            ]):
+                keys_to_clear.append(key)
+        
+        for key in keys_to_clear:
+            DashboardService.clear_cache(key)
+        
+        if keys_to_clear:
+            print(f"[Dashboard] 已清除 {len(keys_to_clear)} 个任务相关缓存")
+    
+    @staticmethod
+    def invalidate_dataset_related_cache() -> None:
+        """
+        使数据集相关的缓存失效
+        
+        当数据集创建、更新或删除时调用此方法。
+        """
+        keys_to_clear = []
+        for key in list(DashboardService._cache.keys()):
+            if any(prefix in key for prefix in [
+                'datasets_summary',
+                'datasets_overview',
+                'overview',
+                'subjects_overview'
+            ]):
+                keys_to_clear.append(key)
+        
+        for key in keys_to_clear:
+            DashboardService.clear_cache(key)
+        
+        if keys_to_clear:
+            print(f"[Dashboard] 已清除 {len(keys_to_clear)} 个数据集相关缓存")
     
     @staticmethod
     def get_cache_status() -> Dict[str, Any]:
@@ -333,12 +420,36 @@ class DashboardService:
             if prev_questions > 0:
                 result['accuracy']['previous'] = round(prev_correct / prev_questions, 4)
             
-            # 计算趋势
+            # 计算昨日准确率用于对比
+            yesterday_start = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+            yesterday_end = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            
+            yesterday_questions = 0
+            yesterday_correct = 0
+            for task in all_tasks:
+                task_time_str = task.get('created_at', '')
+                if not DashboardService._is_in_date_range(task_time_str, yesterday_start, yesterday_end):
+                    continue
+                    
+                for hw_item in task.get('homework_items', []):
+                    if hw_item.get('status') != 'completed':
+                        continue
+                    evaluation = hw_item.get('evaluation') or {}
+                    yesterday_questions += evaluation.get('total_questions', 0)
+                    yesterday_correct += evaluation.get('correct_count', 0)
+            
+            if yesterday_questions > 0:
+                result['accuracy']['yesterday'] = round(yesterday_correct / yesterday_questions, 4)
+            else:
+                # 如果昨日没有数据，使用上周数据作为备选
+                result['accuracy']['yesterday'] = result['accuracy']['previous']
+            
+            # 计算趋势（基于昨日对比）
             current_acc = result['accuracy']['current']
-            prev_acc = result['accuracy']['previous']
-            if current_acc > prev_acc + 0.01:
+            yesterday_acc = result['accuracy'].get('yesterday', result['accuracy']['previous'])
+            if current_acc > yesterday_acc + 0.01:
                 result['accuracy']['trend'] = 'up'
-            elif current_acc < prev_acc - 0.01:
+            elif current_acc < yesterday_acc - 0.01:
                 result['accuracy']['trend'] = 'down'
             else:
                 result['accuracy']['trend'] = 'stable'
@@ -346,6 +457,23 @@ class DashboardService:
             # 添加数据来源说明
             result['accuracy']['source'] = '批量评估任务'
             result['accuracy']['correct_count'] = total_correct
+            
+            # 统计本周新增数据集
+            week_start = now - timedelta(days=now.weekday())
+            week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+            week_new_count = 0
+            for ds in datasets:
+                ds_created = ds.get('created_at', '')
+                if ds_created:
+                    try:
+                        ds_time = datetime.fromisoformat(ds_created.replace('Z', '+00:00'))
+                        if ds_time.tzinfo:
+                            ds_time = ds_time.replace(tzinfo=None)
+                        if ds_time >= week_start:
+                            week_new_count += 1
+                    except:
+                        pass
+            result['datasets']['week_new'] = week_new_count
             
             # 缓存结果
             DashboardService.set_cached(cache_key, result)

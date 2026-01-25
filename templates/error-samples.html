@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错误样本库</title>
+    <link rel="stylesheet" href="/static/css/error-samples.css">
+</head>
+<body>
+    <div class="page-container">
+        <!-- 页面头部 -->
+        <header class="page-header">
+            <div class="header-left">
+                <a href="/batch-evaluation" class="back-btn">返回</a>
+                <h1 class="page-title">错误样本库</h1>
+            </div>
+            <div class="header-right">
+                <div class="batch-actions">
+                    <button class="btn btn-secondary" id="batchMarkBtn" disabled>批量标记</button>
+                    <button class="btn btn-secondary" id="exportSamplesBtn">导出</button>
+                </div>
+                <button class="btn btn-icon" id="toggleRightPanel" title="折叠/展开分析面板">
+                    <span class="icon">&#9664;</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- 三栏布局 -->
+        <div class="three-column-layout">
+            <!-- 左栏：列表 -->
+            <div class="left-panel" id="leftPanel">
+                <div class="panel-header">
+                    <input type="text" class="search-input" id="searchInput" placeholder="搜索样本...">
+                </div>
+                <div class="quick-filters">
+                    <button class="filter-btn active" data-status="all">全部</button>
+                    <button class="filter-btn" data-status="pending">待处理</button>
+                    <button class="filter-btn" data-status="confirmed">已确认</button>
+                    <button class="filter-btn" data-status="fixed">已修复</button>
+                </div>
+                <div class="samples-list" id="samplesList">
+                    <div class="loading-placeholder">加载中...</div>
+                </div>
+                <div class="list-footer">
+                    <span class="total-count" id="totalCount">共 0 条</span>
+                    <button class="btn btn-text" id="loadMoreBtn" style="display: none;">加载更多</button>
+                </div>
+            </div>
+
+            <!-- 分隔条 -->
+            <div class="resizer" id="leftResizer"></div>
+
+            <!-- 中栏：详情 -->
+            <div class="center-panel" id="centerPanel">
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-icon">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                    <p>选择一个样本查看详情</p>
+                </div>
+                <div class="sample-detail" id="sampleDetail" style="display: none;">
+                    <!-- 基本信息 -->
+                    <div class="detail-section">
+                        <h3 class="detail-title">基本信息</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">作业ID</span>
+                                <span class="info-value" id="detailHomeworkId">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">书本</span>
+                                <span class="info-value" id="detailBookName">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">页码</span>
+                                <span class="info-value" id="detailPageNum">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">题号</span>
+                                <span class="info-value" id="detailQuestionIndex">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">错误类型</span>
+                                <span class="info-value tag" id="detailErrorType">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 答案对比 -->
+                    <div class="detail-section">
+                        <h3 class="detail-title">答案对比</h3>
+                        <div class="answer-compare">
+                            <div class="answer-item">
+                                <div class="answer-label">期望答案</div>
+                                <div class="answer-content" id="detailExpectedAnswer">-</div>
+                            </div>
+                            <div class="answer-item">
+                                <div class="answer-label">AI 识别</div>
+                                <div class="answer-content highlight" id="detailAiAnswer">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 状态操作 -->
+                    <div class="detail-section">
+                        <h3 class="detail-title">状态</h3>
+                        <div class="status-actions">
+                            <button class="status-btn" data-status="pending">待处理</button>
+                            <button class="status-btn" data-status="confirmed">已确认</button>
+                            <button class="status-btn" data-status="fixed">已修复</button>
+                            <button class="status-btn" data-status="ignored">忽略</button>
+                        </div>
+                        <div class="note-input">
+                            <textarea id="sampleNote" placeholder="添加备注..."></textarea>
+                            <button class="btn btn-sm" id="saveNoteBtn">保存备注</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 分隔条 -->
+            <div class="resizer" id="rightResizer"></div>
+
+            <!-- 右栏：分析 -->
+            <div class="right-panel" id="rightPanel">
+                <div class="panel-header">
+                    <h3>AI 分析</h3>
+                </div>
+                <div class="analysis-content" id="analysisContent">
+                    <div class="analysis-section">
+                        <h4 class="analysis-title">LLM 分析结果</h4>
+                        <div class="analysis-text" id="llmInsight">
+                            <p class="text-muted">选择样本后显示分析结果</p>
+                        </div>
+                    </div>
+                    <div class="analysis-section">
+                        <h4 class="analysis-title">所属聚类</h4>
+                        <div class="cluster-info" id="clusterInfo">
+                            <p class="text-muted">-</p>
+                        </div>
+                    </div>
+                    <div class="analysis-section">
+                        <h4 class="analysis-title">相似样本</h4>
+                        <div class="similar-samples" id="similarSamples">
+                            <p class="text-muted">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量操作弹窗 -->
+    <div class="modal" id="batchModal" style="display: none;">
+        <div class="modal-content">
+            <h3>批量标记</h3>
+            <p>已选择 <span id="selectedCount">0</span> 个样本</p>
+            <div class="batch-status-options">
+                <button class="status-btn" data-status="confirmed">标记为已确认</button>
+                <button class="status-btn" data-status="fixed">标记为已修复</button>
+                <button class="status-btn" data-status="ignored">标记为忽略</button>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="cancelBatch">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 组件脚本 -->
+    <script src="/static/js/components/toast.js"></script>
+    <script src="/static/js/components/skeleton.js"></script>
+    <script src="/static/js/components/confirm.js"></script>
+    <script src="/static/js/components/empty-state.js"></script>
+    <script src="/static/js/components/search-filter.js"></script>
+    <script src="/static/js/utils/performance.js"></script>
+    <script src="/static/js/error-samples.js"></script>
+</body>
+</html>

@@ -164,27 +164,64 @@ function updateSyncTime() {
 
 /**
  * 渲染统计卡片 - 合并数据源确保一致性
+ * 更新：错误率卡片移到第一位，数据集卡片移到最后并优化显示
  */
 function renderStatCards(overview, datasets) {
-    // 隐藏骨架屏
-    ['dataset', 'task', 'question', 'accuracy'].forEach(id => {
+    // 隐藏骨架屏 - 更新ID列表
+    ['errorRate', 'task', 'question', 'dataset'].forEach(id => {
         toggleSkeleton(`${id}Skeleton`, `${id}Content`, false);
     });
     
-    // 数据集总数 - 优先使用 datasets 数据
-    const datasetTotal = datasets?.total || overview?.datasets?.total || 0;
-    const datasetEl = document.getElementById('datasetTotal');
-    if (datasetEl) {
-        animateNumber(datasetEl, datasetTotal, { duration: 800 });
+    // 1. 整体错误率（第一位）
+    const errorRateEl = document.getElementById('errorRateValue');
+    const errorTrendEl = document.getElementById('errorRateTrend');
+    const errorCompareEl = document.getElementById('errorRateCompare');
+    const errorSourceEl = document.getElementById('errorRateSource');
+    
+    if (errorRateEl && overview?.accuracy) {
+        // 错误率 = 100% - 准确率
+        const accuracy = overview.accuracy.current || 0;
+        const errorRate = (1 - accuracy) * 100;
+        animateNumber(errorRateEl, errorRate, { duration: 800, decimals: 1, suffix: '%' });
+        
+        // 趋势箭头逻辑反转：错误率下降为好（绿色），上升为差（红色）
+        if (errorTrendEl) {
+            errorTrendEl.className = 'trend-arrow';
+            // 注意：trend 是准确率的趋势，错误率趋势相反
+            if (overview.accuracy.trend === 'up') errorTrendEl.classList.add('down'); // 准确率上升 = 错误率下降
+            else if (overview.accuracy.trend === 'down') errorTrendEl.classList.add('up'); // 准确率下降 = 错误率上升
+        }
+        
+        // 与昨日对比
+        if (errorCompareEl && overview.accuracy.yesterday !== undefined) {
+            const yesterdayErrorRate = (1 - overview.accuracy.yesterday) * 100;
+            const diff = (errorRate - yesterdayErrorRate).toFixed(1);
+            const sign = diff >= 0 ? '+' : '';
+            errorCompareEl.textContent = `与昨日对比 ${sign}${diff}%`;
+        } else if (errorCompareEl && overview.accuracy.previous !== undefined) {
+            // 兼容旧数据：使用 previous（上周）
+            const prevErrorRate = (1 - overview.accuracy.previous) * 100;
+            const diff = (errorRate - prevErrorRate).toFixed(1);
+            const sign = diff >= 0 ? '+' : '';
+            errorCompareEl.textContent = `与昨日对比 ${sign}${diff}%`;
+        }
+        
+        // 显示数据来源：错误题数/总题数
+        if (errorSourceEl) {
+            const correct = overview.accuracy.correct_count || 0;
+            const tested = overview.questions?.tested || 0;
+            const errorCount = tested - correct;
+            errorSourceEl.textContent = `${formatNumber(errorCount)}/${formatNumber(tested)} 题`;
+        }
     }
     
-    // 任务数
+    // 2. 任务数
     const taskEl = document.getElementById('taskTotal');
     if (taskEl && overview?.tasks) {
         animateNumber(taskEl, overview.tasks[currentTaskRange] || overview.tasks.today || 0, { duration: 800 });
     }
     
-    // 题目数 - 从 datasets 聚合
+    // 3. 题目数 - 从 datasets 聚合
     const questionEl = document.getElementById('questionTotal');
     const questionDetail = document.getElementById('questionDetail');
     const datasetList = datasets?.datasets || [];
@@ -194,37 +231,41 @@ function renderStatCards(overview, datasets) {
         const tested = overview?.questions?.tested || totalQuestions;
         animateNumber(questionEl, tested, { duration: 800 });
         if (questionDetail) {
-            questionDetail.textContent = `已测试 ${tested} / 总计 ${overview?.questions?.total || totalQuestions}`;
+            questionDetail.textContent = `已测试 ${formatNumber(tested)} / 总计 ${formatNumber(overview?.questions?.total || totalQuestions)}`;
         }
     }
     
-    // 准确率
-    const accuracyEl = document.getElementById('accuracyValue');
-    const trendEl = document.getElementById('accuracyTrend');
-    const compareEl = document.getElementById('accuracyCompare');
-    const sourceEl = document.getElementById('accuracySource');
-    if (accuracyEl && overview?.accuracy) {
-        const accuracy = (overview.accuracy.current || 0) * 100;
-        animateNumber(accuracyEl, accuracy, { duration: 800, decimals: 1, suffix: '%' });
+    // 4. 数据集总数（最后一位，优化显示）
+    const datasetTotal = datasets?.total || overview?.datasets?.total || 0;
+    const datasetEl = document.getElementById('datasetTotal');
+    const datasetBySubjectEl = document.getElementById('datasetBySubject');
+    const datasetWeekNewEl = document.getElementById('datasetWeekNew');
+    
+    if (datasetEl) {
+        animateNumber(datasetEl, datasetTotal, { duration: 800 });
+    }
+    
+    // 显示学科分布摘要（取前3个学科）
+    if (datasetBySubjectEl && datasets?.by_subject) {
+        const bySubject = datasets.by_subject;
+        const subjectEntries = Object.entries(bySubject)
+            .map(([id, count]) => ({ id, count, name: SUBJECT_MAP[id] || '未知' }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 3);
         
-        if (trendEl) {
-            trendEl.className = 'trend-arrow';
-            if (overview.accuracy.trend === 'up') trendEl.classList.add('up');
-            else if (overview.accuracy.trend === 'down') trendEl.classList.add('down');
+        if (subjectEntries.length > 0) {
+            datasetBySubjectEl.textContent = subjectEntries
+                .map(s => `${s.name} ${s.count}`)
+                .join(' · ');
+        } else {
+            datasetBySubjectEl.textContent = '--';
         }
-        
-        if (compareEl && overview.accuracy.previous !== undefined) {
-            const diff = ((overview.accuracy.current - overview.accuracy.previous) * 100).toFixed(1);
-            const sign = diff >= 0 ? '+' : '';
-            compareEl.textContent = `与上周对比 ${sign}${diff}%`;
-        }
-        
-        // 显示数据来源：正确题数/总题数
-        if (sourceEl) {
-            const correct = overview.accuracy.correct_count || 0;
-            const tested = overview.questions?.tested || 0;
-            sourceEl.textContent = `${formatNumber(correct)}/${formatNumber(tested)} 题`;
-        }
+    }
+    
+    // 显示本周新增数量
+    if (datasetWeekNewEl) {
+        const weekNew = datasets?.week_new || overview?.datasets?.week_new || 0;
+        datasetWeekNewEl.textContent = weekNew > 0 ? `本周新增 ${weekNew}` : '';
     }
 }
 
@@ -558,12 +599,12 @@ function renderDatasetOverview(data) {
     // 渲染学科分布饼图
     renderSubjectPieChart(bySubject);
     
-    // 渲染准确率 Top5
-    renderAccuracyTop5(datasets);
+    // 渲染最近数据集列表
+    renderRecentDatasets(datasets);
 }
 
 /**
- * 渲染学科分布饼图
+ * 渲染学科分布饼图 - 优化版
  */
 function renderSubjectPieChart(distribution) {
     const canvas = document.getElementById('datasetPieChart');
@@ -577,7 +618,7 @@ function renderSubjectPieChart(distribution) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = '#f5f5f7';
         ctx.beginPath();
-        ctx.arc(canvas.width / 2, canvas.height / 2, 60, 0, 2 * Math.PI);
+        ctx.arc(canvas.width / 2, canvas.height / 2, 50, 0, 2 * Math.PI);
         ctx.fill();
         return;
     }
@@ -589,53 +630,61 @@ function renderSubjectPieChart(distribution) {
     }));
     
     if (!pieChart) {
-        pieChart = new PieChart(canvas, { innerRadius: 0.6, duration: 1000 });
+        pieChart = new PieChart(canvas, { innerRadius: 0.6, duration: 800 });
     }
     pieChart.setData(data, { title: total.toString(), subtitle: '数据集' });
     
-    // 渲染图例
+    // 渲染图例 - 紧凑网格布局
     const legend = document.getElementById('datasetPieLegend');
     if (legend) {
         legend.innerHTML = data.map((item, i) => `
-            <div class="pie-legend-item" data-index="${i}">
-                <span class="pie-legend-color" style="background: ${item.color}"></span>
-                <span class="pie-legend-label">${escapeHtml(item.label)}</span>
-                <span class="pie-legend-value">${item.value}</span>
+            <div class="legend-item-compact">
+                <span class="legend-dot" style="background: ${item.color}"></span>
+                <span class="legend-text" title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</span>
+                <span class="legend-val">${item.value}</span>
             </div>
         `).join('');
     }
 }
 
 /**
- * 渲染准确率 Top5
+ * 渲染最近数据集列表
  */
-function renderAccuracyTop5(datasets) {
-    const container = document.getElementById('datasetUsageTop5');
+function renderRecentDatasets(datasets) {
+    const container = document.getElementById('datasetRecentList');
     if (!container) return;
-    
-    const valid = datasets.filter(ds => ds.history_accuracy != null);
-    const top5 = [...valid].sort((a, b) => (b.history_accuracy || 0) - (a.history_accuracy || 0)).slice(0, 5);
-    
-    if (top5.length === 0) {
-        container.innerHTML = '<div class="empty-text">暂无准确率数据</div>';
+
+    if (!datasets || datasets.length === 0) {
+        container.innerHTML = '<div class="empty-text" style="padding:10px;text-align:center;color:var(--text-muted);font-size:12px;">暂无数据集</div>';
         return;
     }
-    
-    container.innerHTML = top5.map((ds, i) => {
-        const acc = (ds.history_accuracy || 0) * 100;
-        const color = acc >= 80 ? '#10b981' : acc >= 60 ? '#f59e0b' : '#ef4444';
-        const name = ds.name?.length > 20 ? ds.name.slice(0, 17) + '...' : ds.name;
+
+    // 按更新时间倒序排列取前5
+    const sorted = [...datasets].sort((a, b) => {
+        const t1 = new Date(b.updated_at || b.created_at || 0).getTime();
+        const t2 = new Date(a.updated_at || a.created_at || 0).getTime();
+        return t1 - t2;
+    }).slice(0, 5);
+
+    container.innerHTML = sorted.map(ds => {
+        const date = formatDateTime(ds.updated_at || ds.created_at).split(' ')[0];
+        const subject = SUBJECT_MAP[ds.subject_id] || '未知';
         
         return `
-            <div class="usage-bar-item" onclick="navigateTo('/dataset-manage?dataset_id=${ds.dataset_id}')">
-                <div class="usage-bar-rank">${i + 1}</div>
-                <div class="usage-bar-info">
-                    <div class="usage-bar-name" title="${escapeHtml(ds.name)}">${escapeHtml(name)}</div>
-                    <div class="usage-bar-track">
-                        <div class="usage-bar-fill" style="width: ${acc}%; background: ${color}"></div>
+            <div class="recent-item" onclick="navigateTo('/dataset-manage?dataset_id=${ds.dataset_id}')">
+                <div class="recent-info">
+                    <div class="recent-name" title="${escapeHtml(ds.name)}">${escapeHtml(ds.name)}</div>
+                    <div class="recent-meta">
+                        <span>${subject}</span>
+                        <span class="recent-meta-divider"></span>
+                        <span>${ds.question_count || 0}题</span>
+                        <span class="recent-meta-divider"></span>
+                        <span>${date}</span>
                     </div>
                 </div>
-                <div class="usage-bar-count">${acc.toFixed(1)}%</div>
+                <div class="recent-action">
+                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                </div>
             </div>
         `;
     }).join('');
@@ -665,6 +714,7 @@ async function loadSubjectAnalysis() {
 
 /**
  * 渲染学科分析 - 显示批量评估任务中的学科统计
+ * 更新：适配主区域布局，添加统计摘要
  */
 function renderSubjectAnalysis(subjects) {
     const container = document.getElementById('subjectList');
@@ -675,14 +725,41 @@ function renderSubjectAnalysis(subjects) {
         return;
     }
     
-    container.innerHTML = subjects.map(s => {
-        const acc = s.accuracy != null ? (s.accuracy * 100) : null;
-        const color = SUBJECT_COLORS[s.subject_id] || '#86868b';
-        const accColor = acc == null ? '#86868b' : acc >= 80 ? '#50a060' : acc >= 60 ? '#d0a050' : '#d07070';
-        const warning = s.warning ? 'subject-item-warning' : '';
+    // 更新统计摘要
+    const totalCount = subjects.length;
+    const totalTasks = subjects.reduce((sum, s) => sum + (s.task_count || 0), 0);
+    const totalQuestions = subjects.reduce((sum, s) => sum + (s.question_count || 0), 0);
+    const avgAccuracy = subjects.length > 0 
+        ? subjects.reduce((sum, s) => sum + (s.accuracy || 0), 0) / subjects.length * 100 
+        : 0;
+    
+    const summaryEls = {
+        count: document.getElementById('subjectTotalCount'),
+        tasks: document.getElementById('subjectTaskCount'),
+        questions: document.getElementById('subjectQuestionCount'),
+        accuracy: document.getElementById('subjectAvgAccuracy')
+    };
+    
+    if (summaryEls.count) summaryEls.count.textContent = totalCount;
+    if (summaryEls.tasks) summaryEls.tasks.textContent = formatNumber(totalTasks);
+    if (summaryEls.questions) summaryEls.questions.textContent = formatNumber(totalQuestions);
+    if (summaryEls.accuracy) summaryEls.accuracy.textContent = avgAccuracy.toFixed(1) + '%';
+    
+    // 渲染学科卡片列表
+    container.innerHTML = subjects.map((s, index) => {
+        const acc = s.accuracy != null ? (s.accuracy * 100) : 0;
+        const color = SUBJECT_COLORS[s.subject_id] || SUBJECT_COLORS[index % SUBJECT_COLORS.length] || '#86868b';
+        
+        // 状态判定
+        let statusClass = 'low';
+        if (acc >= 80) statusClass = 'high';
+        else if (acc >= 60) statusClass = 'medium';
+        
+        // 进度条颜色
+        const progressColorClass = acc >= 80 ? '' : acc >= 60 ? 'warning' : 'danger';
         
         return `
-            <div class="subject-item ${warning}">
+            <div class="subject-item">
                 <div class="subject-item-left">
                     <span class="subject-dot" style="background: ${color}"></span>
                     <span class="subject-name">${escapeHtml(s.subject_name)}</span>
@@ -696,9 +773,12 @@ function renderSubjectAnalysis(subjects) {
                         <span class="subject-stat-value">${formatNumber(s.question_count || 0)}</span>
                         <span class="subject-stat-label">题目</span>
                     </div>
-                    <div class="subject-accuracy" style="color: ${accColor}">
-                        ${acc != null ? acc.toFixed(1) + '%' : '--'}
+                    <div class="subject-score-badge ${statusClass}">
+                        ${acc.toFixed(1)}%
                     </div>
+                </div>
+                <div class="subject-item-progress">
+                    <div class="subject-item-progress-bar ${progressColorClass}" style="width: ${acc}%"></div>
                 </div>
             </div>
         `;
@@ -2108,7 +2188,213 @@ window.pauseAllAutomation = pauseAllAutomation;
 window.resumeAllAutomation = resumeAllAutomation;
 window.clearAutomationQueue = clearAutomationQueue;
 
+// ========== 优化日志功能 ==========
+let optLogs = [];
+
+// 加载优化日志（从API获取，与聊天页面共享）
+async function loadOptLogs() {
+    const logsList = document.getElementById('optLogsList');
+    if (!logsList) return;
+    
+    try {
+        const res = await fetch('/api/optimization-logs');
+        if (res.ok) {
+            optLogs = await res.json();
+            renderOptLogs();
+        } else {
+            logsList.innerHTML = '<div class="opt-logs-empty">暂无日志</div>';
+        }
+    } catch (e) {
+        console.error('加载优化日志失败:', e);
+        logsList.innerHTML = '<div class="opt-logs-empty">加载失败</div>';
+    }
+}
+
+// 渲染优化日志列表
+function renderOptLogs() {
+    const logsList = document.getElementById('optLogsList');
+    if (!logsList) return;
+    
+    if (!optLogs || optLogs.length === 0) {
+        logsList.innerHTML = '<div class="opt-logs-empty">暂无日志</div>';
+        return;
+    }
+    
+    logsList.innerHTML = optLogs.map(log => {
+        const items = (log.content || '').split('\n').filter(s => s.trim());
+        const itemsHtml = items.map((item, i) => 
+            `<span class="log-item"><span class="log-num">${i + 1}.</span> ${escapeHtml(item)}</span>`
+        ).join('');
+        
+        return `
+            <div class="opt-log-item" data-category="${log.category || 'general'}" data-id="${log.id}">
+                <div class="opt-log-header">
+                    <span class="opt-log-date">${formatOptLogDate(log.created_at || log.date)}</span>
+                </div>
+                <div class="opt-log-content">${itemsHtml}</div>
+                <button class="opt-log-delete" onclick="deleteOptLog(${log.id}, event)" title="删除">x</button>
+            </div>
+        `;
+    }).join('');
+}
+
+// 格式化日期
+function formatOptLogDate(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${month}/${day} ${hours}:${minutes}`;
+}
+
+// 显示添加日志弹窗
+function showAddOptLogModal() {
+    document.getElementById('addOptLogModal').style.display = 'flex';
+    document.getElementById('optLogContent').value = '';
+    document.getElementById('optLogCategory').value = 'general';
+    document.getElementById('optLogContent').focus();
+}
+
+// 关闭添加日志弹窗
+function closeAddOptLogModal() {
+    document.getElementById('addOptLogModal').style.display = 'none';
+}
+
+function onAddOptLogModalBackdropClick(event) {
+    if (event.target.id === 'addOptLogModal') {
+        closeAddOptLogModal();
+    }
+}
+
+// 保存优化日志
+async function saveOptLog() {
+    const content = document.getElementById('optLogContent').value.trim();
+    const category = document.getElementById('optLogCategory').value;
+    
+    if (!content) {
+        showToast('请输入日志内容');
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/optimization-logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content, category })
+        });
+        
+        if (res.ok) {
+            closeAddOptLogModal();
+            loadOptLogs();
+            showToast('日志已添加');
+        } else {
+            const data = await res.json();
+            showToast(data.error || '保存失败');
+        }
+    } catch (e) {
+        console.error('保存日志失败:', e);
+        showToast('保存失败');
+    }
+}
+
+// 删除优化日志
+async function deleteOptLog(id, event) {
+    event.stopPropagation();
+    
+    try {
+        const res = await fetch(`/api/optimization-logs/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (res.ok) {
+            loadOptLogs();
+        }
+    } catch (e) {
+        console.error('删除日志失败:', e);
+    }
+}
+
+// 导出优化日志函数
+window.showAddOptLogModal = showAddOptLogModal;
+window.closeAddOptLogModal = closeAddOptLogModal;
+window.onAddOptLogModalBackdropClick = onAddOptLogModalBackdropClick;
+window.saveOptLog = saveOptLog;
+window.deleteOptLog = deleteOptLog;
+
+// 页面加载时加载优化日志
+setTimeout(loadOptLogs, 500);
+
+// ========== 全局设置弹窗 ==========
+let globalSettings = {
+    visionModel: 'doubao-seed-1-8-251228',
+    textModel: 'deepseek-v3.2',
+    notifyComplete: true,
+    notifyError: true,
+    refreshInterval: 60
+};
+
+function openGlobalSettingsModal() {
+    document.getElementById('globalSettingsModal').style.display = 'flex';
+    loadGlobalSettings();
+}
+
+function closeGlobalSettingsModal() {
+    document.getElementById('globalSettingsModal').style.display = 'none';
+}
+
+function onGlobalSettingsModalBackdropClick(event) {
+    if (event.target.id === 'globalSettingsModal') {
+        closeGlobalSettingsModal();
+    }
+}
+
+function loadGlobalSettings() {
+    // 从 localStorage 加载设置
+    const saved = localStorage.getItem('globalSettings');
+    if (saved) {
+        try {
+            globalSettings = { ...globalSettings, ...JSON.parse(saved) };
+        } catch (e) {}
+    }
+    
+    // 更新 UI
+    document.getElementById('settingsVisionModel').value = globalSettings.visionModel;
+    document.getElementById('settingsTextModel').value = globalSettings.textModel;
+    document.getElementById('settingsRefreshInterval').value = globalSettings.refreshInterval;
+    
+    document.getElementById('settingsNotifyComplete').classList.toggle('active', globalSettings.notifyComplete);
+    document.getElementById('settingsNotifyError').classList.toggle('active', globalSettings.notifyError);
+}
+
+function toggleGlobalSetting(key) {
+    const toggleKey = 'settings' + key.charAt(0).toUpperCase() + key.slice(1);
+    const toggle = document.getElementById(toggleKey);
+    toggle.classList.toggle('active');
+    globalSettings[key] = toggle.classList.contains('active');
+}
+
+function saveGlobalSettings() {
+    globalSettings.visionModel = document.getElementById('settingsVisionModel').value;
+    globalSettings.textModel = document.getElementById('settingsTextModel').value;
+    globalSettings.refreshInterval = parseInt(document.getElementById('settingsRefreshInterval').value);
+    
+    // 保存到 localStorage
+    localStorage.setItem('globalSettings', JSON.stringify(globalSettings));
+    
+    closeGlobalSettingsModal();
+    showToast('设置已保存');
+}
+
+// 导出全局设置函数
+window.openGlobalSettingsModal = openGlobalSettingsModal;
+window.closeGlobalSettingsModal = closeGlobalSettingsModal;
+window.onGlobalSettingsModalBackdropClick = onGlobalSettingsModalBackdropClick;
+window.toggleGlobalSetting = toggleGlobalSetting;
+window.saveGlobalSettings = saveGlobalSettings;
+
 // 页面加载后延迟加载高级工具统计
 setTimeout(loadAdvancedToolsStats, 2000);
 
-console.log('[Dashboard] 模块化看板初始化完成 v20260124');
+console.log('[Dashboard] 模块化看板初始化完成 v20260125');

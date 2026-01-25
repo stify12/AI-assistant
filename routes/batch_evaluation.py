@@ -37,6 +37,59 @@ def get_analysis_service():
     return _analysis_service
 
 
+# ========== 任务列表缓存 ==========
+_task_summaries_cache = None
+_task_summaries_cache_time = None
+TASK_CACHE_TTL = 30  # 缓存30秒
+
+def get_cached_task_summaries():
+    """
+    获取任务摘要列表（带缓存）
+    只返回列表展示需要的字段，不加载完整任务数据
+    """
+    global _task_summaries_cache, _task_summaries_cache_time
+    
+    now = datetime.now()
+    
+    # 检查缓存是否有效
+    if (_task_summaries_cache is not None and 
+        _task_summaries_cache_time is not None and
+        (now - _task_summaries_cache_time).total_seconds() < TASK_CACHE_TTL):
+        return _task_summaries_cache
+    
+    # 重新加载任务列表
+    tasks = []
+    for filename in StorageService.list_batch_tasks():
+        task_id = filename.replace('.json', '')
+        task_data = StorageService.load_batch_task(task_id)
+        if task_data:
+            # 只提取列表展示需要的字段
+            tasks.append({
+                'task_id': task_data.get('task_id', task_id),
+                'name': task_data.get('name', ''),
+                'status': task_data.get('status', 'pending'),
+                'subject_id': task_data.get('subject_id'),
+                'subject_name': task_data.get('subject_name', ''),
+                'test_condition_id': task_data.get('test_condition_id'),
+                'test_condition_name': task_data.get('test_condition_name', ''),
+                'created_at': task_data.get('created_at', ''),
+                'homework_count': len(task_data.get('homework_items', [])),
+                'overall_accuracy': task_data.get('overall_report', {}).get('overall_accuracy', 0)
+            })
+    
+    # 更新缓存
+    _task_summaries_cache = tasks
+    _task_summaries_cache_time = now
+    
+    return tasks
+
+def invalidate_task_summaries_cache():
+    """使任务摘要缓存失效"""
+    global _task_summaries_cache, _task_summaries_cache_time
+    _task_summaries_cache = None
+    _task_summaries_cache_time = None
+
+
 # ========== 辅助函数 ==========
 
 def parse_essay_feedback(main_answer):
@@ -1737,67 +1790,19 @@ def batch_tasks():
         test_condition_id = request.args.get('test_condition_id', type=int)
         
         try:
-            tasks = []
-            for filename in StorageService.list_batch_tasks():
-                task_id = filename[:-5]
-                data = StorageService.load_batch_task(task_id)
-                if data:
-                    # 学科筛选
-                    task_subject_id = data.get('subject_id')
-                    if subject_id is not None and task_subject_id != subject_id:
+            # 使用缓存的任务摘要列表
+            tasks = get_cached_task_summaries()
+            
+            # 应用筛选
+            if subject_id is not None or test_condition_id is not None:
+                filtered_tasks = []
+                for task in tasks:
+                    if subject_id is not None and task.get('subject_id') != subject_id:
                         continue
-                    
-                    # 测试条件筛选
-                    task_test_condition_id = data.get('test_condition_id')
-                    if test_condition_id is not None and task_test_condition_id != test_condition_id:
+                    if test_condition_id is not None and task.get('test_condition_id') != test_condition_id:
                         continue
-                    
-                    overall_report = data.get('overall_report') or {}
-                    homework_items = data.get('homework_items', [])
-                    
-                    # 提取书本名称和页码范围（用于气泡展示）
-                    book_names = set()
-                    page_nums = set()
-                    student_ids = set()
-                    for item in homework_items:
-                        if item.get('book_name'):
-                            book_names.add(item.get('book_name'))
-                        if item.get('page_num'):
-                            page_nums.add(item.get('page_num'))
-                        if item.get('student_id'):
-                            student_ids.add(item.get('student_id'))
-                    
-                    # 格式化页码范围
-                    page_range = ''
-                    if page_nums:
-                        sorted_pages = sorted(page_nums)
-                        if len(sorted_pages) == 1:
-                            page_range = f'P{sorted_pages[0]}'
-                        else:
-                            page_range = f'P{sorted_pages[0]}-{sorted_pages[-1]}'
-                    
-                    # 计算学生数和每人作业数
-                    student_count = len(student_ids)
-                    homework_per_student = round(len(homework_items) / student_count, 1) if student_count > 0 else 0
-                    
-                    tasks.append({
-                        'task_id': data.get('task_id'),
-                        'name': data.get('name', ''),
-                        'subject_id': task_subject_id,
-                        'subject_name': data.get('subject_name', ''),
-                        'test_condition_id': task_test_condition_id,
-                        'test_condition_name': data.get('test_condition_name', ''),
-                        'status': data.get('status', 'pending'),
-                        'homework_count': len(homework_items),
-                        'overall_accuracy': overall_report.get('overall_accuracy', 0),
-                        'created_at': data.get('created_at', ''),
-                        # 气泡展示用字段
-                        'book_name': ', '.join(book_names) if book_names else '',
-                        'page_range': page_range,
-                        'remark': data.get('remark', ''),
-                        'student_count': student_count,
-                        'homework_per_student': homework_per_student
-                    })
+                    filtered_tasks.append(task)
+                tasks = filtered_tasks
             
             tasks.sort(key=lambda x: x.get('created_at', ''), reverse=True)
             return jsonify({'success': True, 'data': tasks})
@@ -3366,6 +3371,34 @@ def generate_ai_report(task_id):
     if not force_regenerate:
         ai_analysis = task_data.get('overall_report', {}).get('ai_analysis')
         if ai_analysis:
+            # 检查是否有 overview 字段，如果没有则补充
+            if 'overview' not in ai_analysis:
+                # 重新计算统计数据
+                total_questions = 0
+                total_correct = 0
+                homework_items = task_data.get('homework_items', [])
+                for item in homework_items:
+                    if item.get('status') != 'completed':
+                        continue
+                    evaluation = item.get('evaluation', {})
+                    total_questions += evaluation.get('total_questions', 0)
+                    total_correct += evaluation.get('correct_count', 0)
+                
+                homework_count = len([item for item in homework_items if item.get('status') == 'completed'])
+                accuracy = total_correct / total_questions if total_questions > 0 else 0
+                
+                ai_analysis['overview'] = {
+                    'total': total_questions,
+                    'passed': total_correct,
+                    'failed': total_questions - total_correct,
+                    'pass_rate': round(accuracy * 100, 1),
+                    'homework_count': homework_count
+                }
+                
+                # 更新缓存
+                task_data['overall_report']['ai_analysis'] = ai_analysis
+                StorageService.save_batch_task(task_id, task_data)
+            
             return jsonify({
                 'success': True,
                 'cached': True,
@@ -3476,6 +3509,33 @@ def generate_ai_report(task_id):
                 'capability_scores': {'recognition': 0, 'judgment': 0, 'overall': 0},
                 'conclusion': ''
             }
+        
+        # 添加 overview 字段（前端需要）
+        homework_count = len([item for item in homework_items if item.get('status') == 'completed'])
+        ai_analysis['overview'] = {
+            'total': total_questions,
+            'passed': total_correct,
+            'failed': total_questions - total_correct,
+            'pass_rate': round(accuracy * 100, 1),
+            'homework_count': homework_count
+        }
+        
+        # 添加 top_issues 字段（从 main_issues 转换）
+        main_issues = ai_analysis.get('main_issues', [])
+        if main_issues and isinstance(main_issues[0], str):
+            # 如果是字符串列表，转换为对象列表
+            ai_analysis['top_issues'] = [
+                {'issue': issue, 'count': 0, 'severity': 'medium'} 
+                for issue in main_issues
+            ]
+        elif main_issues:
+            ai_analysis['top_issues'] = main_issues
+        else:
+            # 从错误分布生成 top_issues
+            ai_analysis['top_issues'] = [
+                {'issue': err_type, 'count': count, 'severity': 'high' if count > 5 else 'medium'}
+                for err_type, count in sorted(error_distribution.items(), key=lambda x: -x[1])[:5]
+            ]
         
         # 保存到任务数据
         if 'overall_report' not in task_data:

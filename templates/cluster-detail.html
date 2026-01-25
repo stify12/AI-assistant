@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聚类详情</title>
+    <link rel="stylesheet" href="/static/css/analysis-report.css">
+    <style>
+        .cluster-overview {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        .cluster-info-card {
+            flex: 1;
+        }
+        .cluster-name {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .cluster-description {
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+        .cluster-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .meta-item {
+            background: var(--bg-page);
+            padding: 8px 16px;
+            border-radius: 6px;
+        }
+        .meta-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .meta-value {
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .analysis-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .analysis-card {
+            background: var(--bg-page);
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .analysis-card h4 {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+        .representative-samples {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        .rep-sample-card {
+            background: var(--bg-page);
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .rep-sample-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .rep-sample-title {
+            font-weight: 500;
+        }
+        .answer-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .answer-label {
+            color: var(--text-muted);
+            min-width: 60px;
+        }
+        .samples-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .samples-table th,
+        .samples-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .samples-table th {
+            background: var(--bg-page);
+            font-weight: 500;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .samples-table tr:hover {
+            background: var(--bg-hover);
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <!-- 页面头部 -->
+        <header class="page-header">
+            <div class="header-left">
+                <a href="javascript:history.back()" class="back-btn">返回</a>
+                <h1 class="page-title">聚类详情</h1>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-secondary" id="exportBtn">导出样本</button>
+            </div>
+        </header>
+
+        <!-- 聚类概览 -->
+        <section class="section cluster-overview">
+            <div class="cluster-info-card">
+                <div class="cluster-name" id="clusterName">加载中...</div>
+                <div class="cluster-description" id="clusterDescription">-</div>
+                <div class="cluster-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">错误类型</div>
+                        <div class="meta-value" id="errorType">-</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">书本</div>
+                        <div class="meta-value" id="bookName">-</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">页码范围</div>
+                        <div class="meta-value" id="pageRange">-</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">样本数</div>
+                        <div class="meta-value" id="sampleCount">-</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LLM 分析结果 -->
+        <section class="section">
+            <h2 class="section-title">AI 分析</h2>
+            <div class="analysis-panel">
+                <div class="analysis-card">
+                    <h4>根因分析</h4>
+                    <div id="rootCause">-</div>
+                </div>
+                <div class="analysis-card">
+                    <h4>模式洞察</h4>
+                    <div id="patternInsight">-</div>
+                </div>
+                <div class="analysis-card">
+                    <h4>修复建议</h4>
+                    <div id="commonFix">-</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 代表性样本 -->
+        <section class="section">
+            <h2 class="section-title">代表性样本</h2>
+            <div class="representative-samples" id="repSamples">
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+            </div>
+        </section>
+
+        <!-- 样本列表 -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">全部样本</h2>
+                <div>
+                    <button class="btn btn-secondary" id="batchMarkBtn">批量标记</button>
+                </div>
+            </div>
+            <table class="samples-table">
+                <thead>
+                    <tr>
+                        <th>作业ID</th>
+                        <th>页码</th>
+                        <th>题号</th>
+                        <th>AI答案</th>
+                        <th>期望答案</th>
+                        <th>状态</th>
+                    </tr>
+                </thead>
+                <tbody id="samplesTableBody">
+                    <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">加载中...</td></tr>
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <script src="/static/js/components/toast.js"></script>
+    <script src="/static/js/components/skeleton.js"></script>
+    <script src="/static/js/components/empty-state.js"></script>
+    <script>
+        let taskId = null;
+        let clusterId = null;
+        let clusterData = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const pathParts = window.location.pathname.split('/');
+            clusterId = decodeURIComponent(pathParts[pathParts.length - 1]);
+            const params = new URLSearchParams(window.location.search);
+            taskId = params.get('task_id');
+            
+            if (!taskId || !clusterId) {
+                toast.error('缺少参数');
+                return;
+            }
+            loadClusterDetail();
+        });
+
+        async function loadClusterDetail() {
+            try {
+                const response = await fetch(`/api/analysis/clusters/${encodeURIComponent(clusterId)}?task_id=${taskId}`);
+                const result = await response.json();
+                
+                if (!result.success) {
+                    toast.error(result.error || '加载失败');
+                    return;
+                }
+                clusterData = result.data;
+                renderClusterDetail();
+            } catch (error) {
+                console.error('加载聚类详情失败:', error);
+                toast.error('加载失败');
+            }
+        }
+
+        function renderClusterDetail() {
+            const data = clusterData;
+            document.getElementById('clusterName').textContent = data.cluster_name || `${data.error_type || '未知'} - ${data.book_name || '未知'}`;
+            document.getElementById('clusterDescription').textContent = data.cluster_description || `页码范围 ${data.page_range} 的错误聚类`;
+            document.getElementById('errorType').textContent = data.error_type || '-';
+            document.getElementById('bookName').textContent = data.book_name || '-';
+            document.getElementById('pageRange').textContent = data.page_range || '-';
+            document.getElementById('sampleCount').textContent = data.sample_count || 0;
+            
+            document.getElementById('rootCause').textContent = data.root_cause || '暂无分析';
+            document.getElementById('patternInsight').textContent = data.pattern_insight || '暂无分析';
+            document.getElementById('commonFix').textContent = data.common_fix || '暂无建议';
+            
+            const samples = data.samples || [];
+            const repContainer = document.getElementById('repSamples');
+            
+            if (samples.length === 0) {
+                repContainer.innerHTML = '<p style="color:#aeaeb2;">暂无样本</p>';
+            } else {
+                let html = '';
+                samples.slice(0, 3).forEach(sample => {
+                    html += `<div class="rep-sample-card">
+                        <div class="rep-sample-header">
+                            <span class="rep-sample-title">${sample.book_name || '未知'} P${sample.page_num || 0} 题${sample.question_index || 0}</span>
+                        </div>
+                        <div class="answer-row"><span class="answer-label">期望:</span><span>${(sample.expected_answer || '-').substring(0, 50)}</span></div>
+                        <div class="answer-row"><span class="answer-label">AI:</span><span style="color:#d73a49;">${(sample.ai_answer || '-').substring(0, 50)}</span></div>
+                    </div>`;
+                });
+                repContainer.innerHTML = html;
+            }
+            
+            const tbody = document.getElementById('samplesTableBody');
+            if (samples.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aeaeb2;">暂无样本</td></tr>';
+            } else {
+                let html = '';
+                samples.forEach(sample => {
+                    const status = sample.status || 'pending';
+                    const statusText = { pending: '待处理', confirmed: '已确认', fixed: '已修复', ignored: '已忽略' }[status] || status;
+                    html += `<tr onclick="viewSample('${sample.sample_id}')" style="cursor:pointer;">
+                        <td>${sample.homework_id || '-'}</td>
+                        <td>${sample.page_num || '-'}</td>
+                        <td>${sample.question_index || '-'}</td>
+                        <td>${(sample.ai_answer || '-').substring(0, 30)}...</td>
+                        <td>${(sample.expected_answer || '-').substring(0, 30)}...</td>
+                        <td><span class="sample-card-tag ${status}" style="padding:2px 8px;border-radius:4px;font-size:11px;">${statusText}</span></td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            }
+        }
+
+        function viewSample(sampleId) {
+            window.location.href = `/error-samples?task_id=${taskId}&sample=${sampleId}`;
+        }
+
+        document.getElementById('exportBtn').addEventListener('click', async function() {
+            try {
+                const response = await fetch('/api/analysis/export', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task_id: taskId, format: 'excel', sections: ['samples'], cluster_id: clusterId })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    toast.success('导出成功');
+                    window.location.href = `/api/analysis/export/download/${result.data.export_id}`;
+                } else {
+                    toast.error(result.error || '导出失败');
+                }
+            } catch (error) {
+                console.error('导出失败:', error);
+                toast.error('导出失败');
+            }
+        });
+    </script>
+</body>
+</html>

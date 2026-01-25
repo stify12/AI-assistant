@@ -24,6 +24,22 @@
             </button>
         </div>
         <div class="task-list" id="taskList"></div>
+        
+        <!-- 工具区域 -->
+        <div class="sidebar-tools">
+            <div class="tools-label">工具</div>
+            <div class="tools-list">
+                <button class="tool-item" onclick="showOptimizationLogs()" title="优化日志">
+                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6A4.997 4.997 0 017 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1z"/></svg>
+                    <span>优化日志</span>
+                </button>
+                <button class="tool-item" onclick="showSettingsModal()" title="设置">
+                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg>
+                    <span>设置</span>
+                </button>
+            </div>
+        </div>
+        
         <div class="sidebar-footer">
             <button class="nav-link" onclick="goBack()">返回</button>
             <a href="/prompt-optimize" class="nav-link">提示词优化</a>
@@ -148,6 +164,70 @@
             <div class="modal-actions">
                 <button class="btn-cancel" onclick="hideCreateTask()">取消</button>
                 <button class="btn-save" onclick="createTask()">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 优化日志弹窗 -->
+    <div class="modal" id="optimizationLogsModal">
+        <div class="modal-content optimization-modal">
+            <div class="modal-header">
+                <h3 class="modal-title">优化日志</h3>
+                <button class="modal-close" onclick="hideOptimizationLogs()">&times;</button>
+            </div>
+            <div class="optimization-logs" id="optimizationLogsList">
+                <div class="empty-logs">
+                    <svg viewBox="0 0 24 24" width="48" height="48"><path fill="currentColor" d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
+                    <p>暂无优化日志</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="hideOptimizationLogs()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置弹窗 -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content settings-modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">分析设置</h3>
+                <button class="modal-close" onclick="hideSettingsModal()">&times;</button>
+            </div>
+            <div class="settings-section">
+                <div class="settings-section-title">模型配置</div>
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">分析模型</div>
+                        <div class="settings-desc">用于数据分析的AI模型</div>
+                    </div>
+                    <select class="settings-select" id="settingsAnalysisModel">
+                        <option value="deepseek-v3.2">DeepSeek V3.2</option>
+                        <option value="deepseek-chat">DeepSeek Chat</option>
+                        <option value="qwen3-max">Qwen3 Max</option>
+                    </select>
+                </div>
+            </div>
+            <div class="settings-section">
+                <div class="settings-section-title">报告设置</div>
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">自动生成摘要</div>
+                        <div class="settings-desc">分析完成后自动生成报告摘要</div>
+                    </div>
+                    <div class="settings-toggle active" id="settingsAutoSummary" onclick="toggleSetting('autoSummary')"></div>
+                </div>
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">包含原始数据</div>
+                        <div class="settings-desc">在报告中包含原始数据表格</div>
+                    </div>
+                    <div class="settings-toggle" id="settingsIncludeRawData" onclick="toggleSetting('includeRawData')"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="hideSettingsModal()">取消</button>
+                <button class="btn-save" onclick="saveSettings()">保存</button>
             </div>
         </div>
     </div>
