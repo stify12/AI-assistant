@@ -2,6 +2,25 @@
  * 批量评估页面 JavaScript
  */
 
+// ========== 更多操作下拉菜单 ==========
+function toggleMoreActions(event) {
+    event.stopPropagation();
+    const menu = document.getElementById('moreActionsMenu');
+    menu.classList.toggle('show');
+}
+
+function hideMoreActions() {
+    const menu = document.getElementById('moreActionsMenu');
+    if (menu) menu.classList.remove('show');
+}
+
+// 点击页面其他地方关闭下拉菜单
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.more-actions-dropdown')) {
+        hideMoreActions();
+    }
+});
+
 // ========== 全局状态 ==========
 let currentTab = 'tasks';
 let taskList = [];

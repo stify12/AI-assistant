@@ -63,6 +63,25 @@ def get_cached_task_summaries():
         task_id = filename.replace('.json', '')
         task_data = StorageService.load_batch_task(task_id)
         if task_data:
+            # 从作业列表中提取书本名称和页码范围
+            homework_items = task_data.get('homework_items', [])
+            book_name = ''
+            page_nums = set()
+            for hw in homework_items:
+                if not book_name and hw.get('book_name'):
+                    book_name = hw.get('book_name', '')
+                if hw.get('page_num'):
+                    page_nums.add(hw.get('page_num'))
+            
+            # 生成页码范围字符串
+            page_range = ''
+            if page_nums:
+                sorted_pages = sorted(page_nums)
+                if len(sorted_pages) == 1:
+                    page_range = f"P{sorted_pages[0]}"
+                else:
+                    page_range = f"P{sorted_pages[0]}-{sorted_pages[-1]}"
+            
             # 只提取列表展示需要的字段
             tasks.append({
                 'task_id': task_data.get('task_id', task_id),
@@ -73,8 +92,11 @@ def get_cached_task_summaries():
                 'test_condition_id': task_data.get('test_condition_id'),
                 'test_condition_name': task_data.get('test_condition_name', ''),
                 'created_at': task_data.get('created_at', ''),
-                'homework_count': len(task_data.get('homework_items', [])),
-                'overall_accuracy': task_data.get('overall_report', {}).get('overall_accuracy', 0)
+                'homework_count': len(homework_items),
+                'overall_accuracy': task_data.get('overall_report', {}).get('overall_accuracy', 0),
+                'book_name': book_name,
+                'page_range': page_range,
+                'remark': task_data.get('remark', '')
             })
     
     # 更新缓存
