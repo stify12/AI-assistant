@@ -6,10 +6,10 @@
     <title>批量评估</title>
     <!-- 预加载关键资源 -->
     <link rel="preload" href="/static/css/common.css?v=20260125" as="style">
-    <link rel="preload" href="/static/css/batch-evaluation.css?v=20260125" as="style">
+    <link rel="preload" href="/static/css/batch-evaluation.css?v=20260127b" as="style">
     <!-- 样式表 -->
     <link rel="stylesheet" href="/static/css/common.css?v=20260125">
-    <link rel="stylesheet" href="/static/css/batch-evaluation.css?v=20260125">
+    <link rel="stylesheet" href="/static/css/batch-evaluation.css?v=20260127b">
     <!-- Chart.js 延迟加载(仅图表渲染时需要) -->
     <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
     <!-- html2canvas 延迟加载(仅导出时使用) -->
@@ -125,6 +125,7 @@
                             </div>
                             <div class="task-actions">
                                 <button class="btn btn-primary" id="batchAiEvalBtn" onclick="batchAiEvaluation()">一键AI评估</button>
+                                <button class="btn btn-secondary" id="startEvalBtn" onclick="startBatchEvaluation()">开始分析</button>
                                 <button class="btn btn-secondary" id="aiReportBtn" onclick="generateAIReport()" disabled>AI分析任务</button>
                                 <button class="btn btn-secondary" id="viewAnalysisBtn" onclick="viewAnalysisReport()" disabled>查看分析</button>
                                 <div class="more-actions-dropdown">
@@ -135,7 +136,6 @@
                                         </svg>
                                     </button>
                                     <div class="more-actions-menu" id="moreActionsMenu">
-                                        <button class="menu-item" id="startEvalBtn" onclick="startBatchEvaluation(); hideMoreActions();">本地评估</button>
                                         <button class="menu-item" id="reEvalBtn" onclick="reEvaluateCurrentTask(); hideMoreActions();">重新评估</button>
                                         <button class="menu-item" id="exportBtn" onclick="exportExcel(); hideMoreActions();" disabled>导出Excel</button>
                                         <button class="menu-item" id="resetTaskBtn" onclick="resetBatchTask(); hideMoreActions();" style="display:none;">重置任务</button>
@@ -168,9 +168,49 @@
                                         <div class="chart-title">错误类型分布</div>
                                         <canvas id="errorTypePieChart"></canvas>
                                     </div>
-                                    <div class="chart-box">
-                                        <div class="chart-title">题型准确率对比</div>
-                                        <canvas id="typeBarChart"></canvas>
+                                    <div class="chart-box anomaly-chart-box" id="anomalyChartBox" onclick="showAnomalyDetailModal()">
+                                        <div class="chart-title">
+                                            <span>异常检测</span>
+                                            <span class="chart-link">查看详情</span>
+                                        </div>
+                                        <div class="anomaly-summary" id="anomalySummary">
+                                            <div class="anomaly-stats-row">
+                                                <div class="anomaly-stat-card anomaly-universal">
+                                                    <div class="anomaly-stat-value" id="anomalyUniversalCount">-</div>
+                                                    <div class="anomaly-stat-label">全员错误</div>
+                                                </div>
+                                                <div class="anomaly-stat-card anomaly-high">
+                                                    <div class="anomaly-stat-value" id="anomalyHighAnomalyCount">-</div>
+                                                    <div class="anomaly-stat-label">高异常</div>
+                                                </div>
+                                                <div class="anomaly-stat-card anomaly-low">
+                                                    <div class="anomaly-stat-value" id="anomalyLowAnomalyCount">-</div>
+                                                    <div class="anomaly-stat-label">低异常</div>
+                                                </div>
+                                                <div class="anomaly-stat-card anomaly-normal">
+                                                    <div class="anomaly-stat-value" id="anomalyNormalCount">-</div>
+                                                    <div class="anomaly-stat-label">一致</div>
+                                                </div>
+                                            </div>
+                                            <div class="anomaly-progress-row">
+                                                <div class="anomaly-rate" id="anomalyRate">-</div>
+                                                <div class="anomaly-bar-wrap">
+                                                    <div class="anomaly-segmented-bar" id="anomalySegmentedBar">
+                                                        <div class="anomaly-segment segment-universal" id="segmentUniversal" style="width:0%"></div>
+                                                        <div class="anomaly-segment segment-high" id="segmentHighAnomaly" style="width:0%"></div>
+                                                        <div class="anomaly-segment segment-low" id="segmentLowAnomaly" style="width:0%"></div>
+                                                        <div class="anomaly-segment segment-normal" id="segmentNormal" style="width:0%"></div>
+                                                    </div>
+                                                    <div class="anomaly-stats-text" id="anomalyStatsText">一致 - / 共 - 题</div>
+                                                </div>
+                                            </div>
+                                            <div class="anomaly-preview" id="anomalyPreview">
+                                                <span class="anomaly-preview-label">高频异常:</span>
+                                                <div class="anomaly-preview-items" id="anomalyPreviewItems">
+                                                    <span class="anomaly-preview-empty">暂无数据</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="chart-grid">
@@ -658,6 +698,91 @@
         </div>
     </div>
 
-    <script src="/static/js/batch-evaluation.js?v=8"></script>
+    <!-- 异常检测详情弹窗 -->
+    <div class="modal" id="anomalyDetailModal" onclick="hideModal('anomalyDetailModal', event)">
+        <div class="modal-content modal-large" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>异常检测详情</h3>
+                <button class="close-btn" onclick="hideModal('anomalyDetailModal')">x</button>
+            </div>
+            <div class="modal-body">
+                <!-- 可视化图表区域 -->
+                <div class="anomaly-charts-row">
+                    <!-- 左侧：题目分布饼图 -->
+                    <div class="anomaly-chart-card">
+                        <div class="chart-card-title">题目分布</div>
+                        <div class="anomaly-pie-container">
+                            <div class="anomaly-pie" id="anomalyPieChart"></div>
+                            <div class="anomaly-pie-legend" id="anomalyPieLegend"></div>
+                        </div>
+                    </div>
+                    <!-- 右侧：错误率 Top 5 柱状图 -->
+                    <div class="anomaly-chart-card anomaly-chart-card-wide">
+                        <div class="chart-card-title">错误率最高题目</div>
+                        <div class="anomaly-bar-container" id="anomalyBarChart"></div>
+                    </div>
+                </div>
+
+                <!-- 统计卡片 -->
+                <div class="anomaly-detail-stats" id="anomalyDetailStats">
+                    <div class="anomaly-detail-card anomaly-universal" onclick="filterAnomalyByType('universal_error')">
+                        <div class="anomaly-detail-value" id="anomalyDetailUniversal">0</div>
+                        <div class="anomaly-detail-label">全员错误</div>
+                        <div class="anomaly-detail-severity">严重</div>
+                    </div>
+                    <div class="anomaly-detail-card anomaly-high" onclick="filterAnomalyByType('high_anomaly')">
+                        <div class="anomaly-detail-value" id="anomalyDetailHigh">0</div>
+                        <div class="anomaly-detail-label">高异常</div>
+                        <div class="anomaly-detail-severity">识别正确-判断错误</div>
+                    </div>
+                    <div class="anomaly-detail-card anomaly-low" onclick="filterAnomalyByType('low_anomaly')">
+                        <div class="anomaly-detail-value" id="anomalyDetailLow">0</div>
+                        <div class="anomaly-detail-label">低异常</div>
+                        <div class="anomaly-detail-severity">其他错误类型</div>
+                    </div>
+                    <div class="anomaly-detail-card anomaly-normal" onclick="filterAnomalyByType('')">
+                        <div class="anomaly-detail-value" id="anomalyDetailNormal">0</div>
+                        <div class="anomaly-detail-label">一致</div>
+                        <div class="anomaly-detail-severity">-</div>
+                    </div>
+                </div>
+                
+                <!-- 筛选栏 -->
+                <div class="anomaly-filter-row">
+                    <select id="anomalyTypeFilter" onchange="filterAnomalyList()">
+                        <option value="">全部类型</option>
+                        <option value="universal_error">全员错误</option>
+                        <option value="high_anomaly">高异常</option>
+                        <option value="low_anomaly">低异常</option>
+                    </select>
+                    <select id="anomalyPageFilter" onchange="filterAnomalyList()">
+                        <option value="">全部页码</option>
+                    </select>
+                    <span class="anomaly-filter-count" id="anomalyFilterCount">显示 0 条</span>
+                </div>
+                
+                <!-- 异常列表 -->
+                <div class="anomaly-list-container">
+                    <table class="anomaly-table">
+                        <thead>
+                            <tr>
+                                <th style="width:90px">类型</th>
+                                <th style="width:90px">位置</th>
+                                <th style="width:80px">错误率</th>
+                                <th style="width:80px">统计</th>
+                                <th>说明</th>
+                                <th style="width:30px"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="anomalyTableBody">
+                            <tr><td colspan="6" class="empty-row">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/batch-evaluation.js?v=10"></script>
 </body>
 </html>

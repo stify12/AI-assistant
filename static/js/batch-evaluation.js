@@ -975,74 +975,8 @@ function renderOverallCharts(report) {
         }
     }
     
-    // 2. 题型准确率对比柱状图 (选择题、客观填空题、主观题)
-    const byType = report.by_question_type || {};
-    const choice = byType.choice || {};
-    const objectiveFill = byType.objective_fill || {};
-    const subjective = byType.subjective || {};
-    
-    const typeLabels = [];
-    const typeData = [];
-    const typeColors = [];
-    
-    if (choice.total > 0) {
-        typeLabels.push('选择题');
-        typeData.push((choice.accuracy || 0) * 100);
-        typeColors.push('#3b82f6');
-    }
-    if (objectiveFill.total > 0) {
-        typeLabels.push('客观填空题');
-        typeData.push((objectiveFill.accuracy || 0) * 100);
-        typeColors.push('#10b981');
-    }
-    if (subjective.total > 0) {
-        typeLabels.push('主观题');
-        typeData.push((subjective.accuracy || 0) * 100);
-        typeColors.push('#f59e0b');
-    }
-    
-    if (typeLabels.length > 0) {
-        batchChartInstances.typeBar = new Chart(document.getElementById('typeBarChart'), {
-            type: 'bar',
-            data: {
-                labels: typeLabels,
-                datasets: [{
-                    label: '准确率',
-                    data: typeData,
-                    backgroundColor: typeColors,
-                    borderRadius: 6,
-                    barThickness: 40
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        max: 100,
-                        ticks: { 
-                            font: { size: 11 }, 
-                            color: '#666',
-                            callback: v => v + '%'
-                        },
-                        grid: { color: '#f0f0f0' }
-                    },
-                    x: {
-                        ticks: { font: { size: 12 }, color: '#1d1d1f' },
-                        grid: { display: false }
-                    }
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: ctx => `准确率: ${ctx.parsed.y.toFixed(1)}%`
-                        }
-                    }
-                }
-            }
-        });
-    }
+    // 2. 异常检测卡片（替换原来的题型准确率对比）
+    loadAnomalyDetection();
     
     // 3. 高频错误题目 TOP5 柱状图
     const homeworkItems = selectedTask?.homework_items || [];
@@ -7012,3 +6946,707 @@ document.addEventListener('DOMContentLoaded', function() {
         observer.observe(createTaskModal, { attributes: true });
     }
 });
+
+// ========== 异常检测功能 ==========
+let currentAnomalyData = null;
+let expandedAnomalyIndex = null;
+
+/**
+ * 加载异常检测数据
+ */
+async function loadAnomalyDetection() {
+    if (!selectedTask || !selectedTask.task_id) {
+        resetAnomalySummary();
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/anomaly/task/${selectedTask.task_id}/questions`);
+        const data = await res.json();
+        
+        if (data.success && data.data) {
+            currentAnomalyData = data.data;
+            renderAnomalySummary(data.data);
+        } else {
+            resetAnomalySummary();
+        }
+    } catch (e) {
+        console.error('加载异常检测失败:', e);
+        resetAnomalySummary();
+    }
+}
+
+/**
+ * 重置异常检测摘要显示
+ */
+function resetAnomalySummary() {
+    const universalCount = document.getElementById('anomalyUniversalCount');
+    const highAnomalyCount = document.getElementById('anomalyHighAnomalyCount');
+    const lowAnomalyCount = document.getElementById('anomalyLowAnomalyCount');
+    const normalCount = document.getElementById('anomalyNormalCount');
+    const segmentUniversal = document.getElementById('segmentUniversal');
+    const segmentHighAnomaly = document.getElementById('segmentHighAnomaly');
+    const segmentLowAnomaly = document.getElementById('segmentLowAnomaly');
+    const segmentNormal = document.getElementById('segmentNormal');
+    const anomalyRate = document.getElementById('anomalyRate');
+    const anomalyStatsText = document.getElementById('anomalyStatsText');
+    const anomalyPreviewItems = document.getElementById('anomalyPreviewItems');
+    
+    if (universalCount) universalCount.textContent = '-';
+    if (highAnomalyCount) highAnomalyCount.textContent = '-';
+    if (lowAnomalyCount) lowAnomalyCount.textContent = '-';
+    if (normalCount) normalCount.textContent = '-';
+    if (segmentUniversal) segmentUniversal.style.width = '0%';
+    if (segmentHighAnomaly) segmentHighAnomaly.style.width = '0%';
+    if (segmentLowAnomaly) segmentLowAnomaly.style.width = '0%';
+    if (segmentNormal) segmentNormal.style.width = '0%';
+    if (anomalyRate) {
+        anomalyRate.textContent = '-';
+        anomalyRate.classList.remove('low-rate', 'high-rate');
+    }
+    if (anomalyStatsText) anomalyStatsText.textContent = '异常 - / 共 - 题';
+    if (anomalyPreviewItems) anomalyPreviewItems.innerHTML = '<span class="anomaly-preview-empty">暂无数据</span>';
+    
+    // 移除has-data高亮类
+    document.querySelectorAll('.anomaly-stat-card.has-data').forEach(card => {
+        card.classList.remove('has-data');
+    });
+    
+    currentAnomalyData = null;
+}
+
+/**
+ * 渲染异常检测摘要卡片 - 黑白简洁风格
+ */
+function renderAnomalySummary(data) {
+    const summary = data.summary || {};
+    
+    const universal = summary.universal_errors || 0;
+    const highAnomaly = summary.high_anomaly || 0;
+    const lowAnomaly = summary.low_anomaly || 0;
+    const normal = summary.normal || 0;
+    const total = summary.total_questions || 0;
+    const effectiveQuestions = summary.effective_questions || (total - universal);
+    const consistencyRate = summary.consistency_rate || 0;
+    
+    // 保存数据供后续使用
+    currentAnomalyData = data;
+    
+    // 获取元素
+    const universalCount = document.getElementById('anomalyUniversalCount');
+    const highAnomalyCount = document.getElementById('anomalyHighAnomalyCount');
+    const lowAnomalyCount = document.getElementById('anomalyLowAnomalyCount');
+    const normalCount = document.getElementById('anomalyNormalCount');
+    const segmentUniversal = document.getElementById('segmentUniversal');
+    const segmentHighAnomaly = document.getElementById('segmentHighAnomaly');
+    const segmentLowAnomaly = document.getElementById('segmentLowAnomaly');
+    const segmentNormal = document.getElementById('segmentNormal');
+    const anomalyRate = document.getElementById('anomalyRate');
+    const anomalyStatsText = document.getElementById('anomalyStatsText');
+    const anomalyPreviewItems = document.getElementById('anomalyPreviewItems');
+    
+    // 更新数值
+    if (universalCount) universalCount.textContent = universal;
+    if (highAnomalyCount) highAnomalyCount.textContent = highAnomaly;
+    if (lowAnomalyCount) lowAnomalyCount.textContent = lowAnomaly;
+    if (normalCount) normalCount.textContent = normal;
+    
+    // 为有数据的卡片添加高亮类
+    const universalCard = universalCount?.closest('.anomaly-stat-card');
+    const highAnomalyCard = highAnomalyCount?.closest('.anomaly-stat-card');
+    const lowAnomalyCard = lowAnomalyCount?.closest('.anomaly-stat-card');
+    
+    if (universalCard) {
+        universalCard.classList.toggle('has-data', universal > 0);
+    }
+    if (highAnomalyCard) {
+        highAnomalyCard.classList.toggle('has-data', highAnomaly > 0);
+    }
+    if (lowAnomalyCard) {
+        lowAnomalyCard.classList.toggle('has-data', lowAnomaly > 0);
+    }
+    
+    // 计算分段进度条宽度（基于有效题数，排除全员错误）
+    if (effectiveQuestions > 0) {
+        // 全员错误不参与进度条
+        if (segmentUniversal) segmentUniversal.style.width = '0%';
+        if (segmentHighAnomaly) segmentHighAnomaly.style.width = (highAnomaly / effectiveQuestions * 100) + '%';
+        if (segmentLowAnomaly) segmentLowAnomaly.style.width = (lowAnomaly / effectiveQuestions * 100) + '%';
+        if (segmentNormal) segmentNormal.style.width = (normal / effectiveQuestions * 100) + '%';
+    }
+    
+    // 计算一致性（排除全员错误）
+    const rate = Math.round(consistencyRate * 100);
+    
+    // 更新一致性显示
+    if (anomalyRate) {
+        anomalyRate.textContent = rate + '%';
+        anomalyRate.classList.remove('low-rate', 'high-rate');
+        // 一致性越高越好
+        if (rate >= 80) {
+            anomalyRate.classList.add('low-rate');  // 绿色
+        } else if (rate < 60) {
+            anomalyRate.classList.add('high-rate');  // 红色
+        }
+    }
+    
+    // 更新统计文本
+    if (anomalyStatsText) {
+        if (universal > 0) {
+            anomalyStatsText.textContent = `一致 ${normal} / 有效 ${effectiveQuestions} 题（排除全员错误 ${universal} 题）`;
+        } else {
+            anomalyStatsText.textContent = `一致 ${normal} / 共 ${total} 题`;
+        }
+    }
+    
+    // 渲染高频异常预览
+    if (anomalyPreviewItems) {
+        const anomalies = data.anomalies || [];
+        // 按错误人数排序，取前4个
+        const topAnomalies = anomalies
+            .sort((a, b) => (b.error_count || 0) - (a.error_count || 0))
+            .slice(0, 4);
+        
+        if (topAnomalies.length > 0) {
+            anomalyPreviewItems.innerHTML = topAnomalies.map(a => {
+                const location = `P${a.page_num}-${a.question_index}`;
+                const errorCount = a.error_count || 0;
+                const total = a.sample_count || 0;
+                return `<span class="anomaly-preview-item">${location} (${errorCount}/${total}错)</span>`;
+            }).join('');
+        } else {
+            anomalyPreviewItems.innerHTML = '<span class="anomaly-preview-empty">无异常题目</span>';
+        }
+    }
+}
+
+/**
+ * 显示异常检测详情弹窗
+ */
+function showAnomalyDetailModal() {
+    if (!currentAnomalyData) {
+        alert('暂无异常检测数据');
+        return;
+    }
+    
+    const summary = currentAnomalyData.summary || {};
+    expandedAnomalyIndex = null;
+    
+    // 更新统计卡片
+    document.getElementById('anomalyDetailUniversal').textContent = summary.universal_errors || 0;
+    document.getElementById('anomalyDetailHigh').textContent = summary.high_anomaly || 0;
+    document.getElementById('anomalyDetailLow').textContent = summary.low_anomaly || 0;
+    document.getElementById('anomalyDetailNormal').textContent = summary.normal || 0;
+    
+    // 清除卡片选中状态
+    document.querySelectorAll('.anomaly-detail-card').forEach(c => c.classList.remove('active'));
+    
+    // 渲染可视化图表
+    renderAnomalyPieChart(summary);
+    renderAnomalyBarChart(currentAnomalyData.anomalies || []);
+    
+    // 填充页码筛选下拉
+    const pageFilter = document.getElementById('anomalyPageFilter');
+    const pages = new Set();
+    (currentAnomalyData.anomalies || []).forEach(a => {
+        if (a.page_num) pages.add(a.page_num);
+    });
+    pageFilter.innerHTML = '<option value="">全部页码</option>' + 
+        Array.from(pages).sort((a, b) => a - b).map(p => `<option value="${p}">P${p}</option>`).join('');
+    
+    // 重置筛选
+    document.getElementById('anomalyTypeFilter').value = '';
+    
+    // 渲染列表
+    renderAnomalyList(currentAnomalyData.anomalies || []);
+    
+    showModal('anomalyDetailModal');
+}
+
+/**
+ * 渲染饼图
+ */
+function renderAnomalyPieChart(summary) {
+    const pieEl = document.getElementById('anomalyPieChart');
+    const legendEl = document.getElementById('anomalyPieLegend');
+    
+    if (!pieEl || !legendEl) return;
+    
+    const total = summary.total_questions || 0;
+    const normal = summary.normal || 0;
+    const low = summary.low_anomaly || 0;
+    const high = summary.high_anomaly || 0;
+    const universal = summary.universal_errors || 0;
+    
+    if (total === 0) {
+        pieEl.innerHTML = '<div class="anomaly-bar-empty">暂无数据</div>';
+        legendEl.innerHTML = '';
+        return;
+    }
+    
+    // 计算百分比
+    const normalPct = (normal / total * 100).toFixed(1);
+    const lowPct = (low / total * 100).toFixed(1);
+    const highPct = (high / total * 100).toFixed(1);
+    const universalPct = (universal / total * 100).toFixed(1);
+    
+    // 计算角度
+    let angle = 0;
+    const segments = [];
+    
+    if (normal > 0) {
+        segments.push({ color: '#34c759', pct: normal / total * 100, start: angle });
+        angle += normal / total * 360;
+    }
+    if (low > 0) {
+        segments.push({ color: '#007aff', pct: low / total * 100, start: angle });
+        angle += low / total * 360;
+    }
+    if (high > 0) {
+        segments.push({ color: '#ff9500', pct: high / total * 100, start: angle });
+        angle += high / total * 360;
+    }
+    if (universal > 0) {
+        segments.push({ color: '#ff3b30', pct: universal / total * 100, start: angle });
+    }
+    
+    // 生成 conic-gradient
+    let gradient = 'conic-gradient(';
+    let currentAngle = 0;
+    segments.forEach((seg, i) => {
+        const endAngle = currentAngle + seg.pct * 3.6;
+        gradient += `${seg.color} ${currentAngle}deg ${endAngle}deg`;
+        if (i < segments.length - 1) gradient += ', ';
+        currentAngle = endAngle;
+    });
+    gradient += ')';
+    
+    pieEl.style.background = gradient;
+    pieEl.innerHTML = `
+        <div class="anomaly-pie-center">
+            <span class="pie-total">${total}</span>
+            <span class="pie-label">题</span>
+        </div>
+    `;
+    
+    // 渲染图例
+    legendEl.innerHTML = `
+        <div class="pie-legend-item">
+            <span class="pie-legend-dot normal"></span>
+            <span>一致</span>
+            <span class="pie-legend-value">${normal} (${normalPct}%)</span>
+        </div>
+        <div class="pie-legend-item">
+            <span class="pie-legend-dot low"></span>
+            <span>低异常</span>
+            <span class="pie-legend-value">${low} (${lowPct}%)</span>
+        </div>
+        <div class="pie-legend-item">
+            <span class="pie-legend-dot high"></span>
+            <span>高异常</span>
+            <span class="pie-legend-value">${high} (${highPct}%)</span>
+        </div>
+        <div class="pie-legend-item">
+            <span class="pie-legend-dot universal"></span>
+            <span>全员错误</span>
+            <span class="pie-legend-value">${universal} (${universalPct}%)</span>
+        </div>
+    `;
+}
+
+/**
+ * 渲染错误率柱状图
+ */
+function renderAnomalyBarChart(anomalies) {
+    const container = document.getElementById('anomalyBarChart');
+    if (!container) return;
+    
+    if (!anomalies || anomalies.length === 0) {
+        container.innerHTML = '<div class="anomaly-bar-empty">暂无异常题目</div>';
+        return;
+    }
+    
+    // 按错误率排序，取前5
+    const sorted = [...anomalies]
+        .sort((a, b) => (b.error_rate || 0) - (a.error_rate || 0))
+        .slice(0, 5);
+    
+    container.innerHTML = sorted.map(a => {
+        const errorRate = (a.error_rate || 0) * 100;
+        const errorCount = a.error_count || 0;
+        const total = a.sample_count || 0;
+        const location = `P${a.page_num}-${a.question_index}`;
+        
+        // 根据错误率决定颜色
+        let rateClass = 'rate-low';
+        if (errorRate >= 50) rateClass = 'rate-high';
+        else if (errorRate >= 30) rateClass = 'rate-medium';
+        
+        return `
+            <div class="anomaly-bar-item">
+                <span class="bar-label" title="${location}">${location}</span>
+                <div class="bar-track">
+                    <div class="bar-fill ${rateClass}" style="width: ${errorRate}%"></div>
+                </div>
+                <span class="bar-value"><strong>${errorCount}</strong>/${total}错</span>
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * 通过点击卡片筛选类型
+ */
+function filterAnomalyByType(type) {
+    document.getElementById('anomalyTypeFilter').value = type;
+    
+    // 更新卡片选中状态
+    document.querySelectorAll('.anomaly-detail-card').forEach(c => c.classList.remove('active'));
+    if (type) {
+        const typeMap = {
+            'universal_error': 'anomaly-universal',
+            'high_anomaly': 'anomaly-high',
+            'low_anomaly': 'anomaly-low'
+        };
+        const cardClass = typeMap[type];
+        if (cardClass) {
+            document.querySelector(`.anomaly-detail-card.${cardClass}`)?.classList.add('active');
+        }
+    }
+    
+    filterAnomalyList();
+}
+
+/**
+ * 筛选异常列表
+ */
+function filterAnomalyList() {
+    if (!currentAnomalyData) return;
+    
+    const typeFilter = document.getElementById('anomalyTypeFilter').value;
+    const pageFilter = document.getElementById('anomalyPageFilter').value;
+    
+    let filtered = currentAnomalyData.anomalies || [];
+    
+    if (typeFilter) {
+        filtered = filtered.filter(a => a.type === typeFilter);
+    }
+    if (pageFilter) {
+        filtered = filtered.filter(a => String(a.page_num) === pageFilter);
+    }
+    
+    expandedAnomalyIndex = null;
+    renderAnomalyList(filtered);
+}
+
+/**
+ * 渲染异常列表
+ */
+function renderAnomalyList(anomalies) {
+    const tbody = document.getElementById('anomalyTableBody');
+    const countEl = document.getElementById('anomalyFilterCount');
+    
+    if (!anomalies || anomalies.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-row">暂无异常数据</td></tr>';
+        countEl.textContent = '显示 0 条';
+        return;
+    }
+    
+    countEl.textContent = `显示 ${anomalies.length} 条`;
+    
+    const typeLabels = {
+        'universal_error': { label: '全员错误', class: 'type-universal' },
+        'high_anomaly': { label: '高异常', class: 'type-high' },
+        'low_anomaly': { label: '低异常', class: 'type-low' }
+    };
+    
+    let html = '';
+    anomalies.forEach((anomaly, index) => {
+        const typeInfo = typeLabels[anomaly.type] || { label: anomaly.type, class: '' };
+        const errorRate = (anomaly.error_rate * 100).toFixed(0);
+        const rateClass = errorRate >= 80 ? 'rate-high' : (errorRate >= 50 ? 'rate-medium' : 'rate-low');
+        const isExpanded = expandedAnomalyIndex === index;
+        // 显示错误类型摘要
+        const errorTypeSummary = anomaly.error_type_summary || '';
+        
+        html += `
+            <tr onclick="toggleAnomalySamples(${index})" data-index="${index}" class="${isExpanded ? 'expanded' : ''}">
+                <td>
+                    <span class="anomaly-type-badge ${typeInfo.class}">${typeInfo.label}</span>
+                </td>
+                <td class="anomaly-location">P${anomaly.page_num}-${anomaly.question_index}</td>
+                <td class="anomaly-error-rate ${rateClass}">${errorRate}%</td>
+                <td>${anomaly.sample_count}人</td>
+                <td>${escapeHtml(anomaly.description || '')}</td>
+                <td><span class="anomaly-expand-icon">${isExpanded ? '▼' : '▶'}</span></td>
+            </tr>
+            <tr class="anomaly-samples-row" id="anomalySamples_${index}" style="display:${isExpanded ? 'table-row' : 'none'};">
+                <td colspan="6">
+                    ${renderAnomalySamplesContent(anomaly)}
+                </td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = html;
+}
+
+/**
+ * 渲染异常样例内容 - 优化版卡片布局
+ */
+function renderAnomalySamplesContent(anomaly) {
+    const samples = anomaly.samples || [];
+    if (samples.length === 0) {
+        return '<div class="anomaly-samples-content"><div class="anomaly-samples-empty">暂无样例数据</div></div>';
+    }
+    
+    // 分组：判对的和判错的
+    const correctSamples = samples.filter(s => s.result === 'correct');
+    const errorSamples = samples.filter(s => s.result === 'error');
+    
+    // 基准答案（标准答案）
+    const baseAnswer = samples[0]?.base_answer || '-';
+    const totalCount = anomaly.sample_count || samples.length;
+    const correctCount = anomaly.correct_count || correctSamples.length;
+    const errorCount = anomaly.error_count || errorSamples.length;
+    const correctPercent = totalCount > 0 ? Math.round(correctCount / totalCount * 100) : 0;
+    const errorPercent = totalCount > 0 ? Math.round(errorCount / totalCount * 100) : 0;
+    
+    // 计算识别一致率
+    const matchCount = samples.filter(s => {
+        const baseUser = (s.base_user || '').trim();
+        const hwAnswer = (s.hw_answer || '').trim();
+        return baseUser === hwAnswer;
+    }).length;
+    const matchRate = totalCount > 0 ? Math.round(matchCount / totalCount * 100) : 0;
+    
+    // 错误类型统计
+    const errorTypes = anomaly.error_types || {};
+    
+    let html = `<div class="anomaly-samples-content-v2">`;
+    
+    // 卡片1: 统计概览
+    html += `
+        <div class="anomaly-card">
+            <div class="anomaly-card-title">统计概览</div>
+            <div class="anomaly-card-body">
+                <div class="anomaly-stats-row">
+                    <span class="stat-item">
+                        <span class="stat-label">判对</span>
+                        <span class="stat-value correct">${correctCount}人</span>
+                        <span class="stat-percent">(${correctPercent}%)</span>
+                    </span>
+                    <span class="stat-item">
+                        <span class="stat-label">判错</span>
+                        <span class="stat-value error">${errorCount}人</span>
+                        <span class="stat-percent">(${errorPercent}%)</span>
+                    </span>
+                    <span class="stat-item">
+                        <span class="stat-label">共计</span>
+                        <span class="stat-value">${totalCount}人</span>
+                    </span>
+                </div>
+                ${Object.keys(errorTypes).length > 0 ? `
+                <div class="anomaly-error-dist">
+                    <span class="dist-label">错误分布:</span>
+                    ${Object.entries(errorTypes)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([type, count]) => `<span class="dist-item">${escapeHtml(type)} ${count}</span>`)
+                        .join('')}
+                </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+    
+    // 卡片2: 答案信息
+    html += `
+        <div class="anomaly-card">
+            <div class="anomaly-card-title">答案信息</div>
+            <div class="anomaly-card-body">
+                <div class="anomaly-info-row">
+                    <span class="info-label">标准答案</span>
+                    <span class="info-value mono" title="${escapeHtml(baseAnswer)}">${escapeHtml(baseAnswer)}</span>
+                </div>
+                <div class="anomaly-info-row">
+                    <span class="info-label">识别一致率</span>
+                    <span class="info-value">${matchRate}% <span class="info-hint">(${matchCount}/${totalCount} 学生AI识别与基准一致)</span></span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 卡片3: 判错样例
+    if (errorSamples.length > 0) {
+        const showCount = 5;
+        const hasMore = errorSamples.length > showCount;
+        const uniqueId = `errorSamples_${Date.now()}`;
+        
+        html += `
+            <div class="anomaly-card">
+                <div class="anomaly-card-title">
+                    判错样例
+                    <span class="card-title-hint">(显示前${Math.min(showCount, errorSamples.length)}条，共${errorSamples.length}条)</span>
+                </div>
+                <div class="anomaly-card-body">
+                    <div class="anomaly-table-wrapper">
+                        <table class="anomaly-samples-table-v2">
+                            <thead>
+                                <tr>
+                                    <th class="col-student">学生</th>
+                                    <th class="col-base">基准答案</th>
+                                    <th class="col-ai">AI识别答案</th>
+                                    <th class="col-result">判定</th>
+                                    <th class="col-type">错误类型</th>
+                                </tr>
+                            </thead>
+                            <tbody id="${uniqueId}">
+                                ${errorSamples.slice(0, showCount).map(s => renderErrorSampleRow(s)).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    ${hasMore ? `
+                    <div class="anomaly-table-footer">
+                        <button class="btn-show-all" onclick="toggleAllErrorSamples(this, ${JSON.stringify(errorSamples.map(s => ({
+                            student_name: s.student_name,
+                            student_id: s.student_id,
+                            base_user: s.base_user,
+                            hw_answer: s.hw_answer,
+                            error_type: s.error_type
+                        }))).replace(/"/g, '&quot;')}, '${uniqueId}')">
+                            查看全部 ${errorSamples.length} 条
+                        </button>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    // 卡片4: 判对样例（紧凑展示）
+    if (correctSamples.length > 0 && anomaly.type !== 'universal_error') {
+        const uniqueId = `correctSamples_${Date.now()}`;
+        
+        html += `
+            <div class="anomaly-card collapsed" id="${uniqueId}_card">
+                <div class="anomaly-card-title clickable" onclick="toggleCorrectSamplesCard('${uniqueId}')">
+                    判对样例（参照）
+                    <span class="card-title-hint">(共${correctSamples.length}条)</span>
+                    <span class="card-toggle-icon">展开</span>
+                </div>
+                <div class="anomaly-card-body" id="${uniqueId}_body" style="display:none;">
+                    <div class="anomaly-correct-list">
+                        ${correctSamples.slice(0, 10).map(s => {
+                            const studentName = s.student_name || ('学生' + String(s.student_id || '').slice(-4));
+                            const answer = s.hw_answer || '-';
+                            return `<span class="correct-item" title="${escapeHtml(answer)}">${escapeHtml(studentName)} · ${escapeHtml(answer.length > 20 ? answer.substring(0, 20) + '...' : answer)}</span>`;
+                        }).join('')}
+                        ${correctSamples.length > 10 ? `<span class="correct-item more">+${correctSamples.length - 10}条</span>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    html += `</div>`;
+    return html;
+}
+
+/**
+ * 渲染单条判错样例行
+ */
+function renderErrorSampleRow(s) {
+    const studentName = s.student_name || ('学生' + String(s.student_id || '').slice(-4));
+    const baseUser = s.base_user || '-';
+    const hwAnswer = s.hw_answer || '-';
+    const errorType = s.error_type || '';
+    const isAnswerMatch = baseUser === hwAnswer || (baseUser && hwAnswer && baseUser.trim() === hwAnswer.trim());
+    
+    return `
+        <tr>
+            <td class="col-student">${escapeHtml(studentName)}</td>
+            <td class="col-base" title="${escapeHtml(baseUser)}">${escapeHtml(baseUser)}</td>
+            <td class="col-ai ${isAnswerMatch ? '' : 'mismatch'}" title="${escapeHtml(hwAnswer)}">${escapeHtml(hwAnswer)}</td>
+            <td class="col-result error">错误</td>
+            <td class="col-type">${escapeHtml(errorType)}</td>
+        </tr>
+    `;
+}
+
+/**
+ * 切换显示全部判错样例
+ */
+function toggleAllErrorSamples(btn, samples, tbodyId) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    
+    const isExpanded = btn.dataset.expanded === 'true';
+    
+    if (isExpanded) {
+        // 收起，只显示前5条
+        tbody.innerHTML = samples.slice(0, 5).map(s => renderErrorSampleRow(s)).join('');
+        btn.textContent = `查看全部 ${samples.length} 条`;
+        btn.dataset.expanded = 'false';
+    } else {
+        // 展开，显示全部
+        tbody.innerHTML = samples.map(s => renderErrorSampleRow(s)).join('');
+        btn.textContent = '收起';
+        btn.dataset.expanded = 'true';
+    }
+}
+
+/**
+ * 切换判对样例卡片展开/收起
+ */
+function toggleCorrectSamplesCard(uniqueId) {
+    const card = document.getElementById(`${uniqueId}_card`);
+    const body = document.getElementById(`${uniqueId}_body`);
+    const icon = card?.querySelector('.card-toggle-icon');
+    
+    if (!card || !body) return;
+    
+    const isCollapsed = card.classList.contains('collapsed');
+    
+    if (isCollapsed) {
+        card.classList.remove('collapsed');
+        body.style.display = 'block';
+        if (icon) icon.textContent = '收起';
+    } else {
+        card.classList.add('collapsed');
+        body.style.display = 'none';
+        if (icon) icon.textContent = '展开';
+    }
+}
+
+/**
+ * 切换显示异常样例
+ */
+function toggleAnomalySamples(index) {
+    const row = document.getElementById(`anomalySamples_${index}`);
+    const parentRow = row?.previousElementSibling;
+    
+    if (expandedAnomalyIndex === index) {
+        // 收起当前行
+        row.style.display = 'none';
+        parentRow?.classList.remove('expanded');
+        expandedAnomalyIndex = null;
+    } else {
+        // 收起之前展开的行
+        if (expandedAnomalyIndex !== null) {
+            const prevRow = document.getElementById(`anomalySamples_${expandedAnomalyIndex}`);
+            if (prevRow) {
+                prevRow.style.display = 'none';
+                prevRow.previousElementSibling?.classList.remove('expanded');
+            }
+        }
+        // 展开当前行
+        row.style.display = 'table-row';
+        parentRow?.classList.add('expanded');
+        expandedAnomalyIndex = index;
+    }
+    
+    // 更新展开图标
+    document.querySelectorAll('.anomaly-expand-icon').forEach((icon, i) => {
+        icon.textContent = (i === expandedAnomalyIndex) ? '▼' : '▶';
+    });
+}

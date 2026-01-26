@@ -2597,25 +2597,33 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
     has_duplicate_index = has_duplicate_base or has_duplicate_hw
     
     if has_duplicate_index:
-        print(f"[DEBUG] do_evaluation: 检测到重复题号，使用索引匹配模式")
+        print(f"[DEBUG] do_evaluation: 检测到重复题号，使用题号顺序匹配模式")
     
     # 构建索引字典（使用展开后的数据）
-    hw_dict_by_index = {}  # 按题号索引（标准化后）
+    hw_dict_by_index = {}  # 按题号索引（标准化后）- 无重复时使用
     hw_dict_by_tempindex = {}  # 按tempIndex索引
-    hw_list_by_position = flat_homework  # 按位置索引（用于重复题号情况）
+    hw_list_by_index = {}  # 按题号分组的列表（用于重复题号情况）
     
     for i, item in enumerate(flat_homework):
-        # 按题号索引（标准化中英文符号）- 只有在没有重复题号时才使用
-        if not has_duplicate_index:
-            item_idx = normalize_index(item.get('index', ''))
-            if item_idx:
+        item_idx = normalize_index(item.get('index', ''))
+        if item_idx:
+            if not has_duplicate_index:
+                # 无重复题号时，直接按题号索引
                 hw_dict_by_index[item_idx] = item
+            else:
+                # 有重复题号时，按题号分组存储（保持顺序）
+                if item_idx not in hw_list_by_index:
+                    hw_list_by_index[item_idx] = []
+                hw_list_by_index[item_idx].append(item)
         # 按tempIndex索引
         temp_idx = item.get('tempIndex')
         if temp_idx is not None:
             hw_dict_by_tempindex[int(temp_idx)] = item
         else:
             hw_dict_by_tempindex[i] = item
+    
+    # 记录每个题号已使用的索引（用于重复题号时按顺序取第一个未使用的）
+    hw_index_used = {}
     
     for i, base_item in enumerate(base_effect):
         idx = str(base_item.get('index', ''))
@@ -2629,18 +2637,22 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
             base_temp_idx = i
         
         # 匹配方式：
-        # 1. 如果有重复题号，优先使用位置索引匹配
+        # 1. 有重复题号且AI题目数>基准题目数时，按题号顺序匹配（取第一个未使用的同题号项）
         # 2. 否则优先按题号(index)匹配，其次按tempIndex匹配
         hw_item = None
-        if has_duplicate_index:
-            # 有重复题号时，优先使用位置索引匹配
-            if i < len(hw_list_by_position):
-                hw_item = hw_list_by_position[i]
-            # 如果位置匹配失败，尝试tempIndex匹配
+        if has_duplicate_index and len(flat_homework) > len(base_effect):
+            # 有重复题号且AI题目更多时，按题号顺序匹配
+            if normalized_idx in hw_list_by_index:
+                used_count = hw_index_used.get(normalized_idx, 0)
+                candidates = hw_list_by_index[normalized_idx]
+                if used_count < len(candidates):
+                    hw_item = candidates[used_count]
+                    hw_index_used[normalized_idx] = used_count + 1
+            # 如果题号匹配失败，尝试tempIndex匹配
             if not hw_item:
                 hw_item = hw_dict_by_tempindex.get(base_temp_idx)
         else:
-            # 没有重复题号时，优先按题号匹配
+            # 没有重复题号或题目数相近时，优先按题号匹配
             hw_item = hw_dict_by_index.get(normalized_idx)
             if not hw_item:
                 hw_item = hw_dict_by_tempindex.get(base_temp_idx)

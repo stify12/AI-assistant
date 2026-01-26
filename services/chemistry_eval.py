@@ -172,6 +172,17 @@ def normalize_chemistry_markdown(text):
         text
     )
     
+    # 5.1 处理 \stackrel{条件}{=} 格式（条件在上，符号在下）
+    def replace_stackrel(match):
+        condition = _process_reaction_condition(match.group(1))
+        symbol = match.group(2)
+        # 将 = 转换为带条件的箭头格式
+        if symbol == '=' or symbol == '\\to' or symbol == '→':
+            return f" ─{condition}─→ "
+        return f" ─{condition}─{symbol} "
+    
+    text = re.sub(r'\\stackrel\s*\{([^{}]*)\}\s*\{([^{}]*)\}', replace_stackrel, text)
+    
     # 6. 处理简单条件标注 \overset{条件}{=} 或 \underset{条件}{=}
     def replace_overset(match):
         condition = _process_reaction_condition(match.group(1))

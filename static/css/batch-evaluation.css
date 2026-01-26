@@ -5350,8 +5350,6 @@ body {
     border-color: #1d1d1f;
 }
 
-}
-
 
 /* ========== 基准合集样式 ========== */
 
@@ -5939,4 +5937,1281 @@ body {
     height: 1px;
     background: #e5e5e5;
     margin: 4px 0;
+}
+
+/* ========== 异常检测卡片样式 ========== */
+/* ========== 异常检测卡片 - 黑白简洁风格 ========== */
+.anomaly-chart-box {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.anomaly-chart-box:hover {
+    border-color: #1d1d1f;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.anomaly-chart-box .chart-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.anomaly-chart-box .chart-link {
+    font-size: 12px;
+    font-weight: 400;
+    color: #86868b;
+}
+
+.anomaly-chart-box:hover .chart-link {
+    color: #1d1d1f;
+}
+
+.anomaly-summary {
+    padding: 12px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 40px);
+}
+
+/* 统计卡片行 - 黑白风格 */
+.anomaly-stats-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.anomaly-stat-card {
+    flex: 1;
+    text-align: center;
+    padding: 12px 8px;
+    border-radius: 10px;
+    min-width: 55px;
+    position: relative;
+    background: #f5f5f7;
+    border: 1px solid #e5e5e5;
+    transition: all 0.15s;
+}
+
+.anomaly-stat-card:hover {
+    border-color: #1d1d1f;
+    background: #fff;
+}
+
+/* 黑白风格卡片 - 通过左边框颜色区分类型 */
+.anomaly-stat-card.anomaly-universal {
+    border-left: 3px solid #1d1d1f;
+}
+
+.anomaly-stat-card.anomaly-high {
+    border-left: none;
+}
+
+.anomaly-stat-card.anomaly-low {
+    border-left: none;
+}
+
+.anomaly-stat-card.anomaly-normal {
+    border-left: 3px solid #d2d2d7;
+}
+
+/* 有异常数据时高亮显示 */
+.anomaly-stat-card.anomaly-universal.has-data {
+    background: #1d1d1f;
+    border-color: #1d1d1f;
+}
+
+.anomaly-stat-card.anomaly-universal.has-data .anomaly-stat-value,
+.anomaly-stat-card.anomaly-universal.has-data .anomaly-stat-label {
+    color: #fff;
+}
+
+.anomaly-stat-card.anomaly-high.has-data {
+    background: #f5f5f7;
+    border: none;
+}
+
+.anomaly-stat-card.anomaly-high.has-data .anomaly-stat-value {
+    color: #1d1d1f;
+}
+
+.anomaly-stat-card.anomaly-low.has-data {
+    background: #f5f5f7;
+    border: none;
+}
+
+.anomaly-stat-card.anomaly-low.has-data .anomaly-stat-value {
+    color: #1d1d1f;
+}
+
+.anomaly-stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1d1d1f;
+    line-height: 1.2;
+}
+
+.anomaly-stat-label {
+    font-size: 11px;
+    color: #86868b;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+/* 进度条区域 - 现代简洁风格 */
+.anomaly-progress-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+}
+
+.anomaly-rate {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1d1d1f;
+    min-width: 75px;
+    text-align: center;
+    line-height: 1;
+}
+
+.anomaly-rate.low-rate {
+    color: #86868b;
+}
+
+.anomaly-rate.high-rate {
+    color: #1d1d1f;
+}
+
+.anomaly-bar-wrap {
+    flex: 1;
+}
+
+.anomaly-segmented-bar {
+    display: flex;
+    height: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+    background: #e5e5e5;
+}
+
+.anomaly-segment {
+    height: 100%;
+    transition: width 0.3s;
+}
+
+/* 黑白渐变色进度条 */
+.anomaly-segment.segment-universal {
+    background: #1d1d1f;
+}
+
+.anomaly-segment.segment-high {
+    background: #e65100;
+}
+
+.anomaly-segment.segment-low {
+    background: #1565c0;
+}
+
+.anomaly-segment.segment-normal {
+    background: #d2d2d7;
+}
+
+.anomaly-stats-text {
+    font-size: 12px;
+    color: #86868b;
+    margin-top: 6px;
+    font-weight: 500;
+}
+
+/* 高频异常预览 - 白色背景现代风格 */
+.anomaly-preview {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-top: auto;
+}
+
+.anomaly-preview-label {
+    font-size: 12px;
+    color: #86868b;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.anomaly-preview-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+/* 高频异常标签 - 黑白风格 */
+.anomaly-preview-item {
+    font-size: 12px;
+    color: #1d1d1f;
+    background: #f5f5f7;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid #d2d2d7;
+    font-weight: 500;
+    transition: all 0.15s;
+    cursor: pointer;
+}
+
+.anomaly-preview-item:hover {
+    background: #1d1d1f;
+    color: #fff;
+    border-color: #1d1d1f;
+}
+
+.anomaly-preview-empty {
+    font-size: 12px;
+    color: #86868b;
+    font-style: italic;
+}
+
+/* 旧版进度条文本（兼容） */
+.anomaly-progress-text {
+    font-size: 11px;
+    color: #86868b;
+    margin-top: 4px;
+    text-align: center;
+    display: none;
+}
+
+.anomaly-progress-text strong {
+    color: #1d1d1f;
+    font-weight: 600;
+}
+
+/* ========== 异常检测详情弹窗样式 ========== */
+.anomaly-detail-stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.anomaly-detail-card {
+    flex: 1;
+    text-align: center;
+    padding: 14px 12px;
+    border-radius: 10px;
+    min-width: 80px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.anomaly-detail-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.anomaly-detail-card.active {
+    box-shadow: 0 0 0 2px #1d1d1f;
+}
+
+.anomaly-detail-card.anomaly-universal {
+    background: #ffeef0;
+    border: 1px solid #f8d7da;
+}
+
+.anomaly-detail-card.anomaly-high {
+    background: #fff3e0;
+    border: 1px solid #ffe0b2;
+}
+
+.anomaly-detail-card.anomaly-low {
+    background: #e3f2fd;
+    border: 1px solid #bbdefb;
+}
+
+.anomaly-detail-card.anomaly-normal {
+    background: #e3f9e5;
+    border: 1px solid #c8e6c9;
+}
+
+.anomaly-detail-value {
+    font-size: 28px;
+    font-weight: 600;
+    color: #1d1d1f;
+    line-height: 1.2;
+}
+
+.anomaly-detail-label {
+    font-size: 12px;
+    color: #1d1d1f;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.anomaly-detail-severity {
+    font-size: 10px;
+    color: #86868b;
+    margin-top: 2px;
+}
+
+.anomaly-filter-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    align-items: center;
+}
+
+.anomaly-filter-row select {
+    padding: 8px 12px;
+    border: 1px solid #d2d2d7;
+    border-radius: 8px;
+    font-size: 13px;
+    background: #fff;
+    color: #1d1d1f;
+    min-width: 120px;
+}
+
+.anomaly-filter-count {
+    font-size: 12px;
+    color: #86868b;
+    margin-left: auto;
+}
+
+.anomaly-list-container {
+    max-height: 380px;
+    overflow-y: auto;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+}
+
+.anomaly-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.anomaly-table th {
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #86868b;
+    background: #f5f5f7;
+    border-bottom: 1px solid #e5e5e5;
+    position: sticky;
+    top: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.anomaly-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #1d1d1f;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+}
+
+.anomaly-table tbody tr {
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.anomaly-table tbody tr:hover {
+    background: #f5f5f7;
+}
+
+.anomaly-table tbody tr.expanded {
+    background: #f0f0f2;
+}
+
+.anomaly-table .empty-row {
+    text-align: center;
+    color: #86868b;
+    padding: 40px;
+}
+
+.anomaly-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.anomaly-type-badge.type-universal {
+    background: #ffeef0;
+    color: #d73a49;
+}
+
+.anomaly-type-badge.type-high {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.anomaly-type-badge.type-low {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.anomaly-type-icon {
+    font-size: 8px;
+}
+
+.anomaly-location {
+    font-weight: 500;
+    color: #1d1d1f;
+    font-family: 'Söhne Mono', monospace;
+    font-size: 12px;
+}
+
+.anomaly-error-rate {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.anomaly-error-rate.rate-high {
+    color: #d73a49;
+}
+
+.anomaly-error-rate.rate-medium {
+    color: #e65100;
+}
+
+.anomaly-error-rate.rate-low {
+    color: #1565c0;
+}
+
+.anomaly-expand-icon {
+    color: #86868b;
+    font-size: 10px;
+    transition: transform 0.2s;
+}
+
+.anomaly-table tbody tr.expanded .anomaly-expand-icon {
+    transform: rotate(90deg);
+}
+
+/* ========== 异常样例展开区域 V2 ========== */
+.anomaly-samples-row {
+    background: #fafafa;
+}
+
+.anomaly-samples-row td {
+    padding: 0 !important;
+}
+
+/* V2 容器 */
+.anomaly-samples-content-v2 {
+    padding: 16px;
+    margin: 8px 12px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: #fafafa;
+}
+
+/* 卡片通用样式 */
+.anomaly-samples-content-v2 .anomaly-card {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.anomaly-samples-content-v2 .anomaly-card-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1d1d1f;
+    padding: 12px 16px;
+    background: #f5f5f7;
+    border-bottom: 1px solid #e5e5e5;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.anomaly-samples-content-v2 .anomaly-card-title .card-title-hint {
+    font-weight: 400;
+    color: #86868b;
+    font-size: 11px;
+}
+
+.anomaly-samples-content-v2 .anomaly-card-title .card-toggle-icon {
+    margin-left: auto;
+    font-size: 11px;
+    color: #86868b;
+    cursor: pointer;
+}
+
+.anomaly-samples-content-v2 .anomaly-card-title.clickable {
+    cursor: pointer;
+}
+
+.anomaly-samples-content-v2 .anomaly-card-title.clickable:hover {
+    background: #ebebeb;
+}
+
+.anomaly-samples-content-v2 .anomaly-card-body {
+    padding: 16px;
+}
+
+/* 统计概览 */
+.anomaly-samples-content-v2 .anomaly-stats-row {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.anomaly-samples-content-v2 .anomaly-stats-row .stat-item {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.anomaly-samples-content-v2 .anomaly-stats-row .stat-label {
+    font-size: 13px;
+    color: #86868b;
+}
+
+.anomaly-samples-content-v2 .anomaly-stats-row .stat-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.anomaly-samples-content-v2 .anomaly-stats-row .stat-value.correct {
+    color: #1e7e34;
+}
+
+.anomaly-samples-content-v2 .anomaly-stats-row .stat-value.error {
+    color: #d73a49;
+}
+
+.anomaly-samples-content-v2 .anomaly-stats-row .stat-percent {
+    font-size: 12px;
+    color: #86868b;
+}
+
+/* 错误分布 */
+.anomaly-samples-content-v2 .anomaly-error-dist {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid #e5e5e5;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.anomaly-samples-content-v2 .anomaly-error-dist .dist-label {
+    font-size: 12px;
+    color: #86868b;
+}
+
+.anomaly-samples-content-v2 .anomaly-error-dist .dist-item {
+    font-size: 12px;
+    color: #1d1d1f;
+    padding: 4px 10px;
+    background: #f0f0f0;
+    border-radius: 4px;
+}
+
+/* 答案信息 */
+.anomaly-samples-content-v2 .anomaly-info-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.anomaly-samples-content-v2 .anomaly-info-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.anomaly-samples-content-v2 .anomaly-info-row:first-child {
+    padding-top: 0;
+}
+
+.anomaly-samples-content-v2 .anomaly-info-row .info-label {
+    font-size: 13px;
+    color: #86868b;
+    min-width: 80px;
+    flex-shrink: 0;
+}
+
+.anomaly-samples-content-v2 .anomaly-info-row .info-value {
+    font-size: 13px;
+    color: #1d1d1f;
+    word-break: break-all;
+}
+
+.anomaly-samples-content-v2 .anomaly-info-row .info-value.mono {
+    font-family: 'Söhne Mono', 'Monaco', 'Consolas', monospace;
+    background: #f5f5f7;
+    padding: 6px 10px;
+    border-radius: 4px;
+}
+
+.anomaly-samples-content-v2 .anomaly-info-row .info-hint {
+    font-size: 11px;
+    color: #86868b;
+}
+
+/* 表格包装器 */
+.anomaly-samples-content-v2 .anomaly-table-wrapper {
+    overflow-x: auto;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+}
+
+/* V2 表格样式 */
+.anomaly-samples-content-v2 .anomaly-samples-table-v2 {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.anomaly-samples-content-v2 .anomaly-samples-table-v2 thead {
+    background: #f5f5f7;
+}
+
+.anomaly-samples-content-v2 .anomaly-samples-table-v2 th {
+    padding: 12px 14px;
+    text-align: left;
+    font-weight: 500;
+    color: #86868b;
+    font-size: 12px;
+    border-bottom: 1px solid #e5e5e5;
+    white-space: nowrap;
+}
+
+.anomaly-samples-content-v2 .anomaly-samples-table-v2 td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+    color: #1d1d1f;
+}
+
+.anomaly-samples-content-v2 .anomaly-samples-table-v2 tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.anomaly-samples-content-v2 .anomaly-samples-table-v2 tbody tr:hover {
+    background: #fafafa;
+}
+
+/* 列宽定义 */
+.anomaly-samples-content-v2 .anomaly-samples-table-v2 .col-student {
+    width: 80px;
+    font-weight: 500;
+}
+
+.anomaly-samples-content-v2 .anomaly-samples-table-v2 .col-base,
+.anomaly-samples-content-v2 .anomaly-samples-table-v2 .col-ai {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: 'Söhne Mono', 'Monaco', 'Consolas', monospace;
+    font-size: 12px;
+}
+
+.anomaly-samples-content-v2 .anomaly-samples-table-v2 .col-ai.mismatch {
+    color: #d73a49;
+}
+
+.anomaly-samples-content-v2 .anomaly-samples-table-v2 .col-result {
+    width: 60px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.anomaly-samples-content-v2 .anomaly-samples-table-v2 .col-result.error {
+    color: #d73a49;
+}
+
+.anomaly-samples-content-v2 .anomaly-samples-table-v2 .col-result.correct {
+    color: #1e7e34;
+}
+
+.anomaly-samples-content-v2 .anomaly-samples-table-v2 .col-type {
+    width: 140px;
+    font-size: 12px;
+    color: #86868b;
+    text-align: right;
+}
+
+/* 表格底部 */
+.anomaly-samples-content-v2 .anomaly-table-footer {
+    padding-top: 14px;
+    text-align: center;
+}
+
+.anomaly-samples-content-v2 .anomaly-table-footer .btn-show-all {
+    font-size: 13px;
+    color: #1d1d1f;
+    background: #f5f5f7;
+    border: 1px solid #d2d2d7;
+    padding: 8px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.anomaly-samples-content-v2 .anomaly-table-footer .btn-show-all:hover {
+    background: #e5e5e5;
+}
+
+/* 判对样例紧凑列表 */
+.anomaly-samples-content-v2 .anomaly-correct-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.anomaly-samples-content-v2 .anomaly-correct-list .correct-item {
+    font-size: 12px;
+    color: #1d1d1f;
+    padding: 6px 12px;
+    background: #f5f5f7;
+    border-radius: 4px;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomaly-samples-content-v2 .anomaly-correct-list .correct-item.more {
+    color: #86868b;
+    font-style: italic;
+}
+
+/* 收起状态 */
+.anomaly-samples-content-v2 .anomaly-card.collapsed .anomaly-card-title {
+    border-bottom: none;
+}
+
+/* 保留旧版样式兼容 */
+.anomaly-samples-content {
+    padding: 16px;
+    margin: 0 12px 12px 12px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #e5e5e5;
+}
+
+.anomaly-samples-empty {
+    color: #86868b;
+    font-size: 12px;
+    text-align: center;
+    padding: 20px;
+}
+
+.anomaly-samples-overview {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.anomaly-samples-overview .overview-item {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 4px;
+}
+
+.anomaly-samples-overview .overview-item.correct {
+    background: #e3f9e5;
+    color: #1e7e34;
+}
+
+.anomaly-samples-overview .overview-item.error {
+    background: #ffeef0;
+    color: #d73a49;
+}
+
+.anomaly-samples-overview .overview-item.total {
+    background: #f5f5f7;
+    color: #86868b;
+}
+
+.anomaly-base-answer-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    background: #f5f5f7;
+    border-radius: 6px;
+}
+
+.anomaly-base-answer-box .base-label {
+    font-size: 11px;
+    color: #86868b;
+    white-space: nowrap;
+    padding-top: 2px;
+}
+
+.anomaly-base-answer-box .base-value {
+    font-size: 12px;
+    color: #1d1d1f;
+    font-family: 'Söhne Mono', monospace;
+    word-break: break-all;
+}
+
+.anomaly-samples-section {
+    margin-top: 12px;
+}
+
+.anomaly-samples-section .section-title {
+    font-size: 11px;
+    font-weight: 500;
+    color: #86868b;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.anomaly-samples-section.error-section {
+    border-left: 3px solid #d73a49;
+    padding-left: 12px;
+}
+
+.anomaly-samples-section.correct-section {
+    border-left: 3px solid #1e7e34;
+    padding-left: 12px;
+    margin-top: 16px;
+}
+
+.sample-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    font-size: 12px;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.sample-row:last-child {
+    border-bottom: none;
+}
+
+.sample-row .sample-student {
+    color: #1d1d1f;
+    min-width: 80px;
+    font-size: 12px;
+}
+
+.sample-row .sample-answer {
+    flex: 1;
+    color: #1d1d1f;
+    font-family: 'Söhne Mono', monospace;
+    font-size: 12px;
+    background: #fafafa;
+    padding: 4px 8px;
+    border-radius: 4px;
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sample-row.error .sample-answer {
+    background: #fff5f5;
+}
+
+.sample-row.correct .sample-answer {
+    background: #f5fff5;
+}
+
+.sample-row .sample-error-type {
+    font-size: 10px;
+    color: #d73a49;
+    background: #ffeef0;
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+.sample-row .sample-error-type.high {
+    color: #e65100;
+    background: #fff3e0;
+    font-weight: 500;
+}
+
+/* 优化后的样例展示样式 */
+.anomaly-samples-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.anomaly-error-types-inline {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.anomaly-error-types-inline .error-type-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: #f0f0f0;
+    color: #1d1d1f;
+}
+
+.anomaly-error-types-inline .error-type-tag.high {
+    background: #fff3e0;
+    color: #e65100;
+    font-weight: 500;
+}
+
+/* 样例表格样式 - 使用真正的 table */
+.anomaly-samples-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.anomaly-samples-table thead {
+    background: #f5f5f7;
+}
+
+.anomaly-samples-table th {
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 500;
+    color: #86868b;
+    font-size: 11px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.anomaly-samples-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomaly-samples-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.anomaly-samples-table tbody tr:hover {
+    background: #fafafa;
+}
+
+.anomaly-samples-table.compact {
+    border: none;
+    background: #f9f9f9;
+    border-radius: 6px;
+}
+
+.anomaly-samples-table.compact thead {
+    background: transparent;
+}
+
+.anomaly-samples-table.compact th {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.anomaly-samples-table.compact td {
+    padding: 8px 12px;
+}
+
+.anomaly-samples-table .col-student {
+    font-weight: 500;
+    color: #1d1d1f;
+}
+
+.anomaly-samples-table .col-answer {
+    font-family: 'Söhne Mono', monospace;
+    color: #1d1d1f;
+}
+
+.anomaly-samples-table .col-answer.match {
+    color: #1e7e34;
+}
+
+.anomaly-samples-table .col-answer.mismatch {
+    color: #d73a49;
+}
+
+.anomaly-samples-table .col-type {
+    text-align: right;
+}
+
+.anomaly-samples-table .col-status {
+    text-align: center;
+    font-weight: 500;
+}
+
+.anomaly-samples-table .col-status.correct {
+    color: #1e7e34;
+}
+
+.error-type-mini {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: #ffeef0;
+    color: #d73a49;
+    white-space: nowrap;
+}
+
+.error-type-mini.high {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+/* 错误类型统计框 - 保留旧样式兼容 */
+.anomaly-error-types-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: #fafafa;
+    border-radius: 6px;
+}
+
+.anomaly-error-types-box .error-types-label {
+    font-size: 11px;
+    color: #86868b;
+    margin-right: 4px;
+}
+
+.anomaly-error-types-box .error-type-tag {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: #f0f0f0;
+    color: #1d1d1f;
+}
+
+.anomaly-error-types-box .error-type-tag.high {
+    background: #fff3e0;
+    color: #e65100;
+    font-weight: 500;
+}
+
+/* 弹窗卡片样式 - 高异常和低异常 */
+.anomaly-detail-card.anomaly-high {
+    border-left: none;
+}
+
+.anomaly-detail-card.anomaly-high:hover,
+.anomaly-detail-card.anomaly-high.active {
+    background: #f5f5f7;
+}
+
+.anomaly-detail-card.anomaly-low {
+    border-left: none;
+}
+
+.anomaly-detail-card.anomaly-low:hover,
+.anomaly-detail-card.anomaly-low.active {
+    background: #f5f5f7;
+}
+
+
+/* ========== 异常检测可视化图表样式 ========== */
+.anomaly-charts-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.anomaly-chart-card {
+    flex: 1;
+    background: #f9f9fb;
+    border-radius: 12px;
+    padding: 16px;
+    min-height: 180px;
+}
+
+.anomaly-chart-card-wide {
+    flex: 1.5;
+}
+
+.chart-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin-bottom: 12px;
+}
+
+/* 饼图样式 */
+.anomaly-pie-container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.anomaly-pie {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.anomaly-pie-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    background: #f9f9fb;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.anomaly-pie-center .pie-total {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d1d1f;
+    line-height: 1;
+}
+
+.anomaly-pie-center .pie-label {
+    font-size: 10px;
+    color: #86868b;
+    margin-top: 2px;
+}
+
+.anomaly-pie-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pie-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #1d1d1f;
+}
+
+.pie-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.pie-legend-dot.normal { background: #34c759; }
+.pie-legend-dot.low { background: #007aff; }
+.pie-legend-dot.high { background: #ff9500; }
+.pie-legend-dot.universal { background: #ff3b30; }
+
+.pie-legend-value {
+    color: #86868b;
+    margin-left: auto;
+    font-size: 11px;
+}
+
+/* 柱状图样式 */
+.anomaly-bar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.anomaly-bar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.bar-label {
+    width: 90px;
+    font-size: 12px;
+    color: #1d1d1f;
+    font-family: 'Söhne Mono', monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bar-track {
+    flex: 1;
+    height: 20px;
+    background: #e5e5e5;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.bar-fill.rate-high { background: linear-gradient(90deg, #ff3b30, #ff6b6b); }
+.bar-fill.rate-medium { background: linear-gradient(90deg, #ff9500, #ffb84d); }
+.bar-fill.rate-low { background: linear-gradient(90deg, #007aff, #5ac8fa); }
+
+.bar-value {
+    width: 70px;
+    font-size: 12px;
+    color: #86868b;
+    text-align: right;
+}
+
+.bar-value strong {
+    color: #1d1d1f;
+    font-weight: 600;
+}
+
+/* 空状态 */
+.anomaly-bar-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 140px;
+    color: #86868b;
+    font-size: 13px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .anomaly-charts-row {
+        flex-direction: column;
+    }
+    
+    .anomaly-chart-card-wide {
+        flex: 1;
+    }
 }

@@ -5,8 +5,34 @@
 """
 from flask import Blueprint, request, jsonify
 from services.anomaly_service import AnomalyService
+from services.storage_service import StorageService
 
 anomaly_bp = Blueprint('anomaly', __name__)
+
+
+@anomaly_bp.route('/api/anomaly/task/<task_id>/questions', methods=['GET'])
+def detect_question_anomalies(task_id):
+    """
+    检测任务中的题目异常
+    
+    返回：
+    - 全员错误题目
+    - 不稳定判断题目
+    - 高错误率题目
+    """
+    try:
+        task_data = StorageService.load_batch_task(task_id)
+        if not task_data:
+            return jsonify({'success': False, 'error': '任务不存在'}), 404
+        
+        result = AnomalyService.detect_question_anomalies(task_data)
+        return jsonify({'success': True, 'data': result})
+        
+    except Exception as e:
+        print(f'[Anomaly] 题目异常检测失败: {e}')
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @anomaly_bp.route('/api/anomaly/logs', methods=['GET'])

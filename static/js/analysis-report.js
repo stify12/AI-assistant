@@ -422,7 +422,12 @@ async function loadAnomalies() {
         
         let html = '';
         anomalies.slice(0, 5).forEach(anomaly => {
-            const typeText = anomaly.anomaly_type === 'inconsistent_grading' ? '批改不一致' : anomaly.anomaly_type;
+            const typeMap = {
+                'inconsistent_high': '高出错',
+                'inconsistent_low': '低出错',
+                'universal_error': '全员错误'
+            };
+            const typeText = typeMap[anomaly.anomaly_type] || anomaly.anomaly_type;
             html += `<div class="anomaly-card">
                 <div class="anomaly-header">
                     <span class="anomaly-type">${typeText}</span>

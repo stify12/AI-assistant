@@ -207,6 +207,9 @@ def build_dynamic_prompt(data_value_items, subject_id=0):
     }
     subject_name = subject_map.get(subject_id, '通用')
     
+    # 检测是否有 score 字段
+    has_score = any(item.get('score') is not None for item in flat_items)
+    
     # 构建题目信息数组（按小题粒度）
     questions_info = []
     for item in flat_items:
@@ -217,17 +220,58 @@ def build_dynamic_prompt(data_value_items, subject_id=0):
         # 标准答案：优先取 jans，没有则取 answer 或 mainAnswer
         answer = item.get('jans', '') or item.get('answer', '') or item.get('mainAnswer', '')
         
-        questions_info.append({
+        q_info = {
             'index': item.get('index', ''),
             'tempIndex': item.get('tempIndex', 0),
             'answer': str(answer).strip(),  # 标准答案，去除首尾空格
             'type': bvalue_map.get(str(item.get('bvalue', '4')), '填空题'),
             'questionType': item.get('questionType', 'objective'),
             'content': content_short
-        })
+        }
+        
+        # 如果有分数字段，添加到题目信息中
+        if has_score and item.get('score') is not None:
+            q_info['score'] = item.get('score')
+        
+        questions_info.append(q_info)
     
     # 构建动态提示词
     questions_json = json.dumps(questions_info, ensure_ascii=False, indent=2)
+    
+    # 根据是否有分数字段，调整输出格式说明
+    if has_score:
+        output_format = """【输出格式】
+返回JSON数组，每个元素包含：
+- index: 题号（与上述题目信息一致）
+- tempIndex: 临时索引（与上述题目信息一致）
+- userAnswer: 学生的答案（识别结果，保持原始格式）
+- answer: 标准答案（直接使用上述题目信息中的answer）
+- correct: 判断结果，"yes"表示正确，"no"表示错误
+- score: 题目分值（直接使用上述题目信息中的score）
+
+【输出示例】
+```json
+[
+  {{"index": "1", "tempIndex": 0, "userAnswer": "A", "answer": "C", "correct": "no", "score": 3}},
+  {{"index": "2", "tempIndex": 1, "userAnswer": "B", "answer": "B", "correct": "yes", "score": 3}}
+]
+```"""
+    else:
+        output_format = """【输出格式】
+返回JSON数组，每个元素包含：
+- index: 题号（与上述题目信息一致）
+- tempIndex: 临时索引（与上述题目信息一致）
+- userAnswer: 学生的答案（识别结果，保持原始格式）
+- answer: 标准答案（直接使用上述题目信息中的answer）
+- correct: 判断结果，"yes"表示正确，"no"表示错误
+
+【输出示例】
+```json
+[
+  {{"index": "31", "tempIndex": 0, "userAnswer": "A", "answer": "C", "correct": "no"}},
+  {{"index": "32", "tempIndex": 1, "userAnswer": "stopped", "answer": "stopped", "correct": "yes"}}
+]
+```"""
     
     prompt = f"""你是一个专业的{subject_name}作业批改助手。请仔细识别图片中学生的手写答案。
 
@@ -247,25 +291,11 @@ def build_dynamic_prompt(data_value_items, subject_id=0):
    - 填空题：答案内容一致（忽略首尾空格，不区分大小写）
    - 对于英语单词，拼写必须完全正确
 
-【输出格式】
-返回JSON数组，每个元素包含：
-- index: 题号（与上述题目信息一致）
-- tempIndex: 临时索引（与上述题目信息一致）
-- userAnswer: 学生的答案（识别结果，保持原始格式）
-- answer: 标准答案（直接使用上述题目信息中的answer）
-- correct: 判断结果，"yes"表示正确，"no"表示错误
-
-【输出示例】
-```json
-[
-  {{"index": "31", "tempIndex": 0, "userAnswer": "A", "answer": "C", "correct": "no"}},
-  {{"index": "32", "tempIndex": 1, "userAnswer": "stopped", "answer": "stopped", "correct": "yes"}}
-]
-```
+{output_format}
 
 请直接输出JSON数组，不要添加其他说明文字。"""
     
-    return prompt
+    return prompt, has_score
 
 
 @dataset_manage_bp.route('/api/dataset/page-image-info', methods=['GET'])
@@ -389,9 +419,10 @@ def dataset_recognize():
                 pass
         
         # 根据是否有 data_value 选择提示词
+        has_score = False
         if data_value_items:
-            # 使用动态提示词
-            prompt = build_dynamic_prompt(data_value_items, subject_id)
+            # 使用动态提示词，返回 (prompt, has_score)
+            prompt, has_score = build_dynamic_prompt(data_value_items, subject_id)
         else:
             # 回退到静态提示词
             prompts_config = config.get('prompts', {})
@@ -420,7 +451,7 @@ def dataset_recognize():
         if base_effect and isinstance(base_effect, list) and len(base_effect) > 0:
             print(f"[DatasetRecognize] Extracted {len(base_effect)} items")
             
-            # 构建 data_value 的 tempIndex 映射，用于获取 questionType 和 bvalue
+            # 构建 data_value 的 tempIndex 映射，用于获取 questionType、bvalue 和 score
             flat_data_value = flatten_data_value_items(data_value_items) if data_value_items else []
             data_value_map = {}
             for dv_item in flat_data_value:
@@ -439,7 +470,7 @@ def dataset_recognize():
                 user_answer = str(item.get('userAnswer', '')).strip()
                 temp_idx = item.get('tempIndex', 0)
                 
-                # 从 data_value 中获取正确的标准答案、questionType 和 bvalue
+                # 从 data_value 中获取正确的标准答案、questionType、bvalue 和 score
                 dv_item = data_value_map.get(int(temp_idx), {})
                 question_type = dv_item.get('questionType', 'objective')
                 bvalue = str(dv_item.get('bvalue', '4'))
@@ -454,7 +485,7 @@ def dataset_recognize():
                 )
                 answer = str(answer).strip()
                 
-                formatted_data.append({
+                formatted_item = {
                     'index': str(item.get('index', '')),
                     'tempIndex': temp_idx,
                     'userAnswer': user_answer,
@@ -462,7 +493,15 @@ def dataset_recognize():
                     'correct': correct_val,
                     'questionType': question_type,
                     'bvalue': bvalue
-                })
+                }
+                
+                # 如果有分数字段，添加到输出中（优先从 data_value 获取，其次从 AI 返回）
+                if has_score:
+                    score = dv_item.get('score') if dv_item.get('score') is not None else item.get('score')
+                    if score is not None:
+                        formatted_item['score'] = score
+                
+                formatted_data.append(formatted_item)
             
             return jsonify({'success': True, 'data': formatted_data})
         else:

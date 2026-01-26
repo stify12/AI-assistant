@@ -3,6 +3,15 @@
 
 提供准确率异常自动检测和告警功能。
 支持基于统计学方法的异常检测，自动记录异常日志。
+
+任务级题目异常检测：
+- 全员错误：某题所有学生的AI批改结果都与基准不一致（可能是数据集标注错误）
+- 高异常：有人批改对的情况下，错误类型是"识别正确-判断错误"（AI识别准确但判断错误）
+- 低异常：有人批改对的情况下，其他错误类型（识别错误等）
+
+一致性计算：
+- 一致性 = 正常题数 / (总题数 - 全员错误题数) × 100%
+- 排除全员错误的影响，因为可能是数据集标注问题
 """
 import uuid
 import json
@@ -10,6 +19,7 @@ import os
 import statistics
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
+from collections import defaultdict
 
 from .database_service import AppDatabaseService
 from .storage_service import StorageService
@@ -24,8 +34,299 @@ class AnomalyService:
     # 配置缓存
     _config = {
         'threshold_sigma': 2.0,
-        'min_samples': 5  # 最少需要5个历史样本才能检测
+        'min_samples': 5,  # 最少需要5个历史样本才能检测
     }
+    
+    # 高异常错误类型（识别正确但判断错误）
+    HIGH_ANOMALY_ERROR_TYPES = ['识别正确-判断错误']
+    
+    # ========== 任务级题目异常检测 ==========
+    
+    @staticmethod
+    def _collect_question_indices(data_value: list, result: set = None) -> set:
+        """从 data_value 递归收集所有子题的题号（只收集叶子节点）"""
+        if result is None:
+            result = set()
+        for item in data_value:
+            children = item.get('children', [])
+            if children:
+                # 有子题，递归处理子题
+                AnomalyService._collect_question_indices(children, result)
+            else:
+                # 叶子节点，收集题号
+                idx = item.get('index')
+                if idx:
+                    result.add(str(idx))
+        return result
+    
+    @staticmethod
+    def detect_question_anomalies(task_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        检测任务中的题目异常
+        
+        异常类型：
+        1. 全员错误：同一页码的某题，所有包含该页的作业都判错
+        2. 高异常：有人批改对的情况下，错误类型是"识别正确-判断错误"
+        3. 低异常：有人批改对的情况下，其他错误类型
+        4. 正常：所有人都做对的题目
+        
+        Args:
+            task_data: 完整的任务数据
+            
+        Returns:
+            {
+                'summary': {...},
+                'anomalies': [...]
+            }
+        """
+        homework_items = task_data.get('homework_items', [])
+        completed_items = [h for h in homework_items if h.get('status') == 'completed' and h.get('evaluation')]
+        
+        if not completed_items:
+            return {
+                'summary': {
+                    'universal_errors': 0,
+                    'high_anomaly': 0,
+                    'low_anomaly': 0,
+                    'normal': 0,
+                    'total_questions': 0,
+                    'anomaly_rate': 0
+                },
+                'anomalies': []
+            }
+        
+        # 按页码统计作业数和收集所有题号
+        page_homework_count = defaultdict(int)
+        page_all_indices = defaultdict(set)  # 每个页码的所有题号
+        
+        for item in completed_items:
+            page_num = item.get('page_num', '?')
+            page_homework_count[page_num] += 1
+            
+            # 从 data_value 获取该页的所有题号
+            data_value = item.get('data_value', '[]')
+            if isinstance(data_value, str):
+                try:
+                    data_value = json.loads(data_value)
+                except:
+                    data_value = []
+            
+            if data_value:
+                indices = AnomalyService._collect_question_indices(data_value)
+                page_all_indices[page_num].update(indices)
+        
+        # 按题目聚合统计 (page_num + question_index)
+        question_stats = defaultdict(lambda: {
+            'total': 0,
+            'correct': 0,
+            'error': 0,
+            'samples': [],
+            'error_types': defaultdict(int),
+            'error_samples': []
+        })
+        
+        # 初始化所有题目的统计（从 data_value 获取）
+        for page_num, indices in page_all_indices.items():
+            for q_index in indices:
+                q_key = f"{page_num}_{q_index}"
+                question_stats[q_key]['page_num'] = page_num
+                question_stats[q_key]['question_index'] = q_index
+        
+        # 遍历每个作业，统计正确和错误
+        for item in completed_items:
+            page_num = item.get('page_num', '?')
+            evaluation = item.get('evaluation', {})
+            student_id = item.get('student_id', item.get('homework_id', ''))
+            student_name = item.get('student_name', '')
+            
+            # 获取该页的所有题号
+            all_indices = page_all_indices.get(page_num, set())
+            
+            # 获取错误题目的 index 集合
+            error_indices = set()
+            error_info = {}  # index -> error details
+            for q in evaluation.get('errors', []):
+                q_index = str(q.get('index', '?'))
+                error_indices.add(q_index)
+                error_info[q_index] = q
+            
+            # 遍历该页的所有题目
+            for q_index in all_indices:
+                q_key = f"{page_num}_{q_index}"
+                stats = question_stats[q_key]
+                stats['total'] += 1
+                
+                if q_index in error_indices:
+                    # 错误
+                    stats['error'] += 1
+                    q = error_info[q_index]
+                    error_type = q.get('error_type', '未知错误')
+                    stats['error_types'][error_type] += 1
+                    
+                    base_effect = q.get('base_effect', {})
+                    ai_result = q.get('ai_result', {})
+                    
+                    error_sample = {
+                        'student_id': student_id,
+                        'student_name': student_name,
+                        'result': 'error',
+                        'hw_answer': ai_result.get('userAnswer', ''),
+                        'base_answer': base_effect.get('answer', ''),
+                        'base_user': base_effect.get('userAnswer', ''),
+                        'error_type': error_type
+                    }
+                    stats['error_samples'].append(error_sample)
+                    if len(stats['samples']) < 10:
+                        stats['samples'].append(error_sample)
+                else:
+                    # 正确
+                    stats['correct'] += 1
+                    correct_sample = {
+                        'student_id': student_id,
+                        'student_name': student_name,
+                        'result': 'correct'
+                    }
+                    if len(stats['samples']) < 10:
+                        stats['samples'].append(correct_sample)
+        
+        # 分析异常
+        anomalies = []
+        universal_errors = 0
+        high_anomaly = 0
+        low_anomaly = 0
+        normal = 0
+        
+        for q_key, stats in question_stats.items():
+            if stats['total'] == 0:
+                continue
+            
+            error_rate = stats['error'] / stats['total']
+            page_num = stats.get('page_num', '?')
+            q_index = stats.get('question_index', '?')
+            
+            # 获取该页码的作业总数
+            page_total = page_homework_count.get(page_num, 0)
+            
+            anomaly = None
+            
+            # 1. 全员错误检测（新定义）
+            # 条件：该题目所有学生的AI批改结果都与基准不一致（全部异常）
+            # 即：没有任何一个学生该题是正常的
+            is_universal_error = (
+                error_rate == 1.0 and 
+                stats['total'] >= 2 and 
+                stats['correct'] == 0  # 没有任何正确的
+            )
+            
+            if is_universal_error:
+                # 统计错误类型分布
+                error_type_summary = AnomalyService._format_error_types(stats['error_types'])
+                anomaly = {
+                    'type': 'universal_error',
+                    'severity': 'critical',
+                    'page_num': page_num,
+                    'question_index': q_index,
+                    'error_rate': error_rate,
+                    'sample_count': stats['total'],
+                    'correct_count': stats['correct'],
+                    'error_count': stats['error'],
+                    'error_types': dict(stats['error_types']),
+                    'description': f'全部{stats["total"]}人判错',
+                    'error_type_summary': error_type_summary,
+                    'samples': stats['samples'][:5]
+                }
+                universal_errors += 1
+            
+            # 2. 有人对有人错的情况（不稳定）
+            elif stats['correct'] > 0 and stats['error'] > 0 and stats['total'] >= 2:
+                # 分析错误类型
+                error_types = stats['error_types']
+                high_anomaly_count = sum(error_types.get(t, 0) for t in AnomalyService.HIGH_ANOMALY_ERROR_TYPES)
+                low_anomaly_count = stats['error'] - high_anomaly_count
+                
+                # 判断主要异常类型
+                if high_anomaly_count > 0:
+                    # 高异常：存在"识别正确-判断错误"
+                    error_type_summary = AnomalyService._format_error_types(stats['error_types'])
+                    anomaly = {
+                        'type': 'high_anomaly',
+                        'severity': 'high',
+                        'page_num': page_num,
+                        'question_index': q_index,
+                        'error_rate': error_rate,
+                        'sample_count': stats['total'],
+                        'correct_count': stats['correct'],
+                        'error_count': stats['error'],
+                        'error_types': dict(stats['error_types']),
+                        'description': f'{stats["correct"]}对/{stats["error"]}错，含识别正确-判断错误',
+                        'error_type_summary': error_type_summary,
+                        'samples': stats['samples'][:5]
+                    }
+                    high_anomaly += 1
+                else:
+                    # 低异常：其他错误类型
+                    error_type_summary = AnomalyService._format_error_types(stats['error_types'])
+                    anomaly = {
+                        'type': 'low_anomaly',
+                        'severity': 'medium',
+                        'page_num': page_num,
+                        'question_index': q_index,
+                        'error_rate': error_rate,
+                        'sample_count': stats['total'],
+                        'correct_count': stats['correct'],
+                        'error_count': stats['error'],
+                        'error_types': dict(stats['error_types']),
+                        'description': f'{stats["correct"]}对/{stats["error"]}错',
+                        'error_type_summary': error_type_summary,
+                        'samples': stats['samples'][:5]
+                    }
+                    low_anomaly += 1
+            
+            else:
+                normal += 1
+            
+            if anomaly:
+                anomalies.append(anomaly)
+        
+        # 按严重程度和错误率排序
+        severity_order = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
+        anomalies.sort(key=lambda x: (severity_order.get(x['severity'], 99), -x['error_rate']))
+        
+        total_questions = len(question_stats)
+        anomaly_count = universal_errors + high_anomaly + low_anomaly
+        
+        # 计算一致性（排除全员错误）
+        effective_questions = total_questions - universal_errors  # 有效题数
+        consistency_rate = round(normal / effective_questions, 4) if effective_questions > 0 else 0
+        
+        return {
+            'summary': {
+                'universal_errors': universal_errors,
+                'high_anomaly': high_anomaly,
+                'low_anomaly': low_anomaly,
+                'normal': normal,
+                'total_questions': total_questions,
+                'anomaly_count': anomaly_count,
+                'anomaly_rate': round(anomaly_count / total_questions, 4) if total_questions > 0 else 0,
+                # 一致性相关
+                'effective_questions': effective_questions,
+                'consistency_rate': consistency_rate
+            },
+            'anomalies': anomalies
+        }
+    
+    @staticmethod
+    def _format_error_types(error_types: Dict[str, int]) -> str:
+        """格式化错误类型统计为可读字符串"""
+        if not error_types:
+            return ''
+        parts = [f'{t}({c})' for t, c in sorted(error_types.items(), key=lambda x: -x[1])]
+        return '、'.join(parts[:3])  # 最多显示3种
+    
+    @staticmethod
+    def _get_inconsistent_details(stats: Dict) -> Dict:
+        """获取不稳定判断的详细信息（保留兼容）"""
+        return {'description': '', 'inconsistent_answers': []}
     
     @staticmethod
     def detect_task_anomaly(task_id: str) -> Optional[Dict[str, Any]]:
