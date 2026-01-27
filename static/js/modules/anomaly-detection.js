@@ -73,6 +73,13 @@ export const AnomalyAPI = {
             body: JSON.stringify({ threshold_sigma: threshold })
         });
         return response.json();
+    },
+    
+    /**
+     * 导出异常检测结果到Excel
+     */
+    exportToExcel: (taskId) => {
+        window.location.href = `/api/anomaly/task/${taskId}/export`;
     }
 };
 

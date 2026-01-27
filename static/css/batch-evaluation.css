@@ -6206,35 +6206,40 @@ body {
     min-width: 80px;
     cursor: pointer;
     transition: all 0.15s;
+    background: #f5f5f7;
+    border: 1px solid #e5e5e5;
 }
 
 .anomaly-detail-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    background: #ebebeb;
 }
 
 .anomaly-detail-card.active {
     box-shadow: 0 0 0 2px #1d1d1f;
+    background: #fff;
 }
 
+/* 黑白风格卡片 - 移除彩色背景 */
 .anomaly-detail-card.anomaly-universal {
-    background: #ffeef0;
-    border: 1px solid #f8d7da;
+    background: #f5f5f7;
+    border: 1px solid #e5e5e5;
 }
 
 .anomaly-detail-card.anomaly-high {
-    background: #fff3e0;
-    border: 1px solid #ffe0b2;
+    background: #f5f5f7;
+    border: 1px solid #e5e5e5;
 }
 
 .anomaly-detail-card.anomaly-low {
-    background: #e3f2fd;
-    border: 1px solid #bbdefb;
+    background: #f5f5f7;
+    border: 1px solid #e5e5e5;
 }
 
 .anomaly-detail-card.anomaly-normal {
-    background: #e3f9e5;
-    border: 1px solid #c8e6c9;
+    background: #f5f5f7;
+    border: 1px solid #e5e5e5;
 }
 
 .anomaly-detail-value {
@@ -7020,23 +7025,25 @@ body {
     font-weight: 500;
 }
 
-/* 弹窗卡片样式 - 高异常和低异常 */
-.anomaly-detail-card.anomaly-high {
-    border-left: none;
-}
-
+/* 弹窗卡片样式 - 黑白风格统一 */
 .anomaly-detail-card.anomaly-high:hover,
 .anomaly-detail-card.anomaly-high.active {
-    background: #f5f5f7;
-}
-
-.anomaly-detail-card.anomaly-low {
-    border-left: none;
+    background: #fff;
 }
 
 .anomaly-detail-card.anomaly-low:hover,
 .anomaly-detail-card.anomaly-low.active {
-    background: #f5f5f7;
+    background: #fff;
+}
+
+.anomaly-detail-card.anomaly-universal:hover,
+.anomaly-detail-card.anomaly-universal.active {
+    background: #fff;
+}
+
+.anomaly-detail-card.anomaly-normal:hover,
+.anomaly-detail-card.anomaly-normal.active {
+    background: #fff;
 }
 
 
@@ -7049,7 +7056,8 @@ body {
 
 .anomaly-chart-card {
     flex: 1;
-    background: #f9f9fb;
+    background: #fff;
+    border: 1px solid #e5e5e5;
     border-radius: 12px;
     padding: 16px;
     min-height: 180px;
@@ -7066,7 +7074,7 @@ body {
     margin-bottom: 12px;
 }
 
-/* 饼图样式 */
+/* 饼图样式 - Chart.js 版本 */
 .anomaly-pie-container {
     display: flex;
     align-items: center;
@@ -7074,39 +7082,15 @@ body {
 }
 
 .anomaly-pie {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
+    width: 140px;
+    height: 140px;
     position: relative;
     flex-shrink: 0;
 }
 
-.anomaly-pie-center {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 60px;
-    height: 60px;
-    background: #f9f9fb;
-    border-radius: 50%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.anomaly-pie-center .pie-total {
-    font-size: 18px;
-    font-weight: 600;
-    color: #1d1d1f;
-    line-height: 1;
-}
-
-.anomaly-pie-center .pie-label {
-    font-size: 10px;
-    color: #86868b;
-    margin-top: 2px;
+.anomaly-pie canvas {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 .anomaly-pie-legend {
@@ -7130,69 +7114,21 @@ body {
     flex-shrink: 0;
 }
 
-.pie-legend-dot.normal { background: #34c759; }
-.pie-legend-dot.low { background: #007aff; }
-.pie-legend-dot.high { background: #ff9500; }
-.pie-legend-dot.universal { background: #ff3b30; }
-
 .pie-legend-value {
     color: #86868b;
     margin-left: auto;
     font-size: 11px;
 }
 
-/* 柱状图样式 */
+/* 柱状图样式 - Chart.js 版本 */
 .anomaly-bar-container {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.anomaly-bar-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.bar-label {
-    width: 90px;
-    font-size: 12px;
-    color: #1d1d1f;
-    font-family: 'Söhne Mono', monospace;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.bar-track {
-    flex: 1;
-    height: 20px;
-    background: #e5e5e5;
-    border-radius: 4px;
-    overflow: hidden;
+    height: 150px;
     position: relative;
 }
 
-.bar-fill {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.3s ease;
-}
-
-.bar-fill.rate-high { background: linear-gradient(90deg, #ff3b30, #ff6b6b); }
-.bar-fill.rate-medium { background: linear-gradient(90deg, #ff9500, #ffb84d); }
-.bar-fill.rate-low { background: linear-gradient(90deg, #007aff, #5ac8fa); }
-
-.bar-value {
-    width: 70px;
-    font-size: 12px;
-    color: #86868b;
-    text-align: right;
-}
-
-.bar-value strong {
-    color: #1d1d1f;
-    font-weight: 600;
+.anomaly-bar-container canvas {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 /* 空状态 */
@@ -7214,4 +7150,544 @@ body {
     .anomaly-chart-card-wide {
         flex: 1;
     }
+}
+
+
+/* ========== 提示词配置弹窗样式 ========== */
+
+/* 学科Tab切换 */
+.prompt-config-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: #f5f5f7;
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+
+.prompt-tab {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #86868b;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.prompt-tab:hover {
+    color: #1d1d1f;
+    background: rgba(255,255,255,0.5);
+}
+
+.prompt-tab.active {
+    background: #fff;
+    color: #1d1d1f;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* 操作按钮区 */
+.prompt-config-actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+/* 提示词列表 */
+.prompt-config-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.prompt-config-item {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.15s ease;
+}
+
+.prompt-config-item:hover {
+    border-color: #d2d2d7;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.prompt-config-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.prompt-config-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.prompt-config-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.prompt-type-badge {
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    background: #f5f5f7;
+    color: #86868b;
+}
+
+.prompt-config-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-badge.unchanged {
+    background: #e3f9e5;
+    color: #1e7e34;
+}
+
+.status-badge.changed {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.status-badge.new {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.status-badge.not-found {
+    background: #ffeef0;
+    color: #d73a49;
+}
+
+.prompt-config-desc {
+    font-size: 13px;
+    color: #86868b;
+    margin-bottom: 12px;
+}
+
+.prompt-config-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+    color: #86868b;
+}
+
+.prompt-config-meta .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.prompt-config-meta .meta-value {
+    font-weight: 500;
+    color: #1d1d1f;
+}
+
+.prompt-config-preview {
+    margin-top: 12px;
+    padding: 12px;
+    background: #f9f9fb;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #424245;
+    line-height: 1.6;
+    max-height: 80px;
+    overflow: hidden;
+    position: relative;
+}
+
+.prompt-config-preview::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background: linear-gradient(transparent, #f9f9fb);
+}
+
+.prompt-config-actions-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.btn-view-detail {
+    background: #fff;
+    border: 1px solid #d2d2d7;
+    color: #1d1d1f;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-view-detail:hover {
+    background: #f5f5f7;
+    border-color: #1d1d1f;
+}
+
+/* 变更摘要 */
+.change-summary {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #fff3e0;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #e65100;
+    border-left: 3px solid #e65100;
+}
+
+/* 提示词详情弹窗 */
+.prompt-detail-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 16px;
+    background: #f5f5f7;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.prompt-detail-meta .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.prompt-detail-meta .meta-label {
+    font-size: 12px;
+    color: #86868b;
+}
+
+.prompt-detail-meta .meta-value {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1d1d1f;
+}
+
+/* 版本历史列表 */
+.prompt-versions-section {
+    margin-bottom: 20px;
+}
+
+.prompt-versions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.prompt-version-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.prompt-version-item:hover {
+    border-color: #1d1d1f;
+    background: #f9f9fb;
+}
+
+.prompt-version-item.current {
+    border-color: #1d1d1f;
+    background: #f5f5f7;
+}
+
+.version-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.version-number {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.version-tag {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    background: #1d1d1f;
+    color: #fff;
+}
+
+.version-summary {
+    font-size: 12px;
+    color: #86868b;
+}
+
+.version-time {
+    font-size: 12px;
+    color: #86868b;
+}
+
+/* 提示词内容预览 */
+.prompt-content-section {
+    margin-bottom: 20px;
+}
+
+.prompt-content-preview {
+    background: #1d1d1f;
+    color: #e5e5e5;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.6;
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: 'Söhne Mono', 'Monaco', 'Consolas', monospace;
+}
+
+/* 加载状态 */
+.prompt-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #86868b;
+}
+
+.prompt-loading .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #e5e5e5;
+    border-top-color: #1d1d1f;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+}
+
+/* 空状态 */
+.prompt-empty {
+    text-align: center;
+    padding: 40px;
+    color: #86868b;
+}
+
+/* 同步成功提示 */
+.sync-result {
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.sync-result.success {
+    background: #e3f9e5;
+    border: 1px solid #a7f3d0;
+}
+
+.sync-result.warning {
+    background: #fff3e0;
+    border: 1px solid #ffcc80;
+}
+
+.sync-result-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.sync-result.success .sync-result-title {
+    color: #1e7e34;
+}
+
+.sync-result.warning .sync-result-title {
+    color: #e65100;
+}
+
+.sync-result-detail {
+    font-size: 13px;
+    color: #424245;
+}
+
+
+/* ========== 提示词版本信息区域 ========== */
+.prompt-versions-info {
+    background: #f9f9fb;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border: 1px solid #e5e5e5;
+}
+
+.prompt-versions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.prompt-versions-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1d1d1f;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.prompt-versions-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex: 1;
+}
+
+.prompt-version-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #1d1d1f;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.prompt-version-tag:hover {
+    border-color: #1d1d1f;
+    background: #f5f5f7;
+}
+
+.prompt-version-tag .tag-name {
+    font-weight: 500;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.prompt-version-tag .tag-version {
+    padding: 2px 6px;
+    background: #1d1d1f;
+    color: #fff;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.prompt-version-tag.has-change {
+    border-color: #e65100;
+    background: #fff3e0;
+}
+
+.prompt-version-tag.has-change .tag-version {
+    background: #e65100;
+}
+
+/* ========== 学科分组检测结果 ========== */
+.subject-check-section {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.subject-check-section.has-changes {
+    border-color: #ffcc80;
+}
+
+.subject-check-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    background: #f9f9fb;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.subject-check-header:hover {
+    background: #f0f0f2;
+}
+
+.subject-check-section.has-changes .subject-check-header {
+    background: #fff8f0;
+}
+
+.subject-check-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.subject-check-title .subject-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.subject-check-title .change-count {
+    padding: 3px 10px;
+    background: #e65100;
+    color: #fff;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.subject-check-title .no-change {
+    padding: 3px 10px;
+    background: #e3f9e5;
+    color: #1e7e34;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.subject-check-header .expand-icon {
+    transition: transform 0.2s ease;
+    color: #86868b;
+}
+
+.subject-check-content {
+    padding: 12px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.subject-check-content .prompt-config-item {
+    margin-bottom: 8px;
+}
+
+.subject-check-content .prompt-config-item:last-child {
+    margin-bottom: 0;
 }

@@ -6,10 +6,10 @@
     <title>批量评估</title>
     <!-- 预加载关键资源 -->
     <link rel="preload" href="/static/css/common.css?v=20260125" as="style">
-    <link rel="preload" href="/static/css/batch-evaluation.css?v=20260127b" as="style">
+    <link rel="preload" href="/static/css/batch-evaluation.css?v=20260127c" as="style">
     <!-- 样式表 -->
     <link rel="stylesheet" href="/static/css/common.css?v=20260125">
-    <link rel="stylesheet" href="/static/css/batch-evaluation.css?v=20260127b">
+    <link rel="stylesheet" href="/static/css/batch-evaluation.css?v=20260127c">
     <!-- Chart.js 延迟加载(仅图表渲染时需要) -->
     <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
     <!-- html2canvas 延迟加载(仅导出时使用) -->
@@ -29,6 +29,7 @@
     <nav class="navbar">
         <div class="logo">批量评估</div>
         <div style="display:flex;gap:12px;align-items:center;">
+            <button class="btn btn-secondary" onclick="showPromptConfigModal()">提示词配置</button>
             <button class="btn btn-secondary" onclick="showSettingsModal()">设置</button>
             <button class="back-btn" onclick="goBack()">返回</button>
         </div>
@@ -158,6 +159,16 @@
                         <div class="overall-report" id="overallReport" style="display:none;">
                             <!-- 测试条件信息 -->
                             <div class="test-conditions-info" id="testConditionsInfo" style="display:none;"></div>
+                            
+                            <!-- 提示词版本信息 -->
+                            <div class="prompt-versions-info" id="promptVersionsInfo" style="display:none;">
+                                <div class="prompt-versions-header">
+                                    <span class="prompt-versions-label">使用的提示词版本</span>
+                                    <div class="prompt-versions-tags" id="promptVersionsTags"></div>
+                                    <button class="btn btn-small btn-secondary" onclick="showPromptConfigModal()">查看配置</button>
+                                </div>
+                            </div>
+                            
                             <div class="report-title">总体报告</div>
                             <div class="stats-grid" id="overallStats"></div>
                             
@@ -703,7 +714,10 @@
         <div class="modal-content modal-large" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3>异常检测详情</h3>
-                <button class="close-btn" onclick="hideModal('anomalyDetailModal')">x</button>
+                <div class="modal-header-actions">
+                    <button class="btn btn-secondary" onclick="exportAnomalyToExcel()">导出Excel</button>
+                    <button class="close-btn" onclick="hideModal('anomalyDetailModal')">x</button>
+                </div>
             </div>
             <div class="modal-body">
                 <!-- 可视化图表区域 -->
@@ -712,14 +726,18 @@
                     <div class="anomaly-chart-card">
                         <div class="chart-card-title">题目分布</div>
                         <div class="anomaly-pie-container">
-                            <div class="anomaly-pie" id="anomalyPieChart"></div>
+                            <div class="anomaly-pie" id="anomalyPieChart">
+                                <canvas id="anomalyPieCanvas"></canvas>
+                            </div>
                             <div class="anomaly-pie-legend" id="anomalyPieLegend"></div>
                         </div>
                     </div>
-                    <!-- 右侧：错误率 Top 5 柱状图 -->
+                    <!-- 右侧：一致性折线图 -->
                     <div class="anomaly-chart-card anomaly-chart-card-wide">
-                        <div class="chart-card-title">错误率最高题目</div>
-                        <div class="anomaly-bar-container" id="anomalyBarChart"></div>
+                        <div class="chart-card-title">题目一致性趋势</div>
+                        <div class="anomaly-bar-container" id="anomalyBarChart">
+                            <canvas id="anomalyBarCanvas"></canvas>
+                        </div>
                     </div>
                 </div>
 
@@ -779,6 +797,84 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示词配置弹窗 -->
+    <div class="modal" id="promptConfigModal" onclick="hideModal('promptConfigModal', event)">
+        <div class="modal-content modal-large" onclick="event.stopPropagation()" style="max-width: 900px;">
+            <div class="modal-header">
+                <h3>提示词配置管理</h3>
+                <button class="close-btn" onclick="hideModal('promptConfigModal')">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <!-- 学科选择 -->
+                <div class="prompt-config-tabs">
+                    <button class="prompt-tab active" data-subject="1" onclick="switchPromptSubject(1)">语文</button>
+                    <button class="prompt-tab" data-subject="0" onclick="switchPromptSubject(0)">英语</button>
+                    <button class="prompt-tab" data-subject="3" onclick="switchPromptSubject(3)">物理</button>
+                    <button class="prompt-tab" data-subject="4" onclick="switchPromptSubject(4)">化学</button>
+                    <button class="prompt-tab" data-subject="5" onclick="switchPromptSubject(5)">生物</button>
+                    <button class="prompt-tab" data-subject="6" onclick="switchPromptSubject(6)">地理</button>
+                    <button class="prompt-tab" data-subject="2" onclick="switchPromptSubject(2)">数学</button>
+                </div>
+                
+                <!-- 操作按钮 -->
+                <div class="prompt-config-actions">
+                    <button class="btn btn-primary" onclick="checkAllPromptChanges()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: middle;">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                        一键检测所有学科
+                    </button>
+                    <button class="btn btn-secondary" onclick="syncAllPromptConfigs()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: middle;">
+                            <path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"></path>
+                        </svg>
+                        同步所有变更
+                    </button>
+                </div>
+                
+                <!-- 提示词列表 -->
+                <div class="prompt-config-list" id="promptConfigList">
+                    <div class="empty-state">
+                        <div class="empty-state-text">加载中...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('promptConfigModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示词详情弹窗 -->
+    <div class="modal" id="promptDetailModal" onclick="hideModal('promptDetailModal', event)">
+        <div class="modal-content modal-large" onclick="event.stopPropagation()" style="max-width: 1000px;">
+            <div class="modal-header">
+                <h3 id="promptDetailTitle">提示词详情</h3>
+                <button class="close-btn" onclick="hideModal('promptDetailModal')">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
+                <!-- 版本信息 -->
+                <div class="prompt-detail-meta" id="promptDetailMeta"></div>
+                
+                <!-- 版本历史 -->
+                <div class="prompt-versions-section">
+                    <div class="section-title" style="font-size: 14px; margin-bottom: 12px;">版本历史</div>
+                    <div class="prompt-versions-list" id="promptVersionsList"></div>
+                </div>
+                
+                <!-- 当前内容 -->
+                <div class="prompt-content-section">
+                    <div class="section-title" style="font-size: 14px; margin-bottom: 12px;">当前提示词内容</div>
+                    <pre class="prompt-content-preview" id="promptContentPreview"></pre>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('promptDetailModal')">关闭</button>
             </div>
         </div>
     </div>

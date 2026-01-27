@@ -736,6 +736,9 @@ function renderOverallReport(report) {
     // 渲染测试条件信息
     renderTestConditionsInfo();
     
+    // 渲染提示词版本信息
+    renderPromptVersionsInfo();
+    
     const statsHtml = `
         <div class="stat-card highlight">
             <div class="stat-value">${(report.overall_accuracy * 100).toFixed(1)}%</div>
@@ -2172,6 +2175,17 @@ async function createTask() {
         if (data.success) {
             updateLoadingProgress(100, '创建成功', '');
             clearInterval(progressInterval);
+            
+            // 检查是否有提示词变更
+            if (data.prompt_sync && data.prompt_sync.has_changes) {
+                const changedPrompts = data.prompt_sync.prompts.filter(p => p.has_change);
+                if (changedPrompts.length > 0) {
+                    setTimeout(() => {
+                        showPromptSyncNotification(data.prompt_sync);
+                    }, 300);
+                }
+            }
+            
             setTimeout(async () => {
                 hideLoading();
                 hideModal('createTaskModal');
@@ -6952,6 +6966,19 @@ let currentAnomalyData = null;
 let expandedAnomalyIndex = null;
 
 /**
+ * 导出异常检测结果到Excel
+ */
+function exportAnomalyToExcel() {
+    if (!selectedTask || !selectedTask.task_id) {
+        alert('请先选择任务');
+        return;
+    }
+    
+    // 直接触发下载
+    window.location.href = `/api/anomaly/task/${selectedTask.task_id}/export`;
+}
+
+/**
  * 加载异常检测数据
  */
 async function loadAnomalyDetection() {
@@ -7163,14 +7190,16 @@ function showAnomalyDetailModal() {
     showModal('anomalyDetailModal');
 }
 
+// 存储 Chart.js 实例
+let anomalyPieChartInstance = null;
+let anomalyBarChartInstance = null;
+
 /**
- * 渲染饼图
+ * 渲染饼图 - 使用 Chart.js
  */
 function renderAnomalyPieChart(summary) {
-    const pieEl = document.getElementById('anomalyPieChart');
-    const legendEl = document.getElementById('anomalyPieLegend');
-    
-    if (!pieEl || !legendEl) return;
+    const container = document.getElementById('anomalyPieChart');
+    if (!container) return;
     
     const total = summary.total_questions || 0;
     const normal = summary.normal || 0;
@@ -7178,84 +7207,132 @@ function renderAnomalyPieChart(summary) {
     const high = summary.high_anomaly || 0;
     const universal = summary.universal_errors || 0;
     
+    // 清除旧内容，创建 canvas
+    container.innerHTML = '<canvas id="anomalyPieCanvas"></canvas>';
+    container.style.background = 'none';
+    
+    const canvas = document.getElementById('anomalyPieCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // 销毁旧实例
+    if (anomalyPieChartInstance) {
+        anomalyPieChartInstance.destroy();
+        anomalyPieChartInstance = null;
+    }
+    
     if (total === 0) {
-        pieEl.innerHTML = '<div class="anomaly-bar-empty">暂无数据</div>';
-        legendEl.innerHTML = '';
+        container.innerHTML = '<div class="anomaly-bar-empty">暂无数据</div>';
+        document.getElementById('anomalyPieLegend').innerHTML = '';
         return;
     }
     
-    // 计算百分比
-    const normalPct = (normal / total * 100).toFixed(1);
-    const lowPct = (low / total * 100).toFixed(1);
-    const highPct = (high / total * 100).toFixed(1);
-    const universalPct = (universal / total * 100).toFixed(1);
+    // 美观的配色方案
+    const colors = {
+        normal: '#22c55e',    // 绿色 - 一致
+        low: '#3b82f6',       // 蓝色 - 低异常
+        high: '#f59e0b',      // 橙色 - 高异常
+        universal: '#ef4444'  // 红色 - 全员错误
+    };
     
-    // 计算角度
-    let angle = 0;
-    const segments = [];
-    
-    if (normal > 0) {
-        segments.push({ color: '#34c759', pct: normal / total * 100, start: angle });
-        angle += normal / total * 360;
-    }
-    if (low > 0) {
-        segments.push({ color: '#007aff', pct: low / total * 100, start: angle });
-        angle += low / total * 360;
-    }
-    if (high > 0) {
-        segments.push({ color: '#ff9500', pct: high / total * 100, start: angle });
-        angle += high / total * 360;
-    }
-    if (universal > 0) {
-        segments.push({ color: '#ff3b30', pct: universal / total * 100, start: angle });
-    }
-    
-    // 生成 conic-gradient
-    let gradient = 'conic-gradient(';
-    let currentAngle = 0;
-    segments.forEach((seg, i) => {
-        const endAngle = currentAngle + seg.pct * 3.6;
-        gradient += `${seg.color} ${currentAngle}deg ${endAngle}deg`;
-        if (i < segments.length - 1) gradient += ', ';
-        currentAngle = endAngle;
+    // 创建 Chart.js 饼图
+    anomalyPieChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['一致', '低异常', '高异常', '全员错误'],
+            datasets: [{
+                data: [normal, low, high, universal],
+                backgroundColor: [colors.normal, colors.low, colors.high, colors.universal],
+                borderColor: '#fff',
+                borderWidth: 2,
+                hoverBorderWidth: 3,
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '55%',
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.raw;
+                            const pct = ((value / total) * 100).toFixed(1);
+                            return `${context.label}: ${value} (${pct}%)`;
+                        }
+                    }
+                }
+            }
+        },
+        plugins: [{
+            id: 'centerText',
+            beforeDraw: function(chart) {
+                const ctx = chart.ctx;
+                const centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
+                const centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
+                
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // 数字
+                ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.fillStyle = '#1d1d1f';
+                ctx.fillText(total, centerX, centerY - 6);
+                
+                // 标签
+                ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.fillStyle = '#86868b';
+                ctx.fillText('题', centerX, centerY + 12);
+                
+                ctx.restore();
+            }
+        }]
     });
-    gradient += ')';
-    
-    pieEl.style.background = gradient;
-    pieEl.innerHTML = `
-        <div class="anomaly-pie-center">
-            <span class="pie-total">${total}</span>
-            <span class="pie-label">题</span>
-        </div>
-    `;
     
     // 渲染图例
-    legendEl.innerHTML = `
-        <div class="pie-legend-item">
-            <span class="pie-legend-dot normal"></span>
-            <span>一致</span>
-            <span class="pie-legend-value">${normal} (${normalPct}%)</span>
-        </div>
-        <div class="pie-legend-item">
-            <span class="pie-legend-dot low"></span>
-            <span>低异常</span>
-            <span class="pie-legend-value">${low} (${lowPct}%)</span>
-        </div>
-        <div class="pie-legend-item">
-            <span class="pie-legend-dot high"></span>
-            <span>高异常</span>
-            <span class="pie-legend-value">${high} (${highPct}%)</span>
-        </div>
-        <div class="pie-legend-item">
-            <span class="pie-legend-dot universal"></span>
-            <span>全员错误</span>
-            <span class="pie-legend-value">${universal} (${universalPct}%)</span>
-        </div>
-    `;
+    const legendEl = document.getElementById('anomalyPieLegend');
+    if (legendEl) {
+        const normalPct = (normal / total * 100).toFixed(1);
+        const lowPct = (low / total * 100).toFixed(1);
+        const highPct = (high / total * 100).toFixed(1);
+        const universalPct = (universal / total * 100).toFixed(1);
+        
+        legendEl.innerHTML = `
+            <div class="pie-legend-item">
+                <span class="pie-legend-dot" style="background:${colors.normal}"></span>
+                <span>一致</span>
+                <span class="pie-legend-value">${normal} (${normalPct}%)</span>
+            </div>
+            <div class="pie-legend-item">
+                <span class="pie-legend-dot" style="background:${colors.low}"></span>
+                <span>低异常</span>
+                <span class="pie-legend-value">${low} (${lowPct}%)</span>
+            </div>
+            <div class="pie-legend-item">
+                <span class="pie-legend-dot" style="background:${colors.high}"></span>
+                <span>高异常</span>
+                <span class="pie-legend-value">${high} (${highPct}%)</span>
+            </div>
+            <div class="pie-legend-item">
+                <span class="pie-legend-dot" style="background:${colors.universal}"></span>
+                <span>全员错误</span>
+                <span class="pie-legend-value">${universal} (${universalPct}%)</span>
+            </div>
+        `;
+    }
 }
 
 /**
- * 渲染错误率柱状图
+ * 渲染一致性折线图 - 使用 Chart.js
  */
 function renderAnomalyBarChart(anomalies) {
     const container = document.getElementById('anomalyBarChart');
@@ -7266,32 +7343,110 @@ function renderAnomalyBarChart(anomalies) {
         return;
     }
     
-    // 按错误率排序，取前5
+    // 按页码和题号排序，取前10个题目展示趋势
     const sorted = [...anomalies]
-        .sort((a, b) => (b.error_rate || 0) - (a.error_rate || 0))
-        .slice(0, 5);
+        .sort((a, b) => {
+            if (a.page_num !== b.page_num) return a.page_num - b.page_num;
+            return String(a.question_index).localeCompare(String(b.question_index));
+        })
+        .slice(0, 10);
     
-    container.innerHTML = sorted.map(a => {
-        const errorRate = (a.error_rate || 0) * 100;
-        const errorCount = a.error_count || 0;
-        const total = a.sample_count || 0;
-        const location = `P${a.page_num}-${a.question_index}`;
-        
-        // 根据错误率决定颜色
-        let rateClass = 'rate-low';
-        if (errorRate >= 50) rateClass = 'rate-high';
-        else if (errorRate >= 30) rateClass = 'rate-medium';
-        
-        return `
-            <div class="anomaly-bar-item">
-                <span class="bar-label" title="${location}">${location}</span>
-                <div class="bar-track">
-                    <div class="bar-fill ${rateClass}" style="width: ${errorRate}%"></div>
-                </div>
-                <span class="bar-value"><strong>${errorCount}</strong>/${total}错</span>
-            </div>
-        `;
-    }).join('');
+    // 创建 canvas
+    container.innerHTML = '<canvas id="anomalyBarCanvas"></canvas>';
+    const canvas = document.getElementById('anomalyBarCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // 销毁旧实例
+    if (anomalyBarChartInstance) {
+        anomalyBarChartInstance.destroy();
+        anomalyBarChartInstance = null;
+    }
+    
+    // 准备数据 - 一致率 = 1 - 错误率
+    const labels = sorted.map(a => `P${a.page_num}-${a.question_index}`);
+    const consistencyData = sorted.map(a => ((1 - (a.error_rate || 0)) * 100).toFixed(1));
+    
+    // 创建 Chart.js 折线图
+    anomalyBarChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '一致率',
+                data: consistencyData,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3,
+                pointRadius: 4,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: '#3b82f6',
+                pointBorderWidth: 2,
+                pointHoverRadius: 6,
+                pointHoverBackgroundColor: '#3b82f6',
+                pointHoverBorderColor: '#fff',
+                pointHoverBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const idx = context.dataIndex;
+                            const item = sorted[idx];
+                            const correctCount = (item.sample_count || 0) - (item.error_count || 0);
+                            return `一致率: ${context.raw}% (${correctCount}/${item.sample_count || 0}正确)`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: '#f0f0f0',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#86868b',
+                        font: { 
+                            size: 10,
+                            family: "'Söhne Mono', 'Monaco', 'Consolas', monospace"
+                        },
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    grid: {
+                        color: '#f0f0f0',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#86868b',
+                        font: { size: 11 },
+                        callback: function(value) {
+                            return value + '%';
+                        },
+                        stepSize: 25
+                    }
+                }
+            }
+        }
+    });
 }
 
 /**
@@ -7382,7 +7537,7 @@ function renderAnomalyList(anomalies) {
             </tr>
             <tr class="anomaly-samples-row" id="anomalySamples_${index}" style="display:${isExpanded ? 'table-row' : 'none'};">
                 <td colspan="6">
-                    ${renderAnomalySamplesContent(anomaly)}
+                    ${renderAnomalySamplesContent(anomaly, index)}
                 </td>
             </tr>
         `;
@@ -7394,7 +7549,7 @@ function renderAnomalyList(anomalies) {
 /**
  * 渲染异常样例内容 - 优化版卡片布局
  */
-function renderAnomalySamplesContent(anomaly) {
+function renderAnomalySamplesContent(anomaly, anomalyIndex = 0) {
     const samples = anomaly.samples || [];
     if (samples.length === 0) {
         return '<div class="anomaly-samples-content"><div class="anomaly-samples-empty">暂无样例数据</div></div>';
@@ -7480,7 +7635,7 @@ function renderAnomalySamplesContent(anomaly) {
     if (errorSamples.length > 0) {
         const showCount = 5;
         const hasMore = errorSamples.length > showCount;
-        const uniqueId = `errorSamples_${Date.now()}`;
+        const uniqueId = `errorSamples_${anomalyIndex}`;
         
         html += `
             <div class="anomaly-card">
@@ -7525,7 +7680,7 @@ function renderAnomalySamplesContent(anomaly) {
     
     // 卡片4: 判对样例（紧凑展示）
     if (correctSamples.length > 0 && anomaly.type !== 'universal_error') {
-        const uniqueId = `correctSamples_${Date.now()}`;
+        const uniqueId = `correctSamples_${anomalyIndex}`;
         
         html += `
             <div class="anomaly-card collapsed" id="${uniqueId}_card">
@@ -7649,4 +7804,684 @@ function toggleAnomalySamples(index) {
     document.querySelectorAll('.anomaly-expand-icon').forEach((icon, i) => {
         icon.textContent = (i === expandedAnomalyIndex) ? '▼' : '▶';
     });
+}
+
+
+// ========== 提示词配置管理 ==========
+
+let currentPromptSubject = 1; // 默认语文
+let promptConfigCache = {}; // 缓存已加载的提示词配置
+
+/**
+ * 显示提示词配置弹窗
+ */
+function showPromptConfigModal() {
+    document.getElementById('promptConfigModal').classList.add('show');
+    loadPromptConfigs(currentPromptSubject);
+}
+
+/**
+ * 切换学科Tab
+ */
+function switchPromptSubject(subjectId) {
+    currentPromptSubject = subjectId;
+    
+    // 更新Tab状态
+    document.querySelectorAll('.prompt-tab').forEach(tab => {
+        tab.classList.toggle('active', parseInt(tab.dataset.subject) === subjectId);
+    });
+    
+    // 加载该学科的提示词配置
+    loadPromptConfigs(subjectId);
+}
+
+/**
+ * 加载提示词配置列表
+ */
+async function loadPromptConfigs(subjectId) {
+    const container = document.getElementById('promptConfigList');
+    container.innerHTML = `
+        <div class="prompt-loading">
+            <div class="spinner"></div>
+            <div>加载中...</div>
+        </div>
+    `;
+    
+    try {
+        // 获取学科提示词映射
+        const mappingRes = await fetch('/api/prompt-config/subjects');
+        const mappingData = await mappingRes.json();
+        
+        if (!mappingData.success) {
+            throw new Error(mappingData.error || '获取配置映射失败');
+        }
+        
+        const subjectConfig = mappingData.data[subjectId];
+        if (!subjectConfig) {
+            container.innerHTML = `<div class="prompt-empty">该学科暂无提示词配置</div>`;
+            return;
+        }
+        
+        // 获取本地存储的配置
+        const localRes = await fetch('/api/prompt-config/list');
+        const localData = await localRes.json();
+        
+        // 构建本地配置映射
+        const localMap = {};
+        if (localData.success && localData.data) {
+            localData.data.forEach(subject => {
+                subject.prompts.forEach(p => {
+                    localMap[p.config_key] = p;
+                });
+            });
+        }
+        
+        // 渲染提示词列表
+        let html = '';
+        for (const prompt of subjectConfig.prompts) {
+            const local = localMap[prompt.key];
+            html += renderPromptConfigItem(prompt, local);
+        }
+        
+        container.innerHTML = html || `<div class="prompt-empty">该学科暂无提示词配置</div>`;
+        
+    } catch (e) {
+        console.error('加载提示词配置失败:', e);
+        container.innerHTML = `<div class="prompt-empty">加载失败: ${e.message}</div>`;
+    }
+}
+
+/**
+ * 渲染单个提示词配置项
+ */
+function renderPromptConfigItem(promptInfo, localConfig) {
+    const hasLocal = !!localConfig;
+    const version = localConfig?.current_version || 0;
+    const syncedAt = localConfig?.synced_at || '未同步';
+    const preview = localConfig?.config_preview || '';
+    
+    let statusBadge = '';
+    if (!hasLocal) {
+        statusBadge = '<span class="status-badge new">未同步</span>';
+    } else {
+        statusBadge = '<span class="status-badge unchanged">已同步</span>';
+    }
+    
+    return `
+        <div class="prompt-config-item" data-key="${promptInfo.key}">
+            <div class="prompt-config-header">
+                <div class="prompt-config-title">
+                    <span class="prompt-config-name">${escapeHtml(promptInfo.key)}</span>
+                    <span class="prompt-type-badge">${escapeHtml(promptInfo.type)}</span>
+                </div>
+                <div class="prompt-config-status">
+                    ${statusBadge}
+                </div>
+            </div>
+            <div class="prompt-config-desc">${escapeHtml(promptInfo.desc)}</div>
+            <div class="prompt-config-meta">
+                <span class="meta-item">版本: <span class="meta-value">v${version}</span></span>
+                <span class="meta-item">同步时间: <span class="meta-value">${syncedAt}</span></span>
+            </div>
+            ${preview ? `<div class="prompt-config-preview">${escapeHtml(preview)}...</div>` : ''}
+            <div class="prompt-config-actions-row">
+                <button class="btn-view-detail" onclick="viewPromptDetail('${promptInfo.key}')">查看详情</button>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * 检测提示词变更
+ */
+async function checkPromptChanges() {
+    const container = document.getElementById('promptConfigList');
+    
+    try {
+        showLoading('检测变更中...', '正在对比远程配置');
+        
+        const res = await fetch('/api/prompt-config/check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ subject_id: currentPromptSubject })
+        });
+        
+        const data = await res.json();
+        hideLoading();
+        
+        if (!data.success) {
+            alert('检测失败: ' + (data.error || '未知错误'));
+            return;
+        }
+        
+        // 渲染检测结果
+        renderCheckResults(data);
+        
+    } catch (e) {
+        hideLoading();
+        console.error('检测变更失败:', e);
+        alert('检测失败: ' + e.message);
+    }
+}
+
+/**
+ * 一键检测所有学科的提示词变更
+ */
+async function checkAllPromptChanges() {
+    const container = document.getElementById('promptConfigList');
+    
+    try {
+        showLoading('检测变更中...', '正在检测所有学科的提示词');
+        
+        const res = await fetch('/api/prompt-config/check-all', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const data = await res.json();
+        hideLoading();
+        
+        if (!data.success) {
+            alert('检测失败: ' + (data.error || '未知错误'));
+            return;
+        }
+        
+        // 渲染所有学科的检测结果
+        renderAllSubjectsCheckResults(data);
+        
+    } catch (e) {
+        hideLoading();
+        console.error('检测变更失败:', e);
+        alert('检测失败: ' + e.message);
+    }
+}
+
+/**
+ * 渲染所有学科的检测结果
+ */
+function renderAllSubjectsCheckResults(data) {
+    const container = document.getElementById('promptConfigList');
+    
+    let html = '';
+    
+    // 显示总体检测结果摘要
+    const totalChanges = data.total_changes || 0;
+    if (totalChanges > 0) {
+        html += `
+            <div class="sync-result warning">
+                <div class="sync-result-title">检测到 ${totalChanges} 个提示词有变更</div>
+                <div class="sync-result-detail">点击"同步所有变更"按钮将变更保存为新版本</div>
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="sync-result success">
+                <div class="sync-result-title">所有学科的提示词均为最新</div>
+                <div class="sync-result-detail">本地配置与远程配置一致，无需同步</div>
+            </div>
+        `;
+    }
+    
+    // 按学科分组渲染
+    const subjects = data.subjects || {};
+    const subjectOrder = [1, 0, 3, 4, 5, 6, 2]; // 语文、英语、物理、化学、生物、地理、数学
+    
+    for (const subjectId of subjectOrder) {
+        const subjectData = subjects[subjectId];
+        if (!subjectData) continue;
+        
+        const hasChanges = subjectData.has_changes;
+        const changedCount = subjectData.prompts.filter(p => p.status === 'changed' || p.status === 'new').length;
+        
+        html += `
+            <div class="subject-check-section ${hasChanges ? 'has-changes' : ''}">
+                <div class="subject-check-header" onclick="toggleSubjectSection(this)">
+                    <div class="subject-check-title">
+                        <span class="subject-name">${escapeHtml(subjectData.subject_name)}</span>
+                        ${hasChanges ? `<span class="change-count">${changedCount} 个变更</span>` : '<span class="no-change">无变更</span>'}
+                    </div>
+                    <svg class="expand-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <div class="subject-check-content" style="display: ${hasChanges ? 'block' : 'none'};">
+        `;
+        
+        // 渲染该学科的每个提示词
+        for (const prompt of subjectData.prompts) {
+            html += renderCheckResultItem(prompt);
+        }
+        
+        html += `
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+}
+
+/**
+ * 切换学科检测结果的展开/收起
+ */
+function toggleSubjectSection(header) {
+    const content = header.nextElementSibling;
+    const icon = header.querySelector('.expand-icon');
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.style.transform = 'rotate(180deg)';
+    } else {
+        content.style.display = 'none';
+        icon.style.transform = 'rotate(0deg)';
+    }
+}
+
+/**
+ * 同步所有学科的提示词变更
+ */
+async function syncAllPromptConfigs() {
+    try {
+        showLoading('同步中...', '正在同步所有学科的提示词');
+        
+        const res = await fetch('/api/prompt-config/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+            // 不传 subject_id，同步所有学科
+        });
+        
+        const data = await res.json();
+        hideLoading();
+        
+        if (!data.success) {
+            alert('同步失败: ' + (data.error || '未知错误'));
+            return;
+        }
+        
+        // 显示同步结果
+        const totalChanges = data.total_changes || 0;
+        
+        if (totalChanges > 0) {
+            alert(`同步完成，已保存 ${totalChanges} 个提示词的新版本`);
+        } else {
+            alert('同步完成，所有提示词均为最新版本');
+        }
+        
+        // 重新检测显示最新状态
+        checkAllPromptChanges();
+        
+    } catch (e) {
+        hideLoading();
+        console.error('同步失败:', e);
+        alert('同步失败: ' + e.message);
+    }
+}
+
+/**
+ * 渲染检测结果
+ */
+function renderCheckResults(data) {
+    const container = document.getElementById('promptConfigList');
+    
+    let html = '';
+    
+    // 显示检测结果摘要
+    const changedCount = data.prompts.filter(p => p.status === 'changed' || p.status === 'new').length;
+    if (changedCount > 0) {
+        html += `
+            <div class="sync-result warning">
+                <div class="sync-result-title">检测到 ${changedCount} 个提示词有变更</div>
+                <div class="sync-result-detail">点击"同步并保存版本"按钮将变更保存为新版本</div>
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="sync-result success">
+                <div class="sync-result-title">所有提示词均为最新</div>
+                <div class="sync-result-detail">本地配置与远程配置一致，无需同步</div>
+            </div>
+        `;
+    }
+    
+    // 渲染每个提示词的检测结果
+    for (const prompt of data.prompts) {
+        html += renderCheckResultItem(prompt);
+    }
+    
+    container.innerHTML = html;
+}
+
+/**
+ * 渲染单个检测结果项
+ */
+function renderCheckResultItem(prompt) {
+    let statusBadge = '';
+    let statusClass = '';
+    
+    switch (prompt.status) {
+        case 'unchanged':
+            statusBadge = '<span class="status-badge unchanged">无变更</span>';
+            statusClass = '';
+            break;
+        case 'changed':
+            statusBadge = '<span class="status-badge changed">有变更</span>';
+            statusClass = 'has-change';
+            break;
+        case 'new':
+            statusBadge = '<span class="status-badge new">新配置</span>';
+            statusClass = 'is-new';
+            break;
+        case 'not_found':
+            statusBadge = '<span class="status-badge not-found">未找到</span>';
+            statusClass = 'not-found';
+            break;
+    }
+    
+    let changeSummary = '';
+    if (prompt.change_summary) {
+        changeSummary = `<div class="change-summary">${escapeHtml(prompt.change_summary)}</div>`;
+    }
+    
+    return `
+        <div class="prompt-config-item ${statusClass}" data-key="${prompt.config_key}">
+            <div class="prompt-config-header">
+                <div class="prompt-config-title">
+                    <span class="prompt-config-name">${escapeHtml(prompt.config_key)}</span>
+                    <span class="prompt-type-badge">${escapeHtml(prompt.prompt_type || '')}</span>
+                </div>
+                <div class="prompt-config-status">
+                    ${statusBadge}
+                </div>
+            </div>
+            <div class="prompt-config-desc">${escapeHtml(prompt.prompt_desc || prompt.message || '')}</div>
+            ${prompt.current_version ? `
+                <div class="prompt-config-meta">
+                    <span class="meta-item">当前版本: <span class="meta-value">v${prompt.current_version}</span></span>
+                </div>
+            ` : ''}
+            ${changeSummary}
+            <div class="prompt-config-actions-row">
+                <button class="btn-view-detail" onclick="viewPromptDetail('${prompt.config_key}')">查看详情</button>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * 同步提示词配置
+ */
+async function syncPromptConfigs() {
+    try {
+        showLoading('同步中...', '正在保存提示词版本');
+        
+        const res = await fetch('/api/prompt-config/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ subject_id: currentPromptSubject })
+        });
+        
+        const data = await res.json();
+        hideLoading();
+        
+        if (!data.success) {
+            alert('同步失败: ' + (data.error || '未知错误'));
+            return;
+        }
+        
+        // 显示同步结果
+        const changedCount = data.prompts?.filter(p => p.has_change).length || 0;
+        
+        if (changedCount > 0) {
+            alert(`同步完成，已保存 ${changedCount} 个提示词的新版本`);
+        } else {
+            alert('同步完成，所有提示词均为最新版本');
+        }
+        
+        // 重新加载列表
+        loadPromptConfigs(currentPromptSubject);
+        
+    } catch (e) {
+        hideLoading();
+        console.error('同步失败:', e);
+        alert('同步失败: ' + e.message);
+    }
+}
+
+/**
+ * 查看提示词详情
+ */
+async function viewPromptDetail(configKey) {
+    const modal = document.getElementById('promptDetailModal');
+    const titleEl = document.getElementById('promptDetailTitle');
+    const metaEl = document.getElementById('promptDetailMeta');
+    const versionsEl = document.getElementById('promptVersionsList');
+    const contentEl = document.getElementById('promptContentPreview');
+    
+    titleEl.textContent = configKey;
+    metaEl.innerHTML = '<div class="prompt-loading"><div class="spinner"></div></div>';
+    versionsEl.innerHTML = '<div class="prompt-loading"><div class="spinner"></div></div>';
+    contentEl.textContent = '加载中...';
+    
+    modal.classList.add('show');
+    
+    try {
+        // 获取详情
+        const detailRes = await fetch(`/api/prompt-config/${configKey}`);
+        const detailData = await detailRes.json();
+        
+        if (!detailData.success) {
+            throw new Error(detailData.error || '获取详情失败');
+        }
+        
+        const detail = detailData.data;
+        const local = detail.local;
+        const remote = detail.remote;
+        
+        // 渲染元信息
+        metaEl.innerHTML = `
+            <div class="meta-item">
+                <div class="meta-label">配置键名</div>
+                <div class="meta-value">${escapeHtml(configKey)}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">当前版本</div>
+                <div class="meta-value">v${local?.current_version || 0}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">学科</div>
+                <div class="meta-value">${escapeHtml(local?.subject_name || '-')}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">同步时间</div>
+                <div class="meta-value">${local?.synced_at || '未同步'}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">状态</div>
+                <div class="meta-value">${detail.has_change ? '<span style="color:#e65100">有变更</span>' : '<span style="color:#1e7e34">已同步</span>'}</div>
+            </div>
+        `;
+        
+        // 获取版本历史
+        const versionsRes = await fetch(`/api/prompt-config/${configKey}/versions?limit=10`);
+        const versionsData = await versionsRes.json();
+        
+        if (versionsData.success && versionsData.data.length > 0) {
+            versionsEl.innerHTML = versionsData.data.map((v, i) => `
+                <div class="prompt-version-item ${i === 0 ? 'current' : ''}" onclick="loadVersionContent('${configKey}', ${v.version})">
+                    <div class="version-info">
+                        <span class="version-number">v${v.version}</span>
+                        ${i === 0 ? '<span class="version-tag">当前</span>' : ''}
+                        <span class="version-summary">${escapeHtml(v.change_summary || '')}</span>
+                    </div>
+                    <span class="version-time">${v.created_at || ''}</span>
+                </div>
+            `).join('');
+        } else {
+            versionsEl.innerHTML = '<div class="prompt-empty">暂无版本历史</div>';
+        }
+        
+        // 显示当前内容
+        contentEl.textContent = local?.config_value || remote?.config_value || '暂无内容';
+        
+    } catch (e) {
+        console.error('获取提示词详情失败:', e);
+        metaEl.innerHTML = `<div class="prompt-empty">加载失败: ${e.message}</div>`;
+        versionsEl.innerHTML = '';
+        contentEl.textContent = '';
+    }
+}
+
+/**
+ * 加载指定版本的内容
+ */
+async function loadVersionContent(configKey, version) {
+    const contentEl = document.getElementById('promptContentPreview');
+    contentEl.textContent = '加载中...';
+    
+    try {
+        const res = await fetch(`/api/prompt-config/${configKey}/versions/${version}`);
+        const data = await res.json();
+        
+        if (data.success && data.data) {
+            contentEl.textContent = data.data.config_value || '暂无内容';
+            
+            // 更新版本项的选中状态
+            document.querySelectorAll('.prompt-version-item').forEach(item => {
+                item.classList.remove('current');
+            });
+            event.target.closest('.prompt-version-item')?.classList.add('current');
+        } else {
+            contentEl.textContent = '加载失败';
+        }
+    } catch (e) {
+        console.error('加载版本内容失败:', e);
+        contentEl.textContent = '加载失败: ' + e.message;
+    }
+}
+
+
+/**
+ * 渲染提示词版本信息
+ */
+async function renderPromptVersionsInfo() {
+    const container = document.getElementById('promptVersionsInfo');
+    const tagsContainer = document.getElementById('promptVersionsTags');
+    
+    if (!container || !tagsContainer || !selectedTask) {
+        if (container) container.style.display = 'none';
+        return;
+    }
+    
+    // 优先使用任务中保存的提示词版本
+    const promptVersions = selectedTask.prompt_versions;
+    if (promptVersions && Object.keys(promptVersions).length > 0) {
+        let tagsHtml = '';
+        for (const [configKey, versionInfo] of Object.entries(promptVersions)) {
+            const shortKey = configKey.replace(/HomeWork|Prompt|Recognition|Correct|Grading|Composition/g, '').substring(0, 15);
+            tagsHtml += `
+                <div class="prompt-version-tag" onclick="viewPromptDetail('${configKey}')" title="${configKey}">
+                    <span class="tag-name">${shortKey || configKey}</span>
+                    <span class="tag-version">v${versionInfo.version}</span>
+                </div>
+            `;
+        }
+        tagsContainer.innerHTML = tagsHtml;
+        container.style.display = 'block';
+        return;
+    }
+    
+    // 如果任务中没有保存版本信息，从API获取当前版本
+    const subjectId = selectedTask.subject_id;
+    if (subjectId === undefined || subjectId === null) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/prompt-config/task-versions/${subjectId}`);
+        const data = await res.json();
+        
+        if (!data.success || !data.data || Object.keys(data.data).length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+        
+        let tagsHtml = '';
+        for (const [configKey, versionInfo] of Object.entries(data.data)) {
+            const shortKey = configKey.replace(/HomeWork|Prompt|Recognition|Correct|Grading|Composition/g, '').substring(0, 15);
+            tagsHtml += `
+                <div class="prompt-version-tag" onclick="viewPromptDetail('${configKey}')" title="${configKey}">
+                    <span class="tag-name">${shortKey || configKey}</span>
+                    <span class="tag-version">v${versionInfo.version}</span>
+                </div>
+            `;
+        }
+        
+        tagsContainer.innerHTML = tagsHtml;
+        container.style.display = 'block';
+        
+    } catch (e) {
+        console.error('获取提示词版本信息失败:', e);
+        container.style.display = 'none';
+    }
+}
+
+
+/**
+ * 显示提示词同步通知
+ */
+function showPromptSyncNotification(syncResult) {
+    if (!syncResult || !syncResult.has_changes) return;
+    
+    const changedPrompts = syncResult.prompts.filter(p => p.has_change);
+    if (changedPrompts.length === 0) return;
+    
+    let message = `检测到 ${syncResult.subject_name} 学科有 ${changedPrompts.length} 个提示词已更新：\n\n`;
+    
+    changedPrompts.forEach(p => {
+        const isNew = p.is_new;
+        const versionInfo = isNew ? '(首次同步)' : `v${p.old_version} → v${p.new_version}`;
+        message += `• ${p.config_key} ${versionInfo}\n`;
+        if (p.change_summary) {
+            message += `  ${p.change_summary}\n`;
+        }
+    });
+    
+    message += '\n已自动保存新版本。';
+    
+    alert(message);
+}
+
+/**
+ * 从任务数据渲染提示词版本信息（使用任务中保存的版本）
+ */
+function renderTaskPromptVersions() {
+    const container = document.getElementById('promptVersionsInfo');
+    const tagsContainer = document.getElementById('promptVersionsTags');
+    
+    if (!container || !tagsContainer || !selectedTask) {
+        if (container) container.style.display = 'none';
+        return;
+    }
+    
+    const promptVersions = selectedTask.prompt_versions;
+    if (!promptVersions || Object.keys(promptVersions).length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    // 渲染版本标签
+    let tagsHtml = '';
+    for (const [configKey, versionInfo] of Object.entries(promptVersions)) {
+        const shortKey = configKey.replace(/HomeWork|Prompt|Recognition|Correct|Grading|Composition/g, '').substring(0, 15);
+        tagsHtml += `
+            <div class="prompt-version-tag" onclick="viewPromptDetail('${configKey}')" title="${configKey}">
+                <span class="tag-name">${shortKey || configKey}</span>
+                <span class="tag-version">v${versionInfo.version}</span>
+            </div>
+        `;
+    }
+    
+    tagsContainer.innerHTML = tagsHtml;
+    container.style.display = 'block';
 }

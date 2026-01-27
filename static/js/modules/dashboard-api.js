@@ -239,11 +239,46 @@ export const DashboardAPI = {
     /**
      * 预览关键字匹配
      * @param {string} keyword - 关键字
+     * @param {Object} options - 选项 { subject_id, match_type, book_id }
+     * @returns {Promise<Object>}
+     */
+    previewMatch: (keyword, options = {}) => 
+        post('/api/test-plans/preview-match', { 
+            keyword, 
+            match_type: options.match_type || 'fuzzy',
+            subject_id: options.subject_id,
+            book_id: options.book_id
+        }),
+    
+    /**
+     * 检查并合并作业创建批量评估任务
+     * @param {string} keyword - 关键字
+     * @param {number} subjectId - 学科ID
+     * @param {Object} options - 选项 { match_type, auto_match_dataset, force_create }
+     * @returns {Promise<Object>}
+     */
+    checkAndMerge: (keyword, subjectId, options = {}) => 
+        post('/api/test-plans/check-and-merge', {
+            keyword,
+            subject_id: subjectId,
+            match_type: options.match_type || 'fuzzy',
+            auto_match_dataset: options.auto_match_dataset !== false,
+            force_create: options.force_create || false
+        }),
+    
+    /**
+     * 轮询检查作业完成状态
+     * @param {string} keyword - 关键字
+     * @param {number} subjectId - 学科ID
      * @param {string} matchType - 匹配类型
      * @returns {Promise<Object>}
      */
-    previewMatch: (keyword, matchType = 'fuzzy') => 
-        post('/api/test-plans/preview-match', { keyword, match_type: matchType }),
+    pollCompletion: (keyword, subjectId, matchType = 'fuzzy') => 
+        post('/api/test-plans/poll-completion', {
+            keyword,
+            subject_id: subjectId,
+            match_type: matchType
+        }),
     
     /**
      * 执行测试计划

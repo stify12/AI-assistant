@@ -33,6 +33,8 @@ def register_blueprints(app):
     from .saved_filter import saved_filter_bp
     from .analysis import analysis_bp
     from .automation import automation_bp
+    from .rfid_query import rfid_query_bp
+    from .prompt_config import prompt_config_bp
     
     # 注册通用路由（无前缀）
     app.register_blueprint(common_bp)
@@ -96,3 +98,9 @@ def register_blueprints(app):
     
     # 注册自动化管理路由
     app.register_blueprint(automation_bp)
+    
+    # 注册RFID查询路由
+    app.register_blueprint(rfid_query_bp)
+    
+    # 注册提示词配置路由
+    app.register_blueprint(prompt_config_bp)

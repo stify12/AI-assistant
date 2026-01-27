@@ -19,6 +19,7 @@ from services.semantic_eval_service import SemanticEvalService
 from services.physics_eval import normalize_physics_markdown
 from services.chemistry_eval import normalize_chemistry_markdown
 from services.ai_analysis_service import AIAnalysisService
+from services.prompt_config_service import PromptConfigService
 from utils.text_utils import normalize_answer, normalize_answer_science, has_format_diff, calculate_similarity, is_fuzzy_match
 
 batch_evaluation_bp = Blueprint('batch_evaluation', __name__)
@@ -83,6 +84,7 @@ def get_cached_task_summaries():
                     page_range = f"P{sorted_pages[0]}-{sorted_pages[-1]}"
             
             # 只提取列表展示需要的字段
+            overall_report = task_data.get('overall_report') or {}
             tasks.append({
                 'task_id': task_data.get('task_id', task_id),
                 'name': task_data.get('name', ''),
@@ -93,7 +95,7 @@ def get_cached_task_summaries():
                 'test_condition_name': task_data.get('test_condition_name', ''),
                 'created_at': task_data.get('created_at', ''),
                 'homework_count': len(homework_items),
-                'overall_accuracy': task_data.get('overall_report', {}).get('overall_accuracy', 0),
+                'overall_accuracy': overall_report.get('overall_accuracy', 0),
                 'book_name': book_name,
                 'page_range': page_range,
                 'remark': task_data.get('remark', '')
@@ -1985,6 +1987,18 @@ def batch_tasks():
                     'evaluation': None
                 })
             
+            # 同步该学科的提示词配置并记录版本
+            prompt_versions = {}
+            prompt_sync_result = None
+            if subject_id is not None:
+                try:
+                    # 同步提示词（检测变更并自动保存新版本）
+                    prompt_sync_result = PromptConfigService.sync_subject_prompts(subject_id)
+                    # 获取当前版本信息
+                    prompt_versions = PromptConfigService.get_current_prompt_versions_for_subject(subject_id)
+                except Exception as e:
+                    print(f"[CreateTask] 同步提示词失败: {e}")
+            
             task_id = str(uuid.uuid4())[:8]
             task_data = {
                 'task_id': task_id,
@@ -1997,12 +2011,27 @@ def batch_tasks():
                 'status': 'pending',
                 'homework_items': homework_items,
                 'overall_report': None,
+                'prompt_versions': prompt_versions,  # 记录创建时的提示词版本
+                'prompt_sync_result': prompt_sync_result,  # 记录同步结果（是否有变更）
                 'created_at': datetime.now().isoformat()
             }
             
             StorageService.save_batch_task(task_id, task_data)
             
-            return jsonify({'success': True, 'task_id': task_id, 'homework_items': homework_items})
+            # 返回结果中包含提示词同步信息
+            response_data = {
+                'success': True, 
+                'task_id': task_id, 
+                'homework_items': homework_items
+            }
+            if prompt_sync_result:
+                response_data['prompt_sync'] = {
+                    'has_changes': prompt_sync_result.get('has_changes', False),
+                    'subject_name': prompt_sync_result.get('subject_name', ''),
+                    'prompts': prompt_sync_result.get('prompts', [])
+                }
+            
+            return jsonify(response_data)
         
         except Exception as e:
             return jsonify({'success': False, 'error': str(e)})

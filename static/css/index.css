@@ -2106,6 +2106,16 @@ body {
     background: var(--border-light);
 }
 
+.btn-danger {
+    background: #ffeef0;
+    color: #1d1d1f;
+    border: 1px solid #f8d7da;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #fdd;
+}
+
 .btn-ai {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: #fff;
@@ -4404,6 +4414,127 @@ body {
     font-size: 13px;
 }
 
+/* 匹配预览项 - 增强版 */
+.match-preview-item {
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    border: 1px solid var(--border-light);
+    transition: all 0.15s ease;
+}
+
+.match-preview-item:hover {
+    border-color: var(--border-color);
+}
+
+.match-preview-item.completed {
+    border-left: 3px solid #1e7e34;
+}
+
+.match-preview-item.pending {
+    border-left: 3px solid #e65100;
+}
+
+.match-item-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.match-item-content {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.match-item-book {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.match-item-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.match-item-homework {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.match-item-status {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+}
+
+.match-item-status.completed {
+    background: #e3f9e5;
+    color: #1e7e34;
+}
+
+.match-item-status.pending {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.match-item-status svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* 匹配预览摘要 */
+.match-preview-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    margin-top: 12px;
+}
+
+.match-preview-summary.success {
+    background: #e3f9e5;
+    color: #1e7e34;
+}
+
+.match-preview-summary.warning {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.match-preview-summary svg {
+    flex-shrink: 0;
+}
+
+/* 加载中按钮状态 */
+.loading-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 6px;
+}
+
 /* Toggle 开关 */
 .toggle-switch {
     position: relative;
@@ -6535,4 +6666,905 @@ input:checked + .slider:before {
 .subject-score-badge.low {
     background: #ffeef0;
     color: #d73a49;
+}
+
+
+/* ========== RFID查询弹窗样式 ========== */
+.rfid-modal .modal-content {
+    max-width: 900px;
+    width: 90%;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.rfid-modal-content {
+    max-width: 900px;
+    width: 90%;
+}
+
+.rfid-modal-body {
+    min-height: 450px;
+    max-height: 75vh;
+    overflow-y: auto;
+    padding: 24px;
+}
+
+/* 搜索区域 */
+.rfid-search-section {
+    margin-bottom: 28px;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+}
+
+.rfid-search-box {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.rfid-search-box input {
+    flex: 1;
+    padding: 14px 18px;
+    background: #fff;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    color: var(--text-primary);
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.rfid-search-box input:focus {
+    border-color: var(--text-primary);
+    box-shadow: 0 0 0 3px rgba(29, 29, 31, 0.1);
+}
+
+.rfid-search-box input::placeholder {
+    color: var(--text-muted);
+}
+
+.rfid-search-btn {
+    padding: 14px 28px;
+    background: var(--text-primary);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rfid-search-btn:hover {
+    background: #000;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 结果区域 */
+.rfid-result-section {
+    animation: rfidFadeIn 0.4s ease;
+}
+
+@keyframes rfidFadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.rfid-result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.rfid-result-left,
+.rfid-result-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* 信息卡片 */
+.rfid-info-card {
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.rfid-info-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border-color: var(--border-color);
+}
+
+.rfid-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #f5f5f7 100%);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.rfid-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rfid-card-title::before {
+    content: '';
+    width: 4px;
+    height: 14px;
+    background: var(--text-primary);
+    border-radius: 2px;
+}
+
+.rfid-status-badge {
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.rfid-status-badge.valid {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.rfid-status-badge.invalid {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.rfid-type-badge {
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 600;
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.rfid-type-badge.homework {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.rfid-type-badge.error-book {
+    background: #f3e8ff;
+    color: #7c3aed;
+}
+
+.rfid-card-body {
+    padding: 16px 18px;
+}
+
+/* 信息行 */
+.rfid-info-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.rfid-info-row:last-child {
+    border-bottom: none;
+}
+
+.rfid-info-label {
+    width: 90px;
+    flex-shrink: 0;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.rfid-info-value {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.rfid-info-value.highlight {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* 查看全班按钮 */
+.rfid-btn-small {
+    padding: 6px 14px;
+    background: var(--text-primary);
+    border: none;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 500;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.rfid-btn-small:hover {
+    background: #000;
+    transform: scale(1.02);
+}
+
+/* 老师列表 */
+.rfid-teacher-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rfid-teacher-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #f8f9fa;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
+}
+
+.rfid-teacher-item:hover {
+    background: #f0f0f0;
+}
+
+.rfid-teacher-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.rfid-teacher-account {
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 2px 8px;
+    background: #e8f4fd;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+}
+
+.rfid-teacher-subject {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 3px 8px;
+    background: #fff;
+    border-radius: 4px;
+    border: 1px solid var(--border-light);
+}
+
+/* 班级同学列表 */
+.rfid-classmates-section {
+    animation: rfidFadeIn 0.4s ease;
+}
+
+.rfid-classmates-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-light);
+}
+
+.rfid-back-btn {
+    padding: 8px 16px;
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rfid-back-btn:hover {
+    background: var(--bg-page);
+    border-color: var(--text-primary);
+}
+
+.rfid-classmates-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.rfid-classmates-count {
+    font-size: 14px;
+    color: var(--text-muted);
+    padding: 4px 12px;
+    background: var(--bg-page);
+    border-radius: var(--radius-full);
+}
+
+.rfid-classmates-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.rfid-classmate-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+    cursor: default;
+}
+
+.rfid-classmate-item:hover {
+    border-color: var(--border-color);
+    background: #fafafa;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.rfid-classmate-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--text-primary) 0%, #434343 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.rfid-classmate-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.rfid-classmate-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+
+.rfid-classmate-num {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* 空状态 */
+.rfid-empty-state,
+.rfid-not-found,
+.rfid-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    color: var(--text-muted);
+}
+
+.rfid-empty-state svg,
+.rfid-not-found svg {
+    opacity: 0.5;
+}
+
+.rfid-empty-text,
+.rfid-not-found-text,
+.rfid-loading-text {
+    font-size: 15px;
+    margin-top: 16px;
+    color: var(--text-secondary);
+}
+
+.rfid-not-found-no {
+    font-size: 14px;
+    color: var(--status-failed-text);
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+    margin-top: 10px;
+    padding: 6px 14px;
+    background: #fef2f2;
+    border-radius: var(--radius-sm);
+}
+
+/* 加载动画 */
+.rfid-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--text-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* 无数据提示 */
+.rfid-no-data {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 8px 0;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .rfid-modal-content {
+        max-width: 95%;
+    }
+    
+    .rfid-result-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .rfid-classmates-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+
+/* ========== 工作流详情弹窗样式 - 简约高级版 ========== */
+
+/* 主色：#1d1d1f（黑）  辅助色：#10b981（绿）#6b7280（灰）  中性色：#f9fafb/#e5e7eb */
+
+.workflow-node-modal {
+    max-width: 520px;
+    width: 92%;
+}
+
+.workflow-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 4px 0;
+}
+
+/* 顶部信息区 - 横向紧凑布局 */
+.workflow-info {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 0;
+    background: transparent;
+}
+
+.workflow-info .info-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.workflow-info .info-label {
+    color: #9ca3af;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.workflow-info .info-value {
+    color: #1d1d1f;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* 进度条区域 - 极简设计 */
+.workflow-progress {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    border-radius: 12px;
+}
+
+.workflow-progress .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+}
+
+.workflow-progress .progress-header span:first-child {
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.workflow-progress .progress-header span:last-child {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.workflow-progress .progress-bar-container {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.workflow-progress .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+    border-radius: 3px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 步骤列表 - 时间线设计 */
+.workflow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+    padding-left: 28px;
+}
+
+/* 连接线 */
+.workflow-steps::before {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 24px;
+    bottom: 24px;
+    width: 2px;
+    background: #e5e7eb;
+}
+
+.workflow-step {
+    position: relative;
+    padding: 16px 20px;
+    background: #fff;
+    border-radius: 10px;
+    border: none;
+    border-left: none;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+}
+
+.workflow-step:last-child {
+    margin-bottom: 0;
+}
+
+.workflow-step:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    transform: translateX(2px);
+}
+
+/* 步骤状态指示器 - 圆点在左侧 */
+.workflow-step::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 20px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #e5e7eb;
+    z-index: 1;
+}
+
+.workflow-step.completed::before {
+    background: #10b981;
+    box-shadow: 0 0 0 2px #10b981;
+}
+
+.workflow-step.in_progress::before {
+    background: #3b82f6;
+    box-shadow: 0 0 0 2px #3b82f6;
+    animation: pulse-dot 2s infinite;
+}
+
+.workflow-step.failed::before {
+    background: #ef4444;
+    box-shadow: 0 0 0 2px #ef4444;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+.workflow-step .step-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.workflow-step .step-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d1d1f;
+    letter-spacing: -0.01em;
+}
+
+/* 隐藏原来的状态图标，用伪元素代替 */
+.workflow-step .status-icon {
+    display: none;
+}
+
+.workflow-step .step-content {
+    padding-left: 0;
+}
+
+.workflow-step .step-info {
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.6;
+}
+
+.workflow-step .step-info.warning {
+    color: #d97706;
+}
+
+.workflow-step .grading-progress {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+/* 步骤操作按钮 */
+.workflow-step .step-action-btn {
+    margin-left: auto;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    background: #f3f4f6;
+    border: none;
+    border-radius: 6px;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.workflow-step .step-action-btn:hover {
+    background: #e5e7eb;
+    color: #1d1d1f;
+}
+
+/* 加载动画 - 更精致 */
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    margin: 48px auto;
+    border: 2px solid #f3f4f6;
+    border-top-color: #1d1d1f;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ========== 数据集选择器样式 - 简约版 ========== */
+.dataset-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.dataset-selector .selector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    border-bottom: none;
+}
+
+.dataset-selector .selector-header h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1d1d1f;
+    letter-spacing: -0.01em;
+}
+
+.dataset-selector .selector-header .btn {
+    padding: 6px 14px;
+    font-size: 12px;
+    background: #f3f4f6;
+    border: none;
+    color: #6b7280;
+}
+
+.dataset-selector .selector-header .btn:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.dataset-selector .selector-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 48px 20px;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+.dataset-selector .selector-loading .loading-spinner {
+    width: 28px;
+    height: 28px;
+    margin: 0;
+}
+
+.dataset-selector .selector-empty,
+.dataset-selector .selector-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 48px 20px;
+    text-align: center;
+}
+
+.dataset-selector .selector-empty p,
+.dataset-selector .selector-error p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.dataset-selector .selector-empty .hint {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.dataset-selector .selector-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 380px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+/* 自定义滚动条 */
+.dataset-selector .selector-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.dataset-selector .selector-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.dataset-selector .selector-list::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 2px;
+}
+
+.dataset-selector .dataset-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    background: #f9fafb;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+}
+
+.dataset-selector .dataset-item:hover {
+    background: #fff;
+    border-color: #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transform: translateY(-1px);
+}
+
+.dataset-selector .dataset-item-main {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+}
+
+.dataset-selector .dataset-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1d1d1f;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dataset-selector .dataset-book {
+    font-size: 11px;
+    color: #9ca3af;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dataset-selector .dataset-item-meta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-shrink: 0;
+    margin-left: 12px;
+}
+
+.dataset-selector .dataset-subject {
+    font-size: 11px;
+    padding: 3px 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    color: #4b5563;
+    font-weight: 500;
+}
+
+.dataset-selector .dataset-count {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
+    min-width: 40px;
+    text-align: right;
+}
+
+.error-message {
+    padding: 24px;
+    text-align: center;
+    color: #ef4444;
+    font-size: 13px;
+}
+
+/* 弹窗底部按钮优化 */
+.workflow-node-modal .modal-footer {
+    padding-top: 20px;
+    border-top: 1px solid #f3f4f6;
+    margin-top: 8px;
+}
+
+.workflow-node-modal .modal-footer .btn {
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+}
+
+.workflow-node-modal .modal-footer .btn-secondary {
+    background: #f3f4f6;
+    border: none;
+    color: #4b5563;
+}
+
+.workflow-node-modal .modal-footer .btn-secondary:hover {
+    background: #e5e7eb;
+    color: #1d1d1f;
+}
+
+.workflow-node-modal .modal-footer .btn-primary {
+    background: #1d1d1f;
+    border: none;
+    color: #fff;
+}
+
+.workflow-node-modal .modal-footer .btn-primary:hover {
+    background: #000;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }

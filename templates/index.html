@@ -6,11 +6,14 @@
     <title>测试计划看板 - AI效果分析平台</title>
     <!-- DNS 预解析 -->
     <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
     <!-- 关键CSS预加载 -->
     <link rel="preload" href="/static/css/common.css?v=20260124" as="style">
     <link rel="preload" href="/static/css/index.css?v=20260124" as="style">
     <!-- 关键JS预加载 -->
     <link rel="preload" href="/static/js/index.js?v=20260124" as="script">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <!-- 样式表 -->
     <link rel="stylesheet" href="/static/css/common.css?v=20260124">
     <link rel="stylesheet" href="/static/css/index.css?v=20260124">
@@ -74,9 +77,9 @@
                         <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg>
                         <span>提示词优化</span>
                     </a>
-                    <a href="/dataset-manage" class="nav-tool-item" title="数据集管理">
-                        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/></svg>
-                        <span>数据集管理</span>
+                    <a href="javascript:void(0)" class="nav-tool-item" title="RFID查询" onclick="openRfidQueryModal()">
+                        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10 0h2v2h-2zm-6-4h8v2h-8z"/></svg>
+                        <span>RFID查询</span>
                     </a>
                 </div>
             </div>
@@ -197,7 +200,7 @@
             <!-- 左侧：测试计划流程图区 -->
             <section class="plan-section">
                 <div class="section-header">
-                    <h2 class="section-title">今日测试计划</h2>
+                    <h2 class="section-title">测试计划（自动）</h2>
                     <div class="plan-controls">
                         <select class="plan-filter" id="planStatusFilter" onchange="filterPlans()">
                             <option value="all">全部状态</option>
@@ -619,6 +622,10 @@
             
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeCreatePlanModal()">取消</button>
+                <button class="btn btn-warning" onclick="checkAndMergeHomework()" id="autoMergeBtn" title="检查匹配的作业是否全部完成，完成后自动合并创建批量评估任务">
+                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+                    自动合并创建任务
+                </button>
                 <button class="btn btn-primary" onclick="createTestPlan()" id="createPlanSubmitBtn">创建计划</button>
             </div>
         </div>
@@ -1346,6 +1353,113 @@
         </div>
     </div>
 
-    <script type="module" src="/static/js/index.js?v=20260125_v2"></script>
+    <!-- RFID查询弹窗 -->
+    <div class="modal rfid-modal" id="rfidQueryModal" onclick="closeRfidQueryModal(event)" style="display:none;">
+        <div class="modal-content rfid-modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">RFID查询</h3>
+                <button class="modal-close" onclick="closeRfidQueryModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <div class="modal-body rfid-modal-body">
+                <!-- 搜索区域 -->
+                <div class="rfid-search-section">
+                    <div class="rfid-search-box">
+                        <input type="text" id="rfidInput" placeholder="请输入RFID卡号，按回车查询" onkeypress="if(event.keyCode===13) queryRFID()">
+                        <button class="rfid-search-btn" onclick="queryRFID()">
+                            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                            查询
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 结果区域 -->
+                <div class="rfid-result-section" id="rfidResultSection" style="display:none;">
+                    <div class="rfid-result-grid">
+                        <!-- 左侧：基础信息 -->
+                        <div class="rfid-result-left">
+                            <!-- RFID基础信息 -->
+                            <div class="rfid-info-card">
+                                <div class="rfid-card-header">
+                                    <span class="rfid-card-title">RFID信息</span>
+                                    <span class="rfid-status-badge" id="rfidStatusBadge"></span>
+                                </div>
+                                <div class="rfid-card-body" id="rfidBasicInfo"></div>
+                            </div>
+                            
+                            <!-- 绑定信息 -->
+                            <div class="rfid-info-card">
+                                <div class="rfid-card-header">
+                                    <span class="rfid-card-title">绑定信息</span>
+                                    <span class="rfid-type-badge" id="rfidTypeBadge"></span>
+                                </div>
+                                <div class="rfid-card-body" id="rfidBindInfo"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- 右侧：学生和书本信息 -->
+                        <div class="rfid-result-right">
+                            <!-- 学生信息 -->
+                            <div class="rfid-info-card">
+                                <div class="rfid-card-header">
+                                    <span class="rfid-card-title">学生信息</span>
+                                    <button class="rfid-btn-small" id="viewClassmatesBtn" onclick="viewClassmates()" style="display:none;">查看全班</button>
+                                </div>
+                                <div class="rfid-card-body" id="rfidStudentInfo"></div>
+                            </div>
+                            
+                            <!-- 书本信息 -->
+                            <div class="rfid-info-card">
+                                <div class="rfid-card-header">
+                                    <span class="rfid-card-title">绑定书本</span>
+                                </div>
+                                <div class="rfid-card-body" id="rfidBookInfo"></div>
+                            </div>
+                            
+                            <!-- 老师信息 -->
+                            <div class="rfid-info-card">
+                                <div class="rfid-card-header">
+                                    <span class="rfid-card-title">对应老师</span>
+                                </div>
+                                <div class="rfid-card-body" id="rfidTeacherInfo"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 班级同学列表 -->
+                <div class="rfid-classmates-section" id="rfidClassmatesSection" style="display:none;">
+                    <div class="rfid-classmates-header">
+                        <button class="rfid-back-btn" onclick="hideClassmates()">返回</button>
+                        <span class="rfid-classmates-title" id="rfidClassmatesTitle">全班同学</span>
+                        <span class="rfid-classmates-count" id="rfidClassmatesCount"></span>
+                    </div>
+                    <div class="rfid-classmates-list" id="rfidClassmatesList"></div>
+                </div>
+                
+                <!-- 空状态 -->
+                <div class="rfid-empty-state" id="rfidEmptyState">
+                    <svg viewBox="0 0 24 24" width="48" height="48"><path fill="#666" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                    <div class="rfid-empty-text">输入RFID卡号开始查询</div>
+                </div>
+                
+                <!-- 未找到状态 -->
+                <div class="rfid-not-found" id="rfidNotFound" style="display:none;">
+                    <svg viewBox="0 0 24 24" width="48" height="48"><path fill="#666" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    <div class="rfid-not-found-text">未找到该RFID卡号的相关信息</div>
+                    <div class="rfid-not-found-no" id="rfidNotFoundNo"></div>
+                </div>
+                
+                <!-- 加载状态 -->
+                <div class="rfid-loading" id="rfidLoading" style="display:none;">
+                    <div class="rfid-spinner"></div>
+                    <div class="rfid-loading-text">查询中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/static/js/index.js?v=20260127"></script>
 </body>
 </html>

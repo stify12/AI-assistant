@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试计划概览 - 原型演示</title>
+    <link rel="stylesheet" href="/static/css/prototype-demo.css">
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <nav class="nav">
+        <div class="nav-brand">AI 批改分析平台</div>
+        <div class="nav-links">
+            <a href="#" class="nav-link active">测试计划</a>
+            <a href="#" class="nav-link">批量评估</a>
+            <a href="#" class="nav-link">数据分析</a>
+            <a href="#" class="nav-link">设置</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- 页面标题区 -->
+        <header class="page-header">
+            <div class="page-title">
+                <h1>测试计划概览</h1>
+                <p class="page-desc">管理和追踪 AI 批改效果测试</p>
+            </div>
+            <button class="btn btn-primary">
+                <span class="btn-icon">+</span>
+                新建计划
+            </button>
+        </header>
+
+        <!-- 统计卡片区 -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">128</div>
+                <div class="stat-label">总计划数</div>
+                <div class="stat-trend trend-up">+12 本周</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">23</div>
+                <div class="stat-label">进行中</div>
+                <div class="stat-trend">正在执行</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">94.2%</div>
+                <div class="stat-label">平均准确率</div>
+                <div class="stat-trend trend-up">+2.1%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">1,847</div>
+                <div class="stat-label">已评估题目</div>
+                <div class="stat-trend">累计</div>
+            </div>
+        </section>
+
+        <!-- 筛选区 -->
+        <section class="filter-bar">
+            <div class="search-box">
+                <input type="text" placeholder="搜索计划名称..." class="search-input">
+            </div>
+            <div class="filter-group">
+                <select class="select">
+                    <option>全部学科</option>
+                    <option>数学</option>
+                    <option>语文</option>
+                    <option>英语</option>
+                    <option>物理</option>
+                    <option>化学</option>
+                </select>
+                <select class="select">
+                    <option>全部状态</option>
+                    <option>进行中</option>
+                    <option>已完成</option>
+                    <option>待开始</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- 数据表格 -->
+        <section class="card">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>计划名称</th>
+                        <th>学科</th>
+                        <th>题目数</th>
+                        <th>准确率</th>
+                        <th>状态</th>
+                        <th>更新时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="cell-title">高三数学期末测试 v2.1</td>
+                        <td><span class="tag tag-blue">数学</span></td>
+                        <td>156</td>
+                        <td class="cell-highlight">96.8%</td>
+                        <td><span class="status status-success">已完成</span></td>
+                        <td class="cell-muted">2026-01-28 14:30</td>
+                        <td>
+                            <button class="btn btn-text">查看</button>
+                            <button class="btn btn-text">编辑</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="cell-title">初二物理力学专项</td>
+                        <td><span class="tag tag-purple">物理</span></td>
+                        <td>89</td>
+                        <td class="cell-highlight">92.1%</td>
+                        <td><span class="status status-running">进行中</span></td>
+                        <td class="cell-muted">2026-01-28 10:15</td>
+                        <td>
+                            <button class="btn btn-text">查看</button>
+                            <button class="btn btn-text">编辑</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="cell-title">高一化学方程式识别</td>
+                        <td><span class="tag tag-green">化学</span></td>
+                        <td>234</td>
+                        <td class="cell-highlight">88.5%</td>
+                        <td><span class="status status-running">进行中</span></td>
+                        <td class="cell-muted">2026-01-27 16:42</td>
+                        <td>
+                            <button class="btn btn-text">查看</button>
+                            <button class="btn btn-text">编辑</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="cell-title">初三英语作文批改</td>
+                        <td><span class="tag tag-orange">英语</span></td>
+                        <td>67</td>
+                        <td class="cell-highlight">—</td>
+                        <td><span class="status status-pending">待开始</span></td>
+                        <td class="cell-muted">2026-01-27 09:00</td>
+                        <td>
+                            <button class="btn btn-text">查看</button>
+                            <button class="btn btn-text">编辑</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="cell-title">高二语文阅读理解</td>
+                        <td><span class="tag tag-red">语文</span></td>
+                        <td>112</td>
+                        <td class="cell-highlight">91.3%</td>
+                        <td><span class="status status-success">已完成</span></td>
+                        <td class="cell-muted">2026-01-26 18:20</td>
+                        <td>
+                            <button class="btn btn-text">查看</button>
+                            <button class="btn btn-text">编辑</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <!-- 分页 -->
+            <div class="pagination">
+                <span class="page-info">共 128 条记录</span>
+                <div class="page-controls">
+                    <button class="btn btn-page" disabled>上一页</button>
+                    <span class="page-current">1 / 13</span>
+                    <button class="btn btn-page">下一页</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast 提示示例 -->
+    <div class="toast toast-success" id="toast">
+        操作成功，真棒！
+    </div>
+</body>
+</html>

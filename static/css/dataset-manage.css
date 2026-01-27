@@ -3390,3 +3390,30 @@ body {
     color: #1e7e34;
     padding: 6px 12px;
 }
+
+
+/* ========== 分值列样式 ========== */
+.recognize-table-v2 .col-score {
+    width: 70px;
+    text-align: center;
+}
+
+.recognize-table-v2 .score-value {
+    display: inline-block;
+    padding: 4px 10px;
+    background: #e3f2fd;
+    color: #1565c0;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* 有分值列时调整其他列宽度 */
+.recognize-table-v2.has-score .col-user-answer {
+    width: auto;
+}
+
+.recognize-table-v2.has-score .col-answer {
+    width: 160px;
+    min-width: 160px;
+}

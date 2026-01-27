@@ -63,6 +63,12 @@ def cluster_detail(cluster_id):
     return render_template('cluster-detail.html')
 
 
+@common_bp.route('/prototype-demo')
+def prototype_demo():
+    """UI 原型演示页面"""
+    return render_template('prototype-demo.html')
+
+
 # ========== 配置 API ==========
 
 @common_bp.route('/api/config', methods=['GET', 'POST'])

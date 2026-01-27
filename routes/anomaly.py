@@ -3,7 +3,7 @@
 
 提供异常检测和告警管理 API。
 """
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
 from services.anomaly_service import AnomalyService
 from services.storage_service import StorageService
 
@@ -175,4 +175,32 @@ def set_threshold():
         return jsonify({'success': False, 'error': str(e)}), 400
     except Exception as e:
         print(f'[Anomaly] 设置阈值失败: {e}')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@anomaly_bp.route('/api/anomaly/task/<task_id>/export', methods=['GET'])
+def export_question_anomalies(task_id):
+    """
+    导出任务题目异常检测结果到Excel
+    
+    Returns:
+        Excel文件下载
+    """
+    try:
+        filepath = AnomalyService.export_question_anomalies_to_excel(task_id)
+        
+        if not filepath:
+            return jsonify({'success': False, 'error': '任务不存在或导出失败'}), 404
+        
+        return send_file(
+            filepath,
+            as_attachment=True,
+            download_name=filepath.split('/')[-1].split('\\')[-1],
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        
+    except Exception as e:
+        print(f'[Anomaly] 导出异常检测结果失败: {e}')
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500

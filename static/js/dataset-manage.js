@@ -569,17 +569,21 @@ function renderRecognizePreview() {
 }
 
 function renderResultTable(page, data) {
+    // 检测数据中是否有 score 字段
+    const hasScore = data.some(item => item.score !== undefined && item.score !== null);
+    
     return `
         <div class="result-table-header">
             <button class="btn btn-small btn-secondary" onclick="showEffectCorrection(${page})">效果矫正</button>
         </div>
-        <table class="recognize-table recognize-table-v2">
+        <table class="recognize-table recognize-table-v2 ${hasScore ? 'has-score' : ''}">
             <thead>
                 <tr>
                     <th class="col-index">题号</th>
                     <th class="col-answer">标准答案</th>
                     <th class="col-user-answer">学生答案</th>
                     <th class="col-correct">是否正确</th>
+                    ${hasScore ? '<th class="col-score">分值</th>' : ''}
                     <th class="col-tempindex">tempIndex</th>
                     <th class="col-action">操作</th>
                 </tr>
@@ -596,6 +600,7 @@ function renderResultTable(page, data) {
                                 <option value="no" ${item.correct === 'no' || item.correct !== 'yes' ? 'selected' : ''}>错误</option>
                             </select>
                         </td>
+                        ${hasScore ? `<td class="col-score"><span class="score-value">${item.score !== undefined && item.score !== null ? item.score : '-'}</span></td>` : ''}
                         <td class="col-tempindex">
                             <input type="number" value="${item.tempIndex !== undefined ? item.tempIndex : ''}" 
                                    onchange="updateTableCell(${page}, ${idx}, 'tempIndex', parseInt(this.value))">

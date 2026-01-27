@@ -1148,7 +1148,7 @@ def set_plan_schedule(plan_id):
         500: 服务器内部错误
     """
     # 延迟导入避免循环依赖
-    from services.schedule_service import ScheduleService
+    from services.unified_schedule_service import UnifiedScheduleService
     
     try:
         # 参数空值校验 (NFR-34.5)
@@ -1214,7 +1214,7 @@ def set_plan_schedule(plan_id):
                 }), 400
         
         # 调用服务层设置调度
-        result = ScheduleService.set_plan_schedule(plan_id, data)
+        result = UnifiedScheduleService.set_plan_schedule(plan_id, data)
         
         return jsonify({
             'success': True,
@@ -1258,7 +1258,7 @@ def get_plan_schedule(plan_id):
     Example:
         GET /api/dashboard/plans/abc12345/schedule
     """
-    from services.schedule_service import ScheduleService
+    from services.unified_schedule_service import UnifiedScheduleService
     
     try:
         # 参数空值校验 (NFR-34.5)
@@ -1269,7 +1269,7 @@ def get_plan_schedule(plan_id):
             }), 400
         
         # 获取调度状态
-        data = ScheduleService.get_schedule_status(plan_id)
+        data = UnifiedScheduleService.get_schedule_status(plan_id)
         
         return jsonify({
             'success': True,
@@ -1301,7 +1301,7 @@ def disable_plan_schedule(plan_id):
     Example:
         DELETE /api/dashboard/plans/abc12345/schedule
     """
-    from services.schedule_service import ScheduleService
+    from services.unified_schedule_service import UnifiedScheduleService
     
     try:
         # 参数空值校验 (NFR-34.5)
@@ -1312,7 +1312,7 @@ def disable_plan_schedule(plan_id):
             }), 400
         
         # 禁用调度
-        success = ScheduleService.disable_schedule(plan_id)
+        success = UnifiedScheduleService.disable_schedule(plan_id)
         
         if success:
             return jsonify({
@@ -1371,7 +1371,7 @@ def get_plan_logs(plan_id):
     Example:
         GET /api/dashboard/plans/abc12345/logs?page=1&page_size=20
     """
-    from services.schedule_service import ScheduleService
+    from services.unified_schedule_service import UnifiedScheduleService
     
     try:
         # 参数空值校验 (NFR-34.5)
@@ -1404,7 +1404,7 @@ def get_plan_logs(plan_id):
             page_size = 100
         
         # 获取执行日志
-        data = ScheduleService.get_plan_logs(plan_id, page, page_size)
+        data = UnifiedScheduleService.get_plan_logs(plan_id, page, page_size)
         
         return jsonify({
             'success': True,
@@ -1444,7 +1444,7 @@ def execute_plan_manually(plan_id):
     Example:
         POST /api/dashboard/plans/abc12345/execute
     """
-    from services.schedule_service import ScheduleService
+    from services.unified_schedule_service import UnifiedScheduleService as ScheduleService
     
     try:
         # 参数空值校验 (NFR-34.5)
@@ -1455,15 +1455,7 @@ def execute_plan_manually(plan_id):
             }), 400
         
         # 执行任务
-        result = ScheduleService.execute_scheduled_task(plan_id)
-        
-        # 记录为手动执行
-        ScheduleService.log_execution(
-            plan_id=plan_id,
-            task_id=result.get('task_id'),
-            action='manual_run',
-            details=result
-        )
+        result = ScheduleService.execute_test_plan(plan_id)
         
         return jsonify({
             'success': True,
@@ -1472,9 +1464,11 @@ def execute_plan_manually(plan_id):
         
     except Exception as e:
         print(f"[Dashboard] 手动执行计划失败: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
-            'error': '执行失败，请稍后重试'
+            'error': f'执行失败: {str(e)}'
         }), 500
 
 

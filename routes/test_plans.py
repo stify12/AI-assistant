@@ -269,7 +269,8 @@ def get_test_plans():
         where_clauses = []
         params = []
         
-        if status:
+        # status 为 'all' 或空时不筛选
+        if status and status != 'all':
             where_clauses.append("status = %s")
             params.append(status)
         
@@ -671,10 +672,15 @@ def preview_match():
     查询 zpsmart 数据库的 zp_homework_publish 表，
     根据关键字匹配作业发布记录，返回匹配结果及统计信息。
     
+    新增功能：
+    - 支持 subject_id 过滤
+    - 返回 publish.status 字段判断批改是否完成（status=2 表示全部完成）
+    
     Request Body:
         {
             "keyword": "p97-98",           # 必填，搜索关键字
             "match_type": "fuzzy",         # 可选，匹配类型: exact/fuzzy/regex，默认 fuzzy
+            "subject_id": 4,               # 可选，学科ID过滤
             "book_id": "1997848714229166082",  # 可选，限定书本ID
             "dataset_id": "b3b0395e"       # 可选，从数据集获取 book_id
         }
@@ -686,6 +692,8 @@ def preview_match():
                 matched_count: int,        # 匹配到的发布数量
                 total_homework: int,       # 总作业数
                 total_graded: int,         # 已批改数
+                all_completed: bool,       # 是否全部完成（所有 publish.status=2）
+                completed_count: int,      # 已完成的 publish 数量
                 matches: [                 # 匹配到的发布列表
                     {
                         publish_id: str,
@@ -697,6 +705,8 @@ def preview_match():
                         total_homework: int,
                         graded_count: int,
                         grading_progress: float,
+                        status: int,       # publish 状态（2=全部批改完成）
+                        is_completed: bool,# 是否完成
                         create_time: str
                     }
                 ]
@@ -720,6 +730,14 @@ def preview_match():
         match_type = data.get('match_type', 'fuzzy')
         if match_type not in ('exact', 'fuzzy', 'regex'):
             match_type = 'fuzzy'
+        
+        # 获取学科ID过滤
+        subject_id = data.get('subject_id')
+        if subject_id is not None:
+            try:
+                subject_id = int(subject_id)
+            except (ValueError, TypeError):
+                subject_id = None
         
         # 获取 book_id（可以直接传入或从数据集获取）
         book_id = data.get('book_id')
@@ -748,6 +766,7 @@ def preview_match():
         
         # 构建完整 SQL
         # 查询 zp_homework_publish 并统计关联的作业数量和批改状态
+        # 新增：查询 hp.status 字段（status=2 表示全部批改完成）
         sql = f"""
             SELECT 
                 hp.id as publish_id,
@@ -755,7 +774,9 @@ def preview_match():
                 hp.subject_id,
                 hp.book_id,
                 hp.page_region,
+                hp.status,
                 hp.create_time,
+                b.book_name,
                 COUNT(h.id) as total_homework,
                 SUM(CASE 
                     WHEN h.homework_result IS NOT NULL 
@@ -765,10 +786,16 @@ def preview_match():
                 END) as graded_count
             FROM zp_homework_publish hp
             LEFT JOIN zp_homework h ON h.hw_publish_id = hp.id
+            LEFT JOIN zp_make_book b ON hp.book_id = b.id
             WHERE {content_condition}
         """
         
         params = [content_param]
+        
+        # 如果指定了 subject_id，添加过滤条件
+        if subject_id is not None:
+            sql += " AND hp.subject_id = %s"
+            params.append(subject_id)
         
         # 如果指定了 book_id，添加过滤条件
         if book_id:
@@ -777,7 +804,7 @@ def preview_match():
         
         # 分组和排序
         sql += """
-            GROUP BY hp.id, hp.content, hp.subject_id, hp.book_id, hp.page_region, hp.create_time
+            GROUP BY hp.id, hp.content, hp.subject_id, hp.book_id, hp.page_region, hp.status, hp.create_time, b.book_name
             ORDER BY hp.create_time DESC
             LIMIT 50
         """
@@ -789,10 +816,17 @@ def preview_match():
         matches = []
         total_homework_sum = 0
         total_graded_sum = 0
+        completed_count = 0
         
         for row in rows:
             total_hw = row.get('total_homework', 0) or 0
             graded = row.get('graded_count', 0) or 0
+            publish_status = row.get('status', 0) or 0
+            
+            # status=2 表示该 publish 的所有作业都已批改完成
+            is_completed = (publish_status == 2)
+            if is_completed:
+                completed_count += 1
             
             # 计算批改进度百分比
             grading_progress = round(graded / total_hw * 100, 1) if total_hw > 0 else 0
@@ -814,16 +848,22 @@ def preview_match():
                 'content': row.get('content', ''),
                 'subject_id': row.get('subject_id'),
                 'book_id': str(row.get('book_id', '')),
+                'book_name': row.get('book_name', ''),
                 'page_region': page_region,
                 'pages': pages,
                 'total_homework': total_hw,
                 'graded_count': graded,
                 'grading_progress': grading_progress,
+                'status': publish_status,
+                'is_completed': is_completed,
                 'create_time': create_time
             })
             
             total_homework_sum += total_hw
             total_graded_sum += graded
+        
+        # 判断是否全部完成
+        all_completed = len(matches) > 0 and completed_count == len(matches)
         
         return jsonify({
             'success': True,
@@ -831,6 +871,8 @@ def preview_match():
                 'matched_count': len(matches),
                 'total_homework': total_homework_sum,
                 'total_graded': total_graded_sum,
+                'all_completed': all_completed,
+                'completed_count': completed_count,
                 'matches': matches
             }
         })
@@ -2603,3 +2645,487 @@ def execute_workflow(plan_id):
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': f'执行失败: {str(e)}'}), 500
+
+
+# ========== 合并作业发布到批量评估任务 API ==========
+
+@test_plans_bp.route('/api/test-plans/check-and-merge', methods=['POST'])
+def check_and_merge_homework():
+    """
+    检查作业发布完成状态并合并创建批量评估任务
+    
+    根据关键字和学科匹配 zp_homework_publish，检查所有匹配的 publish 是否都已完成
+    （status=2），如果全部完成则合并所有作业创建一个批量评估任务。
+    
+    Request Body:
+        {
+            "keyword": "=",                # 必填，搜索关键字
+            "subject_id": 4,               # 必填，学科ID
+            "match_type": "fuzzy",         # 可选，匹配类型: exact/fuzzy/regex，默认 fuzzy
+            "auto_match_dataset": true,    # 可选，是否自动匹配数据集，默认 true
+            "force_create": false          # 可选，是否强制创建（即使未全部完成），默认 false
+        }
+    
+    Returns:
+        JSON: {
+            success: bool,
+            data: {
+                status: str,               # checking/waiting/completed
+                matched_count: int,        # 匹配到的 publish 数量
+                completed_count: int,      # 已完成的 publish 数量
+                all_completed: bool,       # 是否全部完成
+                total_homework: int,       # 总作业数
+                matches: [...],            # 匹配到的 publish 列表
+                task_id: str,              # 创建的批量任务ID（仅当 all_completed=true 或 force_create=true）
+                task_name: str,            # 任务名称
+                message: str               # 状态消息
+            },
+            error: str (if failed)
+        }
+    """
+    from services.database_service import DatabaseService
+    from services.storage_service import StorageService
+    import uuid
+    
+    # 学科ID映射
+    SUBJECT_MAP = {
+        0: '英语',
+        1: '语文',
+        2: '数学',
+        3: '物理',
+        4: '化学',
+        5: '生物',
+        6: '地理'
+    }
+    
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'success': False, 'error': '请求数据为空'}), 400
+        
+        # 获取并验证参数
+        keyword = data.get('keyword', '').strip()
+        if not keyword:
+            return jsonify({'success': False, 'error': '关键字不能为空'}), 400
+        
+        subject_id = data.get('subject_id')
+        if subject_id is None:
+            return jsonify({'success': False, 'error': '学科ID不能为空'}), 400
+        
+        try:
+            subject_id = int(subject_id)
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'error': '学科ID格式错误'}), 400
+        
+        match_type = data.get('match_type', 'fuzzy')
+        if match_type not in ('exact', 'fuzzy', 'regex'):
+            match_type = 'fuzzy'
+        
+        auto_match_dataset = data.get('auto_match_dataset', True)
+        force_create = data.get('force_create', False)
+        
+        # 构建 SQL 查询条件
+        if match_type == 'exact':
+            content_condition = "hp.content = %s"
+            content_param = keyword
+        elif match_type == 'regex':
+            content_condition = "hp.content REGEXP %s"
+            content_param = keyword
+        else:
+            content_condition = "hp.content LIKE %s"
+            content_param = f'%{keyword}%'
+        
+        # 查询匹配的 publish（包含 status 字段）
+        sql = f"""
+            SELECT 
+                hp.id as publish_id,
+                hp.content,
+                hp.subject_id,
+                hp.book_id,
+                hp.page_region,
+                hp.status,
+                hp.create_time,
+                b.book_name,
+                COUNT(h.id) as total_homework
+            FROM zp_homework_publish hp
+            LEFT JOIN zp_homework h ON h.hw_publish_id = hp.id
+            LEFT JOIN zp_make_book b ON hp.book_id = b.id
+            WHERE {content_condition}
+              AND hp.subject_id = %s
+            GROUP BY hp.id, hp.content, hp.subject_id, hp.book_id, hp.page_region, hp.status, hp.create_time, b.book_name
+            ORDER BY hp.create_time DESC
+            LIMIT 100
+        """
+        
+        rows = DatabaseService.execute_query(sql, (content_param, subject_id))
+        
+        if not rows:
+            return jsonify({
+                'success': True,
+                'data': {
+                    'status': 'no_match',
+                    'matched_count': 0,
+                    'completed_count': 0,
+                    'all_completed': False,
+                    'total_homework': 0,
+                    'matches': [],
+                    'message': '未找到匹配的作业发布'
+                }
+            })
+        
+        # 处理匹配结果
+        matches = []
+        total_homework_sum = 0
+        completed_count = 0
+        publish_ids = []
+        
+        for row in rows:
+            publish_id = str(row.get('publish_id', ''))
+            publish_status = row.get('status', 0) or 0
+            is_completed = (publish_status == 2)
+            total_hw = row.get('total_homework', 0) or 0
+            
+            if is_completed:
+                completed_count += 1
+            
+            publish_ids.append(publish_id)
+            total_homework_sum += total_hw
+            
+            # 解析页码
+            page_region = row.get('page_region', '')
+            pages = parse_page_region(page_region)
+            
+            # 格式化时间
+            create_time = row.get('create_time')
+            if create_time and hasattr(create_time, 'isoformat'):
+                create_time = create_time.isoformat()
+            
+            matches.append({
+                'publish_id': publish_id,
+                'content': row.get('content', ''),
+                'book_id': str(row.get('book_id', '')),
+                'book_name': row.get('book_name', ''),
+                'page_region': page_region,
+                'pages': pages,
+                'total_homework': total_hw,
+                'status': publish_status,
+                'is_completed': is_completed,
+                'create_time': create_time
+            })
+        
+        all_completed = len(matches) > 0 and completed_count == len(matches)
+        
+        # 如果未全部完成且不强制创建，返回等待状态
+        if not all_completed and not force_create:
+            return jsonify({
+                'success': True,
+                'data': {
+                    'status': 'waiting',
+                    'matched_count': len(matches),
+                    'completed_count': completed_count,
+                    'all_completed': False,
+                    'total_homework': total_homework_sum,
+                    'matches': matches,
+                    'message': f'等待批改完成：{completed_count}/{len(matches)} 个任务已完成'
+                }
+            })
+        
+        # 全部完成或强制创建，开始合并创建批量任务
+        # 1. 获取所有作业详细信息
+        placeholders = ','.join(['%s'] * len(publish_ids))
+        homework_sql = f"""
+            SELECT h.id, h.hw_publish_id, h.student_id, h.subject_id, h.page_num, 
+                   h.pic_path, h.homework_result, h.data_value,
+                   p.content AS homework_name, s.name AS student_name,
+                   b.id AS book_id, b.book_name AS book_name, p.page_region
+            FROM zp_homework h
+            LEFT JOIN zp_homework_publish p ON h.hw_publish_id = p.id
+            LEFT JOIN zp_student s ON h.student_id = s.id
+            LEFT JOIN zp_make_book b ON p.book_id = b.id
+            WHERE h.hw_publish_id IN ({placeholders})
+              AND h.homework_result IS NOT NULL 
+              AND h.homework_result != '' 
+              AND h.homework_result != '[]'
+        """
+        
+        homework_rows = DatabaseService.execute_query(homework_sql, tuple(publish_ids))
+        
+        if not homework_rows:
+            return jsonify({
+                'success': False,
+                'error': '没有已批改的作业数据'
+            }), 400
+        
+        # 2. 加载数据集用于匹配
+        datasets = []
+        if auto_match_dataset:
+            for fn in StorageService.list_datasets():
+                ds = StorageService.load_dataset(fn[:-5])
+                if ds:
+                    datasets.append(ds)
+            datasets.sort(key=lambda ds: ds.get('created_at', ''), reverse=True)
+        
+        # 3. 构建 homework_items
+        homework_items = []
+        page_nums = set()
+        book_names = set()
+        
+        for row in homework_rows:
+            book_id = str(row.get('book_id', '')) if row.get('book_id') else ''
+            page_num = row.get('page_num')
+            page_num_int = int(page_num) if page_num is not None else None
+            
+            if page_num_int:
+                page_nums.add(page_num_int)
+            if row.get('book_name'):
+                book_names.add(row.get('book_name'))
+            
+            # 自动匹配数据集
+            matched_dataset = None
+            matched_dataset_name = ''
+            
+            if auto_match_dataset:
+                for ds in datasets:
+                    ds_book_id = str(ds.get('book_id', '')) if ds.get('book_id') else ''
+                    ds_pages = ds.get('pages', [])
+                    base_effects = ds.get('base_effects', {})
+                    
+                    if ds_book_id == book_id and page_num_int is not None:
+                        page_in_pages = page_num_int in ds_pages or str(page_num_int) in [str(p) for p in ds_pages]
+                        page_in_effects = str(page_num_int) in base_effects
+                        
+                        if page_in_pages and page_in_effects:
+                            matched_dataset = ds.get('dataset_id')
+                            matched_dataset_name = ds.get('name', '')
+                            break
+            
+            homework_items.append({
+                'homework_id': str(row['id']),
+                'student_id': str(row.get('student_id', '')),
+                'student_name': row.get('student_name', ''),
+                'homework_name': row.get('homework_name', ''),
+                'book_id': book_id,
+                'book_name': row.get('book_name', ''),
+                'page_num': page_num,
+                'pic_path': row.get('pic_path', ''),
+                'homework_result': row.get('homework_result', '[]'),
+                'data_value': row.get('data_value', '[]'),
+                'matched_dataset': matched_dataset,
+                'matched_dataset_name': matched_dataset_name,
+                'status': 'matched' if matched_dataset else 'pending',
+                'accuracy': None,
+                'evaluation': None
+            })
+        
+        # 4. 生成任务ID和名称
+        task_id = str(uuid.uuid4())[:8]
+        now = datetime.now()
+        subject_name = SUBJECT_MAP.get(subject_id, f'学科{subject_id}')
+        
+        # 自动生成任务名称: {学科名}_P{页码范围}_自动评估_{日期}
+        if page_nums:
+            sorted_pages = sorted(page_nums)
+            if len(sorted_pages) == 1:
+                page_range = f'P{sorted_pages[0]}'
+            else:
+                page_range = f'P{sorted_pages[0]}-{sorted_pages[-1]}'
+        else:
+            page_range = ''
+        
+        task_name = f'{subject_name}_{page_range}_自动评估_{now.strftime("%m%d")}'
+        
+        # 5. 创建任务数据
+        task_data = {
+            'task_id': task_id,
+            'name': task_name,
+            'subject_id': subject_id,
+            'subject_name': subject_name,
+            'source': 'auto_merge',  # 标记来源为自动合并
+            'source_keyword': keyword,
+            'source_publish_ids': publish_ids,
+            'fuzzy_threshold': 0.85,
+            'status': 'pending',
+            'homework_items': homework_items,
+            'overall_report': None,
+            'created_at': now.isoformat()
+        }
+        
+        # 6. 保存任务
+        StorageService.save_batch_task(task_id, task_data)
+        
+        # 7. 创建测试计划并关联任务（存入数据库）
+        plan_id = str(uuid.uuid4())[:8]
+        try:
+            from services.database_service import AppDatabaseService
+            import json
+            
+            plan_sql = """
+                INSERT INTO test_plans 
+                (plan_id, name, description, subject_ids, target_count, completed_count, 
+                 status, task_keyword, keyword_match_type, linked_task_ids, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            plan_params = (
+                plan_id,
+                task_name,
+                f'自动合并创建，关键字: {keyword}',
+                json.dumps([subject_id]),  # subject_ids 是 JSON 数组
+                len(homework_items),  # target_count
+                0,  # completed_count
+                'active',  # status - 直接设为进行中
+                keyword,  # task_keyword
+                match_type,  # keyword_match_type
+                json.dumps([task_id]),  # linked_task_ids - 关联批量任务
+                now,  # created_at
+                now   # updated_at
+            )
+            AppDatabaseService.execute_update(plan_sql, plan_params)
+            print(f"[TestPlans] 已创建测试计划: {plan_id} - {task_name}")
+        except Exception as plan_error:
+            print(f"[TestPlans] 创建测试计划失败: {plan_error}")
+            # 测试计划创建失败不影响批量任务
+        
+        # 8. 统计匹配情况
+        matched_count = sum(1 for item in homework_items if item.get('matched_dataset'))
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'status': 'completed',
+                'matched_count': len(matches),
+                'completed_count': completed_count,
+                'all_completed': all_completed,
+                'total_homework': len(homework_items),
+                'matches': matches,
+                'task_id': task_id,
+                'task_name': task_name,
+                'dataset_matched_count': matched_count,
+                'message': f'已创建批量评估任务：{task_name}，包含 {len(homework_items)} 份作业'
+            }
+        })
+        
+    except Exception as e:
+        print(f"[TestPlans] 检查并合并作业失败: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': f'操作失败: {str(e)}'}), 500
+
+
+@test_plans_bp.route('/api/test-plans/poll-completion', methods=['POST'])
+def poll_completion_status():
+    """
+    轮询检查作业发布完成状态
+    
+    用于前端定时轮询，检查匹配的 publish 是否全部完成。
+    
+    Request Body:
+        {
+            "keyword": "=",
+            "subject_id": 4,
+            "match_type": "fuzzy"
+        }
+    
+    Returns:
+        JSON: {
+            success: bool,
+            data: {
+                matched_count: int,
+                completed_count: int,
+                all_completed: bool,
+                progress: float,        # 完成进度百分比
+                matches: [
+                    {
+                        publish_id: str,
+                        content: str,
+                        is_completed: bool,
+                        total_homework: int
+                    }
+                ]
+            }
+        }
+    """
+    from services.database_service import DatabaseService
+    
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'success': False, 'error': '请求数据为空'}), 400
+        
+        keyword = data.get('keyword', '').strip()
+        if not keyword:
+            return jsonify({'success': False, 'error': '关键字不能为空'}), 400
+        
+        subject_id = data.get('subject_id')
+        if subject_id is None:
+            return jsonify({'success': False, 'error': '学科ID不能为空'}), 400
+        
+        try:
+            subject_id = int(subject_id)
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'error': '学科ID格式错误'}), 400
+        
+        match_type = data.get('match_type', 'fuzzy')
+        
+        # 构建查询条件
+        if match_type == 'exact':
+            content_condition = "hp.content = %s"
+            content_param = keyword
+        elif match_type == 'regex':
+            content_condition = "hp.content REGEXP %s"
+            content_param = keyword
+        else:
+            content_condition = "hp.content LIKE %s"
+            content_param = f'%{keyword}%'
+        
+        # 查询 publish 状态
+        sql = f"""
+            SELECT 
+                hp.id as publish_id,
+                hp.content,
+                hp.status,
+                COUNT(h.id) as total_homework
+            FROM zp_homework_publish hp
+            LEFT JOIN zp_homework h ON h.hw_publish_id = hp.id
+            WHERE {content_condition}
+              AND hp.subject_id = %s
+            GROUP BY hp.id, hp.content, hp.status
+            ORDER BY hp.create_time DESC
+            LIMIT 100
+        """
+        
+        rows = DatabaseService.execute_query(sql, (content_param, subject_id))
+        
+        matches = []
+        completed_count = 0
+        
+        for row in rows:
+            is_completed = (row.get('status', 0) == 2)
+            if is_completed:
+                completed_count += 1
+            
+            matches.append({
+                'publish_id': str(row.get('publish_id', '')),
+                'content': row.get('content', ''),
+                'is_completed': is_completed,
+                'total_homework': row.get('total_homework', 0) or 0
+            })
+        
+        all_completed = len(matches) > 0 and completed_count == len(matches)
+        progress = round(completed_count / len(matches) * 100, 1) if matches else 0
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'matched_count': len(matches),
+                'completed_count': completed_count,
+                'all_completed': all_completed,
+                'progress': progress,
+                'matches': matches
+            }
+        })
+        
+    except Exception as e:
+        print(f"[TestPlans] 轮询完成状态失败: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': f'查询失败: {str(e)}'}), 500

@@ -12,7 +12,7 @@ import {
     escapeHtml, showToast, toggleSkeleton, debounce,
     navigateTo, toggleSidebar, restoreSidebarState
 } from './modules/dashboard-utils.js';
-import { PieChart, LineChart, animateNumber } from './modules/dashboard-charts.js';
+import { LineChart, animateNumber } from './modules/dashboard-charts.js';
 import { exportSubjectReport } from './modules/dashboard-subjects.js';
 import {
     initAIPlanModule, openAIPlanModal, closeAIPlanModal, onAIPlanModalBackdropClick,
@@ -337,7 +337,9 @@ function renderPlanList(plans) {
         const statusClass = plan.status || 'draft';
         const statusText = STATUS_MAP[plan.status] || '草稿';
         const progress = plan.progress || 0;
-        const subjectName = SUBJECT_MAP[plan.subject_id] || '--';
+        // 处理 subject_ids 数组，取第一个学科显示
+        const subjectIds = plan.subject_ids || [];
+        const subjectName = subjectIds.length > 0 ? SUBJECT_MAP[subjectIds[0]] || '--' : '--';
         
         return `
             <div class="plan-card" data-id="${plan.plan_id}" onclick="togglePlanCard(this)">
@@ -365,6 +367,7 @@ function renderPlanList(plans) {
                     <div class="plan-actions">
                         <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();viewPlanDetail('${plan.plan_id}')">查看详情</button>
                         ${plan.status === 'draft' ? `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();executePlan('${plan.plan_id}')">开始执行</button>` : ''}
+                        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deletePlan('${plan.plan_id}', '${escapeHtml(plan.name || '')}')">删除</button>
                     </div>
                 </div>
             </div>
@@ -390,26 +393,375 @@ function filterPlans() {
 }
 
 /**
- * 查看计划详情
+ * 查看计划详情 - 打开工作流详情弹窗
  */
-function viewPlanDetail(planId) {
-    navigateTo(`/batch-evaluation?plan_id=${planId}`);
+async function viewPlanDetail(planId) {
+    await openWorkflowDetailModal(planId);
 }
 
 /**
- * 执行计划
+ * 执行计划 - 执行工作流并显示进度
  */
 async function executePlan(planId) {
     try {
+        showToast('正在执行...', 'info');
         const res = await DashboardAPI.executePlan(planId);
         if (res.success) {
-            showToast('计划开始执行', 'success');
+            const data = res.data;
+            // 显示执行结果
+            if (data.can_proceed === false) {
+                showToast(data.next_action || '等待中...', 'warning');
+            } else {
+                showToast('执行成功', 'success');
+            }
+            // 刷新计划列表
             loadTestPlans();
+            // 如果工作流弹窗已打开，刷新它
+            if (currentWorkflowPlanId === planId) {
+                await refreshWorkflowDetail();
+            }
         } else {
             throw new Error(res.error || '执行失败');
         }
     } catch (error) {
         showToast('执行失败: ' + error.message, 'error');
+    }
+}
+
+// ========== 工作流详情弹窗 ==========
+let currentWorkflowPlanId = null;
+let currentWorkflowData = null;
+
+/**
+ * 打开工作流详情弹窗
+ */
+async function openWorkflowDetailModal(planId) {
+    currentWorkflowPlanId = planId;
+    const modal = document.getElementById('workflowNodeModal');
+    const titleEl = document.getElementById('workflowNodeTitle');
+    const contentEl = document.getElementById('workflowNodeContent');
+    const footerEl = document.getElementById('workflowNodeFooter');
+    
+    if (!modal) return;
+    
+    // 显示加载状态
+    titleEl.textContent = '加载中...';
+    contentEl.innerHTML = '<div class="loading-spinner"></div>';
+    footerEl.innerHTML = '<button class="btn btn-secondary" onclick="closeWorkflowNodeModal()">关闭</button>';
+    modal.style.display = 'flex';
+    
+    try {
+        // 获取计划详情
+        const res = await DashboardAPI.getPlan(planId);
+        if (!res.success) throw new Error(res.error || '获取计划失败');
+        
+        currentWorkflowData = res.data;
+        renderWorkflowDetail(res.data);
+    } catch (error) {
+        contentEl.innerHTML = `<div class="error-message">加载失败: ${error.message}</div>`;
+    }
+}
+
+/**
+ * 渲染工作流详情 - 简约高级版
+ */
+function renderWorkflowDetail(plan) {
+    const titleEl = document.getElementById('workflowNodeTitle');
+    const contentEl = document.getElementById('workflowNodeContent');
+    const footerEl = document.getElementById('workflowNodeFooter');
+    
+    titleEl.textContent = plan.name || '测试计划';
+    
+    const workflow = plan.workflow_status || {};
+    const datasetStatus = workflow.dataset || {};
+    const matchStatus = workflow.homework_match || {};
+    const evalStatus = workflow.evaluation || {};
+    const reportStatus = workflow.report || {};
+    
+    // 计算整体进度
+    let completedSteps = 0;
+    if (datasetStatus.status === 'completed') completedSteps++;
+    if (matchStatus.status === 'completed') completedSteps++;
+    if (evalStatus.status === 'completed') completedSteps++;
+    if (reportStatus.status === 'completed') completedSteps++;
+    const progressPercent = Math.round(completedSteps / 4 * 100);
+    
+    // 获取步骤状态class
+    const getStepClass = (status) => {
+        if (status === 'completed') return 'completed';
+        if (status === 'in_progress') return 'in_progress';
+        if (status === 'failed') return 'failed';
+        return '';
+    };
+    
+    contentEl.innerHTML = `
+        <div class="workflow-detail">
+            <!-- 顶部信息 - 横向紧凑 -->
+            <div class="workflow-info">
+                <div class="info-row">
+                    <span class="info-label">关键字</span>
+                    <span class="info-value">${plan.task_keyword || '-'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">目标</span>
+                    <span class="info-value">${plan.target_count || 0} 题</span>
+                </div>
+            </div>
+            
+            <!-- 进度条 -->
+            <div class="workflow-progress">
+                <div class="progress-header">
+                    <span>执行进度</span>
+                    <span>${progressPercent}%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width:${progressPercent}%"></div>
+                </div>
+            </div>
+            
+            <!-- 步骤时间线 -->
+            <div class="workflow-steps">
+                <!-- 步骤1: 数据集 -->
+                <div class="workflow-step ${getStepClass(datasetStatus.status)}">
+                    <div class="step-header">
+                        <span class="step-title">数据集配置</span>
+                        <button class="step-action-btn" onclick="openDatasetSelector('${plan.plan_id}')">
+                            ${datasetStatus.dataset_name ? '更换' : '选择'}
+                        </button>
+                    </div>
+                    <div class="step-content">
+                        ${datasetStatus.dataset_name 
+                            ? `<div class="step-info">${datasetStatus.dataset_name}<br>${datasetStatus.question_count || 0} 题</div>`
+                            : '<div class="step-info warning">请选择数据集</div>'
+                        }
+                    </div>
+                </div>
+                
+                <!-- 步骤2: 作业匹配 -->
+                <div class="workflow-step ${getStepClass(matchStatus.status)}">
+                    <div class="step-header">
+                        <span class="step-title">作业匹配</span>
+                    </div>
+                    <div class="step-content">
+                        ${matchStatus.matched_publish && matchStatus.matched_publish.length > 0
+                            ? `<div class="step-info">
+                                ${matchStatus.matched_publish.length} 个发布 · ${matchStatus.total_homework || 0} 份作业
+                               </div>
+                               <div class="grading-progress">
+                                   批改 ${matchStatus.grading_progress || 0}% (${matchStatus.total_graded || 0}/${matchStatus.total_homework || 0})
+                               </div>`
+                            : '<div class="step-info">等待匹配</div>'
+                        }
+                    </div>
+                </div>
+                
+                <!-- 步骤3: 批量评估 -->
+                <div class="workflow-step ${getStepClass(evalStatus.status)}">
+                    <div class="step-header">
+                        <span class="step-title">批量评估</span>
+                    </div>
+                    <div class="step-content">
+                        ${evalStatus.task_id
+                            ? `<div class="step-info">
+                                ${evalStatus.accuracy !== null ? `准确率 ${(evalStatus.accuracy * 100).toFixed(1)}%` : '评估中...'}
+                               </div>`
+                            : '<div class="step-info">等待执行</div>'
+                        }
+                    </div>
+                </div>
+                
+                <!-- 步骤4: 测试报告 -->
+                <div class="workflow-step ${getStepClass(reportStatus.status)}">
+                    <div class="step-header">
+                        <span class="step-title">测试报告</span>
+                    </div>
+                    <div class="step-content">
+                        ${reportStatus.report_id
+                            ? '<div class="step-info">报告已生成</div>'
+                            : '<div class="step-info">等待生成</div>'
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 底部按钮
+    const canExecute = plan.status === 'draft' || plan.status === 'active';
+    const hasTask = evalStatus.task_id;
+    
+    footerEl.innerHTML = `
+        <button class="btn btn-secondary" onclick="closeWorkflowNodeModal()">关闭</button>
+        <button class="btn btn-secondary" onclick="refreshWorkflowDetail()">刷新状态</button>
+        ${canExecute ? `<button class="btn btn-primary" onclick="executePlan('${plan.plan_id}')">执行下一步</button>` : ''}
+        ${hasTask ? `<button class="btn btn-secondary" onclick="navigateTo('/batch-evaluation?task_id=${evalStatus.task_id}')">查看评估任务</button>` : ''}
+    `;
+}
+
+/**
+ * 刷新工作流详情
+ */
+async function refreshWorkflowDetail() {
+    if (!currentWorkflowPlanId) return;
+    await openWorkflowDetailModal(currentWorkflowPlanId);
+}
+
+/**
+ * 关闭工作流详情弹窗
+ */
+function closeWorkflowNodeModal() {
+    const modal = document.getElementById('workflowNodeModal');
+    if (modal) modal.style.display = 'none';
+    currentWorkflowPlanId = null;
+    currentWorkflowData = null;
+}
+
+/**
+ * 工作流弹窗背景点击
+ */
+function onWorkflowNodeModalBackdropClick(event) {
+    if (event.target.id === 'workflowNodeModal') {
+        closeWorkflowNodeModal();
+    }
+}
+
+// ========== 数据集选择器 ==========
+
+/**
+ * 打开数据集选择器
+ */
+async function openDatasetSelector(planId) {
+    const contentEl = document.getElementById('workflowNodeContent');
+    if (!contentEl) return;
+    
+    // 保存当前内容以便取消时恢复
+    const originalContent = contentEl.innerHTML;
+    
+    // 显示加载状态
+    contentEl.innerHTML = `
+        <div class="dataset-selector">
+            <div class="selector-header">
+                <h4>选择数据集</h4>
+                <button class="btn btn-sm btn-secondary" onclick="refreshWorkflowDetail()">取消</button>
+            </div>
+            <div class="selector-loading">
+                <div class="loading-spinner"></div>
+                <span>加载数据集列表...</span>
+            </div>
+        </div>
+    `;
+    
+    try {
+        // 获取数据集列表
+        const res = await DashboardAPI.getDatasets();
+        if (!res.success) throw new Error(res.error || '获取数据集失败');
+        
+        const datasets = res.data?.datasets || [];
+        
+        if (datasets.length === 0) {
+            contentEl.innerHTML = `
+                <div class="dataset-selector">
+                    <div class="selector-header">
+                        <h4>选择数据集</h4>
+                        <button class="btn btn-sm btn-secondary" onclick="refreshWorkflowDetail()">返回</button>
+                    </div>
+                    <div class="selector-empty">
+                        <p>暂无可用数据集</p>
+                        <p class="hint">请先在数据集管理页面创建数据集</p>
+                        <button class="btn btn-primary" onclick="navigateTo('/dataset-manage')">前往创建</button>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        
+        // 渲染数据集列表
+        const datasetListHtml = datasets.map(ds => `
+            <div class="dataset-item" onclick="selectDatasetForPlan('${planId}', '${ds.dataset_id}')">
+                <div class="dataset-item-main">
+                    <span class="dataset-name">${escapeHtml(ds.name || '未命名')}</span>
+                    <span class="dataset-book">${escapeHtml(ds.book_name || '')}</span>
+                </div>
+                <div class="dataset-item-meta">
+                    <span class="dataset-subject">${SUBJECT_MAP[ds.subject_id] || '未知学科'}</span>
+                    <span class="dataset-count">${ds.question_count || 0} 题</span>
+                </div>
+            </div>
+        `).join('');
+        
+        contentEl.innerHTML = `
+            <div class="dataset-selector">
+                <div class="selector-header">
+                    <h4>选择数据集</h4>
+                    <button class="btn btn-sm btn-secondary" onclick="refreshWorkflowDetail()">取消</button>
+                </div>
+                <div class="selector-list">
+                    ${datasetListHtml}
+                </div>
+            </div>
+        `;
+        
+    } catch (error) {
+        contentEl.innerHTML = `
+            <div class="dataset-selector">
+                <div class="selector-header">
+                    <h4>选择数据集</h4>
+                    <button class="btn btn-sm btn-secondary" onclick="refreshWorkflowDetail()">返回</button>
+                </div>
+                <div class="selector-error">
+                    <p>加载失败: ${error.message}</p>
+                    <button class="btn btn-secondary" onclick="openDatasetSelector('${planId}')">重试</button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+/**
+ * 为测试计划选择数据集
+ */
+async function selectDatasetForPlan(planId, datasetId) {
+    try {
+        showToast('正在设置数据集...', 'info');
+        
+        const res = await fetch(`/api/test-plans/${planId}/update-dataset`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dataset_id: datasetId })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            showToast(`已选择数据集: ${data.data.dataset_name}`, 'success');
+            // 刷新工作流详情
+            await refreshWorkflowDetail();
+        } else {
+            throw new Error(data.error || '设置失败');
+        }
+    } catch (error) {
+        showToast('设置数据集失败: ' + error.message, 'error');
+    }
+}
+
+/**
+ * 删除测试计划
+ */
+async function deletePlan(planId, planName) {
+    if (!confirm(`确定要删除测试计划「${planName || planId}」吗？此操作不可恢复。`)) {
+        return;
+    }
+    
+    try {
+        const res = await DashboardAPI.deletePlan(planId);
+        if (res.success) {
+            showToast('测试计划已删除', 'success');
+            loadTestPlans();
+        } else {
+            throw new Error(res.error || '删除失败');
+        }
+    } catch (error) {
+        showToast('删除失败: ' + error.message, 'error');
     }
 }
 
@@ -438,33 +790,120 @@ function onCreatePlanModalBackdropClick(event) {
 
 async function previewKeywordMatch() {
     const keyword = document.getElementById('createPlanKeyword')?.value?.trim();
+    const subjectId = document.getElementById('createPlanSubject')?.value;
+    const matchType = document.getElementById('createPlanMatchType')?.value || 'fuzzy';
+    
     if (!keyword) {
         showToast('请输入任务关键字', 'warning');
         return;
     }
     
+    if (!subjectId) {
+        showToast('请先选择目标学科', 'warning');
+        return;
+    }
+    
+    const btn = document.getElementById('previewMatchBtn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading-spinner"></span> 查询中...';
+    }
+    
     try {
-        const res = await DashboardAPI.previewMatch(keyword);
-        if (res.success) {
+        const res = await DashboardAPI.previewMatch(keyword, {
+            subject_id: parseInt(subjectId),
+            match_type: matchType
+        });
+        
+        if (res.success && res.data) {
             const container = document.getElementById('matchPreviewContainer');
             const list = document.getElementById('matchPreviewList');
             const count = document.getElementById('matchPreviewCount');
+            const statsContainer = document.getElementById('matchPreviewStats');
             
-            const matches = res.data || [];
-            count.textContent = `${matches.length} 条`;
+            const data = res.data;
+            const matches = data.matches || [];
+            
+            // 更新统计信息
+            count.textContent = `${data.matched_count || 0} 条匹配`;
+            
+            // 更新统计数据
+            const totalHomeworkEl = document.getElementById('matchTotalHomework');
+            const totalGradedEl = document.getElementById('matchTotalGraded');
+            const gradingProgressEl = document.getElementById('matchGradingProgress');
+            
+            if (totalHomeworkEl) totalHomeworkEl.textContent = data.total_homework || 0;
+            if (totalGradedEl) totalGradedEl.textContent = data.total_graded || 0;
+            if (gradingProgressEl) {
+                const progress = data.total_homework > 0 
+                    ? Math.round(data.total_graded / data.total_homework * 100) 
+                    : 0;
+                gradingProgressEl.textContent = `${progress}%`;
+            }
+            
+            if (statsContainer) statsContainer.style.display = 'flex';
             
             if (matches.length === 0) {
-                list.innerHTML = '<div class="match-preview-item">未找到匹配的任务</div>';
+                list.innerHTML = '<div class="match-preview-empty">未找到匹配的作业发布</div>';
             } else {
-                list.innerHTML = matches.slice(0, 10).map(m => 
-                    `<div class="match-preview-item">${escapeHtml(m.name || m.task_id)}</div>`
-                ).join('');
+                // 渲染匹配结果，显示完成状态
+                list.innerHTML = matches.slice(0, 15).map(m => {
+                    const statusClass = m.is_completed ? 'completed' : 'pending';
+                    const statusText = m.is_completed ? '已完成' : '批改中';
+                    const statusIcon = m.is_completed 
+                        ? '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
+                        : '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>';
+                    
+                    return `
+                        <div class="match-preview-item ${statusClass}">
+                            <div class="match-item-main">
+                                <span class="match-item-content">${escapeHtml(m.content || '')}</span>
+                                <span class="match-item-book">${escapeHtml(m.book_name || '')}</span>
+                            </div>
+                            <div class="match-item-meta">
+                                <span class="match-item-homework">${m.total_homework || 0}份作业</span>
+                                <span class="match-item-status ${statusClass}">${statusIcon} ${statusText}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                // 显示完成状态摘要
+                const completedCount = data.completed_count || 0;
+                const allCompleted = data.all_completed || false;
+                
+                if (allCompleted) {
+                    list.innerHTML += `
+                        <div class="match-preview-summary success">
+                            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            全部 ${matches.length} 个任务已完成批改，可以创建评估任务
+                        </div>
+                    `;
+                } else {
+                    list.innerHTML += `
+                        <div class="match-preview-summary warning">
+                            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                            ${completedCount}/${matches.length} 个任务已完成，等待全部完成后可创建评估任务
+                        </div>
+                    `;
+                }
             }
             
             container.style.display = 'block';
+        } else {
+            showToast(res.error || '查询失败', 'error');
         }
     } catch (error) {
-        showToast('预览失败', 'error');
+        console.error('[PreviewMatch] 预览失败:', error);
+        showToast('预览失败: ' + error.message, 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `
+                <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                预览匹配
+            `;
+        }
     }
 }
 
@@ -489,7 +928,7 @@ async function createTestPlan() {
         const res = await DashboardAPI.createPlan({
             name,
             description,
-            subject_id: subjectId ? parseInt(subjectId) : null,
+            subject_ids: subjectId ? [parseInt(subjectId)] : [],
             target_count: targetCount,
             task_keyword: keyword
         });
@@ -503,6 +942,93 @@ async function createTestPlan() {
         }
     } catch (error) {
         showToast('创建失败: ' + error.message, 'error');
+    }
+}
+
+/**
+ * 检查并合并作业创建批量评估任务
+ * 检查匹配的 publish 是否全部完成（status=2），完成后自动合并创建批量评估任务
+ */
+async function checkAndMergeHomework() {
+    const keyword = document.getElementById('createPlanKeyword')?.value?.trim();
+    const subjectId = document.getElementById('createPlanSubject')?.value;
+    const matchType = document.getElementById('createPlanMatchType')?.value || 'fuzzy';
+    
+    if (!keyword) {
+        showToast('请输入任务关键字', 'warning');
+        return;
+    }
+    
+    if (!subjectId) {
+        showToast('请先选择目标学科', 'warning');
+        return;
+    }
+    
+    const btn = document.getElementById('autoMergeBtn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading-spinner"></span> 检查中...';
+    }
+    
+    try {
+        const res = await DashboardAPI.checkAndMerge(keyword, parseInt(subjectId), {
+            match_type: matchType,
+            auto_match_dataset: true,
+            force_create: false
+        });
+        
+        if (res.success && res.data) {
+            const data = res.data;
+            
+            if (data.status === 'no_match') {
+                showToast('未找到匹配的作业发布', 'warning');
+            } else if (data.status === 'waiting') {
+                // 未全部完成，显示等待状态
+                showToast(`等待批改完成：${data.completed_count}/${data.matched_count} 个任务已完成`, 'info');
+                
+                // 更新预览区域显示
+                const container = document.getElementById('matchPreviewContainer');
+                const list = document.getElementById('matchPreviewList');
+                
+                if (container && list) {
+                    // 添加等待提示
+                    const existingSummary = list.querySelector('.match-preview-summary');
+                    if (existingSummary) {
+                        existingSummary.outerHTML = `
+                            <div class="match-preview-summary warning">
+                                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                ${data.completed_count}/${data.matched_count} 个任务已完成，等待全部完成后可创建评估任务
+                            </div>
+                        `;
+                    }
+                    container.style.display = 'block';
+                }
+            } else if (data.status === 'completed') {
+                // 全部完成，任务已创建
+                showToast(`批量评估任务已创建：${data.task_name}`, 'success');
+                
+                // 关闭弹窗并跳转到批量评估页面
+                closeCreatePlanModal();
+                
+                // 跳转到批量评估页面查看新创建的任务
+                setTimeout(() => {
+                    navigateTo(`/batch-evaluation?task_id=${data.task_id}`);
+                }, 500);
+            }
+        } else {
+            showToast(res.error || '操作失败', 'error');
+        }
+    } catch (error) {
+        console.error('[CheckAndMerge] 操作失败:', error);
+        showToast('操作失败: ' + error.message, 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `
+                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+                自动合并创建任务
+            `;
+        }
     }
 }
 
@@ -604,44 +1130,93 @@ function renderDatasetOverview(data) {
 }
 
 /**
- * 渲染学科分布饼图 - 优化版
+ * 渲染学科分布饼图 - 使用 Chart.js 动态饼图
  */
 function renderSubjectPieChart(distribution) {
     const canvas = document.getElementById('datasetPieChart');
     if (!canvas) return;
     
-    const entries = Object.entries(distribution);
+    const entries = Object.entries(distribution).filter(([, count]) => count > 0);
     const total = entries.reduce((sum, [, count]) => sum + count, 0);
+    
+    // 销毁旧图表
+    if (pieChart) {
+        pieChart.destroy();
+        pieChart = null;
+    }
     
     if (total === 0) {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#f5f5f7';
-        ctx.beginPath();
-        ctx.arc(canvas.width / 2, canvas.height / 2, 50, 0, 2 * Math.PI);
-        ctx.fill();
+        ctx.font = '14px -apple-system, sans-serif';
+        ctx.fillStyle = '#86868b';
+        ctx.textAlign = 'center';
+        ctx.fillText('暂无数据', canvas.width / 2, canvas.height / 2);
         return;
     }
     
-    const data = entries.map(([subjectId, count]) => ({
-        label: SUBJECT_MAP[subjectId] || '未知',
-        value: count,
-        color: SUBJECT_COLORS[subjectId] || '#86868b'
-    }));
+    const labels = entries.map(([subjectId]) => SUBJECT_MAP[subjectId] || '未知');
+    const data = entries.map(([, count]) => count);
+    const colors = entries.map(([subjectId]) => SUBJECT_COLORS[subjectId] || '#d1d5db');
     
-    if (!pieChart) {
-        pieChart = new PieChart(canvas, { innerRadius: 0.6, duration: 800 });
-    }
-    pieChart.setData(data, { title: total.toString(), subtitle: '数据集' });
+    pieChart = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors,
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            cutout: '60%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed || 0;
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${context.label}: ${value}个 (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        },
+        plugins: [{
+            id: 'centerText',
+            afterDraw: function(chart) {
+                const ctx = chart.ctx;
+                const centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
+                const centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
+                
+                ctx.save();
+                ctx.fillStyle = '#1d1d1f';
+                ctx.font = 'bold 20px -apple-system, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(total.toString(), centerX, centerY - 8);
+                
+                ctx.font = '11px -apple-system, sans-serif';
+                ctx.fillStyle = '#86868b';
+                ctx.fillText('数据集', centerX, centerY + 12);
+                ctx.restore();
+            }
+        }]
+    });
     
     // 渲染图例 - 紧凑网格布局
     const legend = document.getElementById('datasetPieLegend');
     if (legend) {
-        legend.innerHTML = data.map((item, i) => `
+        legend.innerHTML = entries.map(([subjectId, count]) => `
             <div class="legend-item-compact">
-                <span class="legend-dot" style="background: ${item.color}"></span>
-                <span class="legend-text" title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</span>
-                <span class="legend-val">${item.value}</span>
+                <span class="legend-dot" style="background: ${SUBJECT_COLORS[subjectId] || '#d1d5db'}"></span>
+                <span class="legend-text" title="${escapeHtml(SUBJECT_MAP[subjectId] || '未知')}">${escapeHtml(SUBJECT_MAP[subjectId] || '未知')}</span>
+                <span class="legend-val">${count}</span>
             </div>
         `).join('');
     }
@@ -1253,8 +1828,17 @@ window.filterPlans = filterPlans;
 window.togglePlanCard = togglePlanCard;
 window.viewPlanDetail = viewPlanDetail;
 window.executePlan = executePlan;
+window.deletePlan = deletePlan;
 window.loadTestPlans = loadTestPlans;
 window.switchTaskRange = switchTaskRange;
+
+// 工作流详情弹窗
+window.openWorkflowDetailModal = openWorkflowDetailModal;
+window.closeWorkflowNodeModal = closeWorkflowNodeModal;
+window.onWorkflowNodeModalBackdropClick = onWorkflowNodeModalBackdropClick;
+window.refreshWorkflowDetail = refreshWorkflowDetail;
+window.openDatasetSelector = openDatasetSelector;
+window.selectDatasetForPlan = selectDatasetForPlan;
 
 // 创建计划弹窗
 window.openCreatePlanModal = openCreatePlanModal;
@@ -1263,6 +1847,7 @@ window.onCreatePlanModalBackdropClick = onCreatePlanModalBackdropClick;
 window.previewKeywordMatch = previewKeywordMatch;
 window.createTestPlan = createTestPlan;
 window.toggleAdvancedSettings = toggleAdvancedSettings;
+window.checkAndMergeHomework = checkAndMergeHomework;
 
 // AI 计划弹窗
 window.openAIPlanModal = openAIPlanModal;
@@ -2397,4 +2982,281 @@ window.saveGlobalSettings = saveGlobalSettings;
 // 页面加载后延迟加载高级工具统计
 setTimeout(loadAdvancedToolsStats, 2000);
 
-console.log('[Dashboard] 模块化看板初始化完成 v20260125');
+console.log('[Dashboard] 模块化看板初始化完成 v20260127');
+
+// ========== RFID查询弹窗功能 ==========
+let currentRfidData = null;
+
+function openRfidQueryModal() {
+    document.getElementById('rfidQueryModal').style.display = 'flex';
+    document.getElementById('rfidInput').focus();
+    // 重置状态
+    document.getElementById('rfidResultSection').style.display = 'none';
+    document.getElementById('rfidClassmatesSection').style.display = 'none';
+    document.getElementById('rfidNotFound').style.display = 'none';
+    document.getElementById('rfidLoading').style.display = 'none';
+    document.getElementById('rfidEmptyState').style.display = 'flex';
+}
+
+function closeRfidQueryModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    document.getElementById('rfidQueryModal').style.display = 'none';
+    document.getElementById('rfidInput').value = '';
+    currentRfidData = null;
+}
+
+async function queryRFID() {
+    const rfidInput = document.getElementById('rfidInput');
+    const rfidNo = rfidInput.value.trim();
+    
+    if (!rfidNo) {
+        showToast('请输入RFID卡号');
+        rfidInput.focus();
+        return;
+    }
+    
+    // 显示加载状态
+    document.getElementById('rfidEmptyState').style.display = 'none';
+    document.getElementById('rfidResultSection').style.display = 'none';
+    document.getElementById('rfidClassmatesSection').style.display = 'none';
+    document.getElementById('rfidNotFound').style.display = 'none';
+    document.getElementById('rfidLoading').style.display = 'flex';
+    
+    try {
+        const response = await fetch(`/api/rfid/query?rfid_no=${encodeURIComponent(rfidNo)}`);
+        const result = await response.json();
+        
+        document.getElementById('rfidLoading').style.display = 'none';
+        
+        if (!result.success) {
+            showToast(result.error || '查询失败');
+            document.getElementById('rfidEmptyState').style.display = 'flex';
+            return;
+        }
+        
+        if (!result.found) {
+            document.getElementById('rfidNotFoundNo').textContent = rfidNo;
+            document.getElementById('rfidNotFound').style.display = 'flex';
+            return;
+        }
+        
+        currentRfidData = result.data;
+        renderRfidResult(result.data);
+        
+    } catch (error) {
+        console.error('RFID query error:', error);
+        document.getElementById('rfidLoading').style.display = 'none';
+        document.getElementById('rfidEmptyState').style.display = 'flex';
+        showToast('查询失败，请稍后重试');
+    }
+}
+
+function renderRfidResult(data) {
+    // 渲染基础信息
+    renderRfidBasicInfo(data.basic_info);
+    // 渲染绑定信息
+    renderRfidBindInfo(data.bind_info);
+    // 渲染学生信息
+    renderRfidStudentInfo(data.student_info);
+    // 渲染书本信息
+    renderRfidBookInfo(data.book_info);
+    // 渲染老师信息
+    renderRfidTeacherInfo(data.teacher_info);
+    
+    document.getElementById('rfidResultSection').style.display = 'block';
+}
+
+function renderRfidBasicInfo(info) {
+    const body = document.getElementById('rfidBasicInfo');
+    const badge = document.getElementById('rfidStatusBadge');
+    
+    if (!info) {
+        body.innerHTML = '<div class="rfid-no-data">未找到RFID基础信息</div>';
+        badge.textContent = '';
+        badge.className = 'rfid-status-badge';
+        return;
+    }
+    
+    badge.textContent = info.valid_status_text;
+    badge.className = `rfid-status-badge ${info.valid_status === 1 ? 'valid' : 'invalid'}`;
+    
+    body.innerHTML = `
+        <div class="rfid-info-row">
+            <span class="rfid-info-label">RFID卡号</span>
+            <span class="rfid-info-value highlight">${info.rfid_no}</span>
+        </div>
+        <div class="rfid-info-row">
+            <span class="rfid-info-label">所属学校</span>
+            <span class="rfid-info-value">${info.school_name || '--'}</span>
+        </div>
+        <div class="rfid-info-row">
+            <span class="rfid-info-label">创建时间</span>
+            <span class="rfid-info-value">${info.create_time || '--'}</span>
+        </div>
+    `;
+}
+
+function renderRfidBindInfo(info) {
+    const body = document.getElementById('rfidBindInfo');
+    const badge = document.getElementById('rfidTypeBadge');
+    
+    if (!info) {
+        body.innerHTML = '<div class="rfid-no-data">该RFID卡未绑定</div>';
+        badge.textContent = '';
+        badge.className = 'rfid-type-badge';
+        return;
+    }
+    
+    badge.textContent = info.rfid_type_text;
+    badge.className = `rfid-type-badge ${info.rfid_type === 'H' ? 'homework' : 'error-book'}`;
+    
+    body.innerHTML = `
+        <div class="rfid-info-row">
+            <span class="rfid-info-label">标签类型</span>
+            <span class="rfid-info-value highlight">${info.rfid_type_text}</span>
+        </div>
+        <div class="rfid-info-row">
+            <span class="rfid-info-label">学科</span>
+            <span class="rfid-info-value">${info.subject_name}</span>
+        </div>
+        <div class="rfid-info-row">
+            <span class="rfid-info-label">年级</span>
+            <span class="rfid-info-value">${info.grade_name}</span>
+        </div>
+    `;
+}
+
+function renderRfidStudentInfo(info) {
+    const body = document.getElementById('rfidStudentInfo');
+    const btn = document.getElementById('viewClassmatesBtn');
+    
+    if (!info) {
+        body.innerHTML = '<div class="rfid-no-data">未绑定学生</div>';
+        btn.style.display = 'none';
+        return;
+    }
+    
+    btn.style.display = 'inline-block';
+    
+    body.innerHTML = `
+        <div class="rfid-info-row">
+            <span class="rfid-info-label">学生姓名</span>
+            <span class="rfid-info-value highlight">${info.name}</span>
+        </div>
+        <div class="rfid-info-row">
+            <span class="rfid-info-label">性别</span>
+            <span class="rfid-info-value">${info.sex}</span>
+        </div>
+        <div class="rfid-info-row">
+            <span class="rfid-info-label">班级</span>
+            <span class="rfid-info-value">${info.class_name || '--'}</span>
+        </div>
+        <div class="rfid-info-row">
+            <span class="rfid-info-label">学号</span>
+            <span class="rfid-info-value">${info.stu_num || '--'}</span>
+        </div>
+    `;
+}
+
+function renderRfidBookInfo(info) {
+    const body = document.getElementById('rfidBookInfo');
+    
+    if (!info) {
+        body.innerHTML = '<div class="rfid-no-data">未绑定书本</div>';
+        return;
+    }
+    
+    body.innerHTML = `
+        <div class="rfid-info-row">
+            <span class="rfid-info-label">书本名称</span>
+            <span class="rfid-info-value highlight">${info.book_name}</span>
+        </div>
+        <div class="rfid-info-row">
+            <span class="rfid-info-label">学科</span>
+            <span class="rfid-info-value">${info.subject_name}</span>
+        </div>
+        <div class="rfid-info-row">
+            <span class="rfid-info-label">出版社</span>
+            <span class="rfid-info-value">${info.publishing || '--'}</span>
+        </div>
+    `;
+}
+
+function renderRfidTeacherInfo(info) {
+    const body = document.getElementById('rfidTeacherInfo');
+    
+    if (!info || info.length === 0) {
+        body.innerHTML = '<div class="rfid-no-data">未关联老师</div>';
+        return;
+    }
+    
+    const html = info.map(t => `
+        <div class="rfid-teacher-item">
+            <span class="rfid-teacher-name">${t.name}</span>
+            ${t.account ? `<span class="rfid-teacher-account">${t.account}</span>` : ''}
+            <span class="rfid-teacher-subject">${t.subject_name}</span>
+        </div>
+    `).join('');
+    
+    body.innerHTML = `<div class="rfid-teacher-list">${html}</div>`;
+}
+
+async function viewClassmates() {
+    if (!currentRfidData || !currentRfidData.student_info) {
+        showToast('无学生信息');
+        return;
+    }
+    
+    const classId = currentRfidData.student_info.class_id;
+    const className = currentRfidData.student_info.class_name || '班级';
+    
+    document.getElementById('rfidResultSection').style.display = 'none';
+    document.getElementById('rfidClassmatesTitle').textContent = className + ' - 全班同学';
+    document.getElementById('rfidClassmatesList').innerHTML = '<div class="rfid-loading"><div class="rfid-spinner"></div></div>';
+    document.getElementById('rfidClassmatesSection').style.display = 'block';
+    
+    try {
+        const response = await fetch(`/api/rfid/classmates?class_id=${encodeURIComponent(classId)}`);
+        const result = await response.json();
+        
+        if (!result.success) {
+            document.getElementById('rfidClassmatesList').innerHTML = `<div class="rfid-no-data">${result.error || '加载失败'}</div>`;
+            return;
+        }
+        
+        document.getElementById('rfidClassmatesCount').textContent = `共 ${result.total} 人`;
+        
+        if (result.data.length === 0) {
+            document.getElementById('rfidClassmatesList').innerHTML = '<div class="rfid-no-data">暂无同学信息</div>';
+            return;
+        }
+        
+        const html = result.data.map(s => `
+            <div class="rfid-classmate-item">
+                <div class="rfid-classmate-avatar">${s.name.charAt(0)}</div>
+                <div class="rfid-classmate-info">
+                    <div class="rfid-classmate-name">${s.name}</div>
+                    <div class="rfid-classmate-num">${s.stu_num || '--'}</div>
+                </div>
+            </div>
+        `).join('');
+        
+        document.getElementById('rfidClassmatesList').innerHTML = html;
+        
+    } catch (error) {
+        console.error('Load classmates error:', error);
+        document.getElementById('rfidClassmatesList').innerHTML = '<div class="rfid-no-data">加载失败</div>';
+    }
+}
+
+function hideClassmates() {
+    document.getElementById('rfidClassmatesSection').style.display = 'none';
+    document.getElementById('rfidResultSection').style.display = 'block';
+}
+
+// 导出RFID查询函数
+window.openRfidQueryModal = openRfidQueryModal;
+window.closeRfidQueryModal = closeRfidQueryModal;
+window.queryRFID = queryRFID;
+window.viewClassmates = viewClassmates;
+window.hideClassmates = hideClassmates;
