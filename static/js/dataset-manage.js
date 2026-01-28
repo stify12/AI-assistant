@@ -1880,13 +1880,17 @@ async function saveEditDataset() {
     showLoading('保存修改...');
     
     try {
-        // 构建更新数据，将删除的页码设置为空数组
+        // 构建更新数据
         const updateEffects = { ...editingData };
         
         // 将已删除的页码标记为空数组（后端会处理删除）
+        // 注意：deletedPages 中存储的是数字，需要转为字符串作为键
         for (const page of deletedPages) {
-            updateEffects[page] = [];
+            updateEffects[String(page)] = [];
         }
+        
+        console.log('[SaveDataset] deletedPages:', deletedPages);
+        console.log('[SaveDataset] updateEffects keys:', Object.keys(updateEffects));
         
         const res = await fetch(`/api/batch/datasets/${editingDataset.dataset_id}`, {
             method: 'PUT',
