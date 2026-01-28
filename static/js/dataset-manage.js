@@ -1520,8 +1520,12 @@ function renderEditTable() {
     const tbody = document.getElementById('editTableBody');
     const data = editingData[currentEditPage] || [];
     
-    // 检查是否有分数数据
-    const hasScore = data.some(item => item.maxScore !== undefined || item.score !== undefined);
+    // 检查是否有分数数据（兼容 maxScore、score、sorce 三种字段名，且值不为 null/undefined）
+    const hasScore = data.some(item => 
+        (item.maxScore !== undefined && item.maxScore !== null) || 
+        (item.score !== undefined && item.score !== null) ||
+        (item.sorce !== undefined && item.sorce !== null)
+    );
     
     // 更新表头
     const thead = document.querySelector('#editTableContainer table thead tr');
@@ -1544,6 +1548,11 @@ function renderEditTable() {
     tbody.innerHTML = data.map((item, idx) => {
         // 统一使用 correct 字段 ("yes"/"no")
         const isCorrect = item.correct === 'yes';
+        // 兼容 maxScore 和 sorce 字段（原始数据中字段名是 sorce）
+        const maxScoreValue = item.maxScore !== undefined && item.maxScore !== null 
+            ? item.maxScore 
+            : (item.sorce !== undefined && item.sorce !== null ? item.sorce : '');
+        const scoreValue = item.score !== undefined && item.score !== null ? item.score : '';
         return `
         <tr data-idx="${idx}">
             <td><input type="text" class="edit-input" value="${escapeHtml(item.index || '')}" 
@@ -1559,9 +1568,9 @@ function renderEditTable() {
                 </select>
             </td>
             ${hasScore ? `
-            <td><input type="number" class="edit-input score-input" value="${item.maxScore !== undefined && item.maxScore !== null ? item.maxScore : ''}" 
+            <td><input type="number" class="edit-input score-input" value="${maxScoreValue}" 
                        onchange="updateEditCell(${idx}, 'maxScore', this.value ? parseFloat(this.value) : null)" step="0.5" min="0"></td>
-            <td><input type="number" class="edit-input score-input" value="${item.score !== undefined && item.score !== null ? item.score : ''}" 
+            <td><input type="number" class="edit-input score-input" value="${scoreValue}" 
                        onchange="updateEditCell(${idx}, 'score', this.value ? parseFloat(this.value) : null)" step="0.5" min="0"></td>
             ` : ''}
             <td><button class="btn-delete-row" onclick="deleteEditRow(${idx})">×</button></td>
@@ -1574,10 +1583,19 @@ function autoUpdateEditScore(idx) {
     if (!editingData[currentEditPage]?.[idx]) return;
     const item = editingData[currentEditPage][idx];
     
+    // 兼容 maxScore 和 sorce 字段
+    const maxScore = item.maxScore !== undefined && item.maxScore !== null 
+        ? item.maxScore 
+        : (item.sorce !== undefined && item.sorce !== null ? item.sorce : null);
+    
     // 只有当有 maxScore 时才自动更新 score
-    if (item.maxScore !== undefined && item.maxScore !== null) {
-        const newScore = item.correct === 'yes' ? item.maxScore : 0;
+    if (maxScore !== null) {
+        const newScore = item.correct === 'yes' ? maxScore : 0;
         item.score = newScore;
+        // 同时更新 maxScore 字段（如果原来是 sorce）
+        if (item.maxScore === undefined || item.maxScore === null) {
+            item.maxScore = maxScore;
+        }
         
         // 更新输入框显示
         const row = document.querySelector(`#editTableBody tr[data-idx="${idx}"]`);

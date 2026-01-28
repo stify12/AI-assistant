@@ -1130,6 +1130,29 @@ body {
     background: #fff;
 }
 
+/* 编辑表格分数输入框 - 确保数字完整显示 */
+.edit-table input[type="number"].score-input {
+    width: 60px;
+    min-width: 60px;
+    padding: 8px 6px;
+    border: 1px solid #d2d2d7;
+    border-radius: 6px;
+    font-size: 14px;
+    text-align: center;
+    -moz-appearance: textfield;
+}
+
+.edit-table input[type="number"].score-input::-webkit-outer-spin-button,
+.edit-table input[type="number"].score-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.edit-table input[type="number"].score-input:focus {
+    outline: none;
+    border-color: #1d1d1f;
+}
+
 .edit-table-actions {
     margin-top: 12px;
 }
@@ -3404,19 +3427,28 @@ body {
 /* ========== 分值列样式 ========== */
 .recognize-table-v2 .col-maxscore,
 .recognize-table-v2 .col-score {
-    width: 50px;
-    min-width: 50px;
+    width: 70px;
+    min-width: 70px;
     text-align: center;
 }
 
 .recognize-table-v2 .maxscore-input,
 .recognize-table-v2 .score-input {
-    width: 40px;
-    padding: 4px 6px;
+    width: 60px;
+    padding: 6px 4px;
     border: 1px solid #d2d2d7;
     border-radius: 4px;
-    font-size: 12px;
+    font-size: 13px;
     text-align: center;
+    -moz-appearance: textfield;
+}
+
+.recognize-table-v2 .maxscore-input::-webkit-outer-spin-button,
+.recognize-table-v2 .maxscore-input::-webkit-inner-spin-button,
+.recognize-table-v2 .score-input::-webkit-outer-spin-button,
+.recognize-table-v2 .score-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .recognize-table-v2 .maxscore-input:focus,
