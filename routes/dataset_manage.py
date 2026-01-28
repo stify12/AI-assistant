@@ -207,8 +207,8 @@ def build_dynamic_prompt(data_value_items, subject_id=0):
     }
     subject_name = subject_map.get(subject_id, '通用')
     
-    # 检测是否有 score 字段
-    has_score = any(item.get('score') is not None for item in flat_items)
+    # 检测是否有 score 字段（注意：datavalue 中字段名是 sorce，这里兼容两种写法）
+    has_score = any(item.get('sorce') is not None or item.get('score') is not None for item in flat_items)
     
     # 构建题目信息数组（按小题粒度）
     questions_info = []
@@ -217,8 +217,8 @@ def build_dynamic_prompt(data_value_items, subject_id=0):
         # content 取前15个字符
         content_short = content[:15] if content else ''
         
-        # 标准答案：优先取 jans，没有则取 answer 或 mainAnswer
-        answer = item.get('jans', '') or item.get('answer', '') or item.get('mainAnswer', '')
+        # 标准答案：优先取 jans，没有则取 ans、answer 或 mainAnswer
+        answer = item.get('jans', '') or item.get('ans', '') or item.get('answer', '') or item.get('mainAnswer', '')
         
         q_info = {
             'index': item.get('index', ''),
@@ -229,9 +229,11 @@ def build_dynamic_prompt(data_value_items, subject_id=0):
             'content': content_short
         }
         
-        # 如果有分数字段，添加到题目信息中
-        if has_score and item.get('score') is not None:
-            q_info['score'] = item.get('score')
+        # 如果有分数字段，添加到题目信息中（maxScore 是题目总分）
+        # 注意：datavalue 中字段名是 sorce（拼写错误），这里兼容两种写法
+        max_score = item.get('sorce') if item.get('sorce') is not None else item.get('score')
+        if has_score and max_score is not None:
+            q_info['maxScore'] = max_score
         
         questions_info.append(q_info)
     
@@ -247,13 +249,19 @@ def build_dynamic_prompt(data_value_items, subject_id=0):
 - userAnswer: 学生的答案（识别结果，保持原始格式）
 - answer: 标准答案（直接使用上述题目信息中的answer）
 - correct: 判断结果，"yes"表示正确，"no"表示错误
-- score: 题目分值（直接使用上述题目信息中的score）
+- maxScore: 题目总分（直接使用上述题目信息中的maxScore）
+- score: 判断分值（正确时等于maxScore，错误时为0；主观题可根据答案质量给部分分）
+
+【分值判断规则】
+- 选择题/判断题：正确得满分(maxScore)，错误得0分
+- 填空题：正确得满分(maxScore)，错误得0分
+- 主观题/解答题：根据答案质量判断，可以给部分分（0到maxScore之间）
 
 【输出示例】
 ```json
 [
-  {{"index": "1", "tempIndex": 0, "userAnswer": "A", "answer": "C", "correct": "no", "score": 3}},
-  {{"index": "2", "tempIndex": 1, "userAnswer": "B", "answer": "B", "correct": "yes", "score": 3}}
+  {{"index": "1", "tempIndex": 0, "userAnswer": "A", "answer": "C", "correct": "no", "maxScore": 3, "score": 0}},
+  {{"index": "2", "tempIndex": 1, "userAnswer": "B", "answer": "B", "correct": "yes", "maxScore": 3, "score": 3}}
 ]
 ```"""
     else:
@@ -470,15 +478,16 @@ def dataset_recognize():
                 user_answer = str(item.get('userAnswer', '')).strip()
                 temp_idx = item.get('tempIndex', 0)
                 
-                # 从 data_value 中获取正确的标准答案、questionType、bvalue 和 score
+                # 从 data_value 中获取正确的标准答案、questionType、bvalue 和 maxScore
                 dv_item = data_value_map.get(int(temp_idx), {})
                 question_type = dv_item.get('questionType', 'objective')
                 bvalue = str(dv_item.get('bvalue', '4'))
                 
                 # 标准答案优先从 data_value 获取，确保准确性
-                # 优先级: jans > answer > mainAnswer > AI返回的answer
+                # 优先级: jans > ans > answer > mainAnswer > AI返回的answer
                 answer = (
                     dv_item.get('jans', '') or 
+                    dv_item.get('ans', '') or 
                     dv_item.get('answer', '') or 
                     dv_item.get('mainAnswer', '') or 
                     str(item.get('answer', '')).strip()
@@ -495,11 +504,20 @@ def dataset_recognize():
                     'bvalue': bvalue
                 }
                 
-                # 如果有分数字段，添加到输出中（优先从 data_value 获取，其次从 AI 返回）
+                # 处理分数字段：maxScore（题目总分）和 score（判断分值）
                 if has_score:
-                    score = dv_item.get('score') if dv_item.get('score') is not None else item.get('score')
-                    if score is not None:
-                        formatted_item['score'] = score
+                    # maxScore 从 data_value 获取（注意字段名是 sorce）
+                    max_score = dv_item.get('sorce') if dv_item.get('sorce') is not None else dv_item.get('score')
+                    if max_score is not None:
+                        formatted_item['maxScore'] = max_score
+                    
+                    # score（判断分值）从 AI 返回获取，如果没有则根据 correct 计算
+                    ai_score = item.get('score')
+                    if ai_score is not None:
+                        formatted_item['score'] = ai_score
+                    elif max_score is not None:
+                        # AI 没有返回 score，根据 correct 自动计算
+                        formatted_item['score'] = max_score if correct_val == 'yes' else 0
                 
                 formatted_data.append(formatted_item)
             

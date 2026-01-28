@@ -569,21 +569,21 @@ function renderRecognizePreview() {
 }
 
 function renderResultTable(page, data) {
-    // 检测数据中是否有 score 字段
-    const hasScore = data.some(item => item.score !== undefined && item.score !== null);
+    // 检查是否有分数数据
+    const hasScore = data.some(item => item.maxScore !== undefined || item.score !== undefined);
     
     return `
         <div class="result-table-header">
             <button class="btn btn-small btn-secondary" onclick="showEffectCorrection(${page})">效果矫正</button>
         </div>
-        <table class="recognize-table recognize-table-v2 ${hasScore ? 'has-score' : ''}">
+        <table class="recognize-table recognize-table-v2">
             <thead>
                 <tr>
                     <th class="col-index">题号</th>
                     <th class="col-answer">标准答案</th>
                     <th class="col-user-answer">学生答案</th>
                     <th class="col-correct">是否正确</th>
-                    ${hasScore ? '<th class="col-score">分值</th>' : ''}
+                    ${hasScore ? '<th class="col-maxscore">总分</th><th class="col-score">得分</th>' : ''}
                     <th class="col-tempindex">tempIndex</th>
                     <th class="col-action">操作</th>
                 </tr>
@@ -595,12 +595,21 @@ function renderResultTable(page, data) {
                         <td class="col-answer"><div class="standard-answer-box">${escapeHtml(item.answer || '-')}</div></td>
                         <td class="col-user-answer"><textarea class="answer-textarea" onchange="updateTableCell(${page}, ${idx}, 'userAnswer', this.value)">${escapeHtml(item.userAnswer || '')}</textarea></td>
                         <td class="col-correct">
-                            <select onchange="updateTableCell(${page}, ${idx}, 'correct', this.value)">
+                            <select onchange="updateTableCell(${page}, ${idx}, 'correct', this.value); autoUpdateScore(${page}, ${idx})">
                                 <option value="yes" ${item.correct === 'yes' ? 'selected' : ''}>正确</option>
                                 <option value="no" ${item.correct === 'no' || item.correct !== 'yes' ? 'selected' : ''}>错误</option>
                             </select>
                         </td>
-                        ${hasScore ? `<td class="col-score"><span class="score-value">${item.score !== undefined && item.score !== null ? item.score : '-'}</span></td>` : ''}
+                        ${hasScore ? `
+                        <td class="col-maxscore">
+                            <input type="number" class="maxscore-input" value="${item.maxScore !== undefined && item.maxScore !== null ? item.maxScore : ''}" 
+                                   onchange="updateTableCell(${page}, ${idx}, 'maxScore', this.value ? parseFloat(this.value) : null)" step="0.5" min="0">
+                        </td>
+                        <td class="col-score">
+                            <input type="number" class="score-input" value="${item.score !== undefined && item.score !== null ? item.score : ''}" 
+                                   onchange="updateTableCell(${page}, ${idx}, 'score', this.value ? parseFloat(this.value) : null)" step="0.5" min="0">
+                        </td>
+                        ` : ''}
                         <td class="col-tempindex">
                             <input type="number" value="${item.tempIndex !== undefined ? item.tempIndex : ''}" 
                                    onchange="updateTableCell(${page}, ${idx}, 'tempIndex', parseInt(this.value))">
@@ -614,6 +623,27 @@ function renderResultTable(page, data) {
             <button class="btn-add-row" onclick="addTableRow(${page})">+ 添加题目</button>
         </div>
     `;
+}
+
+// 自动更新得分（当正确性改变时）
+function autoUpdateScore(page, idx) {
+    if (!recognizeResults[page]?.data?.[idx]) return;
+    const item = recognizeResults[page].data[idx];
+    
+    // 只有当有 maxScore 时才自动更新 score
+    if (item.maxScore !== undefined && item.maxScore !== null) {
+        const newScore = item.correct === 'yes' ? item.maxScore : 0;
+        item.score = newScore;
+        
+        // 更新输入框显示
+        const row = document.querySelector(`#resultTableBody_${page} tr[data-idx="${idx}"]`);
+        if (row) {
+            const scoreInput = row.querySelector('.score-input');
+            if (scoreInput) {
+                scoreInput.value = newScore;
+            }
+        }
+    }
 }
 
 function toggleResultView(page, view) {
@@ -1490,8 +1520,24 @@ function renderEditTable() {
     const tbody = document.getElementById('editTableBody');
     const data = editingData[currentEditPage] || [];
     
+    // 检查是否有分数数据
+    const hasScore = data.some(item => item.maxScore !== undefined || item.score !== undefined);
+    
+    // 更新表头
+    const thead = document.querySelector('#editTableContainer table thead tr');
+    if (thead) {
+        thead.innerHTML = `
+            <th>题号</th>
+            <th>标准答案</th>
+            <th>学生答案</th>
+            <th>是否正确</th>
+            ${hasScore ? '<th style="width:60px">总分</th><th style="width:60px">得分</th>' : ''}
+            <th>操作</th>
+        `;
+    }
+    
     if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">暂无题目数据</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="${hasScore ? 7 : 5}" style="text-align:center;color:#999;">暂无题目数据</td></tr>`;
         return;
     }
     
@@ -1507,14 +1553,41 @@ function renderEditTable() {
             <td><input type="text" class="edit-input" value="${escapeHtml(item.userAnswer || '')}" 
                        onchange="updateEditCell(${idx}, 'userAnswer', this.value)"></td>
             <td>
-                <select class="edit-select" onchange="updateEditCell(${idx}, 'correct', this.value)">
+                <select class="edit-select" onchange="updateEditCell(${idx}, 'correct', this.value); autoUpdateEditScore(${idx})">
                     <option value="yes" ${isCorrect ? 'selected' : ''}>正确</option>
                     <option value="no" ${!isCorrect ? 'selected' : ''}>错误</option>
                 </select>
             </td>
+            ${hasScore ? `
+            <td><input type="number" class="edit-input score-input" value="${item.maxScore !== undefined && item.maxScore !== null ? item.maxScore : ''}" 
+                       onchange="updateEditCell(${idx}, 'maxScore', this.value ? parseFloat(this.value) : null)" step="0.5" min="0"></td>
+            <td><input type="number" class="edit-input score-input" value="${item.score !== undefined && item.score !== null ? item.score : ''}" 
+                       onchange="updateEditCell(${idx}, 'score', this.value ? parseFloat(this.value) : null)" step="0.5" min="0"></td>
+            ` : ''}
             <td><button class="btn-delete-row" onclick="deleteEditRow(${idx})">×</button></td>
         </tr>
     `}).join('');
+}
+
+// 自动更新编辑表格中的得分（当正确性改变时）
+function autoUpdateEditScore(idx) {
+    if (!editingData[currentEditPage]?.[idx]) return;
+    const item = editingData[currentEditPage][idx];
+    
+    // 只有当有 maxScore 时才自动更新 score
+    if (item.maxScore !== undefined && item.maxScore !== null) {
+        const newScore = item.correct === 'yes' ? item.maxScore : 0;
+        item.score = newScore;
+        
+        // 更新输入框显示
+        const row = document.querySelector(`#editTableBody tr[data-idx="${idx}"]`);
+        if (row) {
+            const scoreInputs = row.querySelectorAll('.score-input');
+            if (scoreInputs.length >= 2) {
+                scoreInputs[1].value = newScore;
+            }
+        }
+    }
 }
 
 // 更新编辑单元格
@@ -2018,6 +2091,10 @@ async function showEffectCorrection(page) {
 function renderCorrectionModal(page) {
     const baseEffects = recognizeResults[page]?.data || [];
     
+    // 检查是否有分数数据
+    const hasScore = baseEffects.some(item => item.maxScore !== undefined || item.score !== undefined) ||
+                     aiResultData.some(item => item.score !== undefined);
+    
     // 创建弹窗HTML
     const modalHtml = `
         <div class="correction-modal show" id="correctionModal" onclick="hideCorrectionModal(event)">
@@ -2036,6 +2113,7 @@ function renderCorrectionModal(page) {
                                         <tr>
                                             <th class="col-index">题号</th>
                                             <th>手写答案</th>
+                                            ${hasScore ? '<th class="col-score">得分</th>' : ''}
                                             <th class="col-tempindex">tempIndex</th>
                                         </tr>
                                     </thead>
@@ -2050,6 +2128,14 @@ function renderCorrectionModal(page) {
                                                     <textarea class="correction-textarea" 
                                                               onchange="updateCorrectionCell(${idx}, 'userAnswer', this.value)">${escapeHtml(item.userAnswer || '')}</textarea>
                                                 </td>
+                                                ${hasScore ? `
+                                                <td class="col-score">
+                                                    <input type="number" class="correction-input score-input" 
+                                                           value="${item.score !== undefined && item.score !== null ? item.score : ''}" 
+                                                           onchange="updateCorrectionCell(${idx}, 'score', this.value ? parseFloat(this.value) : null)"
+                                                           step="0.5" min="0">
+                                                </td>
+                                                ` : ''}
                                                 <td class="col-tempindex">
                                                     <input type="number" class="correction-input tempindex-input" 
                                                            value="${item.tempIndex !== undefined ? item.tempIndex : ''}" 
@@ -2072,6 +2158,7 @@ function renderCorrectionModal(page) {
                                         <tr>
                                             <th class="col-index">题号</th>
                                             <th>手写答案</th>
+                                            ${hasScore ? '<th class="col-score">得分</th>' : ''}
                                             <th class="col-tempindex">tempIndex</th>
                                         </tr>
                                     </thead>
@@ -2080,6 +2167,7 @@ function renderCorrectionModal(page) {
                                             <tr data-idx="${idx}" class="${getMatchClass(item.tempIndex, baseEffects)}">
                                                 <td class="col-index">${escapeHtml(item.index || '')}</td>
                                                 <td class="ai-answer-cell">${escapeHtml(item.userAnswer || '')}</td>
+                                                ${hasScore ? `<td class="col-score ai-score-cell">${item.score !== undefined && item.score !== null ? item.score : '-'}</td>` : ''}
                                                 <td class="col-tempindex tempindex-cell">${item.tempIndex !== undefined ? item.tempIndex : '-'}</td>
                                             </tr>
                                         `).join('')}
@@ -2343,6 +2431,10 @@ function renderGlobalCorrectionSplitView(page) {
     const baseEffects = data.baseEffects;
     const aiResults = data.aiResults;
     
+    // 检查是否有分数数据
+    const hasScore = baseEffects.some(item => item.maxScore !== undefined || item.score !== undefined) ||
+                     aiResults.some(item => item.score !== undefined);
+    
     document.getElementById('correctionTableContainer').style.display = 'block';
     document.getElementById('correctionEmpty').style.display = 'none';
     
@@ -2358,6 +2450,7 @@ function renderGlobalCorrectionSplitView(page) {
                             <tr>
                                 <th style="width:80px;">题号</th>
                                 <th>手写答案</th>
+                                ${hasScore ? '<th style="width:60px;">得分</th>' : ''}
                                 <th style="width:100px;">tempIndex</th>
                             </tr>
                         </thead>
@@ -2372,6 +2465,14 @@ function renderGlobalCorrectionSplitView(page) {
                                         <textarea class="correction-textarea" 
                                                   onchange="updateGlobalCorrectionCell(${page}, ${idx}, 'userAnswer', this.value)">${escapeHtml(item.userAnswer || '')}</textarea>
                                     </td>
+                                    ${hasScore ? `
+                                    <td>
+                                        <input type="number" class="correction-input score-input" 
+                                               value="${item.score !== undefined && item.score !== null ? item.score : ''}" 
+                                               onchange="updateGlobalCorrectionCell(${page}, ${idx}, 'score', this.value ? parseFloat(this.value) : null)"
+                                               step="0.5" min="0">
+                                    </td>
+                                    ` : ''}
                                     <td>
                                         <input type="number" class="correction-input tempindex-input" 
                                                value="${item.tempIndex !== undefined ? item.tempIndex : ''}" 
@@ -2394,6 +2495,7 @@ function renderGlobalCorrectionSplitView(page) {
                             <tr>
                                 <th style="width:80px;">题号</th>
                                 <th>手写答案</th>
+                                ${hasScore ? '<th style="width:60px;">得分</th>' : ''}
                                 <th style="width:100px;">tempIndex</th>
                             </tr>
                         </thead>
@@ -2402,6 +2504,7 @@ function renderGlobalCorrectionSplitView(page) {
                                 <tr data-idx="${idx}" class="${getGlobalMatchClass(item.tempIndex, baseEffects)}">
                                     <td>${escapeHtml(item.index || '-')}</td>
                                     <td class="ai-answer-cell">${escapeHtml(item.userAnswer || '-')}</td>
+                                    ${hasScore ? `<td class="ai-score-cell">${item.score !== undefined && item.score !== null ? item.score : '-'}</td>` : ''}
                                     <td class="tempindex-cell">${item.tempIndex !== undefined ? item.tempIndex : '-'}</td>
                                 </tr>
                             `).join('')}

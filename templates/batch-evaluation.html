@@ -255,6 +255,17 @@
                                         </div>
                                     </div>
                                 </div>
+                                <!-- 新增图表区域（仅当有分数数据时显示） -->
+                                <div class="chart-grid new-charts-grid" id="newChartsGrid" style="display:none;">
+                                    <div class="chart-box">
+                                        <div class="chart-title">题型分数准确率对比</div>
+                                        <canvas id="questionTypeAccuracyChart"></canvas>
+                                    </div>
+                                    <div class="chart-box">
+                                        <div class="chart-title" id="pageChartTitle">页面分数一致性率</div>
+                                        <canvas id="pageScoreConsistencyChart"></canvas>
+                                    </div>
+                                </div>
                             </div>
                             
                             <div class="stats-detail" id="statsDetail"></div>

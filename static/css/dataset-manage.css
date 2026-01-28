@@ -2723,6 +2723,11 @@ body {
     text-align: center;
 }
 
+.correction-input.score-input {
+    width: 50px;
+    text-align: center;
+}
+
 .correction-textarea {
     width: 100%;
     min-height: 50px;
@@ -2744,6 +2749,11 @@ body {
     color: #424245;
     line-height: 1.5;
     word-break: break-all;
+}
+
+.ai-score-cell {
+    text-align: center;
+    color: #424245;
 }
 
 .tempindex-cell {
@@ -3391,29 +3401,26 @@ body {
     padding: 6px 12px;
 }
 
-
 /* ========== 分值列样式 ========== */
+.recognize-table-v2 .col-maxscore,
 .recognize-table-v2 .col-score {
-    width: 70px;
+    width: 50px;
+    min-width: 50px;
     text-align: center;
 }
 
-.recognize-table-v2 .score-value {
-    display: inline-block;
-    padding: 4px 10px;
-    background: #e3f2fd;
-    color: #1565c0;
+.recognize-table-v2 .maxscore-input,
+.recognize-table-v2 .score-input {
+    width: 40px;
+    padding: 4px 6px;
+    border: 1px solid #d2d2d7;
     border-radius: 4px;
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 12px;
+    text-align: center;
 }
 
-/* 有分值列时调整其他列宽度 */
-.recognize-table-v2.has-score .col-user-answer {
-    width: auto;
-}
-
-.recognize-table-v2.has-score .col-answer {
-    width: 160px;
-    min-width: 160px;
+.recognize-table-v2 .maxscore-input:focus,
+.recognize-table-v2 .score-input:focus {
+    outline: none;
+    border-color: #1d1d1f;
 }

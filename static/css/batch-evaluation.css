@@ -225,6 +225,21 @@ body {
     margin-left: 8px;
 }
 
+/* 任务标签 */
+.task-item-tag {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    margin-left: 6px;
+    font-weight: 500;
+}
+
+.tag-score {
+    background: #e8f4fd;
+    color: #1976d2;
+}
+
 .status-pending {
     background: #f5f5f7;
     color: #86868b;
@@ -1844,6 +1859,12 @@ body {
     text-align: center;
 }
 
+.full-data-table .score-cell {
+    width: 50px;
+    text-align: center;
+    color: #1d1d1f;
+}
+
 .json-data {
     display: none;
 }
@@ -2153,6 +2174,22 @@ body {
 
 .chart-box canvas {
     max-height: 240px;
+}
+
+/* ========== 新增图表区域样式 ========== */
+.new-charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.new-charts-grid .chart-box {
+    min-height: 200px;
+}
+
+.new-charts-grid .chart-box canvas {
+    max-height: 180px;
 }
 
 /* 双饼图容器 */

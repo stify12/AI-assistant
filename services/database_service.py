@@ -351,7 +351,7 @@ class AppDatabaseService:
                 'userAnswer': row['user_answer'],
                 'correct': row['is_correct']
             }
-            # 解析 extra_data 获取 questionType 和 bvalue
+            # 解析 extra_data 获取 questionType、bvalue、maxScore 和 score
             extra_data = row.get('extra_data')
             if extra_data:
                 try:
@@ -361,6 +361,10 @@ class AppDatabaseService:
                         extra = extra_data
                     item['questionType'] = extra.get('questionType', 'objective')
                     item['bvalue'] = extra.get('bvalue', '4')
+                    if extra.get('maxScore') is not None:
+                        item['maxScore'] = extra.get('maxScore')
+                    if extra.get('score') is not None:
+                        item['score'] = extra.get('score')
                 except:
                     item['questionType'] = 'objective'
                     item['bvalue'] = '4'
@@ -378,11 +382,17 @@ class AppDatabaseService:
             (dataset_id, page_num)
         )
         for effect in effects:
-            # 构建extra_data存储额外字段
+            # 构建extra_data存储额外字段（包含maxScore和score）
             extra_data = {
                 'questionType': effect.get('questionType', 'objective'),
                 'bvalue': effect.get('bvalue', '4')
             }
+            # 存储 maxScore（题目总分）
+            if effect.get('maxScore') is not None:
+                extra_data['maxScore'] = effect.get('maxScore')
+            # 存储 score（判断分值）
+            if effect.get('score') is not None:
+                extra_data['score'] = effect.get('score')
             sql = """INSERT INTO baseline_effects 
                      (dataset_id, page_num, question_index, temp_index, question_type, answer, user_answer, is_correct, extra_data)
                      VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""

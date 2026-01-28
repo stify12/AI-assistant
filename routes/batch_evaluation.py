@@ -85,6 +85,47 @@ def get_cached_task_summaries():
             
             # 只提取列表展示需要的字段
             overall_report = task_data.get('overall_report') or {}
+            
+            # 检测任务是否包含分数数据
+            # 优先级：1. overall_report.has_score 2. evaluation.has_score 3. 从数据集检测 maxScore
+            has_score = overall_report.get('has_score', False)
+            if not has_score:
+                # 从homework_items中检测是否有分数数据
+                for hw in homework_items:
+                    eval_data = hw.get('evaluation') or {}
+                    # 检测 evaluation.has_score
+                    if eval_data.get('has_score'):
+                        has_score = True
+                        break
+                    # 检测 errors 中的 base_effect.score
+                    errors = eval_data.get('errors', [])
+                    for err in errors:
+                        base_effect = err.get('base_effect', {})
+                        if base_effect.get('score') is not None:
+                            has_score = True
+                            break
+                    if has_score:
+                        break
+            
+            # 如果还没检测到，从数据集的 base_effects 中检测 maxScore
+            if not has_score:
+                matched_dataset = None
+                for hw in homework_items:
+                    if hw.get('matched_dataset'):
+                        matched_dataset = hw.get('matched_dataset')
+                        break
+                if matched_dataset:
+                    ds_data = StorageService.load_dataset(matched_dataset)
+                    if ds_data:
+                        base_effects = ds_data.get('base_effects', {})
+                        for page_key, items in base_effects.items():
+                            for item in items:
+                                if item.get('maxScore') is not None or item.get('score') is not None:
+                                    has_score = True
+                                    break
+                            if has_score:
+                                break
+            
             tasks.append({
                 'task_id': task_data.get('task_id', task_id),
                 'name': task_data.get('name', ''),
@@ -98,7 +139,8 @@ def get_cached_task_summaries():
                 'overall_accuracy': overall_report.get('overall_accuracy', 0),
                 'book_name': book_name,
                 'page_range': page_range,
-                'remark': task_data.get('remark', '')
+                'remark': task_data.get('remark', ''),
+                'has_score': has_score
             })
     
     # 更新缓存
@@ -2552,6 +2594,12 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         'AI识别幻觉': 0
     }
     
+    # 检测基准效果中是否有分数字段（兼容 score、sorce、maxScore 三种字段名）
+    has_score_in_base = any(
+        item.get('score') is not None or item.get('sorce') is not None or item.get('maxScore') is not None
+        for item in base_effect
+    )
+    
     # 从 data_value 构建题目类型映射（按 index 和 tempIndex）
     type_map = {}
     if data_value:
@@ -2947,17 +2995,22 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
                 # 记录到详情中展示
                 recognition_match = normalize_answer(base_user) == normalize_answer(hw_user) if base_user or hw_user else None
                 judgment_match = base_correct == hw_correct if base_correct and hw_correct else None
+                # 获取分数字段（兼容 score 和 sorce 两种拼写）
+                base_score = base_item.get('score') if base_item.get('score') is not None else base_item.get('sorce')
+                ai_score = hw_item.get('score') if hw_item else None
                 error_record = {
                     'index': idx,
                     'base_effect': {
                         'answer': base_answer,
                         'userAnswer': base_user,
-                        'correct': base_correct if base_correct else '-'
+                        'correct': base_correct if base_correct else '-',
+                        'score': base_score
                     },
                     'ai_result': {
                         'answer': hw_answer,
                         'userAnswer': hw_user,
-                        'correct': hw_correct if hw_correct else '-'
+                        'correct': hw_correct if hw_correct else '-',
+                        'score': ai_score
                     },
                     'error_type': error_type,
                     'explanation': explanation,
@@ -2982,18 +3035,27 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
             # 计算分析数据
             recognition_match = normalize_answer(base_user) == normalize_answer(hw_user) if base_user or hw_user else None
             judgment_match = base_correct == hw_correct if base_correct and hw_correct else None
+            # 获取分数字段（兼容 maxScore、score、sorce 三种字段名）
+            base_score = (
+                base_item.get('maxScore') if base_item.get('maxScore') is not None 
+                else base_item.get('score') if base_item.get('score') is not None 
+                else base_item.get('sorce')
+            )
+            ai_score = hw_item.get('score') if hw_item else None
             
             errors.append({
                 'index': idx,
                 'base_effect': {
                     'answer': base_answer,
                     'userAnswer': base_user,
-                    'correct': base_correct if base_correct else '-'
+                    'correct': base_correct if base_correct else '-',
+                    'score': base_score
                 },
                 'ai_result': {
                     'answer': hw_answer,
                     'userAnswer': hw_user,
-                    'correct': hw_correct if hw_correct else '-'
+                    'correct': hw_correct if hw_correct else '-',
+                    'score': ai_score
                 },
                 'error_type': error_type or '未知错误',
                 'explanation': explanation,
@@ -3056,7 +3118,8 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         'error_distribution': error_distribution,
         'by_question_type': type_stats,
         'by_bvalue': bvalue_stats,
-        'by_combined': combined_stats
+        'by_combined': combined_stats,
+        'has_score': has_score_in_base
     }
 
 

@@ -441,6 +441,7 @@ function renderTaskList() {
         html += tasks.map(task => {
             const subjectId = task.subject_id !== undefined ? task.subject_id : '';
             const timeOnly = formatTimeOnly(task.created_at);
+            const hasScore = task.has_score || false;
             
             return `
                 <div class="task-item ${selectedTask?.task_id === task.task_id ? 'selected' : ''}" 
@@ -452,6 +453,7 @@ function renderTaskList() {
                         <div class="task-item-header">
                             <div class="task-item-title">
                                 <span class="task-item-title-text">${escapeHtml(task.name)}</span>
+                                ${hasScore ? '<span class="task-item-tag tag-score">判分</span>' : ''}
                                 <span class="task-item-status status-${task.status}">${getStatusText(task.status)}</span>
                             </div>
                             <span class="task-item-time">${timeOnly}</span>
@@ -888,7 +890,9 @@ let batchChartInstances = {
     typeBar: null,
     errorTrend: null,
     recognitionPie: null,
-    gradingPie: null
+    gradingPie: null,
+    questionTypeAccuracy: null,
+    pageScoreConsistency: null
 };
 
 // ========== 销毁图表 ==========
@@ -896,7 +900,7 @@ function destroyBatchCharts() {
     Object.values(batchChartInstances).forEach(chart => {
         if (chart) chart.destroy();
     });
-    batchChartInstances = { errorTypePie: null, typeBar: null, errorTrend: null, recognitionPie: null, gradingPie: null };
+    batchChartInstances = { errorTypePie: null, typeBar: null, errorTrend: null, recognitionPie: null, gradingPie: null, questionTypeAccuracy: null, pageScoreConsistency: null };
 }
 
 // ========== 渲染总体报告图表 ==========
@@ -1156,6 +1160,472 @@ function renderOverallCharts(report) {
     if (gradRateEl) gradRateEl.textContent = recTotal > 0 ? gradRate.toFixed(1) + '%' : '-';
     if (gradFillEl) gradFillEl.style.width = recTotal > 0 ? gradRate + '%' : '0%';
     if (gradStatsEl) gradStatsEl.textContent = `正确 ${gradCorrect} / 总计 ${recTotal}`;
+    
+    // 5. 新增图表：题型准确率对比 + 页面分数一致性率
+    renderNewCharts(report, completedItems);
+}
+
+// ========== 渲染新增图表：题型分数准确率对比 + 页面分数准确率/一致性率 ==========
+function renderNewCharts(report, completedItems) {
+    const newChartsGrid = document.getElementById('newChartsGrid');
+    if (!newChartsGrid) return;
+    
+    // 检查是否有分数数据
+    const hasScoreData = checkHasScoreData(completedItems);
+    if (!hasScoreData) {
+        newChartsGrid.style.display = 'none';
+        return;
+    }
+    
+    // 显示图表区域
+    newChartsGrid.style.display = 'grid';
+    
+    // 销毁旧图表
+    if (batchChartInstances.questionTypeAccuracy) {
+        batchChartInstances.questionTypeAccuracy.destroy();
+        batchChartInstances.questionTypeAccuracy = null;
+    }
+    if (batchChartInstances.pageScoreConsistency) {
+        batchChartInstances.pageScoreConsistency.destroy();
+        batchChartInstances.pageScoreConsistency = null;
+    }
+    
+    // 1. 渲染题型分数准确率对比图表
+    renderQuestionTypeScoreAccuracyChart(report, completedItems);
+    
+    // 2. 判断页面数量，决定显示哪种图表
+    const pageCount = countUniquePages(completedItems);
+    const titleEl = document.getElementById('pageChartTitle');
+    
+    if (pageCount <= 1) {
+        // 只有1页时，显示页面分数准确率
+        if (titleEl) titleEl.textContent = '页面分数准确率';
+        renderPageScoreAccuracyChart(completedItems);
+    } else {
+        // 多页时，显示页面分数一致性率
+        if (titleEl) titleEl.textContent = '页面分数一致性率';
+        renderPageScoreConsistencyChart(completedItems);
+    }
+}
+
+// 统计唯一页面数量
+function countUniquePages(completedItems) {
+    const pages = new Set();
+    completedItems.forEach(item => {
+        const pageNum = item.page_num || '?';
+        pages.add(pageNum);
+    });
+    return pages.size;
+}
+
+// 检查是否有分数数据
+function checkHasScoreData(completedItems) {
+    for (const item of completedItems) {
+        const errors = item.evaluation?.errors || [];
+        for (const err of errors) {
+            if (err.base_effect?.score !== undefined && err.base_effect?.score !== null) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+// 渲染题型分数准确率对比（水平柱状图）
+function renderQuestionTypeScoreAccuracyChart(report, completedItems) {
+    const canvas = document.getElementById('questionTypeAccuracyChart');
+    if (!canvas) return;
+    
+    // 收集分数数据并按题型分类
+    const scoreData = collectScoreDataByType(completedItems);
+    const typeNames = { choice: '选择题', objective_fill: '客观填空', subjective: '主观题' };
+    
+    const labels = [];
+    const accuracyData = [];
+    const totalData = [];
+    
+    // 按顺序添加数据
+    ['choice', 'objective_fill', 'subjective'].forEach(type => {
+        const stats = scoreData[type];
+        if (stats && stats.total > 0) {
+            labels.push(typeNames[type]);
+            // 分数准确率 = 分数一致的题目数 / 总题目数
+            const accuracy = (stats.correct / stats.total * 100).toFixed(1);
+            accuracyData.push(accuracy);
+            totalData.push(stats.total);
+        }
+    });
+    
+    // 如果没有分类数据，显示总体
+    if (labels.length === 0) {
+        const totalStats = { total: 0, correct: 0 };
+        Object.values(scoreData).forEach(s => {
+            totalStats.total += s.total;
+            totalStats.correct += s.correct;
+        });
+        if (totalStats.total > 0) {
+            labels.push('全部题目');
+            accuracyData.push((totalStats.correct / totalStats.total * 100).toFixed(1));
+            totalData.push(totalStats.total);
+        }
+    }
+    
+    // 配色：使用项目统一的蓝绿色系
+    const colors = ['#3b82f6', '#10b981', '#f59e0b'];
+    const backgroundColors = labels.map((_, i) => colors[i % colors.length]);
+    
+    batchChartInstances.questionTypeAccuracy = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '分数准确率',
+                data: accuracyData,
+                backgroundColor: backgroundColors,
+                borderRadius: 6,
+                barThickness: 32
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { 
+                        font: { size: 11 }, 
+                        color: '#86868b',
+                        callback: v => v + '%'
+                    },
+                    grid: { color: '#f0f0f2' }
+                },
+                y: {
+                    ticks: { font: { size: 13, weight: 500 }, color: '#1d1d1f' },
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = totalData[context.dataIndex];
+                            return `分数准确率: ${context.parsed.x}% (共${total}题)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// 收集分数数据并按题型分类
+function collectScoreDataByType(completedItems) {
+    const typeStats = {
+        choice: { total: 0, correct: 0 },
+        objective_fill: { total: 0, correct: 0 },
+        subjective: { total: 0, correct: 0 }
+    };
+    
+    completedItems.forEach(item => {
+        const evaluation = item.evaluation || {};
+        const errors = evaluation.errors || [];
+        
+        errors.forEach(err => {
+            const baseEffect = err.base_effect || {};
+            const aiResult = err.ai_result || {};
+            
+            // 只处理有分数数据的题目
+            if (baseEffect.score !== undefined && baseEffect.score !== null) {
+                const baseScore = parseFloat(baseEffect.score) || 0;
+                const aiScore = aiResult.score !== undefined && aiResult.score !== null 
+                    ? parseFloat(aiResult.score) : null;
+                
+                // 判断题型分类
+                const questionType = classifyQuestionType(baseEffect, err.question_category);
+                
+                if (typeStats[questionType]) {
+                    typeStats[questionType].total++;
+                    // 分数一致则计为正确
+                    if (aiScore !== null && Math.abs(aiScore - baseScore) < 0.01) {
+                        typeStats[questionType].correct++;
+                    }
+                }
+            }
+        });
+    });
+    
+    return typeStats;
+}
+
+// 渲染页面分数准确率图表（单页时使用）
+function renderPageScoreAccuracyChart(completedItems) {
+    const canvas = document.getElementById('pageScoreConsistencyChart');
+    if (!canvas) return;
+    
+    // 收集分数数据
+    const scoreData = collectScoreDataByType(completedItems);
+    
+    // 计算总体分数准确率
+    let totalQuestions = 0;
+    let correctQuestions = 0;
+    Object.values(scoreData).forEach(s => {
+        totalQuestions += s.total;
+        correctQuestions += s.correct;
+    });
+    
+    if (totalQuestions === 0) {
+        const ctx = canvas.getContext('2d');
+        ctx.font = '14px sans-serif';
+        ctx.fillStyle = '#86868b';
+        ctx.textAlign = 'center';
+        ctx.fillText('暂无分数数据', canvas.width / 2, canvas.height / 2);
+        return;
+    }
+    
+    const accuracy = (correctQuestions / totalQuestions * 100).toFixed(1);
+    const errorRate = (100 - parseFloat(accuracy)).toFixed(1);
+    
+    // 使用环形图展示准确率
+    batchChartInstances.pageScoreConsistency = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels: ['分数一致', '分数不一致'],
+            datasets: [{
+                data: [correctQuestions, totalQuestions - correctQuestions],
+                backgroundColor: ['#10b981', '#ef4444'],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: {
+                legend: { 
+                    position: 'bottom',
+                    labels: { padding: 12, font: { size: 12 }, color: '#1d1d1f', boxWidth: 12 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed || 0;
+                            const percentage = ((value / totalQuestions) * 100).toFixed(1);
+                            return `${context.label}: ${value}题 (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// 渲染页面分数一致性率图表（垂直柱状图，多页时使用）
+function renderPageScoreConsistencyChart(completedItems) {
+    const canvas = document.getElementById('pageScoreConsistencyChart');
+    if (!canvas) return;
+    
+    // 计算每页的分数一致性率
+    const pageConsistency = calculatePageScoreConsistency(completedItems);
+    
+    if (Object.keys(pageConsistency).length === 0) {
+        // 没有数据时显示提示
+        const ctx = canvas.getContext('2d');
+        ctx.font = '14px sans-serif';
+        ctx.fillStyle = '#86868b';
+        ctx.textAlign = 'center';
+        ctx.fillText('暂无分数一致性数据', canvas.width / 2, canvas.height / 2);
+        return;
+    }
+    
+    // 按页码排序
+    const sortedPages = Object.keys(pageConsistency).sort((a, b) => {
+        const numA = parseInt(a) || 0;
+        const numB = parseInt(b) || 0;
+        return numA - numB;
+    });
+    
+    const labels = sortedPages.map(p => `P${p}`);
+    const consistencyData = sortedPages.map(p => pageConsistency[p].rate.toFixed(1));
+    const detailData = sortedPages.map(p => pageConsistency[p]);
+    
+    // 配色：使用蓝绿渐变色系，低于70%用警示色
+    const backgroundColors = consistencyData.map(rate => {
+        const r = parseFloat(rate);
+        if (r < 70) return '#ef4444';  // 红色警示
+        if (r < 85) return '#f59e0b';  // 橙色提醒
+        return '#10b981';  // 绿色正常
+    });
+    
+    batchChartInstances.pageScoreConsistency = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '一致性率',
+                data: consistencyData,
+                backgroundColor: backgroundColors,
+                borderRadius: 4,
+                barThickness: 24
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { 
+                        font: { size: 11 }, 
+                        color: '#86868b',
+                        callback: v => v + '%'
+                    },
+                    grid: { color: '#f0f0f2' }
+                },
+                x: {
+                    ticks: { font: { size: 11 }, color: '#1d1d1f' },
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const detail = detailData[context.dataIndex];
+                            return [
+                                `一致性率: ${context.parsed.y}%`,
+                                `一致题数: ${detail.consistent}/${detail.total}`,
+                                `检测作业: ${detail.homeworkCount}份`
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// 计算每页的分数一致性率
+// 逻辑：同一页码、同一题号，多份作业的AI判分是否一致
+function calculatePageScoreConsistency(completedItems) {
+    // 按页码分组收集数据
+    // 结构: { pageNum: { questionIndex: [score1, score2, ...] } }
+    const pageData = {};
+    
+    completedItems.forEach(item => {
+        const pageNum = item.page_num || '?';
+        const aiResult = item.ai_result || [];
+        
+        // 展开children结构
+        const flatResult = flattenHomeworkResult(aiResult);
+        
+        flatResult.forEach(q => {
+            const qIndex = q.index || q.tempIndex || '?';
+            const score = q.score;
+            
+            // 只处理有分数的题目
+            if (score !== undefined && score !== null) {
+                if (!pageData[pageNum]) pageData[pageNum] = {};
+                if (!pageData[pageNum][qIndex]) pageData[pageNum][qIndex] = [];
+                pageData[pageNum][qIndex].push(parseFloat(score) || 0);
+            }
+        });
+    });
+    
+    // 计算每页的一致性率
+    const pageConsistency = {};
+    
+    Object.entries(pageData).forEach(([pageNum, questions]) => {
+        let consistentCount = 0;
+        let totalQuestions = 0;
+        let homeworkCount = 0;
+        
+        Object.entries(questions).forEach(([qIndex, scores]) => {
+            if (scores.length > 1) {
+                totalQuestions++;
+                // 检查所有分数是否一致
+                const allSame = scores.every(s => s === scores[0]);
+                if (allSame) consistentCount++;
+                // 记录最大作业数
+                if (scores.length > homeworkCount) homeworkCount = scores.length;
+            }
+        });
+        
+        if (totalQuestions > 0) {
+            pageConsistency[pageNum] = {
+                rate: (consistentCount / totalQuestions) * 100,
+                consistent: consistentCount,
+                total: totalQuestions,
+                homeworkCount: homeworkCount
+            };
+        }
+    });
+    
+    return pageConsistency;
+}
+
+// 收集分数数据（包含题型分类）
+function collectScoreData(completedItems) {
+    const scoreData = [];
+    
+    completedItems.forEach(item => {
+        const evaluation = item.evaluation || {};
+        const errors = evaluation.errors || [];
+        
+        // 从错误列表中提取分数数据
+        errors.forEach(err => {
+            const baseEffect = err.base_effect || {};
+            const aiResult = err.ai_result || {};
+            
+            // 只处理有分数数据的题目
+            if (baseEffect.score !== undefined && baseEffect.score !== null) {
+                const baseScore = parseFloat(baseEffect.score) || 0;
+                const aiScore = aiResult.score !== undefined && aiResult.score !== null ? parseFloat(aiResult.score) : baseScore;
+                
+                // 判断题型分类
+                const questionType = classifyQuestionType(baseEffect, err.question_category);
+                
+                scoreData.push({
+                    index: err.index || '?',
+                    baseScore: baseScore,
+                    aiScore: aiScore,
+                    diff: aiScore - baseScore,
+                    pageNum: item.page_num || '?',
+                    questionType: questionType
+                });
+            }
+        });
+    });
+    
+    return scoreData;
+}
+
+// 判断题型分类：选择题、客观填空、主观题
+function classifyQuestionType(baseEffect, questionCategory) {
+    // 优先从 question_category 获取
+    if (questionCategory) {
+        if (questionCategory.is_choice) return 'choice';
+        if (questionCategory.is_fill) return 'objective_fill';
+        if (questionCategory.is_subjective) return 'subjective';
+    }
+    
+    // 从 bvalue 推断
+    const bvalue = String(baseEffect?.bvalue || '');
+    const qtype = baseEffect?.questionType || '';
+    
+    // 选择题: bvalue 1(单选), 2(多选), 3(判断)
+    if (['1', '2', '3'].includes(bvalue)) return 'choice';
+    
+    // 客观填空: questionType=objective 且 bvalue=4
+    if (qtype === 'objective' && bvalue === '4') return 'objective_fill';
+    
+    // 其他为主观题
+    return 'subjective';
 }
 
 // 旧的 showAccuracyDetail 函数已移除，使用新版本（在文件后面定义）
@@ -2852,7 +3322,8 @@ function renderEvalDetail(detail) {
                             '识别差异-判断正确': '#14b8a6',  // 语文主观题模糊匹配
                             '格式差异': '#10b981',
                             '缺失题目': '#6b7280',
-                            'AI识别幻觉': '#8b5cf6'
+                            'AI识别幻觉': '#8b5cf6',
+                            '分数不匹配': '#ec4899'  // 粉色，用于分数比对错误
                         };
                         const color = colorMap[type] || '#6b7280';
                         return `
@@ -2885,6 +3356,10 @@ function renderEvalDetail(detail) {
                     const isNotCountedAsError = ['识别差异-判断正确', '识别题干-判断正确', '格式差异'].includes(err.error_type);
                     const cardClass = isNotCountedAsError ? 'error-card not-counted-error' : 'error-card';
                     const headerClass = isNotCountedAsError ? 'error-card-header fuzzy-match-header' : 'error-card-header';
+                    
+                    // 检查是否有分数数据
+                    const hasScore = baseEffect.score !== undefined && baseEffect.score !== null;
+                    const scoreMatch = err.score_match;
                     
                     return `
                         <div class="${cardClass}" data-page="${detail.page_num || ''}" data-index="${err.index || ''}">
@@ -2921,6 +3396,14 @@ function renderEvalDetail(detail) {
                                                 <td class="ai-value"><span class="${aiResult.correct === 'yes' ? 'text-success' : 'text-error'}">${aiResult.correct || '-'}</span></td>
                                                 <td class="match-status">${(baseEffect.correct || '') === (aiResult.correct || '') ? '<span class="match-yes">✓</span>' : '<span class="match-no">✗</span>'}</td>
                                             </tr>
+                                            ${hasScore ? `
+                                            <tr>
+                                                <td class="field-name">分数</td>
+                                                <td class="base-value">${baseEffect.score}</td>
+                                                <td class="ai-value">${aiResult.score !== undefined && aiResult.score !== null ? aiResult.score : '-'}</td>
+                                                <td class="match-status">${scoreMatch === true ? '<span class="match-yes">✓</span>' : scoreMatch === false ? '<span class="match-no">✗</span>' : '-'}</td>
+                                            </tr>
+                                            ` : ''}
                                         </tbody>
                                     </table>
                                 </div>
@@ -2943,6 +3426,10 @@ function renderEvalDetail(detail) {
     // 展开AI结果中的children结构
     const flattenAiResult = flattenHomeworkResult(aiResult);
     const totalAiQuestions = countTotalQuestions(aiResult);
+    
+    // 检查是否有分数数据
+    const hasScoreData = baseEffect.some(item => item.maxScore !== undefined || item.score !== undefined) ||
+                         flattenAiResult.some(item => item.score !== undefined);
     
     if (baseEffect.length > 0 || aiResult.length > 0) {
         html += `
@@ -2971,6 +3458,7 @@ function renderEvalDetail(detail) {
                                         <th>用户答案</th>
                                         <th>标准答案</th>
                                         <th>判断</th>
+                                        ${hasScoreData ? '<th style="width:50px">总分</th><th style="width:50px">得分</th>' : ''}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -2980,6 +3468,10 @@ function renderEvalDetail(detail) {
                                             <td class="answer-cell">${escapeHtml(normalizeMarkdownFormula(item.userAnswer) || '-')}</td>
                                             <td class="answer-cell muted">${escapeHtml(normalizeMarkdownFormula(item.answer || item.mainAnswer) || '-')}</td>
                                             <td class="correct-cell"><span class="${getCorrectClass(item)}">${getCorrectText(item)}</span></td>
+                                            ${hasScoreData ? `
+                                            <td class="score-cell">${item.maxScore !== undefined && item.maxScore !== null ? item.maxScore : '-'}</td>
+                                            <td class="score-cell">${item.score !== undefined && item.score !== null ? item.score : '-'}</td>
+                                            ` : ''}
                                         </tr>
                                     `).join('')}
                                 </tbody>
@@ -3004,10 +3496,11 @@ function renderEvalDetail(detail) {
                                         <th>用户答案</th>
                                         <th>标准答案</th>
                                         <th>判断</th>
+                                        ${hasScoreData ? '<th style="width:50px">得分</th>' : ''}
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${renderAiResultRows(aiResult)}
+                                    ${renderAiResultRows(aiResult, hasScoreData)}
                                 </tbody>
                             </table>
                         </div>
@@ -3078,8 +3571,9 @@ function getCorrectText(item) {
 }
 
 // 渲染AI结果表格行（直接展开显示所有小题）
-function renderAiResultRows(aiResult) {
-    if (!aiResult || !Array.isArray(aiResult)) return '<tr><td colspan="4" class="empty-cell">暂无数据</td></tr>';
+function renderAiResultRows(aiResult, hasScoreData = false) {
+    const colSpan = hasScoreData ? 5 : 4;
+    if (!aiResult || !Array.isArray(aiResult)) return `<tr><td colspan="${colSpan}" class="empty-cell">暂无数据</td></tr>`;
     
     // 按索引排序
     const sortedResult = [...aiResult].sort((a, b) => {
@@ -3097,7 +3591,7 @@ function renderAiResultRows(aiResult) {
             // 有小题时，显示父题作为分组标题，然后直接展示所有小题
             html += `
                 <tr class="parent-row-header">
-                    <td colspan="4" class="parent-title-cell">
+                    <td colspan="${colSpan}" class="parent-title-cell">
                         <span class="parent-index">第${escapeHtml(String(item.index || '-'))}题</span>
                         <span class="children-count">(${children.length}个小题)</span>
                     </td>
@@ -3116,6 +3610,7 @@ function renderAiResultRows(aiResult) {
                         <td class="answer-cell">${escapeHtml(normalizeMarkdownFormula(child.userAnswer) || '-')}</td>
                         <td class="answer-cell muted">${escapeHtml(normalizeMarkdownFormula(child.answer || child.mainAnswer) || '-')}</td>
                         <td class="correct-cell"><span class="${getCorrectClass(child)}">${getCorrectText(child)}</span></td>
+                        ${hasScoreData ? `<td class="score-cell">${child.score !== undefined && child.score !== null ? child.score : '-'}</td>` : ''}
                     </tr>
                 `;
             });
@@ -3127,12 +3622,13 @@ function renderAiResultRows(aiResult) {
                     <td class="answer-cell">${escapeHtml(normalizeMarkdownFormula(item.userAnswer) || '-')}</td>
                     <td class="answer-cell muted">${escapeHtml(normalizeMarkdownFormula(item.answer || item.mainAnswer) || '-')}</td>
                     <td class="correct-cell"><span class="${getCorrectClass(item)}">${getCorrectText(item)}</span></td>
+                    ${hasScoreData ? `<td class="score-cell">${item.score !== undefined && item.score !== null ? item.score : '-'}</td>` : ''}
                 </tr>
             `;
         }
     });
     
-    return html || '<tr><td colspan="4" class="empty-cell">暂无数据</td></tr>';
+    return html || `<tr><td colspan="${colSpan}" class="empty-cell">暂无数据</td></tr>`;
 }
 
 // 渲染逐题对比卡片
@@ -4602,6 +5098,10 @@ function showEditBaselineModal(homeworkDetail) {
     
     const aiResult = homeworkDetail.ai_result || [];
     
+    // 检查是否有分数数据
+    const hasScore = baseEffect.some(item => item.maxScore !== undefined || item.score !== undefined) ||
+                     aiResult.some(item => item.score !== undefined);
+    
     modal.innerHTML = `
         <div class="modal-content modal-large" onclick="event.stopPropagation()">
             <div class="modal-header">
@@ -4650,6 +5150,7 @@ function showEditBaselineModal(homeworkDetail) {
                                     <th style="width:80px">题号</th>
                                     <th>用户答案</th>
                                     <th style="width:100px">判断结果</th>
+                                    ${hasScore ? '<th style="width:60px">总分</th><th style="width:60px">得分</th>' : ''}
                                     <th style="width:60px">操作</th>
                                 </tr>
                             </thead>
@@ -4684,7 +5185,7 @@ function showEditBaselineModal(homeworkDetail) {
                             <div class="compare-data-table">
                                 <table class="compare-table">
                                     <thead>
-                                        <tr><th>题号</th><th>用户答案</th><th>判断</th></tr>
+                                        <tr><th>题号</th><th>用户答案</th><th>判断</th>${hasScore ? '<th>得分</th>' : ''}</tr>
                                     </thead>
                                     <tbody>
                                         ${aiResult.map(item => `
@@ -4692,6 +5193,7 @@ function showEditBaselineModal(homeworkDetail) {
                                                 <td>${escapeHtml(String(item.index || '-'))}</td>
                                                 <td>${escapeHtml(item.userAnswer || '-')}</td>
                                                 <td><span class="${item.correct === 'yes' ? 'text-success' : 'text-error'}">${item.correct || '-'}</span></td>
+                                                ${hasScore ? `<td>${item.score !== undefined && item.score !== null ? item.score : '-'}</td>` : ''}
                                             </tr>
                                         `).join('')}
                                     </tbody>
@@ -4711,6 +5213,7 @@ function showEditBaselineModal(homeworkDetail) {
     // 保存当前作业数据
     window.currentEditingHomework = homeworkDetail;
     window.currentEditingAiResult = aiResult;
+    window.currentEditingHasScore = hasScore;
     
     // 渲染表格
     renderBaselineEditTable();
@@ -4746,6 +5249,8 @@ function renderBaselineEditTable() {
     const tbody = document.getElementById('baselineTableBody');
     if (!tbody) return;
     
+    const hasScore = window.currentEditingHasScore || false;
+    
     // 按题号排序
     const sortedData = [...baselineEditData].sort((a, b) => {
         const indexA = parseFloat(a.index) || 0;
@@ -4775,6 +5280,18 @@ function renderBaselineEditTable() {
                     <option value="no" ${item.correct === 'no' ? 'selected' : ''}>错误</option>
                 </select>
             </td>
+            ${hasScore ? `
+            <td>
+                <input type="number" class="form-input-small baseline-maxscore-input" 
+                       value="${item.maxScore !== undefined && item.maxScore !== null ? item.maxScore : ''}" 
+                       data-field="maxScore" data-idx="${originalIndex}" step="0.5" min="0">
+            </td>
+            <td>
+                <input type="number" class="form-input-small baseline-score-input" 
+                       value="${item.score !== undefined && item.score !== null ? item.score : ''}" 
+                       data-field="score" data-idx="${originalIndex}" step="0.5" min="0">
+            </td>
+            ` : ''}
             <td>
                 <button class="btn btn-small btn-danger" onclick="removeBaselineQuestion(${originalIndex})">删除</button>
             </td>
@@ -4793,10 +5310,26 @@ function renderBaselineEditTable() {
 function handleBaselineFieldChange(e) {
     const field = e.target.dataset.field;
     const idx = parseInt(e.target.dataset.idx, 10);
-    const value = e.target.value;
+    let value = e.target.value;
+    
+    // 处理数值类型字段
+    if (field === 'maxScore' || field === 'score') {
+        value = value === '' ? null : parseFloat(value);
+    }
     
     if (idx >= 0 && idx < baselineEditData.length) {
         baselineEditData[idx][field] = value;
+        
+        // 如果修改了正确性，自动更新得分
+        if (field === 'correct' && baselineEditData[idx].maxScore !== undefined && baselineEditData[idx].maxScore !== null) {
+            const newScore = value === 'yes' ? baselineEditData[idx].maxScore : 0;
+            baselineEditData[idx].score = newScore;
+            // 更新得分输入框
+            const scoreInput = document.querySelector(`input[data-field="score"][data-idx="${idx}"]`);
+            if (scoreInput) {
+                scoreInput.value = newScore;
+            }
+        }
     }
 }
 
@@ -4890,6 +5423,8 @@ function renderCompareBaseTable() {
     const countEl = document.getElementById('compareBaseCount');
     if (!container) return;
     
+    const hasScore = window.currentEditingHasScore || false;
+    
     if (countEl) {
         countEl.textContent = baselineEditData.length;
     }
@@ -4897,7 +5432,7 @@ function renderCompareBaseTable() {
     container.innerHTML = `
         <table class="compare-table">
             <thead>
-                <tr><th>题号</th><th>用户答案</th><th>判断</th></tr>
+                <tr><th>题号</th><th>用户答案</th><th>判断</th>${hasScore ? '<th>总分</th><th>得分</th>' : ''}</tr>
             </thead>
             <tbody>
                 ${baselineEditData.map(item => `
@@ -4905,6 +5440,10 @@ function renderCompareBaseTable() {
                         <td>${escapeHtml(String(item.index || '-'))}</td>
                         <td>${escapeHtml(item.userAnswer || '-')}</td>
                         <td><span class="${item.correct === 'yes' ? 'text-success' : 'text-error'}">${item.correct || '-'}</span></td>
+                        ${hasScore ? `
+                        <td>${item.maxScore !== undefined && item.maxScore !== null ? item.maxScore : '-'}</td>
+                        <td>${item.score !== undefined && item.score !== null ? item.score : '-'}</td>
+                        ` : ''}
                     </tr>
                 `).join('')}
             </tbody>
@@ -8307,7 +8846,7 @@ async function viewPromptDetail(configKey) {
         
         if (versionsData.success && versionsData.data.length > 0) {
             versionsEl.innerHTML = versionsData.data.map((v, i) => `
-                <div class="prompt-version-item ${i === 0 ? 'current' : ''}" onclick="loadVersionContent('${configKey}', ${v.version})">
+                <div class="prompt-version-item ${i === 0 ? 'current' : ''}" onclick="loadVersionContent('${configKey}', ${v.version}, event)">
                     <div class="version-info">
                         <span class="version-number">v${v.version}</span>
                         ${i === 0 ? '<span class="version-tag">当前</span>' : ''}
@@ -8334,7 +8873,7 @@ async function viewPromptDetail(configKey) {
 /**
  * 加载指定版本的内容
  */
-async function loadVersionContent(configKey, version) {
+async function loadVersionContent(configKey, version, event) {
     const contentEl = document.getElementById('promptContentPreview');
     contentEl.textContent = '加载中...';
     
@@ -8349,7 +8888,9 @@ async function loadVersionContent(configKey, version) {
             document.querySelectorAll('.prompt-version-item').forEach(item => {
                 item.classList.remove('current');
             });
-            event.target.closest('.prompt-version-item')?.classList.add('current');
+            if (event && event.target) {
+                event.target.closest('.prompt-version-item')?.classList.add('current');
+            }
         } else {
             contentEl.textContent = '加载失败';
         }

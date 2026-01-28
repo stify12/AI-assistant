@@ -232,7 +232,7 @@ class StorageService:
                     elif extra_data is None:
                         extra_data = {}
                     
-                    base_effects[page_key].append({
+                    effect_item = {
                         'index': effect['question_index'],
                         'tempIndex': effect['temp_index'],
                         'type': effect['question_type'],
@@ -241,7 +241,14 @@ class StorageService:
                         'correct': effect['is_correct'],
                         'questionType': extra_data.get('questionType', 'objective'),
                         'bvalue': extra_data.get('bvalue', '4')
-                    })
+                    }
+                    # 添加 maxScore 和 score 字段（如果存在）
+                    if extra_data.get('maxScore') is not None:
+                        effect_item['maxScore'] = extra_data.get('maxScore')
+                    if extra_data.get('score') is not None:
+                        effect_item['score'] = extra_data.get('score')
+                    
+                    base_effects[page_key].append(effect_item)
                 
                 pages = row['pages']
                 if isinstance(pages, str):
@@ -329,11 +336,11 @@ class StorageService:
                     description=data.get('description')
                 )
             
-            # 保存基准效果（包含questionType和bvalue）
+            # 保存基准效果（包含questionType、bvalue、maxScore和score）
             for page_num, effects in base_effects.items():
                 formatted_effects = []
                 for effect in effects:
-                    formatted_effects.append({
+                    formatted_effect = {
                         'index': effect.get('index', ''),
                         'tempIndex': effect.get('tempIndex', 0),
                         'type': effect.get('type', effect.get('questionType', 'choice')),
@@ -342,7 +349,13 @@ class StorageService:
                         'correct': effect.get('correct', ''),
                         'questionType': effect.get('questionType', 'objective'),
                         'bvalue': effect.get('bvalue', '4')
-                    })
+                    }
+                    # 添加 maxScore 和 score 字段（如果存在）
+                    if effect.get('maxScore') is not None:
+                        formatted_effect['maxScore'] = effect.get('maxScore')
+                    if effect.get('score') is not None:
+                        formatted_effect['score'] = effect.get('score')
+                    formatted_effects.append(formatted_effect)
                 AppDatabaseService.save_baseline_effects(dataset_id, int(page_num), formatted_effects)
             
             # 使数据集相关缓存失效

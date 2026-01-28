@@ -105,6 +105,37 @@ def classify_question_type(data):
 
 ---
 
+## 分数字段规范
+
+数据来源和字段名不统一，需要兼容处理：
+
+| 来源 | 字段名 | 说明 |
+|------|--------|------|
+| datavalue (原始数据) | `sorce` | 题目总分（注意拼写错误） |
+| datavalue (原始数据) | `ans` | 标准答案 |
+| 数据集 base_effects | `maxScore` | 题目总分（从 sorce 转换） |
+| 数据集 base_effects | `score` | 判断分值（AI 返回或计算） |
+| AI 批改结果 | `score` | AI 判断的得分 |
+
+获取分数时需要兼容三种字段名：
+```python
+# 获取基准分数（兼容 maxScore、score、sorce）
+base_score = (
+    item.get('maxScore') if item.get('maxScore') is not None 
+    else item.get('score') if item.get('score') is not None 
+    else item.get('sorce')
+)
+```
+
+### 分数比对数据流
+1. **数据集创建**：`routes/dataset_manage.py` 从 datavalue 的 `sorce` 字段提取，存储为 `maxScore`
+2. **批量评估**：`routes/batch_evaluation.py` 的 `do_evaluation` 函数从 `base_effect` 获取分数
+3. **错误详情**：`errors[].base_effect.score` 和 `errors[].ai_result.score` 用于前端展示
+4. **任务列表**：`has_score` 字段标识任务是否包含分数数据，用于显示"判分"标签
+```
+
+---
+
 ## 部署
 
 ```powershell

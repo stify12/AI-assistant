@@ -99,6 +99,27 @@ class PromptConfigService:
             return None
     
     @staticmethod
+    def get_remote_prompts_batch(config_keys):
+        """批量从 zpsmart.zp_config 获取提示词配置（性能优化）"""
+        if not config_keys:
+            return {}
+        try:
+            placeholders = ','.join(['%s'] * len(config_keys))
+            sql = f"SELECT config_key, config_value, description FROM zp_config WHERE config_key IN ({placeholders})"
+            rows = DatabaseService.execute_query(sql, tuple(config_keys))
+            return {
+                row['config_key']: {
+                    'config_key': row['config_key'],
+                    'config_value': row['config_value'] or '',
+                    'description': row['description'] or ''
+                }
+                for row in rows
+            }
+        except Exception as e:
+            print(f"批量获取远程提示词失败: {e}")
+            return {}
+    
+    @staticmethod
     def get_local_prompt(config_key):
         """获取本地存储的提示词配置"""
         try:
@@ -107,6 +128,20 @@ class PromptConfigService:
         except Exception as e:
             print(f"获取本地提示词失败 [{config_key}]: {e}")
             return None
+    
+    @staticmethod
+    def get_local_prompts_batch(config_keys):
+        """批量获取本地存储的提示词配置（性能优化）"""
+        if not config_keys:
+            return {}
+        try:
+            placeholders = ','.join(['%s'] * len(config_keys))
+            sql = f"SELECT * FROM prompt_configs WHERE config_key IN ({placeholders})"
+            rows = AppDatabaseService.execute_query(sql, tuple(config_keys))
+            return {row['config_key']: row for row in rows}
+        except Exception as e:
+            print(f"批量获取本地提示词失败: {e}")
+            return {}
     
     @staticmethod
     def save_local_prompt(config_key, config_value, description=None, subject_id=None, subject_name=None):
@@ -280,17 +315,28 @@ class PromptConfigService:
     
     @staticmethod
     def sync_subject_prompts(subject_id):
-        """同步指定学科的所有提示词"""
+        """同步指定学科的所有提示词（批量查询优化）"""
         subject_config = SUBJECT_PROMPT_CONFIGS.get(subject_id)
         if not subject_config:
             return {'success': False, 'error': f'未知学科ID: {subject_id}'}
         
+        # 收集所有需要查询的 config_key
+        config_keys = [p['key'] for p in subject_config['prompts']]
+        
+        # 批量查询远程和本地配置（2次查询代替 N*2 次）
+        remote_configs = PromptConfigService.get_remote_prompts_batch(config_keys)
+        local_configs = PromptConfigService.get_local_prompts_batch(config_keys)
+        
         results = []
         for prompt_info in subject_config['prompts']:
-            result = PromptConfigService.check_and_sync_prompt(
-                prompt_info['key'],
-                subject_id,
-                subject_config['name']
+            config_key = prompt_info['key']
+            remote = remote_configs.get(config_key)
+            local = local_configs.get(config_key)
+            
+            # 使用批量查询结果进行同步
+            result = PromptConfigService._sync_single_prompt(
+                config_key, remote, local,
+                subject_id, subject_config['name']
             )
             result['prompt_type'] = prompt_info['type']
             result['prompt_desc'] = prompt_info['desc']
@@ -307,16 +353,118 @@ class PromptConfigService:
         }
     
     @staticmethod
+    def _sync_single_prompt(config_key, remote, local, subject_id, subject_name):
+        """同步单个提示词（内部方法，使用预查询的数据）"""
+        if not remote:
+            return {
+                'config_key': config_key,
+                'has_change': False,
+                'error': '远程配置不存在'
+            }
+        
+        remote_value = remote['config_value']
+        remote_hash = PromptConfigService.get_content_hash(remote_value)
+        
+        if not local:
+            # 本地不存在，首次同步
+            PromptConfigService.save_local_prompt(
+                config_key, remote_value, remote['description'],
+                subject_id, subject_name
+            )
+            PromptConfigService.save_version(config_key, remote_value, 1, "初始版本")
+            
+            return {
+                'config_key': config_key,
+                'has_change': True,
+                'is_new': True,
+                'old_version': 0,
+                'new_version': 1,
+                'change_summary': '初始同步',
+                'description': remote['description']
+            }
+        
+        local_hash = local.get('content_hash', '')
+        local_value = local.get('config_value', '')
+        
+        if remote_hash == local_hash:
+            # 无变化
+            return {
+                'config_key': config_key,
+                'has_change': False,
+                'current_version': local['current_version'],
+                'description': local.get('description') or remote['description']
+            }
+        
+        # 有变化，生成变更摘要
+        change_summary = PromptConfigService.generate_change_summary(local_value, remote_value)
+        old_version = local['current_version']
+        
+        # 保存旧版本
+        PromptConfigService.save_version(config_key, local_value, old_version, "变更前版本")
+        
+        # 更新本地配置
+        PromptConfigService.save_local_prompt(
+            config_key, remote_value, remote['description'],
+            subject_id, subject_name
+        )
+        
+        # 增加版本号
+        new_version = PromptConfigService.increment_version(config_key)
+        
+        # 保存新版本
+        PromptConfigService.save_version(config_key, remote_value, new_version, change_summary)
+        
+        return {
+            'config_key': config_key,
+            'has_change': True,
+            'is_new': False,
+            'old_version': old_version,
+            'new_version': new_version,
+            'change_summary': change_summary,
+            'description': remote['description']
+        }
+    
+    @staticmethod
     def sync_all_prompts():
-        """同步所有学科的提示词"""
+        """同步所有学科的提示词（批量查询优化）"""
+        # 收集所有需要查询的 config_key
+        all_config_keys = []
+        for subject_config in SUBJECT_PROMPT_CONFIGS.values():
+            all_config_keys.extend([p['key'] for p in subject_config['prompts']])
+        
+        # 批量查询远程和本地配置（2次查询代替 N*2 次）
+        remote_configs = PromptConfigService.get_remote_prompts_batch(all_config_keys)
+        local_configs = PromptConfigService.get_local_prompts_batch(all_config_keys)
+        
         all_results = {}
         total_changes = 0
         
         for subject_id, subject_config in SUBJECT_PROMPT_CONFIGS.items():
-            result = PromptConfigService.sync_subject_prompts(subject_id)
-            all_results[subject_id] = result
-            if result.get('has_changes'):
-                total_changes += sum(1 for p in result.get('prompts', []) if p.get('has_change'))
+            results = []
+            for prompt_info in subject_config['prompts']:
+                config_key = prompt_info['key']
+                remote = remote_configs.get(config_key)
+                local = local_configs.get(config_key)
+                
+                result = PromptConfigService._sync_single_prompt(
+                    config_key, remote, local,
+                    subject_id, subject_config['name']
+                )
+                result['prompt_type'] = prompt_info['type']
+                result['prompt_desc'] = prompt_info['desc']
+                results.append(result)
+                
+                if result.get('has_change'):
+                    total_changes += 1
+            
+            has_changes = any(r.get('has_change') for r in results)
+            all_results[subject_id] = {
+                'success': True,
+                'subject_id': subject_id,
+                'subject_name': subject_config['name'],
+                'has_changes': has_changes,
+                'prompts': results
+            }
         
         return {
             'success': True,

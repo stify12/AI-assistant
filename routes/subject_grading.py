@@ -553,7 +553,8 @@ def do_local_evaluation(base_effect, homework_result):
         '格式差异': 0,
         '缺失题目': 0,
         'AI识别幻觉': 0,
-        '基准数据不完整': 0
+        '基准数据不完整': 0,
+        '分数不匹配': 0  # 新增分数不匹配错误类型
     }
     
     # 先展开 homework_result 的 children 结构
@@ -589,15 +590,22 @@ def do_local_evaluation(base_effect, homework_result):
         # 兼容 correct 和 isRight 两种字段格式
         base_correct = get_correct_value(base_item)
         
+        # 获取基准分数（如果有）
+        base_score = base_item.get('score')
+        
         # AI批改结果
         hw_answer = str(hw_item.get('answer', '') or hw_item.get('mainAnswer', '')).strip() if hw_item else ''
         hw_user = str(hw_item.get('userAnswer', '')).strip() if hw_item else ''
         hw_correct = get_correct_value(hw_item) if hw_item else ''
         
+        # 获取AI分数（如果有）
+        hw_score = hw_item.get('score') if hw_item else None
+        
         is_match = True
         error_type = None
         explanation = ''
         severity = 'medium'
+        score_match = None  # 分数匹配状态
         
         if not hw_item:
             is_match = False
@@ -658,6 +666,23 @@ def do_local_evaluation(base_effect, homework_result):
                 explanation = f'识别和判断都有误：基准="{base_user}/{base_correct}"，AI="{hw_user}/{hw_correct}"'
                 severity = 'high'
         
+        # 分数比对（仅当基准有分数时）
+        if base_score is not None:
+            if hw_score is not None:
+                # 精确匹配分数
+                try:
+                    base_score_val = float(base_score)
+                    hw_score_val = float(hw_score)
+                    score_match = base_score_val == hw_score_val
+                except (ValueError, TypeError):
+                    score_match = str(base_score) == str(hw_score)
+            else:
+                score_match = False  # AI没有返回分数
+            
+            # 如果分数不匹配，记录为错误（但不影响原有的正确性判断）
+            if score_match is False:
+                error_distribution['分数不匹配'] = error_distribution.get('分数不匹配', 0) + 1
+        
         if is_match:
             correct_count += 1
             # 格式差异虽然计入正确，但仍记录到分布中
@@ -676,17 +701,20 @@ def do_local_evaluation(base_effect, homework_result):
                 'base_effect': {
                     'answer': base_answer,
                     'userAnswer': base_user,
-                    'correct': base_correct if base_correct else '-'
+                    'correct': base_correct if base_correct else '-',
+                    'score': base_score  # 添加基准分数
                 },
                 'ai_result': {
                     'answer': hw_answer,
                     'userAnswer': hw_user,
-                    'correct': hw_correct if hw_correct else '-'
+                    'correct': hw_correct if hw_correct else '-',
+                    'score': hw_score  # 添加AI分数
                 },
                 'error_type': error_type or '未知错误',
                 'explanation': explanation,
                 'severity': severity,
                 'severity_code': severity,
+                'score_match': score_match,  # 添加分数匹配状态
                 'analysis': {
                     'recognition_match': recognition_match,
                     'judgment_match': judgment_match,
