@@ -407,6 +407,20 @@ class AppDatabaseService:
                 json.dumps(extra_data, ensure_ascii=False)
             ))
     
+    @staticmethod
+    def delete_baseline_effects_not_in_pages(dataset_id, valid_pages):
+        """删除不在指定页码列表中的基准效果数据"""
+        if not valid_pages:
+            # 如果没有有效页码，删除该数据集的所有基准效果
+            sql = "DELETE FROM baseline_effects WHERE dataset_id = %s"
+            return AppDatabaseService.execute_update(sql, (dataset_id,))
+        
+        # 构建 NOT IN 查询
+        placeholders = ','.join(['%s'] * len(valid_pages))
+        sql = f"DELETE FROM baseline_effects WHERE dataset_id = %s AND page_num NOT IN ({placeholders})"
+        params = [dataset_id] + valid_pages
+        return AppDatabaseService.execute_update(sql, tuple(params))
+    
     # ========== 批量任务相关操作 ==========
     
     @staticmethod

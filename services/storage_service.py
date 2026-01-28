@@ -337,7 +337,14 @@ class StorageService:
                 )
             
             # 保存基准效果（包含questionType、bvalue、maxScore和score）
+            # 先删除不在 base_effects 中的页码数据
+            current_pages = set(int(p) for p in base_effects.keys() if base_effects.get(p))
+            AppDatabaseService.delete_baseline_effects_not_in_pages(dataset_id, list(current_pages))
+            
             for page_num, effects in base_effects.items():
+                # 跳过空数组（已删除的页码）
+                if not effects:
+                    continue
                 formatted_effects = []
                 for effect in effects:
                     formatted_effect = {
