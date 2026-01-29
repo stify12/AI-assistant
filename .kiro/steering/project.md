@@ -132,6 +132,36 @@ base_score = (
 2. **批量评估**：`routes/batch_evaluation.py` 的 `do_evaluation` 函数从 `base_effect` 获取分数
 3. **错误详情**：`errors[].base_effect.score` 和 `errors[].ai_result.score` 用于前端展示
 4. **任务列表**：`has_score` 字段标识任务是否包含分数数据，用于显示"判分"标签
+
+### 题型分数准确率统计实现
+
+**功能**：按题型（选择题、客观填空题、主观题）统计分数准确率
+
+**核心函数**：`calculate_score_accuracy_by_type(base_effect, homework_result, type_map)`
+- 位置：`routes/batch_evaluation.py`
+- 作用：遍历全部题目，按题型分类，判断 AI 判分与基准分数是否一致
+- 返回：各题型的 `score_total`、`score_accurate`、`score_higher`、`score_lower`、`score_accuracy`
+
+**数据流**：
+```
+data_value (题目类型信息)
+    ↓ 构建 type_map
+do_evaluation() 
+    ↓ 调用模块化函数
+calculate_score_accuracy_by_type()
+    ↓ 返回分数统计
+type_stats (合并分数字段)
+    ↓ 聚合到任务级别
+overall_report.by_question_type
+    ↓ 前端渲染
+题型分数准确率对比图表
+```
+
+**关键点**：
+- `type_map` 必须从 `data_value` 构建并传递到所有评估函数
+- 使用模块化函数避免重复代码
+- 兼容两种评估模式：本地评估 (`do_evaluation`) 和 AI 语义评估 (`convert_semantic_to_batch_result`)
+- 分数字段需要在聚合时累加：`score_total`、`score_accurate`、`score_higher`、`score_lower`
 ```
 
 ---

@@ -637,7 +637,8 @@ function renderTaskDetail() {
     
     // 总体报告
     if (isCompleted && selectedTask.overall_report) {
-        renderOverallReport(selectedTask.overall_report);
+        const completedItems = selectedTask.homework_items.filter(h => h.status === 'completed');
+        renderOverallReport(selectedTask.overall_report, completedItems);
     } else {
         document.getElementById('overallReport').style.display = 'none';
     }
@@ -732,7 +733,7 @@ function renderTestConditionsInfo() {
 }
 
 
-function renderOverallReport(report) {
+function renderOverallReport(report, completedItems) {
     document.getElementById('overallReport').style.display = 'block';
     
     // 渲染测试条件信息
@@ -762,7 +763,7 @@ function renderOverallReport(report) {
     document.getElementById('overallStats').innerHTML = statsHtml;
     
     // 渲染可视化图表
-    renderOverallCharts(report);
+    renderOverallCharts(report, completedItems);
     
     // 题目类型分类统计 (选择题、客观填空题、主观题)
     let detailHtml = '';
@@ -904,12 +905,15 @@ function destroyBatchCharts() {
 }
 
 // ========== 渲染总体报告图表 ==========
-function renderOverallCharts(report) {
-    // 检查 Chart.js 是否已加载
+async function renderOverallCharts(report, completedItems) {
+    // 按需加载 Chart.js
     if (typeof Chart === 'undefined') {
-        // Chart.js 尚未加载，延迟重试
-        setTimeout(() => renderOverallCharts(report), 100);
-        return;
+        try {
+            await window.loadChartJS();
+        } catch (e) {
+            console.error('加载 Chart.js 失败:', e);
+            return;
+        }
     }
     
     destroyBatchCharts();
@@ -925,10 +929,11 @@ function renderOverallCharts(report) {
             '识别错误-判断错误': '#ef4444',
             '识别正确-判断错误': '#f59e0b',
             '识别题干-判断正确': '#06b6d4',
-            '识别差异-判断正确': '#14b8a6',  // 新增：语文主观题模糊匹配
+            '识别差异-判断正确': '#14b8a6',  // 语文主观题模糊匹配
             '格式差异': '#10b981',
             '缺失题目': '#6b7280',
-            'AI识别幻觉': '#8b5cf6'
+            'AI识别幻觉': '#8b5cf6',
+            '分数不一致': '#ec4899'  // 粉色，表示分数不一致
         };
         const colors = errorLabels.map(label => colorMap[label] || '#6b7280');
         
@@ -986,10 +991,8 @@ function renderOverallCharts(report) {
     loadAnomalyDetection();
     
     // 3. 高频错误题目 TOP5 柱状图
-    const homeworkItems = selectedTask?.homework_items || [];
-    const completedItems = homeworkItems.filter(h => h.status === 'completed' && h.evaluation);
+    // completedItems 已作为参数传入
     
-    console.log('homeworkItems count:', homeworkItems.length);
     console.log('completedItems count:', completedItems.length);
     if (completedItems.length > 0) {
         console.log('First completedItem:', completedItems[0]);
@@ -1037,7 +1040,8 @@ function renderOverallCharts(report) {
                 { key: '识别差异-判断正确', color: '#14b8a6' },  // 语文主观题模糊匹配
                 { key: '格式差异', color: '#10b981' },
                 { key: '缺失题目', color: '#6b7280' },
-                { key: 'AI识别幻觉', color: '#8b5cf6' }
+                { key: 'AI识别幻觉', color: '#8b5cf6' },
+                { key: '分数不一致', color: '#ec4899' }  // 分数不一致
             ];
             
             // 生成堆叠柱状图数据集
@@ -1162,473 +1166,14 @@ function renderOverallCharts(report) {
     if (gradStatsEl) gradStatsEl.textContent = `正确 ${gradCorrect} / 总计 ${recTotal}`;
     
     // 5. 新增图表：题型准确率对比 + 页面分数一致性率
-    renderNewCharts(report, completedItems);
-}
-
-// ========== 渲染新增图表：题型分数准确率对比 + 页面分数准确率/一致性率 ==========
-function renderNewCharts(report, completedItems) {
-    const newChartsGrid = document.getElementById('newChartsGrid');
-    if (!newChartsGrid) return;
-    
-    // 检查是否有分数数据
-    const hasScoreData = checkHasScoreData(completedItems);
-    if (!hasScoreData) {
-        newChartsGrid.style.display = 'none';
-        return;
-    }
-    
-    // 显示图表区域
-    newChartsGrid.style.display = 'grid';
-    
-    // 销毁旧图表
-    if (batchChartInstances.questionTypeAccuracy) {
-        batchChartInstances.questionTypeAccuracy.destroy();
-        batchChartInstances.questionTypeAccuracy = null;
-    }
-    if (batchChartInstances.pageScoreConsistency) {
-        batchChartInstances.pageScoreConsistency.destroy();
-        batchChartInstances.pageScoreConsistency = null;
-    }
-    
-    // 1. 渲染题型分数准确率对比图表
-    renderQuestionTypeScoreAccuracyChart(report, completedItems);
-    
-    // 2. 判断页面数量，决定显示哪种图表
-    const pageCount = countUniquePages(completedItems);
-    const titleEl = document.getElementById('pageChartTitle');
-    
-    if (pageCount <= 1) {
-        // 只有1页时，显示页面分数准确率
-        if (titleEl) titleEl.textContent = '页面分数准确率';
-        renderPageScoreAccuracyChart(completedItems);
-    } else {
-        // 多页时，显示页面分数一致性率
-        if (titleEl) titleEl.textContent = '页面分数一致性率';
-        renderPageScoreConsistencyChart(completedItems);
+    // 使用独立模块 score-charts.js
+    if (window.ScoreCharts) {
+        window.ScoreCharts.render(report, completedItems);
     }
 }
 
-// 统计唯一页面数量
-function countUniquePages(completedItems) {
-    const pages = new Set();
-    completedItems.forEach(item => {
-        const pageNum = item.page_num || '?';
-        pages.add(pageNum);
-    });
-    return pages.size;
-}
 
-// 检查是否有分数数据
-function checkHasScoreData(completedItems) {
-    for (const item of completedItems) {
-        const errors = item.evaluation?.errors || [];
-        for (const err of errors) {
-            if (err.base_effect?.score !== undefined && err.base_effect?.score !== null) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-// 渲染题型分数准确率对比（水平柱状图）
-function renderQuestionTypeScoreAccuracyChart(report, completedItems) {
-    const canvas = document.getElementById('questionTypeAccuracyChart');
-    if (!canvas) return;
-    
-    // 收集分数数据并按题型分类
-    const scoreData = collectScoreDataByType(completedItems);
-    const typeNames = { choice: '选择题', objective_fill: '客观填空', subjective: '主观题' };
-    
-    const labels = [];
-    const accuracyData = [];
-    const totalData = [];
-    
-    // 按顺序添加数据
-    ['choice', 'objective_fill', 'subjective'].forEach(type => {
-        const stats = scoreData[type];
-        if (stats && stats.total > 0) {
-            labels.push(typeNames[type]);
-            // 分数准确率 = 分数一致的题目数 / 总题目数
-            const accuracy = (stats.correct / stats.total * 100).toFixed(1);
-            accuracyData.push(accuracy);
-            totalData.push(stats.total);
-        }
-    });
-    
-    // 如果没有分类数据，显示总体
-    if (labels.length === 0) {
-        const totalStats = { total: 0, correct: 0 };
-        Object.values(scoreData).forEach(s => {
-            totalStats.total += s.total;
-            totalStats.correct += s.correct;
-        });
-        if (totalStats.total > 0) {
-            labels.push('全部题目');
-            accuracyData.push((totalStats.correct / totalStats.total * 100).toFixed(1));
-            totalData.push(totalStats.total);
-        }
-    }
-    
-    // 配色：使用项目统一的蓝绿色系
-    const colors = ['#3b82f6', '#10b981', '#f59e0b'];
-    const backgroundColors = labels.map((_, i) => colors[i % colors.length]);
-    
-    batchChartInstances.questionTypeAccuracy = new Chart(canvas, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: '分数准确率',
-                data: accuracyData,
-                backgroundColor: backgroundColors,
-                borderRadius: 6,
-                barThickness: 32
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: 'y',
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: { 
-                        font: { size: 11 }, 
-                        color: '#86868b',
-                        callback: v => v + '%'
-                    },
-                    grid: { color: '#f0f0f2' }
-                },
-                y: {
-                    ticks: { font: { size: 13, weight: 500 }, color: '#1d1d1f' },
-                    grid: { display: false }
-                }
-            },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const total = totalData[context.dataIndex];
-                            return `分数准确率: ${context.parsed.x}% (共${total}题)`;
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-// 收集分数数据并按题型分类
-function collectScoreDataByType(completedItems) {
-    const typeStats = {
-        choice: { total: 0, correct: 0 },
-        objective_fill: { total: 0, correct: 0 },
-        subjective: { total: 0, correct: 0 }
-    };
-    
-    completedItems.forEach(item => {
-        const evaluation = item.evaluation || {};
-        const errors = evaluation.errors || [];
-        
-        errors.forEach(err => {
-            const baseEffect = err.base_effect || {};
-            const aiResult = err.ai_result || {};
-            
-            // 只处理有分数数据的题目
-            if (baseEffect.score !== undefined && baseEffect.score !== null) {
-                const baseScore = parseFloat(baseEffect.score) || 0;
-                const aiScore = aiResult.score !== undefined && aiResult.score !== null 
-                    ? parseFloat(aiResult.score) : null;
-                
-                // 判断题型分类
-                const questionType = classifyQuestionType(baseEffect, err.question_category);
-                
-                if (typeStats[questionType]) {
-                    typeStats[questionType].total++;
-                    // 分数一致则计为正确
-                    if (aiScore !== null && Math.abs(aiScore - baseScore) < 0.01) {
-                        typeStats[questionType].correct++;
-                    }
-                }
-            }
-        });
-    });
-    
-    return typeStats;
-}
-
-// 渲染页面分数准确率图表（单页时使用）
-function renderPageScoreAccuracyChart(completedItems) {
-    const canvas = document.getElementById('pageScoreConsistencyChart');
-    if (!canvas) return;
-    
-    // 收集分数数据
-    const scoreData = collectScoreDataByType(completedItems);
-    
-    // 计算总体分数准确率
-    let totalQuestions = 0;
-    let correctQuestions = 0;
-    Object.values(scoreData).forEach(s => {
-        totalQuestions += s.total;
-        correctQuestions += s.correct;
-    });
-    
-    if (totalQuestions === 0) {
-        const ctx = canvas.getContext('2d');
-        ctx.font = '14px sans-serif';
-        ctx.fillStyle = '#86868b';
-        ctx.textAlign = 'center';
-        ctx.fillText('暂无分数数据', canvas.width / 2, canvas.height / 2);
-        return;
-    }
-    
-    const accuracy = (correctQuestions / totalQuestions * 100).toFixed(1);
-    const errorRate = (100 - parseFloat(accuracy)).toFixed(1);
-    
-    // 使用环形图展示准确率
-    batchChartInstances.pageScoreConsistency = new Chart(canvas, {
-        type: 'doughnut',
-        data: {
-            labels: ['分数一致', '分数不一致'],
-            datasets: [{
-                data: [correctQuestions, totalQuestions - correctQuestions],
-                backgroundColor: ['#10b981', '#ef4444'],
-                borderWidth: 2,
-                borderColor: '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '60%',
-            plugins: {
-                legend: { 
-                    position: 'bottom',
-                    labels: { padding: 12, font: { size: 12 }, color: '#1d1d1f', boxWidth: 12 }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const value = context.parsed || 0;
-                            const percentage = ((value / totalQuestions) * 100).toFixed(1);
-                            return `${context.label}: ${value}题 (${percentage}%)`;
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-// 渲染页面分数一致性率图表（垂直柱状图，多页时使用）
-function renderPageScoreConsistencyChart(completedItems) {
-    const canvas = document.getElementById('pageScoreConsistencyChart');
-    if (!canvas) return;
-    
-    // 计算每页的分数一致性率
-    const pageConsistency = calculatePageScoreConsistency(completedItems);
-    
-    if (Object.keys(pageConsistency).length === 0) {
-        // 没有数据时显示提示
-        const ctx = canvas.getContext('2d');
-        ctx.font = '14px sans-serif';
-        ctx.fillStyle = '#86868b';
-        ctx.textAlign = 'center';
-        ctx.fillText('暂无分数一致性数据', canvas.width / 2, canvas.height / 2);
-        return;
-    }
-    
-    // 按页码排序
-    const sortedPages = Object.keys(pageConsistency).sort((a, b) => {
-        const numA = parseInt(a) || 0;
-        const numB = parseInt(b) || 0;
-        return numA - numB;
-    });
-    
-    const labels = sortedPages.map(p => `P${p}`);
-    const consistencyData = sortedPages.map(p => pageConsistency[p].rate.toFixed(1));
-    const detailData = sortedPages.map(p => pageConsistency[p]);
-    
-    // 配色：使用蓝绿渐变色系，低于70%用警示色
-    const backgroundColors = consistencyData.map(rate => {
-        const r = parseFloat(rate);
-        if (r < 70) return '#ef4444';  // 红色警示
-        if (r < 85) return '#f59e0b';  // 橙色提醒
-        return '#10b981';  // 绿色正常
-    });
-    
-    batchChartInstances.pageScoreConsistency = new Chart(canvas, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: '一致性率',
-                data: consistencyData,
-                backgroundColor: backgroundColors,
-                borderRadius: 4,
-                barThickness: 24
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: { 
-                        font: { size: 11 }, 
-                        color: '#86868b',
-                        callback: v => v + '%'
-                    },
-                    grid: { color: '#f0f0f2' }
-                },
-                x: {
-                    ticks: { font: { size: 11 }, color: '#1d1d1f' },
-                    grid: { display: false }
-                }
-            },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const detail = detailData[context.dataIndex];
-                            return [
-                                `一致性率: ${context.parsed.y}%`,
-                                `一致题数: ${detail.consistent}/${detail.total}`,
-                                `检测作业: ${detail.homeworkCount}份`
-                            ];
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-// 计算每页的分数一致性率
-// 逻辑：同一页码、同一题号，多份作业的AI判分是否一致
-function calculatePageScoreConsistency(completedItems) {
-    // 按页码分组收集数据
-    // 结构: { pageNum: { questionIndex: [score1, score2, ...] } }
-    const pageData = {};
-    
-    completedItems.forEach(item => {
-        const pageNum = item.page_num || '?';
-        const aiResult = item.ai_result || [];
-        
-        // 展开children结构
-        const flatResult = flattenHomeworkResult(aiResult);
-        
-        flatResult.forEach(q => {
-            const qIndex = q.index || q.tempIndex || '?';
-            const score = q.score;
-            
-            // 只处理有分数的题目
-            if (score !== undefined && score !== null) {
-                if (!pageData[pageNum]) pageData[pageNum] = {};
-                if (!pageData[pageNum][qIndex]) pageData[pageNum][qIndex] = [];
-                pageData[pageNum][qIndex].push(parseFloat(score) || 0);
-            }
-        });
-    });
-    
-    // 计算每页的一致性率
-    const pageConsistency = {};
-    
-    Object.entries(pageData).forEach(([pageNum, questions]) => {
-        let consistentCount = 0;
-        let totalQuestions = 0;
-        let homeworkCount = 0;
-        
-        Object.entries(questions).forEach(([qIndex, scores]) => {
-            if (scores.length > 1) {
-                totalQuestions++;
-                // 检查所有分数是否一致
-                const allSame = scores.every(s => s === scores[0]);
-                if (allSame) consistentCount++;
-                // 记录最大作业数
-                if (scores.length > homeworkCount) homeworkCount = scores.length;
-            }
-        });
-        
-        if (totalQuestions > 0) {
-            pageConsistency[pageNum] = {
-                rate: (consistentCount / totalQuestions) * 100,
-                consistent: consistentCount,
-                total: totalQuestions,
-                homeworkCount: homeworkCount
-            };
-        }
-    });
-    
-    return pageConsistency;
-}
-
-// 收集分数数据（包含题型分类）
-function collectScoreData(completedItems) {
-    const scoreData = [];
-    
-    completedItems.forEach(item => {
-        const evaluation = item.evaluation || {};
-        const errors = evaluation.errors || [];
-        
-        // 从错误列表中提取分数数据
-        errors.forEach(err => {
-            const baseEffect = err.base_effect || {};
-            const aiResult = err.ai_result || {};
-            
-            // 只处理有分数数据的题目
-            if (baseEffect.score !== undefined && baseEffect.score !== null) {
-                const baseScore = parseFloat(baseEffect.score) || 0;
-                const aiScore = aiResult.score !== undefined && aiResult.score !== null ? parseFloat(aiResult.score) : baseScore;
-                
-                // 判断题型分类
-                const questionType = classifyQuestionType(baseEffect, err.question_category);
-                
-                scoreData.push({
-                    index: err.index || '?',
-                    baseScore: baseScore,
-                    aiScore: aiScore,
-                    diff: aiScore - baseScore,
-                    pageNum: item.page_num || '?',
-                    questionType: questionType
-                });
-            }
-        });
-    });
-    
-    return scoreData;
-}
-
-// 判断题型分类：选择题、客观填空、主观题
-function classifyQuestionType(baseEffect, questionCategory) {
-    // 优先从 question_category 获取
-    if (questionCategory) {
-        if (questionCategory.is_choice) return 'choice';
-        if (questionCategory.is_fill) return 'objective_fill';
-        if (questionCategory.is_subjective) return 'subjective';
-    }
-    
-    // 从 bvalue 推断
-    const bvalue = String(baseEffect?.bvalue || '');
-    const qtype = baseEffect?.questionType || '';
-    
-    // 选择题: bvalue 1(单选), 2(多选), 3(判断)
-    if (['1', '2', '3'].includes(bvalue)) return 'choice';
-    
-    // 客观填空: questionType=objective 且 bvalue=4
-    if (qtype === 'objective' && bvalue === '4') return 'objective_fill';
-    
-    // 其他为主观题
-    return 'subjective';
-}
-
-// 旧的 showAccuracyDetail 函数已移除，使用新版本（在文件后面定义）
+// 旧的分数图表函数已移至 modules/score-charts.js
 
 // ========== 计算识别准确率和批改准确率 ==========
 // 简化版：直接使用后端计算的 correct_count 和 error_distribution
@@ -1815,7 +1360,8 @@ function aggregateErrorDistribution() {
         '识别差异-判断正确': 0,  // 语文主观题模糊匹配
         '格式差异': 0,
         '缺失题目': 0,
-        'AI识别幻觉': 0
+        'AI识别幻觉': 0,
+        '分数不一致': 0  // 识别正确+判断正确但分数不一致
     };
     
     if (!selectedTask || !selectedTask.homework_items) return dist;

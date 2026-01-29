@@ -5,6 +5,8 @@ Flask 应用初始化和蓝图注册
 import os
 import secrets
 import atexit
+import gzip
+from io import BytesIO
 from flask import Flask, request, send_from_directory
 from datetime import timedelta
 
@@ -22,7 +24,28 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000  # 1年缓存
 
 @app.after_request
 def add_cache_headers(response):
-    """为静态资源添加缓存头，提升加载速度"""
+    """为静态资源添加缓存头和 gzip 压缩，提升加载速度"""
+    # gzip 压缩：对 API JSON 响应启用（静态文件由 send_file 处理，不在这里压缩）
+    if (response.status_code == 200 and 
+        response.content_type and
+        'application/json' in response.content_type and
+        'gzip' in request.headers.get('Accept-Encoding', '') and
+        'Content-Encoding' not in response.headers and
+        not response.direct_passthrough):
+        
+        try:
+            data = response.get_data()
+            if len(data) > 500:  # 只压缩大于 500 字节的响应
+                gzip_buffer = BytesIO()
+                with gzip.GzipFile(mode='wb', fileobj=gzip_buffer, compresslevel=6) as f:
+                    f.write(data)
+                response.set_data(gzip_buffer.getvalue())
+                response.headers['Content-Encoding'] = 'gzip'
+                response.headers['Content-Length'] = len(response.get_data())
+                response.headers['Vary'] = 'Accept-Encoding'
+        except Exception:
+            pass  # 压缩失败时静默忽略
+    
     if request.path.startswith('/static/'):
         # CSS/JS 文件使用版本号控制，可以长期缓存
         if request.path.endswith(('.css', '.js')):

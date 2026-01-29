@@ -86,45 +86,9 @@ def get_cached_task_summaries():
             # 只提取列表展示需要的字段
             overall_report = task_data.get('overall_report') or {}
             
-            # 检测任务是否包含分数数据
-            # 优先级：1. overall_report.has_score 2. evaluation.has_score 3. 从数据集检测 maxScore
-            has_score = overall_report.get('has_score', False)
-            if not has_score:
-                # 从homework_items中检测是否有分数数据
-                for hw in homework_items:
-                    eval_data = hw.get('evaluation') or {}
-                    # 检测 evaluation.has_score
-                    if eval_data.get('has_score'):
-                        has_score = True
-                        break
-                    # 检测 errors 中的 base_effect.score
-                    errors = eval_data.get('errors', [])
-                    for err in errors:
-                        base_effect = err.get('base_effect', {})
-                        if base_effect.get('score') is not None:
-                            has_score = True
-                            break
-                    if has_score:
-                        break
-            
-            # 如果还没检测到，从数据集的 base_effects 中检测 maxScore
-            if not has_score:
-                matched_dataset = None
-                for hw in homework_items:
-                    if hw.get('matched_dataset'):
-                        matched_dataset = hw.get('matched_dataset')
-                        break
-                if matched_dataset:
-                    ds_data = StorageService.load_dataset(matched_dataset)
-                    if ds_data:
-                        base_effects = ds_data.get('base_effects', {})
-                        for page_key, items in base_effects.items():
-                            for item in items:
-                                if item.get('maxScore') is not None or item.get('score') is not None:
-                                    has_score = True
-                                    break
-                            if has_score:
-                                break
+            # 优化：直接从任务数据或 overall_report 读取预计算的 has_score
+            # 不再遍历 homework_items 和加载数据集
+            has_score = task_data.get('has_score', False) or overall_report.get('has_score', False)
             
             tasks.append({
                 'task_id': task_data.get('task_id', task_id),
@@ -651,6 +615,127 @@ def classify_question_type(question_data):
         'is_parent': is_parent,
         'choice_type': choice_type
     }
+
+
+def calculate_score_accuracy_by_type(base_effect, homework_result, type_map=None):
+    """
+    模块化函数：按题型统计分数准确率
+    
+    遍历全部题目，按题型分类，判断AI判分与基准分数是否一致
+    
+    Args:
+        base_effect: 基准效果数据列表
+        homework_result: AI批改结果列表（已展开children）
+        type_map: 题目类型映射（可选，用于获取 bvalue 和 questionType）
+        
+    Returns:
+        {
+            'choice': {'score_total': int, 'score_accurate': int, 'score_higher': int, 'score_lower': int, 'score_accuracy': float},
+            'objective_fill': {...},
+            'subjective': {...}
+        }
+    """
+    # 初始化统计数据
+    type_stats = {
+        'choice': {'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0},
+        'objective_fill': {'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0},
+        'subjective': {'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0}
+    }
+    
+    # 构建AI批改结果的索引映射（按题号和tempIndex）
+    hw_dict_by_index = {}
+    hw_dict_by_tempindex = {}
+    
+    for i, item in enumerate(homework_result):
+        idx = str(item.get('index', ''))
+        normalized_idx = normalize_index(idx)
+        if normalized_idx:
+            hw_dict_by_index[normalized_idx] = item
+        
+        temp_idx = item.get('tempIndex')
+        if temp_idx is not None:
+            hw_dict_by_tempindex[int(temp_idx)] = item
+        else:
+            hw_dict_by_tempindex[i] = item
+    
+    # 遍历全部基准效果题目
+    for i, base_item in enumerate(base_effect):
+        idx = str(base_item.get('index', ''))
+        normalized_idx = normalize_index(idx)
+        base_temp_idx = base_item.get('tempIndex', i)
+        if base_temp_idx is not None:
+            base_temp_idx = int(base_temp_idx)
+        
+        # 匹配对应的AI批改结果
+        hw_item = hw_dict_by_index.get(normalized_idx) or hw_dict_by_tempindex.get(base_temp_idx)
+        
+        # 获取题目类型
+        type_info = None
+        if type_map:
+            type_info = type_map.get(f'idx_{normalized_idx}') or type_map.get(f'temp_{base_temp_idx}')
+        
+        if type_info:
+            type_source = {
+                'bvalue': type_info.get('bvalue', ''),
+                'questionType': type_info.get('questionType', '')
+            }
+        elif base_item.get('bvalue'):
+            type_source = base_item
+        elif hw_item and hw_item.get('bvalue'):
+            type_source = hw_item
+        else:
+            type_source = base_item
+        
+        question_category = classify_question_type(type_source)
+        
+        # 跳过大题（有children的题目）
+        if question_category['is_parent']:
+            continue
+        
+        # 确定题型分类键
+        if question_category['is_choice']:
+            type_key = 'choice'
+        elif question_category['is_fill']:
+            type_key = 'objective_fill'
+        else:
+            type_key = 'subjective'
+        
+        # 获取分数（兼容 score、sorce、maxScore 字段）
+        base_score = base_item.get('score')
+        if base_score is None:
+            base_score = base_item.get('sorce')
+        if base_score is None:
+            base_score = base_item.get('maxScore')
+        
+        ai_score = hw_item.get('score') if hw_item else None
+        
+        # 只统计两边都有分数数据的题目
+        if base_score is not None and ai_score is not None:
+            try:
+                base_num = float(base_score)
+                ai_num = float(ai_score)
+                
+                # 累加题型统计
+                type_stats[type_key]['score_total'] += 1
+                
+                # 判断分数是否一致（误差小于0.001）
+                if abs(ai_num - base_num) < 0.001:
+                    type_stats[type_key]['score_accurate'] += 1
+                elif ai_num > base_num:
+                    type_stats[type_key]['score_higher'] += 1
+                else:
+                    type_stats[type_key]['score_lower'] += 1
+                    
+            except (ValueError, TypeError):
+                pass  # 分数转换失败，跳过
+    
+    # 计算各题型的分数准确率
+    for key in type_stats:
+        score_total = type_stats[key]['score_total']
+        score_accurate = type_stats[key]['score_accurate']
+        type_stats[key]['score_accuracy'] = score_accurate / score_total if score_total > 0 else 0
+    
+    return type_stats
 
 
 def calculate_type_statistics(questions, results):
@@ -2464,16 +2549,26 @@ def batch_evaluate(task_id):
             except Exception as e:
                 item['status'] = 'failed'
                 item['error'] = str(e)
-                item['evaluation'] = {'accuracy': 0, 'total_questions': 0, 'correct_count': 0, 'error_count': 0, 'errors': [], 'by_question_type': {}, 'by_bvalue': {}, 'by_combined': {}}
+                item['evaluation'] = {'accuracy': 0, 'total_questions': 0, 'correct_count': 0, 'error_count': 0, 'errors': [], 'by_question_type': {}, 'by_bvalue': {}, 'by_combined': {}, 'score_accuracy_stats': {}}
                 yield f"data: {json.dumps({'type': 'error', 'homework_id': homework_id, 'error': str(e)})}\n\n"
         
         overall_accuracy = total_correct / total_questions if total_questions > 0 else 0
         
         # 汇总所有作业的题目类型统计: 选择题、客观填空题、主观题
         aggregated_type_stats = {
-            'choice': {'total': 0, 'correct': 0, 'accuracy': 0},
-            'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0},
-            'subjective': {'total': 0, 'correct': 0, 'accuracy': 0}
+            'choice': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0},
+            'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0},
+            'subjective': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0}
+        }
+        
+        # 汇总所有作业的分数比对统计（用于判分准确率图表）
+        aggregated_score_accuracy = {
+            'total': 0,       # 有分数数据的题目总数
+            'accurate': 0,    # 分数一致的题目数
+            'higher': 0,      # AI分数偏高的题目数
+            'lower': 0,       # AI分数偏低的题目数
+            'higher_sum': 0,  # 偏高的总分差
+            'lower_sum': 0    # 偏低的总分差
         }
         
         # 汇总bvalue细分统计
@@ -2504,11 +2599,17 @@ def batch_evaluate(task_id):
             by_type = evaluation.get('by_question_type') or {}
             by_bvalue = evaluation.get('by_bvalue') or {}
             by_combined = evaluation.get('by_combined') or {}
+            score_stats = evaluation.get('score_accuracy_stats') or {}
             
             for key in aggregated_type_stats:
                 if key in by_type:
                     aggregated_type_stats[key]['total'] += by_type[key].get('total', 0)
                     aggregated_type_stats[key]['correct'] += by_type[key].get('correct', 0)
+                    # 聚合分数字段
+                    aggregated_type_stats[key]['score_total'] += by_type[key].get('score_total', 0)
+                    aggregated_type_stats[key]['score_accurate'] += by_type[key].get('score_accurate', 0)
+                    aggregated_type_stats[key]['score_higher'] += by_type[key].get('score_higher', 0)
+                    aggregated_type_stats[key]['score_lower'] += by_type[key].get('score_lower', 0)
             
             for key in aggregated_bvalue_stats:
                 if key in by_bvalue:
@@ -2519,12 +2620,20 @@ def batch_evaluate(task_id):
                 if key in by_combined:
                     aggregated_combined_stats[key]['total'] += by_combined[key].get('total', 0)
                     aggregated_combined_stats[key]['correct'] += by_combined[key].get('correct', 0)
+            
+            # 聚合分数比对统计
+            for key in aggregated_score_accuracy:
+                aggregated_score_accuracy[key] += score_stats.get(key, 0)
         
         # 计算汇总准确率
         for key in aggregated_type_stats:
             total_count = aggregated_type_stats[key]['total']
             correct = aggregated_type_stats[key]['correct']
             aggregated_type_stats[key]['accuracy'] = correct / total_count if total_count > 0 else 0
+            # 计算分数准确率
+            score_total = aggregated_type_stats[key]['score_total']
+            score_accurate = aggregated_type_stats[key]['score_accurate']
+            aggregated_type_stats[key]['score_accuracy'] = score_accurate / score_total if score_total > 0 else 0
         
         for key in aggregated_bvalue_stats:
             total_count = aggregated_bvalue_stats[key]['total']
@@ -2537,6 +2646,16 @@ def batch_evaluate(task_id):
             aggregated_combined_stats[key]['accuracy'] = correct / total_count if total_count > 0 else 0
         
         task_data['status'] = 'completed'
+        
+        # 计算 has_score：检查任何一个作业的评估结果是否包含分数数据
+        has_score = False
+        for item in homework_items:
+            evaluation = item.get('evaluation') or {}
+            if evaluation.get('has_score'):
+                has_score = True
+                break
+        task_data['has_score'] = has_score
+        
         task_data['overall_report'] = {
             'overall_accuracy': overall_accuracy,
             'total_homework': len(homework_items),
@@ -2544,7 +2663,9 @@ def batch_evaluate(task_id):
             'correct_questions': total_correct,
             'by_question_type': aggregated_type_stats,
             'by_bvalue': aggregated_bvalue_stats,
-            'by_combined': aggregated_combined_stats
+            'by_combined': aggregated_combined_stats,
+            'has_score': has_score,
+            'score_accuracy_stats': aggregated_score_accuracy
         }
         
         StorageService.save_batch_task(task_id, task_data)
@@ -2588,10 +2709,11 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         '识别错误-判断错误': 0,
         '识别正确-判断错误': 0,
         '识别题干-判断正确': 0,
-        '识别差异-判断正确': 0,  # 新增：语文主观题模糊匹配
+        '识别差异-判断正确': 0,  # 语文主观题模糊匹配
         '格式差异': 0,
         '缺失题目': 0,
-        'AI识别幻觉': 0
+        'AI识别幻觉': 0,
+        '分数不一致': 0  # 识别正确+判断正确但分数不一致
     }
     
     # 检测基准效果中是否有分数字段（兼容 score、sorce、maxScore 三种字段名）
@@ -2599,6 +2721,16 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         item.get('score') is not None or item.get('sorce') is not None or item.get('maxScore') is not None
         for item in base_effect
     )
+    
+    # 分数比对统计（用于判分准确率图表）
+    score_accuracy_stats = {
+        'total': 0,       # 有分数数据的题目总数
+        'accurate': 0,    # 分数一致的题目数
+        'higher': 0,      # AI分数偏高的题目数
+        'lower': 0,       # AI分数偏低的题目数
+        'higher_sum': 0,  # 偏高的总分差
+        'lower_sum': 0    # 偏低的总分差
+    }
     
     # 从 data_value 构建题目类型映射（按 index 和 tempIndex）
     type_map = {}
@@ -2624,10 +2756,11 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
             add_to_type_map(item)
     
     # 题目类型分类统计: 选择题、客观填空题、主观题（三类互不包含）
+    # 新增 score_* 字段用于按题型统计分数准确率
     type_stats = {
-        'choice': {'total': 0, 'correct': 0, 'accuracy': 0},           # 选择题 (bvalue=1,2,3)
-        'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0},   # 客观填空题 (questionType=objective且bvalue=4)
-        'subjective': {'total': 0, 'correct': 0, 'accuracy': 0}        # 主观题 (其他)
+        'choice': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0},           # 选择题 (bvalue=1,2,3)
+        'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0},   # 客观填空题 (questionType=objective且bvalue=4)
+        'subjective': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0}        # 主观题 (其他)
     }
     
     # 按bvalue细分统计 (1=单选, 2=多选, 3=判断, 4=填空, 5=解答)
@@ -2655,7 +2788,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
     
     # 如果启用AI比对
     if use_ai_compare:
-        ai_result = do_ai_compare_batch(base_effect, homework_result, user_id=user_id)
+        ai_result = do_ai_compare_batch(base_effect, homework_result, user_id=user_id, type_map=type_map)
         if ai_result:
             return ai_result
     
@@ -2989,8 +3122,30 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
             if combined_key in combined_stats:
                 combined_stats[combined_key]['correct'] += 1
             
-            # 格式差异、识别题干、识别差异虽然计入正确，但仍记录到分布和详情中
-            if error_type in ('格式差异', '识别题干-判断正确', '识别差异-判断正确'):
+            # 检查分数不一致（识别正确+判断正确但得分不同）
+            # 比对的是"得分"（score），不是"总分"（maxScore）
+            base_score_val = base_item.get('score')
+            ai_score_val = hw_item.get('score') if hw_item else None
+            
+            # 判断分数是否不一致（仅当两边都有得分数据时才比较）
+            score_mismatch = False
+            if base_score_val is not None and ai_score_val is not None:
+                base_score_num = float(base_score_val) if base_score_val != '' else None
+                ai_score_num = float(ai_score_val) if ai_score_val != '' else None
+                if base_score_num is not None and ai_score_num is not None:
+                    # 分数完全相等才算一致
+                    if abs(base_score_num - ai_score_num) >= 0.001:
+                        score_mismatch = True
+                        error_type = '分数不一致'
+                        score_diff = ai_score_num - base_score_num
+                        if score_diff > 0:
+                            explanation = f'识别和判断正确，但AI判分偏高：基准={base_score_num}分，AI={ai_score_num}分（+{score_diff:.1f}分）'
+                        else:
+                            explanation = f'识别和判断正确，但AI判分偏低：基准={base_score_num}分，AI={ai_score_num}分（{score_diff:.1f}分）'
+                        severity = 'medium'
+            
+            # 格式差异、识别题干、识别差异、分数不一致虽然计入正确，但仍记录到分布和详情中
+            if error_type in ('格式差异', '识别题干-判断正确', '识别差异-判断正确', '分数不一致'):
                 error_distribution[error_type] = error_distribution.get(error_type, 0) + 1
                 # 记录到详情中展示
                 recognition_match = normalize_answer(base_user) == normalize_answer(hw_user) if base_user or hw_user else None
@@ -3071,6 +3226,63 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
                 # 添加题目类型标注
                 'question_category': question_category
             })
+        
+        # 统计分数比对（无论题目是否正确，只要有分数数据就统计）
+        # 比对的是"得分"（score），不是"总分"（maxScore）
+        if has_score_in_base and hw_item:
+            # 获取基准得分（优先取 score，这是实际得分）
+            base_score_for_stats = base_item.get('score')
+            ai_score_for_stats = hw_item.get('score')
+            
+            # 只有两边都有得分数据时才统计
+            if base_score_for_stats is not None and ai_score_for_stats is not None:
+                try:
+                    base_num = float(base_score_for_stats)
+                    ai_num = float(ai_score_for_stats)
+                    score_accuracy_stats['total'] += 1
+                    
+                    # 确定题型分类键
+                    if question_category['is_choice']:
+                        type_key = 'choice'
+                    elif question_category['is_fill']:
+                        type_key = 'objective_fill'
+                    else:
+                        type_key = 'subjective'
+                    
+                    # 按题型累加分数统计
+                    type_stats[type_key]['score_total'] += 1
+                    
+                    if abs(ai_num - base_num) < 0.001:
+                        # 分数一致
+                        score_accuracy_stats['accurate'] += 1
+                        type_stats[type_key]['score_accurate'] += 1
+                    elif ai_num > base_num:
+                        # AI分数偏高
+                        score_accuracy_stats['higher'] += 1
+                        score_accuracy_stats['higher_sum'] += (ai_num - base_num)
+                        type_stats[type_key]['score_higher'] += 1
+                    else:
+                        # AI分数偏低
+                        score_accuracy_stats['lower'] += 1
+                        score_accuracy_stats['lower_sum'] += (base_num - ai_num)
+                        type_stats[type_key]['score_lower'] += 1
+                except (ValueError, TypeError):
+                    pass  # 分数转换失败，跳过统计
+    
+    # 使用模块化函数统计分数准确率（遍历全部题目）
+    score_stats_by_type = calculate_score_accuracy_by_type(base_effect, flat_homework, type_map)
+    print(f"[DEBUG] do_evaluation(第1处) 分数统计结果: {score_stats_by_type}")
+    
+    # 将分数统计结果合并到 type_stats
+    for key in type_stats:
+        if key in score_stats_by_type:
+            type_stats[key]['score_total'] = score_stats_by_type[key]['score_total']
+            type_stats[key]['score_accurate'] = score_stats_by_type[key]['score_accurate']
+            type_stats[key]['score_higher'] = score_stats_by_type[key]['score_higher']
+            type_stats[key]['score_lower'] = score_stats_by_type[key]['score_lower']
+            type_stats[key]['score_accuracy'] = score_stats_by_type[key]['score_accuracy']
+    
+    print(f"[DEBUG] do_evaluation(第1处) 合并后 type_stats.choice: {type_stats['choice']}")
     
     # 计算题目类型准确率
     for key in type_stats:
@@ -3119,14 +3331,21 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         'by_question_type': type_stats,
         'by_bvalue': bvalue_stats,
         'by_combined': combined_stats,
-        'has_score': has_score_in_base
+        'has_score': has_score_in_base,
+        'score_accuracy_stats': score_accuracy_stats
     }
 
 
-def do_ai_compare_batch(base_effect, homework_result, user_id=None):
+def do_ai_compare_batch(base_effect, homework_result, user_id=None, type_map=None):
     """
     批量评估中使用语义级评估系统
     使用 SemanticEvalService 进行更精准的 AI 批改效果分析
+    
+    Args:
+        base_effect: 基准效果数据
+        homework_result: AI批改结果
+        user_id: 用户ID
+        type_map: 题目类型映射（从 data_value 构建）
     """
     config = ConfigService.load_config(user_id=user_id)
     
@@ -3176,7 +3395,8 @@ def do_ai_compare_batch(base_effect, homework_result, user_id=None):
         return convert_semantic_to_batch_result(
             semantic_result, 
             base_effect, 
-            homework_result
+            homework_result,
+            type_map
         )
         
     except Exception as e:
@@ -3186,9 +3406,15 @@ def do_ai_compare_batch(base_effect, homework_result, user_id=None):
         return None
 
 
-def convert_semantic_to_batch_result(semantic_result, base_effect, homework_result):
+def convert_semantic_to_batch_result(semantic_result, base_effect, homework_result, type_map=None):
     """
     将语义评估结果转换为批量评估结果格式
+    
+    Args:
+        semantic_result: 语义评估结果
+        base_effect: 基准效果数据
+        homework_result: AI批改结果
+        type_map: 题目类型映射（从 data_value 构建）
     """
     total = len(base_effect)
     correct_count = 0
@@ -3204,10 +3430,11 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
     }
     
     # 题目类型分类统计: 选择题、客观填空题、主观题（三类互不包含）
+    # 新增 score_* 字段用于按题型统计分数准确率
     type_stats = {
-        'choice': {'total': 0, 'correct': 0, 'accuracy': 0},           # 选择题 (bvalue=1,2,3)
-        'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0},   # 客观填空题 (questionType=objective且bvalue=4)
-        'subjective': {'total': 0, 'correct': 0, 'accuracy': 0}        # 主观题 (其他)
+        'choice': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0},           # 选择题 (bvalue=1,2,3)
+        'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0},   # 客观填空题 (questionType=objective且bvalue=4)
+        'subjective': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0}        # 主观题 (其他)
     }
     
     # 按bvalue细分统计 (1=单选, 2=多选, 3=判断, 4=填空, 5=解答)
@@ -3364,6 +3591,21 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
                     'suggestion': sem_result.get('suggestion', '')
                 }
             })
+    
+    # 使用模块化函数统计分数准确率（遍历全部题目）
+    score_stats_by_type = calculate_score_accuracy_by_type(base_effect, flat_homework, type_map)
+    print(f"[DEBUG] do_evaluation(第2处) 分数统计结果: {score_stats_by_type}")
+    
+    # 将分数统计结果合并到 type_stats
+    for key in type_stats:
+        if key in score_stats_by_type:
+            type_stats[key]['score_total'] = score_stats_by_type[key]['score_total']
+            type_stats[key]['score_accurate'] = score_stats_by_type[key]['score_accurate']
+            type_stats[key]['score_higher'] = score_stats_by_type[key]['score_higher']
+            type_stats[key]['score_lower'] = score_stats_by_type[key]['score_lower']
+            type_stats[key]['score_accuracy'] = score_stats_by_type[key]['score_accuracy']
+    
+    print(f"[DEBUG] do_evaluation(第2处) 合并后 type_stats.choice: {type_stats['choice']}")
     
     # 计算题目类型准确率
     for key in type_stats:
@@ -3913,9 +4155,9 @@ def batch_ai_evaluate(task_id):
         
         # 汇总所有作业的题目类型统计: 选择题、客观填空题、主观题
         aggregated_type_stats = {
-            'choice': {'total': 0, 'correct': 0, 'accuracy': 0},
-            'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0},
-            'subjective': {'total': 0, 'correct': 0, 'accuracy': 0}
+            'choice': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0},
+            'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0},
+            'subjective': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0}
         }
         
         # 汇总bvalue细分统计
@@ -3951,6 +4193,11 @@ def batch_ai_evaluate(task_id):
                 if key in by_type:
                     aggregated_type_stats[key]['total'] += by_type[key].get('total', 0)
                     aggregated_type_stats[key]['correct'] += by_type[key].get('correct', 0)
+                    # 聚合分数字段
+                    aggregated_type_stats[key]['score_total'] += by_type[key].get('score_total', 0)
+                    aggregated_type_stats[key]['score_accurate'] += by_type[key].get('score_accurate', 0)
+                    aggregated_type_stats[key]['score_higher'] += by_type[key].get('score_higher', 0)
+                    aggregated_type_stats[key]['score_lower'] += by_type[key].get('score_lower', 0)
             
             for key in aggregated_bvalue_stats:
                 if key in by_bvalue:
@@ -3967,6 +4214,10 @@ def batch_ai_evaluate(task_id):
             total_count = aggregated_type_stats[key]['total']
             correct = aggregated_type_stats[key]['correct']
             aggregated_type_stats[key]['accuracy'] = correct / total_count if total_count > 0 else 0
+            # 计算分数准确率
+            score_total = aggregated_type_stats[key]['score_total']
+            score_accurate = aggregated_type_stats[key]['score_accurate']
+            aggregated_type_stats[key]['score_accuracy'] = score_accurate / score_total if score_total > 0 else 0
         
         for key in aggregated_bvalue_stats:
             total_count = aggregated_bvalue_stats[key]['total']
@@ -3979,6 +4230,16 @@ def batch_ai_evaluate(task_id):
             aggregated_combined_stats[key]['accuracy'] = correct / total_count if total_count > 0 else 0
         
         task_data['status'] = 'completed'
+        
+        # 计算 has_score：检查任何一个作业的评估结果是否包含分数数据
+        has_score = False
+        for item in homework_items:
+            evaluation = item.get('evaluation') or {}
+            if evaluation.get('has_score'):
+                has_score = True
+                break
+        task_data['has_score'] = has_score
+        
         task_data['overall_report'] = {
             'overall_accuracy': overall_accuracy,
             'total_homework': len(homework_items),
@@ -3987,7 +4248,8 @@ def batch_ai_evaluate(task_id):
             'ai_evaluated': True,
             'by_question_type': aggregated_type_stats,
             'by_bvalue': aggregated_bvalue_stats,
-            'by_combined': aggregated_combined_stats
+            'by_combined': aggregated_combined_stats,
+            'has_score': has_score
         }
         
         StorageService.save_batch_task(task_id, task_data)

@@ -389,10 +389,25 @@ class StorageService:
         """删除数据集"""
         if USE_DB_STORAGE:
             from .database_service import AppDatabaseService
-            return AppDatabaseService.delete_dataset(dataset_id)
+            result = AppDatabaseService.delete_dataset(dataset_id)
+            # 清除数据集摘要缓存，确保列表立即更新
+            StorageService.clear_datasets_cache()
+            return result
         
         filepath = StorageService.get_file_path(StorageService.DATASETS_DIR, dataset_id)
-        return StorageService.delete_file(filepath)
+        result = StorageService.delete_file(filepath)
+        # 清除数据集摘要缓存
+        StorageService.clear_datasets_cache()
+        return result
+    
+    @staticmethod
+    def clear_datasets_cache():
+        """清除数据集相关缓存"""
+        try:
+            from .dashboard_service import DashboardService
+            DashboardService.clear_cache('datasets_summary')
+        except Exception as e:
+            print(f"[Storage] 清除数据集缓存失败: {e}")
     
     @staticmethod
     def list_datasets():

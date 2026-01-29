@@ -2678,6 +2678,18 @@ body {
     border: 1px solid #d2d2d7;
     border-radius: 4px;
     font-size: 14px;
+    text-align: center;
+}
+
+/* 隐藏 number 输入框的上下箭头，确保数字完整显示 */
+.form-input-small[type="number"]::-webkit-outer-spin-button,
+.form-input-small[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.form-input-small[type="number"] {
+    -moz-appearance: textfield;
 }
 
 .form-input {
@@ -7727,4 +7739,90 @@ body {
 
 .subject-check-content .prompt-config-item:last-child {
     margin-bottom: 0;
+}
+
+
+/* ========== 判分准确率图表样式 ========== */
+.score-accuracy-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    height: 200px;
+}
+
+.score-chart-container {
+    width: 180px;
+    height: 180px;
+    position: relative;
+}
+
+.score-chart-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.score-accuracy-summary {
+    display: flex;
+    align-items: center;
+}
+
+.accuracy-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+.accuracy-main {
+    padding: 0;
+    background: transparent;
+}
+
+.accuracy-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1d1d1f;
+    display: block;
+    line-height: 1.2;
+}
+
+.accuracy-label {
+    font-size: 13px;
+    color: #6e6e73;
+    margin-top: 4px;
+    display: block;
+}
+
+.accuracy-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.accuracy-details .detail-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    background: transparent;
+}
+
+.accuracy-details .detail-label {
+    font-size: 13px;
+    color: #1d1d1f;
+    min-width: 48px;
+}
+
+.accuracy-details .detail-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.accuracy-details .detail-sub {
+    font-size: 12px;
+    color: #6e6e73;
+    margin-left: 4px;
 }
