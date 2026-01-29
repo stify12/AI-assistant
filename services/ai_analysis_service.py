@@ -1296,9 +1296,9 @@ class AIAnalysisService:
         continuous = cls._detect_continuous_errors(task_data)
         anomalies.extend(continuous)
         
-        # 3. 检测批量缺失（整页或整本缺失）
-        missing = cls._detect_batch_missing(task_data)
-        anomalies.extend(missing)
+        # 3. 检测学生答案缺失（整页 useranswer 缺失或全为空）
+        missing_useranswer = cls._detect_missing_useranswer(task_data)
+        anomalies.extend(missing_useranswer)
         
         return anomalies
     
@@ -1411,43 +1411,94 @@ class AIAnalysisService:
         return anomalies[:5]
     
     @classmethod
-    def _detect_batch_missing(cls, task_data: dict) -> List[dict]:
-        """检测批量缺失"""
+    def _detect_missing_useranswer(cls, task_data: dict) -> List[dict]:
+        """
+        检测学生答案缺失（整页 useranswer 缺失或全为空）
+        
+        检测逻辑：
+        1. 遍历所有作业的 homework_result（AI批改结果）
+        2. 按页码分组，检查每页的所有题目
+        3. 如果一整页的所有题目都没有 useranswer 或全为空，标记为异常
+        
+        Returns:
+            list: 异常列表
+        """
         anomalies = []
         
-        # 统计每本书的题目数
-        book_stats = defaultdict(lambda: {'total': 0, 'missing': 0})
+        # 按页码分组统计
+        page_stats = defaultdict(lambda: {
+            'total_questions': 0,
+            'missing_useranswer': 0,
+            'homework_ids': set()
+        })
         
         for hw_item in task_data.get('homework_items', []):
             if hw_item.get('status') != 'completed':
                 continue
             
-            book_name = hw_item.get('book_name', '未知')
-            evaluation = hw_item.get('evaluation') or {}
-            errors = evaluation.get('errors') or []
+            homework_id = hw_item.get('homework_id', '')
+            page_num = hw_item.get('page_num', '')
             
-            book_stats[book_name]['total'] += evaluation.get('total_questions', 0)
+            # 解析 homework_result
+            homework_result_str = hw_item.get('homework_result', '[]')
+            try:
+                homework_result = json.loads(homework_result_str) if isinstance(homework_result_str, str) else homework_result_str
+            except:
+                continue
             
-            for error in errors:
-                if error.get('error_type') == '缺失题目':
-                    book_stats[book_name]['missing'] += 1
+            if not isinstance(homework_result, list) or not homework_result:
+                continue
+            
+            # 展开 children 结构
+            flattened_questions = []
+            for item in homework_result:
+                children = item.get('children', [])
+                if children and len(children) > 0:
+                    flattened_questions.extend(children)
+                else:
+                    flattened_questions.append(item)
+            
+            if not flattened_questions:
+                continue
+            
+            # 检查该页所有题目的 useranswer
+            page_key = f"{page_num}"
+            page_stats[page_key]['homework_ids'].add(homework_id)
+            
+            for q in flattened_questions:
+                page_stats[page_key]['total_questions'] += 1
+                
+                # 检查 useranswer 是否缺失或为空
+                user_answer = q.get('userAnswer', '')
+                if not user_answer or (isinstance(user_answer, str) and not user_answer.strip()):
+                    page_stats[page_key]['missing_useranswer'] += 1
         
-        for book_name, stats in book_stats.items():
-            if stats['total'] > 0 and stats['missing'] > 0:
-                missing_rate = stats['missing'] / stats['total']
-                if missing_rate > 0.1:
-                    anomalies.append({
-                        'anomaly_id': f"a_{uuid.uuid4().hex[:8]}",
-                        'anomaly_type': 'batch_missing',
-                        'severity': 'critical' if missing_rate > 0.3 else 'high',
-                        'base_user_answer': '',
-                        'correct_cases': [],
-                        'incorrect_cases': [],
-                        'inconsistency_rate': round(missing_rate, 4),
-                        'description': f"书本 '{book_name}' 有 {stats['missing']}/{stats['total']} 题缺失（{missing_rate*100:.1f}%）",
-                        'suggested_action': '检查该书本的题目识别和定位逻辑'
-                    })
+        # 分析统计结果，找出整页缺失的情况
+        for page_key, stats in page_stats.items():
+            total = stats['total_questions']
+            missing = stats['missing_useranswer']
+            
+            # 如果整页所有题目都缺失 useranswer
+            if total > 0 and missing == total:
+                homework_ids = list(stats['homework_ids'])
+                
+                anomalies.append({
+                    'anomaly_id': f"a_{uuid.uuid4().hex[:8]}",
+                    'anomaly_type': 'missing_useranswer',
+                    'severity': 'critical',
+                    'base_user_answer': '',
+                    'correct_cases': [],
+                    'incorrect_cases': [],
+                    'inconsistency_rate': 1.0,
+                    'description': f"页码 {page_key} 的 AI 批改结果缺失学生答案（{total} 题全部为空）",
+                    'suggested_action': f"检查作业 {', '.join(homework_ids[:3])} 的 OCR 识别或数据完整性",
+                    'affected_homework_ids': homework_ids,
+                    'page_num': page_key
+                })
         
+        # 按页码排序
+        anomalies.sort(key=lambda x: x.get('page_num', ''))
+        return anomalies
         return anomalies
     
     # ============================================

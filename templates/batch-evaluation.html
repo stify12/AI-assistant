@@ -12,7 +12,8 @@
     <link rel="preload" href="/static/css/batch-evaluation.css?v=20260128" as="style">
     <!-- 样式表 -->
     <link rel="stylesheet" href="/static/css/common.css?v=20260125">
-    <link rel="stylesheet" href="/static/css/batch-evaluation.css?v=20260128">
+    <link rel="stylesheet" href="/static/css/batch-evaluation.css?v=20260130">
+    <link rel="stylesheet" href="/static/css/modules/ai-report.css?v=20260130">
     <!-- Chart.js 和 html2canvas 改为按需加载，不在首屏加载 -->
     <!-- 首屏关键CSS -->
     <style>
@@ -612,23 +613,24 @@
     </div>
 
     <!-- AI分析报告弹窗 -->
-    <div class="modal" id="aiReportModal" onclick="hideAIReportModal()">
-        <div class="modal-content modal-xlarge" onclick="event.stopPropagation()">
-            <div class="modal-header">
+    <div class="ai-report-modal" id="aiReportModal" onclick="hideAIReportModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="ai-report-header">
                 <h3>AI 批改效果分析报告</h3>
-                <div class="modal-header-actions">
+                <div class="ai-report-header-actions">
+                    <span class="generated-time" id="reportGeneratedTime"></span>
                     <button class="btn btn-small btn-secondary" onclick="regenerateAIReport()">重新分析</button>
-                    <button class="close-btn" onclick="hideAIReportModal()">x</button>
+                    <button class="btn btn-small" onclick="hideAIReportModal()">✕</button>
                 </div>
             </div>
-            <div class="modal-body" id="aiReportModalBody">
-                <div class="ai-report-loading">
+            <div class="ai-report-body" id="aiReportModalBody">
+                <div class="report-loading">
                     <div class="spinner"></div>
-                    <div>正在生成分析报告...</div>
+                    <div class="loading-title">正在加载分析报告...</div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <span class="report-generated-time" id="reportGeneratedTime"></span>
+            <div class="ai-report-footer">
+                <button class="btn btn-secondary" onclick="copyAIReport()">复制文本</button>
                 <button class="btn btn-secondary" onclick="downloadReportScreenshot()">下载截图</button>
                 <button class="btn btn-primary" onclick="hideAIReportModal()">关闭</button>
             </div>
@@ -898,6 +900,7 @@
     <!-- 分数图表模块 -->
     <script src="/static/js/modules/score-charts.js?v=1"></script>
     <script src="/static/js/modules/score-accuracy.js?v=1"></script>
+    <script src="/static/js/modules/ai-report.js?v=20260130"></script>
     
     <!-- 主 JS 文件 -->
     <script src="/static/js/batch-evaluation.js?v=13"></script>

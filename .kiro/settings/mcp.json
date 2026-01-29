@@ -58,7 +58,8 @@
         "get_console_message",
         "performance_start_trace",
         "performance_analyze_insight",
-        "performance_stop_trace"
+        "performance_stop_trace",
+        "hover"
       ]
     }
   }

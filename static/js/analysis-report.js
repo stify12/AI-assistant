@@ -171,30 +171,42 @@ function renderPieChart(container, data) {
         return;
     }
     const total = entries.reduce((sum, [, count]) => sum + count, 0);
-    const colors = ['#d73a49', '#e65100', '#1565c0', '#1e7e34', '#86868b', '#9c27b0'];
+    // Swiss Digital Palette
+    const colors = [
+        'var(--c-accent)',    // Blue
+        'var(--c-ink)',       // Black
+        'var(--s-success-bg)',// Lime
+        'var(--s-warning-bg)',// Orange
+        'var(--s-error-bg)',  // Red
+        'var(--c-ink-light)'  // Grey
+    ];
     
-    let html = '<div style="display:flex;align-items:center;gap:40px;justify-content:center;padding:20px;">';
-    html += '<div style="flex:1;max-width:450px;">';
+    let html = '<div class="chart-pie-container">';
+    
+    // Bars Column
+    html += '<div class="chart-pie-bars">';
     entries.forEach(([type, count], index) => {
         const percentage = (count / total * 100).toFixed(1);
         const color = colors[index % colors.length];
-        html += `<div style="margin-bottom:12px;">
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                <span style="font-size:14px;">${type}</span>
-                <span style="font-size:14px;color:#86868b;">${count} (${percentage}%)</span>
+        html += `<div class="chart-pie-row">
+            <div class="chart-pie-header">
+                <span class="chart-pie-label">${type}</span>
+                <span class="chart-pie-value">${count} (${percentage}%)</span>
             </div>
-            <div style="height:8px;background:#e5e5e5;border-radius:4px;overflow:hidden;">
-                <div style="height:100%;width:${percentage}%;background:${color};border-radius:4px;transition:width 0.3s;"></div>
+            <div class="chart-pie-bar-bg">
+                <div class="chart-pie-bar-fill" style="width:${percentage}%; background:${color};"></div>
             </div>
         </div>`;
     });
     html += '</div>';
-    html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+    
+    // Legend Column
+    html += '<div class="chart-pie-legend">';
     entries.forEach(([type], index) => {
         const color = colors[index % colors.length];
-        html += `<div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:12px;height:12px;background:${color};border-radius:2px;"></div>
-            <span style="font-size:13px;">${type}</span>
+        html += `<div class="chart-legend-item">
+            <div class="chart-legend-color" style="background:${color};"></div>
+            <span class="chart-legend-text">${type}</span>
         </div>`;
     });
     html += '</div></div>';
@@ -212,18 +224,18 @@ function renderSankeyChart(container, data) {
         EmptyState.render('chartContainer', 'noData');
         return;
     }
-    let html = '<div style="display:flex;justify-content:space-around;padding:20px;">';
+    let html = '<div class="chart-sankey-container">';
     const categories = ['error_type', 'root_cause', 'suggestion'];
     const categoryNames = { error_type: '错误类型', root_cause: '根因', suggestion: '建议' };
     
     categories.forEach(cat => {
         const nodes = data.nodes.filter(n => n.category === cat);
-        html += `<div style="text-align:center;flex:1;">
-            <h4 style="margin-bottom:12px;color:#86868b;font-size:13px;">${categoryNames[cat]}</h4>
+        html += `<div class="chart-sankey-column">
+            <h4 class="chart-sankey-title">${categoryNames[cat]}</h4>
             <div style="display:flex;flex-direction:column;gap:8px;">`;
         nodes.slice(0, 5).forEach(node => {
-            html += `<div style="padding:8px 16px;background:#f5f5f7;border-radius:6px;font-size:13px;">
-                ${node.name} <span style="color:#86868b;">(${node.value})</span>
+            html += `<div class="chart-sankey-node">
+                ${node.name} <span class="chart-sankey-value">(${node.value})</span>
             </div>`;
         });
         html += '</div></div>';
@@ -244,20 +256,25 @@ function renderHeatmapChart(container, data) {
         return;
     }
     const maxValue = data.max_value || 1;
-    let html = '<div style="overflow-x:auto;padding:20px;"><table style="border-collapse:collapse;margin:0 auto;">';
-    html += '<tr><th style="padding:4px 8px;"></th>';
+    let html = '<div class="chart-heatmap-container"><table class="chart-heatmap-table">';
+    
+    // Header Row
+    html += '<tr><th class="chart-heatmap-th"></th>';
     (data.x_axis || []).forEach(x => {
-        html += `<th style="padding:4px 8px;font-size:12px;color:#86868b;">${x}</th>`;
+        html += `<th class="chart-heatmap-th">${x}</th>`;
     });
     html += '</tr>';
+    
+    // Data Rows
     (data.y_axis || []).forEach((y, yIdx) => {
-        html += `<tr><td style="padding:4px 8px;font-size:12px;color:#86868b;">${y}</td>`;
+        html += `<tr><td class="chart-heatmap-td">${y}</td>`;
         (data.x_axis || []).forEach((_, xIdx) => {
             const cell = data.data.find(d => d[0] === xIdx && d[1] === yIdx);
             const value = cell ? cell[2] : 0;
             const intensity = value / maxValue;
-            const bgColor = value > 0 ? `rgba(215,58,73,${0.2 + intensity * 0.8})` : '#f5f5f7';
-            html += `<td style="width:30px;height:30px;background:${bgColor};text-align:center;font-size:11px;">${value > 0 ? value : ''}</td>`;
+            // Use accent color with opacity for heatmap
+            const bgColor = value > 0 ? `rgba(42, 69, 255, ${0.1 + intensity * 0.9})` : 'transparent'; 
+            html += `<td class="chart-heatmap-cell" style="background:${bgColor};">${value > 0 ? value : ''}</td>`;
         });
         html += '</tr>';
     });
@@ -277,23 +294,22 @@ function renderRadarChart(container, data) {
         return;
     }
     const values = data.series?.[0]?.values || [];
-    let html = '<div style="max-width:500px;margin:0 auto;padding:20px;">';
+    let html = '<div class="chart-radar-container">';
     data.indicators.forEach((ind, idx) => {
         const value = values[idx] || 0;
-        html += `<div style="margin-bottom:16px;">
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                <span style="font-size:14px;">${ind.name}</span>
-                <span style="font-size:14px;color:#86868b;">${value.toFixed(1)}%</span>
+        html += `<div class="chart-radar-row">
+            <div class="chart-radar-header">
+                <span class="chart-radar-label">${ind.name}</span>
+                <span class="chart-radar-value">${value.toFixed(1)}%</span>
             </div>
-            <div style="height:8px;background:#e5e5e5;border-radius:4px;overflow:hidden;">
-                <div style="height:100%;width:${value}%;background:#1565c0;border-radius:4px;"></div>
+            <div class="chart-radar-bar-bg">
+                <div class="chart-radar-bar-fill" style="width:${value}%;"></div>
             </div>
         </div>`;
     });
     html += '</div>';
     container.innerHTML = html;
 }
-
 // 加载维度数据
 async function loadDimensionData() {
     const container = document.getElementById('dimensionContent');

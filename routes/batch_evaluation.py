@@ -3774,16 +3774,30 @@ def generate_ai_report(task_id):
             })
     
     try:
+        # 获取学科信息
+        subject_id = task_data.get('subject_id')
+        subject_name = task_data.get('subject_name') or SUBJECT_MAP.get(subject_id, '未知学科') if subject_id is not None else '未知学科'
+        
         # 收集所有评估结果
         total_questions = 0
         total_correct = 0
         error_distribution = {}
+        all_errors = []  # 收集所有错误用于典型案例
         
         # 题型统计
         type_stats = {
             'choice': {'total': 0, 'correct': 0},
             'objective_fill': {'total': 0, 'correct': 0},
             'subjective': {'total': 0, 'correct': 0}
+        }
+        
+        # 分数统计
+        has_score_data = False
+        score_stats = {
+            'total_with_score': 0,
+            'score_accurate': 0,
+            'score_higher': 0,
+            'score_lower': 0
         }
         
         homework_items = task_data.get('homework_items', [])
@@ -3795,11 +3809,16 @@ def generate_ai_report(task_id):
             total_questions += evaluation.get('total_questions', 0)
             total_correct += evaluation.get('correct_count', 0)
             
-            # 收集错误
+            # 收集错误（包含详细信息用于典型案例）
             errors = evaluation.get('errors', [])
             for err in errors:
                 err_type = err.get('error_type', '未分类')
                 error_distribution[err_type] = error_distribution.get(err_type, 0) + 1
+                # 添加作业信息到错误记录
+                err_with_context = err.copy()
+                err_with_context['homework_name'] = item.get('homework_name', '')
+                err_with_context['page_num'] = item.get('page_num', '')
+                all_errors.append(err_with_context)
             
             # 题型统计
             by_type = evaluation.get('by_question_type', {})
@@ -3807,41 +3826,137 @@ def generate_ai_report(task_id):
                 type_data = by_type.get(type_key, {})
                 type_stats[type_key]['total'] += type_data.get('total', 0)
                 type_stats[type_key]['correct'] += type_data.get('correct', 0)
+                # 分数统计
+                if type_data.get('score_total', 0) > 0:
+                    has_score_data = True
+                    score_stats['total_with_score'] += type_data.get('score_total', 0)
+                    score_stats['score_accurate'] += type_data.get('score_accurate', 0)
+                    score_stats['score_higher'] += type_data.get('score_higher', 0)
+                    score_stats['score_lower'] += type_data.get('score_lower', 0)
         
         # 构建分析数据
         accuracy = total_correct / total_questions if total_questions > 0 else 0
         
-        # 调用LLM生成分析报告
-        analysis_prompt = f"""请分析以下AI批改效果评估数据，生成一份专业的分析报告：
+        # 准备错误案例数据（最多取15个典型案例供LLM分析）
+        error_cases_for_llm = []
+        for err in all_errors[:15]:
+            base = err.get('base_effect', {})
+            ai = err.get('ai_result', {})
+            # 题号优先从 base_effect.index 获取，其次从 ai_result.index，最后从 err.question_index
+            q_index = base.get('index') or ai.get('index') or err.get('question_index') or '?'
+            # 获取分数信息
+            base_score = base.get('score')
+            ai_score = ai.get('score')
+            max_score = base.get('maxScore') or base.get('sorce')
+            
+            case_data = {
+                'index': q_index,
+                'error_type': err.get('error_type', '未分类'),
+                'base_answer': str(base.get('userAnswer', ''))[:50],
+                'ai_answer': str(ai.get('userAnswer', ''))[:50],
+                'standard_answer': str(base.get('answer', '') or base.get('mainAnswer', ''))[:50],
+                'base_correct': base.get('correct', ''),
+                'ai_correct': ai.get('correct', ''),
+                'page': err.get('page_num', '')
+            }
+            # 如果有分数信息，添加到案例数据
+            if base_score is not None or ai_score is not None:
+                case_data['base_score'] = base_score
+                case_data['ai_score'] = ai_score
+                case_data['max_score'] = max_score
+            
+            error_cases_for_llm.append(case_data)
+        
+        # 构建分数统计说明
+        score_info = ""
+        if has_score_data and score_stats['total_with_score'] > 0:
+            score_accuracy = round(score_stats['score_accurate'] / score_stats['total_with_score'] * 100, 1)
+            score_info = f"""
+## 判分统计
+- 有分数的题目数：{score_stats['total_with_score']}
+- 判分准确数：{score_stats['score_accurate']}（准确率 {score_accuracy}%）
+- 判分偏高数：{score_stats['score_higher']}
+- 判分偏低数：{score_stats['score_lower']}"""
+        
+        # 调用LLM生成分析报告（包含错误案例分析）
+        analysis_prompt = f"""你是一位AI批改效果分析专家。请分析以下AI批改系统的评估数据。
 
-评估概况：
+## 背景说明
+这是一个AI作业批改系统的效果评估，学科为【{subject_name}】。我们将AI批改结果与人工标注的基准数据进行对比，评估AI的识别和判断能力。
+
+## 数据字段说明
+- base_answer（基准答案）：人工标注的学生实际书写内容，作为对比基准
+- ai_answer（AI识别答案）：AI系统识别出的学生书写内容
+- standard_answer（标准答案）：题目的正确答案
+- base_correct（基准判断）：人工判断学生答案是否正确
+- ai_correct（AI判断）：AI判断学生答案是否正确
+- base_score（基准分数）：人工判定的得分（如有）
+- ai_score（AI判分）：AI判定的得分（如有）
+- max_score（题目满分）：该题的满分值（如有）
+
+## 错误类型说明
+- 识别错误-判断正确：AI识别的用户答案与基准不同，但对错判断一致（识别有偏差但不影响最终判分）
+- 识别正确-判断错误：AI识别的用户答案与基准相同，但对错判断不一致（识别准确但判分逻辑有问题）
+- 识别错误-判断错误：AI识别和判断都与基准不一致（严重错误，需重点关注）
+- AI识别幻觉：AI将学生的错误答案"脑补"识别成了标准答案（把错的看成对的）
+- 识别差异-判断正确：识别有轻微差异（如格式、空格）但判断正确，通过模糊匹配
+- 识别题干-判断正确：AI多识别了题干内容，但判断结果正确
+- 缺失题目：AI批改结果中缺少某道题目
+- 分数不一致：识别和判断都正确，但给出的分数与基准不一致
+
+## 评估概况
+- 学科：{subject_name}
 - 总题目数：{total_questions}
 - 正确题目数：{total_correct}
+- 错误题目数：{total_questions - total_correct}
 - 总体准确率：{accuracy * 100:.1f}%
 
-题型统计：
+## 题型统计
 - 选择题：总数 {type_stats['choice']['total']}，正确 {type_stats['choice']['correct']}
 - 客观填空题：总数 {type_stats['objective_fill']['total']}，正确 {type_stats['objective_fill']['correct']}
 - 主观题：总数 {type_stats['subjective']['total']}，正确 {type_stats['subjective']['correct']}
+{score_info}
 
-错误类型分布：
+## 错误类型分布
 {json.dumps(error_distribution, ensure_ascii=False, indent=2)}
 
-请提供：
-1. 总体评价（2-3句话）
-2. 主要问题分析（列出3-5个主要问题）
-3. 改进建议（针对每个问题给出具体建议）
-4. 能力评分（识别能力、判断能力、综合评分，满分100）
+## 错误案例详情（共{len(all_errors)}个错误）
+{json.dumps(error_cases_for_llm, ensure_ascii=False, indent=2)}
 
-请以JSON格式返回，包含以下字段：
-- summary: 总体评价
-- main_issues: 主要问题列表
-- suggestions: 改进建议列表
-- capability_scores: {{recognition: 分数, judgment: 分数, overall: 分数}}
-- conclusion: 总体结论
-"""
+请返回JSON格式报告：
+
+1. **capability_scores**: 能力评分
+   - recognition: 识别能力(0-100)
+   - judgment: 判断能力(0-100)
+   - overall: 综合评分(0-100)
+
+2. **top_issues**: 主要问题（3-5个）
+   - issue: 问题描述
+   - count: 出现次数
+   - severity: high/medium/low
+
+3. **error_case_analysis**: 典型案例分析（5-8个），每个包含：
+   - index: 原始题号（直接使用输入数据中的index值）
+   - error_type: 错误类型
+   - base_answer: 基准答案
+   - ai_answer: AI识别答案
+   - standard_answer: 标准答案
+   - base_correct: 基准判断
+   - ai_correct: AI判断
+   - base_score: 基准分数（如有）
+   - ai_score: AI判分（如有）
+   - root_cause: 原因分析（30-60字，分析：差异是什么、为什么会出现这个差异、对批改结果的影响）
+
+4. **recommendations**: 改进建议
+   - title: 标题
+   - detail: 详情
+
+5. **conclusion**: 总体结论（2-3句）
+
+直接返回JSON，不要其他文字。"""
         
         user_id = get_current_user_id()
+        print(f"[AI Report] 调用 DeepSeek 分析，错误案例数: {len(error_cases_for_llm)}")
         llm_result = LLMService.call_deepseek(analysis_prompt, user_id=user_id)
         
         # 检查LLM调用是否成功
@@ -3905,6 +4020,19 @@ def generate_ai_report(task_id):
                 for err_type, count in sorted(error_distribution.items(), key=lambda x: -x[1])[:5]
             ]
         
+        # 添加典型错误案例（优先使用LLM分析的，否则本地选取）
+        if not ai_analysis.get('error_case_analysis'):
+            ai_analysis['error_case_analysis'] = _select_typical_error_cases(all_errors, max_per_type=3, max_total=8)
+        
+        # 添加错误分布数据（用于前端可视化）
+        ai_analysis['error_distribution'] = [
+            {'type': err_type, 'count': count, 'percent': round(count / len(all_errors) * 100, 1) if all_errors else 0}
+            for err_type, count in sorted(error_distribution.items(), key=lambda x: -x[1])
+        ]
+        
+        # 添加生成时间
+        ai_analysis['generated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
         # 保存到任务数据
         if 'overall_report' not in task_data:
             task_data['overall_report'] = {}
@@ -3924,7 +4052,7 @@ def generate_ai_report(task_id):
         })
 
 
-def _select_typical_error_cases(all_errors, max_per_type=2, max_total=8):
+def _select_typical_error_cases(all_errors, max_per_type=3, max_total=10):
     """选取典型错误案例，每种错误类型最多选取指定数量"""
     if not all_errors:
         return []
@@ -3943,15 +4071,18 @@ def _select_typical_error_cases(all_errors, max_per_type=2, max_total=8):
         for err in errors[:max_per_type]:
             base = err.get('base_effect', {})
             ai = err.get('ai_result', {})
+            # 题号优先从 base_effect.index 获取，其次从 ai_result.index，最后从 err.question_index
+            q_index = base.get('index') or ai.get('index') or err.get('question_index') or '?'
             selected.append({
-                'index': base.get('index', '?'),
+                'index': q_index,
                 'error_type': err_type,
-                'base_answer': base.get('userAnswer', ''),
-                'ai_answer': ai.get('userAnswer', ''),
+                'base_answer': str(base.get('userAnswer', ''))[:100],
+                'ai_answer': str(ai.get('userAnswer', ''))[:100],
                 'base_correct': base.get('correct', ''),
                 'ai_correct': ai.get('correct', ''),
-                'standard_answer': base.get('answer', '') or base.get('mainAnswer', ''),
-                'explanation': err.get('explanation', '')
+                'standard_answer': str(base.get('answer', '') or base.get('mainAnswer', ''))[:100],
+                'root_cause': err.get('explanation', '') or _infer_error_cause(err_type, base, ai),
+                'page': err.get('page_num', '')
             })
             if len(selected) >= max_total:
                 break
@@ -3959,6 +4090,28 @@ def _select_typical_error_cases(all_errors, max_per_type=2, max_total=8):
             break
     
     return selected
+
+
+def _infer_error_cause(error_type, base, ai):
+    """根据错误类型推断可能的原因"""
+    base_ans = str(base.get('userAnswer', ''))
+    ai_ans = str(ai.get('userAnswer', ''))
+    
+    if '识别错误' in error_type:
+        if base_ans and ai_ans:
+            if len(base_ans) != len(ai_ans):
+                return f'答案长度不一致：基准"{base_ans}"({len(base_ans)}字符) vs AI"{ai_ans}"({len(ai_ans)}字符)，可能是识别遗漏或多识别'
+            else:
+                return f'答案内容不一致：基准"{base_ans}" vs AI"{ai_ans}"，可能是手写字迹模糊或相似字符混淆'
+        return '识别结果与基准不一致，需检查图像质量或识别模型'
+    elif '判断错误' in error_type:
+        base_correct = base.get('correct', '')
+        ai_correct = ai.get('correct', '')
+        return f'判断结果不一致：基准判断"{base_correct}" vs AI判断"{ai_correct}"，可能是评分标准差异或判断逻辑问题'
+    elif '幻觉' in error_type:
+        return 'AI识别出了不存在的内容，可能是图像噪点或模型幻觉问题'
+    else:
+        return '需要进一步分析具体原因'
 
 
 def _generate_local_summary(total_questions, total_correct, error_distribution, all_errors=None):
