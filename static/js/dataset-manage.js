@@ -33,6 +33,20 @@ function goBack() {
     }
 }
 
+// ========== 跳转到测试用例生成器 ==========
+function goToTestcaseGenerator() {
+    // 携带当前书本信息跳转
+    let url = '/testcase-generator';
+    if (selectedBook && selectedBook.book_id) {
+        const params = new URLSearchParams();
+        params.set('book_id', selectedBook.book_id);
+        params.set('book_name', selectedBook.book_name || '');
+        params.set('subject_id', selectedBook.subject_id || '2');
+        url += '?' + params.toString();
+    }
+    window.location.href = url;
+}
+
 // ========== 工具函数 ==========
 function showLoading(text) {
     document.getElementById('loadingText').textContent = text || '处理中...';
@@ -1531,6 +1545,7 @@ function renderEditTable() {
     const thead = document.querySelector('#editTableContainer table thead tr');
     if (thead) {
         thead.innerHTML = `
+            <th style="width:50px">索引</th>
             <th>题号</th>
             <th>标准答案</th>
             <th>学生答案</th>
@@ -1541,7 +1556,7 @@ function renderEditTable() {
     }
     
     if (data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${hasScore ? 7 : 5}" style="text-align:center;color:#999;">暂无题目数据</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${hasScore ? 8 : 6}" style="text-align:center;color:#999;">暂无题目数据</td></tr>`;
         return;
     }
     
@@ -1553,8 +1568,12 @@ function renderEditTable() {
             ? item.maxScore 
             : (item.sorce !== undefined && item.sorce !== null ? item.sorce : '');
         const scoreValue = item.score !== undefined && item.score !== null ? item.score : '';
+        // tempIndex 索引值
+        const tempIndexValue = item.tempIndex !== undefined && item.tempIndex !== null ? item.tempIndex : '';
         return `
         <tr data-idx="${idx}">
+            <td><input type="number" class="edit-input index-input" value="${tempIndexValue}" 
+                       onchange="updateEditCell(${idx}, 'tempIndex', this.value ? parseInt(this.value) : null)" min="0"></td>
             <td><input type="text" class="edit-input" value="${escapeHtml(item.index || '')}" 
                        onchange="updateEditCell(${idx}, 'index', this.value)"></td>
             <td><input type="text" class="edit-input" value="${escapeHtml(item.answer || '')}" 

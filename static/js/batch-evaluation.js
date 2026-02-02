@@ -120,6 +120,8 @@ function normalizeMarkdownFormula(text) {
     text = text.replace(/\$(.*?)\$/g, '$1');
     text = text.replace(/\\\((.*?)\\\)/gs, '$1');
     text = text.replace(/\\\[(.*?)\\\]/gs, '$1');
+    // 移除残留的单独 $ 符号
+    text = text.replace(/\$/g, '');
     
     // 3. 处理 \text 命令
     for (let i = 0; i < 5; i++) {
@@ -191,6 +193,294 @@ function normalizeMarkdownFormula(text) {
     text = text.replace(/[ \t]+/g, ' ').trim();
     
     return text;
+}
+
+/**
+ * 标准化答案用于比较（移除格式差异）
+ * 用于判断两个答案是否实质相同
+ */
+function normalizeAnswerForCompare(text) {
+    if (!text) return '';
+    text = String(text).trim().toLowerCase();
+    
+    // 1. 先用 normalizeMarkdownFormula 处理 LaTeX
+    text = normalizeMarkdownFormula(text);
+    
+    // 2. 移除所有空白字符
+    text = text.replace(/\s+/g, '');
+    
+    // 3. 移除常见标点符号
+    text = text.replace(/[，。；：！？""''（）【】《》、～—…·「」『』〈〉〔〕｛｝]/g, '');
+    text = text.replace(/[,.;:!?"'()\[\]{}<>~\-_\/\\|@#%^&`$]/g, '');
+    
+    return text;
+}
+
+// ========== 错误聚类分析 ==========
+
+/**
+ * 执行错误聚类分析（支持流式和缓存）
+ */
+async function runErrorClustering(forceRefresh = false) {
+    if (!selectedTask || !selectedTask.task_id) {
+        showToast('请先选择任务', 'warning');
+        return;
+    }
+    
+    const taskId = selectedTask.task_id;
+    const btn = document.getElementById('clusterBtn');
+    const resultDiv = document.getElementById('errorClusterResult');
+    
+    // 如果强制刷新，先清除缓存
+    if (forceRefresh) {
+        try {
+            await fetch(`/api/batch/tasks/${taskId}/cluster-errors/clear`, { method: 'POST' });
+        } catch (e) {
+            console.error('清除缓存失败:', e);
+        }
+    }
+    
+    // 显示加载状态
+    btn.disabled = true;
+    btn.textContent = '分析中...';
+    resultDiv.innerHTML = `
+        <div style="text-align: center; padding: 20px;">
+            <div class="loading-spinner" style="width: 24px; height: 24px; border: 2px solid #e5e5e5; border-top-color: #1d1d1f; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto;"></div>
+            <div style="margin-top: 8px; color: #86868b; font-size: 12px;" id="clusterProgress">正在分析错误模式...</div>
+        </div>`;
+    
+    try {
+        // 使用流式接口
+        const eventSource = new EventSource(`/api/batch/tasks/${taskId}/cluster-errors/stream`);
+        
+        eventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'cached') {
+                // 使用缓存结果
+                eventSource.close();
+                renderClusterResult({ ...data.data, cached: true });
+                btn.disabled = false;
+                btn.textContent = '重新分析';
+                return;
+            }
+            
+            if (data.type === 'start') {
+                document.getElementById('clusterProgress').textContent = 
+                    `正在分析 ${data.subject || ''}作业，共 ${data.total} 道题...`;
+            }
+            
+            if (data.type === 'progress') {
+                document.getElementById('clusterProgress').textContent = 
+                    `分析进度: ${data.current}/${data.total} (${data.result?.label || '...'})`;
+            }
+            
+            if (data.type === 'complete') {
+                eventSource.close();
+                renderClusterResult({
+                    success: true,
+                    clusters: data.clusters,
+                    total_errors: data.total_errors,
+                    total_questions: data.total_questions
+                });
+                btn.disabled = false;
+                btn.textContent = '重新分析';
+            }
+            
+            if (data.type === 'error') {
+                eventSource.close();
+                resultDiv.innerHTML = `<div style="text-align: center; color: #ef4444; padding: 16px; font-size: 13px;">分析失败: ${data.error}</div>`;
+                btn.disabled = false;
+                btn.textContent = '智能聚类';
+            }
+        };
+        
+        eventSource.onerror = () => {
+            eventSource.close();
+            // 降级到普通接口
+            fallbackToNormalClustering(taskId, btn, resultDiv);
+        };
+        
+    } catch (e) {
+        console.error('聚类分析失败:', e);
+        resultDiv.innerHTML = `<div style="text-align: center; color: #ef4444; padding: 16px; font-size: 13px;">分析失败: ${e.message}</div>`;
+        btn.disabled = false;
+        btn.textContent = '智能聚类';
+    }
+}
+
+/**
+ * 降级到普通聚类接口
+ */
+async function fallbackToNormalClustering(taskId, btn, resultDiv) {
+    try {
+        const res = await fetch(`/api/batch/tasks/${taskId}/cluster-errors`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || '聚类分析失败');
+        }
+        
+        renderClusterResult(data);
+    } catch (e) {
+        console.error('聚类分析失败:', e);
+        resultDiv.innerHTML = `<div style="text-align: center; color: #ef4444; padding: 16px; font-size: 13px;">分析失败: ${e.message}</div>`;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = data?.cached ? '重新分析' : '智能聚类';
+    }
+}
+
+// 题目标签配色（彩虹色循环）
+const QUESTION_COLORS = [
+    { bg: '#fee2e2', color: '#dc2626' },
+    { bg: '#fef3c7', color: '#d97706' },
+    { bg: '#dcfce7', color: '#16a34a' },
+    { bg: '#cffafe', color: '#0891b2' },
+    { bg: '#dbeafe', color: '#2563eb' },
+    { bg: '#e0e7ff', color: '#4f46e5' },
+    { bg: '#f3e8ff', color: '#9333ea' },
+    { bg: '#fce7f3', color: '#db2777' },
+];
+
+/**
+ * 渲染聚类结果（按LLM返回的错误类型标签显示）
+ */
+function renderClusterResult(data) {
+    const resultDiv = document.getElementById('errorClusterResult');
+    
+    if (!data.clusters || data.clusters.length === 0) {
+        resultDiv.innerHTML = '<div style="text-align: center; color: #6e6e73; padding: 20px; font-size: 13px;">该任务没有错误样本</div>';
+        return;
+    }
+    
+    window.currentClusterData = data;
+    
+    // 显示缓存状态
+    const cachedHint = data.cached ? '<span style="color: #10b981; font-size: 11px; margin-left: 8px;">(已缓存)</span>' : '';
+    
+    let html = `<div style="font-size: 12px; color: #6e6e73; margin-bottom: 12px;">
+                    共 ${data.total_errors} 个错误，${data.total_questions || '?'} 道题，${data.clusters.length} 种错误类型${cachedHint}
+                </div>`;
+    
+    // 按错误类型显示标签（LLM返回的聚类结果）
+    html += '<div style="display: flex; flex-wrap: wrap; gap: 10px;">';
+    
+    data.clusters.forEach((cluster, idx) => {
+        const style = QUESTION_COLORS[idx % QUESTION_COLORS.length];
+        const label = cluster.label || '未知错误';
+        const description = cluster.description || '';
+        const questionCount = (cluster.question_ids || []).length;
+        
+        html += `
+            <div class="error-type-tag" onclick="showClusterErrors(${idx})" 
+                 style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 10px; 
+                        font-size: 14px; font-weight: 500; cursor: pointer;
+                        background: ${style.bg}; color: ${style.color}; 
+                        border: 1px solid ${style.color}40; transition: all 0.15s ease;"
+                 onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px ${style.color}25'"
+                 onmouseout="this.style.transform='none';this.style.boxShadow='none'"
+                 title="${escapeHtml(description)}">
+                <span>${escapeHtml(label)}</span>
+                <span style="background: ${style.color}; color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">${cluster.error_count}</span>
+            </div>`;
+    });
+    
+    html += '</div>';
+    resultDiv.innerHTML = html;
+}
+
+/**
+ * 显示某个错误类型的所有错误样本
+ */
+function showClusterErrors(clusterIdx) {
+    const data = window.currentClusterData;
+    if (!data || !data.clusters[clusterIdx]) return;
+    
+    const cluster = data.clusters[clusterIdx];
+    const samples = cluster.samples || [];
+    const style = QUESTION_COLORS[clusterIdx % QUESTION_COLORS.length];
+    const label = cluster.label || '未知错误';
+    const description = cluster.description || '';
+    const questionIds = cluster.question_ids || [];
+    
+    let html = `
+        <div style="margin-bottom: 16px;">
+            <span style="padding: 8px 14px; border-radius: 8px; font-size: 14px; font-weight: 600;
+                         background: ${style.bg}; color: ${style.color};">${escapeHtml(label)}</span>
+            <span style="font-size: 13px; color: #6e6e73; margin-left: 10px;">共 ${samples.length} 个错误</span>
+        </div>
+    `;
+    
+    // 错误描述
+    if (description) {
+        html += `
+            <div style="background: #f5f5f7; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                <div style="font-size: 13px; color: #6e6e73;">${escapeHtml(description)}</div>
+            </div>
+        `;
+    }
+    
+    // 涉及的题目
+    if (questionIds.length > 0) {
+        html += `
+            <div style="font-size: 12px; color: #86868b; margin-bottom: 12px;">
+                涉及题目: ${questionIds.map(id => {
+                    const parts = id.split('_');
+                    return parts.length > 1 ? `第${parts[1]}题` : `第${id}题`;
+                }).join('、')}
+            </div>
+        `;
+    }
+    
+    html += '<div style="max-height: 450px; overflow-y: auto;">';
+    
+    // 显示所有错误样本
+    samples.forEach((s, idx) => {
+        const base = s.base_effect || {};
+        const ai = s.ai_result || {};
+        const qIdx = s.question_index || '?';
+        
+        // 获取判定结果
+        const baseCorrect = base.correct;
+        const aiCorrect = ai.correct;
+        const baseCorrectText = baseCorrect === true || baseCorrect === 'yes' ? '✓ 正确' : (baseCorrect === false || baseCorrect === 'no' ? '✗ 错误' : '');
+        const aiCorrectText = aiCorrect === true || aiCorrect === 'yes' ? '✓ 正确' : (aiCorrect === false || aiCorrect === 'no' ? '✗ 错误' : '');
+        
+        html += `
+            <div style="background: #fff; border: 1px solid #e5e5e5; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+                <div style="font-size: 12px; color: #6e6e73; margin-bottom: 8px; display: flex; justify-content: space-between;">
+                    <span>${escapeHtml(s.student_name || '学生' + (idx + 1))}</span>
+                    <span style="color: #86868b;">第${escapeHtml(qIdx)}题</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div style="background: #f0fdf4; border-radius: 4px; padding: 8px;">
+                        <div style="font-size: 11px; color: #16a34a; margin-bottom: 4px; display: flex; justify-content: space-between;">
+                            <span>基准（人工标注）</span>
+                            ${baseCorrectText ? `<span style="font-weight: 600;">${baseCorrectText}</span>` : ''}
+                        </div>
+                        <div style="font-size: 13px; color: #1d1d1f; word-break: break-all;">${escapeHtml(String(base.userAnswer || '-'))}</div>
+                    </div>
+                    <div style="background: #fef2f2; border-radius: 4px; padding: 8px;">
+                        <div style="font-size: 11px; color: #dc2626; margin-bottom: 4px; display: flex; justify-content: space-between;">
+                            <span>AI识别结果</span>
+                            ${aiCorrectText ? `<span style="font-weight: 600;">${aiCorrectText}</span>` : ''}
+                        </div>
+                        <div style="font-size: 13px; color: #1d1d1f; word-break: break-all;">${escapeHtml(String(ai.userAnswer || '-'))}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    
+    document.getElementById('evalDetailTitle').textContent = `${label} - 错误详情`;
+    document.getElementById('evalDetailBody').innerHTML = html;
+    document.getElementById('evalDetailDrawer').classList.add('show');
 }
 
 // ========== 初始化 ==========
@@ -778,57 +1068,17 @@ function renderOverallReport(report, completedItems) {
         detailHtml += `
             <div class="list-header">题目类型分类统计</div>
             <div class="type-stats-grid" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                <div class="type-stats-section" style="flex: 1; min-width: 280px;">
-                    <table class="stats-table type-clickable-table">
-                        <thead><tr><th>类型</th><th>总数</th><th>正确</th><th>准确率</th></tr></thead>
-                        <tbody>
-                            <tr class="clickable-row" onclick="showTypeDetail('choice')" title="点击查看详情">
-                                <td>选择题</td>
-                                <td>${choice.total || 0}</td>
-                                <td>${choice.correct || 0}</td>
-                                <td>${choice.total > 0 ? ((choice.accuracy || 0) * 100).toFixed(1) + '%' : '-'}</td>
-                            </tr>
-                            <tr class="clickable-row" onclick="showTypeDetail('objective_fill')" title="点击查看详情">
-                                <td>客观填空题</td>
-                                <td>${objectiveFill.total || 0}</td>
-                                <td>${objectiveFill.correct || 0}</td>
-                                <td>${objectiveFill.total > 0 ? ((objectiveFill.accuracy || 0) * 100).toFixed(1) + '%' : '-'}</td>
-                            </tr>
-                            <tr class="clickable-row" onclick="showTypeDetail('subjective')" title="点击查看详情">
-                                <td>主观题</td>
-                                <td>${subjective.total || 0}</td>
-                                <td>${subjective.correct || 0}</td>
-                                <td>${subjective.total > 0 ? ((subjective.accuracy || 0) * 100).toFixed(1) + '%' : '-'}</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="type-stats-section" style="flex: 1; min-width: 320px;">
+                    <canvas id="questionTypeBarChart" height="160"></canvas>
                 </div>
-                <div class="type-stats-section" style="flex: 1; min-width: 280px; background: #f9f9fb; border-radius: 8px; padding: 12px;">
-                    <div style="font-size: 13px; color: #86868b; margin-bottom: 8px;">自定义筛选</div>
-                    <div class="filter-row" style="display: flex; gap: 8px; margin-bottom: 12px;">
-                        <select id="filterObjective" style="flex: 1; padding: 8px 12px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; background: #fff;">
-                            <option value="objective">客观题</option>
-                            <option value="subjective">主观题</option>
-                        </select>
-                        <select id="filterBvalue" style="flex: 1; padding: 8px 12px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; background: #fff;">
-                            <option value="1">单选</option>
-                            <option value="3">判断</option>
-                            <option value="2">多选</option>
-                            <option value="4">填空</option>
-                            <option value="5">解答</option>
-                        </select>
+                <div class="type-stats-section error-cluster-section" style="flex: 1; min-width: 280px; background: #f9f9fb; border-radius: 8px; padding: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 13px; color: #86868b;">错误聚类分析</span>
+                        <button class="btn btn-small" onclick="runErrorClustering(false)" id="clusterBtn" style="padding: 4px 10px; font-size: 12px;">智能聚类</button>
                     </div>
-                    <div id="filteredStatsResult" style="background: #fff; border-radius: 8px; padding: 16px; text-align: center;">
-                        <div id="filteredTypeName" style="font-size: 14px; color: #1d1d1f; font-weight: 500; margin-bottom: 8px;">客观单选</div>
-                        <div style="display: flex; justify-content: space-around;">
-                            <div>
-                                <div style="font-size: 24px; font-weight: 600; color: #1d1d1f;" id="filteredAccuracy">-</div>
-                                <div style="font-size: 12px; color: #86868b;">准确率</div>
-                            </div>
-                            <div>
-                                <div style="font-size: 18px; font-weight: 500; color: #1d1d1f;"><span id="filteredCorrect">0</span>/<span id="filteredTotal">0</span></div>
-                                <div style="font-size: 12px; color: #86868b;">正确/总数</div>
-                            </div>
+                    <div id="errorClusterResult" style="background: #fff; border-radius: 8px; padding: 12px; min-height: 80px;">
+                        <div class="cluster-placeholder" style="text-align: center; color: #86868b; font-size: 13px; padding: 20px 0;">
+                            点击"智能聚类"分析错误模式
                         </div>
                     </div>
                 </div>
@@ -837,6 +1087,9 @@ function renderOverallReport(report, completedItems) {
         
         // 保存组合统计数据供筛选使用
         window.combinedStatsData = byCombined;
+        
+        // 保存数据供图表渲染使用
+        window._questionTypeData = { choice, objectiveFill, subjective };
     }
     
     // 按书本统计
@@ -859,29 +1112,19 @@ function renderOverallReport(report, completedItems) {
     }
     document.getElementById('statsDetail').innerHTML = detailHtml;
     
-    // 绑定筛选事件
-    if (Object.keys(byType).length > 0) {
-        const filterObjective = document.getElementById('filterObjective');
-        const filterBvalue = document.getElementById('filterBvalue');
-        if (filterObjective && filterBvalue) {
-            const updateFilteredStats = () => {
-                const objType = filterObjective.value;
-                const bvalue = filterBvalue.value;
-                const key = `${objType}_${bvalue}`;
-                const stats = window.combinedStatsData?.[key] || { total: 0, correct: 0, accuracy: 0, name: '-' };
-                const bvalueNames = { '1': '单选', '2': '多选', '3': '判断', '4': '填空', '5': '解答' };
-                const typeName = (objType === 'objective' ? '客观' : '主观') + bvalueNames[bvalue];
-                
-                document.getElementById('filteredTypeName').textContent = typeName;
-                document.getElementById('filteredAccuracy').textContent = stats.total > 0 ? ((stats.accuracy || 0) * 100).toFixed(1) + '%' : '-';
-                document.getElementById('filteredCorrect').textContent = stats.correct || 0;
-                document.getElementById('filteredTotal').textContent = stats.total || 0;
-            };
-            filterObjective.addEventListener('change', updateFilteredStats);
-            filterBvalue.addEventListener('change', updateFilteredStats);
-            // 初始化显示默认值 (客观单选)
-            updateFilteredStats();
-        }
+    // 保存组合统计数据供后续使用
+    window.combinedStatsData = byCombined;
+    
+    // 自动加载已有聚类结果
+    if (selectedTask.cluster_result) {
+        setTimeout(() => {
+            renderClusterResult({
+                ...selectedTask.cluster_result,
+                cached: true
+            });
+            const btn = document.getElementById('clusterBtn');
+            if (btn) btn.textContent = '重新分析';
+        }, 100);
     }
 }
 
@@ -1170,6 +1413,117 @@ async function renderOverallCharts(report, completedItems) {
     if (window.ScoreCharts) {
         window.ScoreCharts.render(report, completedItems);
     }
+    
+    // 6. 题目类型分类统计横向柱状图
+    renderQuestionTypeBarChart();
+}
+
+/**
+ * 渲染题目类型分类统计横向柱状图
+ */
+function renderQuestionTypeBarChart() {
+    const canvas = document.getElementById('questionTypeBarChart');
+    if (!canvas || !window._questionTypeData) return;
+    
+    const { choice, objectiveFill, subjective } = window._questionTypeData;
+    
+    // 数据准备
+    const labels = ['选择题', '客观填空题', '主观题'];
+    const typeKeys = ['choice', 'objective_fill', 'subjective'];
+    const totals = [choice.total || 0, objectiveFill.total || 0, subjective.total || 0];
+    const corrects = [choice.correct || 0, objectiveFill.correct || 0, subjective.correct || 0];
+    const accuracies = [
+        choice.total > 0 ? (choice.accuracy || 0) * 100 : 0,
+        objectiveFill.total > 0 ? (objectiveFill.accuracy || 0) * 100 : 0,
+        subjective.total > 0 ? (subjective.accuracy || 0) * 100 : 0
+    ];
+    
+    // 使用页面饼图的彩色配色
+    const colors = ['#3b82f6', '#f59e0b', '#10b981'];
+    
+    // 销毁旧图表
+    if (batchChartInstances.typeBar) {
+        batchChartInstances.typeBar.destroy();
+    }
+    
+    batchChartInstances.typeBar = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '准确率',
+                data: accuracies,
+                backgroundColor: colors,
+                borderRadius: 4,
+                barThickness: 24
+            }]
+        },
+        options: {
+            indexAxis: 'y',  // 横向柱状图
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: { right: 50 }  // 为末端数字留空间
+            },
+            onClick: (event, elements) => {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    showTypeDetail(typeKeys[index]);
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { 
+                        font: { size: 11 }, 
+                        color: '#666',
+                        callback: value => value + '%'
+                    },
+                    grid: { color: '#f0f0f0' }
+                },
+                y: {
+                    ticks: { font: { size: 12 }, color: '#1d1d1f' },
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => {
+                            const idx = ctx.dataIndex;
+                            return [
+                                `准确率: ${accuracies[idx].toFixed(1)}%`,
+                                `正确: ${corrects[idx]} / 总数: ${totals[idx]}`,
+                                '点击查看详情'
+                            ];
+                        }
+                    }
+                }
+            }
+        },
+        plugins: [{
+            // 自定义插件：在柱状图末端显示数字
+            id: 'barEndLabels',
+            afterDatasetsDraw(chart) {
+                const { ctx } = chart;
+                chart.data.datasets.forEach((dataset, i) => {
+                    const meta = chart.getDatasetMeta(i);
+                    meta.data.forEach((bar, index) => {
+                        const value = dataset.data[index];
+                        ctx.save();
+                        ctx.font = '12px sans-serif';
+                        ctx.fillStyle = '#1d1d1f';
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(value.toFixed(1) + '%', bar.x + 6, bar.y);
+                        ctx.restore();
+                    });
+                });
+            }
+        }]
+    });
 }
 
 
@@ -2934,7 +3288,7 @@ function renderEvalDetail(detail) {
                                                 <td class="field-name">用户答案</td>
                                                 <td class="base-value user-answer">${escapeHtml(baseEffect.userAnswer || '-')}</td>
                                                 <td class="ai-value user-answer">${escapeHtml(aiResult.userAnswer || '-')}</td>
-                                                <td class="match-status">${(baseEffect.userAnswer || '') === (aiResult.userAnswer || '') ? '<span class="match-yes">✓</span>' : '<span class="match-no">✗</span>'}</td>
+                                                <td class="match-status">${normalizeAnswerForCompare(baseEffect.userAnswer || '') === normalizeAnswerForCompare(aiResult.userAnswer || '') ? '<span class="match-yes">✓</span>' : '<span class="match-no">✗</span>'}</td>
                                             </tr>
                                             <tr>
                                                 <td class="field-name">判断结果</td>
@@ -3201,7 +3555,8 @@ function renderQuestionCompareCards(baseEffect, flatAiResult) {
         const baseCorrect = base.correct || (base.isRight ? 'yes' : 'no');
         const aiCorrect = ai ? (ai.correct || (ai.isRight ? 'yes' : 'no')) : '';
         
-        const userMatch = baseUser === aiUser;
+        // 使用标准化函数比较答案，处理 $6$ vs 6 等情况
+        const userMatch = normalizeAnswerForCompare(baseUser) === normalizeAnswerForCompare(aiUser);
         const correctMatch = baseCorrect === aiCorrect;
         const isMatch = userMatch && correctMatch;
         
@@ -3391,7 +3746,8 @@ function showErrorTypeDetail(errorType) {
                     explanation: err.explanation || '-',
                     similarity: err.similarity,
                     baseAnswer: err.base_effect?.answer || '-',
-                    aiAnswer: err.ai_result?.answer || '-'
+                    aiAnswer: err.ai_result?.answer || '-',
+                    fillGuide: err.base_effect?.fillGuide || ''
                 });
             }
         });
@@ -3466,6 +3822,12 @@ function showErrorTypeDetail(errorType) {
                                     <div class="error-card-label">说明</div>
                                     <div class="error-card-value explanation">${escapeHtml(item.explanation)}</div>
                                 </div>
+                                ${item.fillGuide ? `
+                                <div class="error-card-row">
+                                    <div class="error-card-label">填写指导</div>
+                                    <div class="error-card-value fill-guide">${escapeHtml(item.fillGuide)}</div>
+                                </div>
+                                ` : ''}
                             </div>
                         </div>
                     `).join('')}

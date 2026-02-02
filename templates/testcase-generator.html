@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试用例生成器</title>
+    <link rel="stylesheet" href="/static/css/common.css?v=20260130b">
+    <link rel="stylesheet" href="/static/css/testcase-generator.css?v=20260130b">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="logo">测试用例生成器</div>
+        <div class="nav-actions">
+            <button class="btn btn-secondary" onclick="goBack()">返回</button>
+        </div>
+    </nav>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">处理中...</div>
+    </div>
+
+    <!-- 主布局 -->
+    <div class="main-layout">
+        <!-- 左侧配置区 -->
+        <div class="config-panel">
+            <!-- 步骤1: 选择书本和页码 -->
+            <div class="config-section">
+                <div class="section-header">
+                    <span class="step-badge">1</span>
+                    <span class="section-title">选择书本和页码</span>
+                </div>
+                <div class="section-body">
+                    <!-- 已选书本信息（从URL参数来时显示） -->
+                    <div class="book-info" id="bookInfo" style="display:none;">
+                        <div class="book-info-row">
+                            <span class="book-info-label">当前书本</span>
+                            <span class="book-info-value" id="currentBookName">-</span>
+                        </div>
+                        <button class="btn btn-small btn-text" onclick="changeBook()">更换书本</button>
+                    </div>
+                    
+                    <!-- 书本选择器（直接访问时显示） -->
+                    <div class="book-selector" id="bookSelector">
+                        <div class="form-group">
+                            <label>学科</label>
+                            <select id="subjectSelect" onchange="loadBooks()">
+                                <option value="2">数学</option>
+                                <option value="3">物理</option>
+                                <option value="4">化学</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>书本</label>
+                            <select id="bookSelect" onchange="onBookChange()">
+                                <option value="">请选择书本</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>页码</label>
+                        <div class="page-input-row">
+                            <input type="number" id="pageInput" placeholder="输入页码" min="1" max="999">
+                            <button class="btn btn-small" onclick="loadQuestions()">加载题目</button>
+                        </div>
+                    </div>
+                    
+                    <div class="questions-info" id="questionsInfo" style="display:none;">
+                        <div class="info-row">
+                            <span class="info-label">题目数量</span>
+                            <span class="info-value" id="questionCount">0</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">状态</span>
+                            <span class="info-value status-ready" id="questionStatus">已加载</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步骤2: 选择测试场景 -->
+            <div class="config-section">
+                <div class="section-header">
+                    <span class="step-badge">2</span>
+                    <span class="section-title">选择测试场景</span>
+                </div>
+                <div class="section-body">
+                    <!-- 快捷组合 -->
+                    <div class="combo-section">
+                        <div class="combo-label">快捷选择</div>
+                        <div class="quick-combinations" id="quickCombinations">
+                            <div class="combo-item active" data-combo="quick_test" onclick="selectCombination('quick_test')">
+                                <span class="combo-name">快速测试</span>
+                            </div>
+                            <div class="combo-item" data-combo="full_test" onclick="selectCombination('full_test')">
+                                <span class="combo-name">全面测试</span>
+                            </div>
+                            <div class="combo-item" data-combo="digit_focus" onclick="selectCombination('digit_focus')">
+                                <span class="combo-name">数字专项</span>
+                            </div>
+                            <div class="combo-item" data-combo="error_focus" onclick="selectCombination('error_focus')">
+                                <span class="combo-name">错误专项</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 模板列表 -->
+                    <div class="template-section">
+                        <div class="template-label">测试场景详情</div>
+                        <div class="template-list" id="templateList"></div>
+                    </div>
+                    
+                    <!-- 比例调整 -->
+                    <div class="ratio-summary" id="ratioSummary">
+                        已选择 <span id="selectedCount">0</span> 个场景
+                    </div>
+                </div>
+            </div>
+
+            <!-- 生成按钮 -->
+            <div class="action-section">
+                <button class="btn btn-primary btn-large" id="generateBtn" onclick="generateTestcases()" disabled>
+                    生成基准效果
+                </button>
+            </div>
+        </div>
+
+        <!-- 右侧结果区 -->
+        <div class="result-panel">
+            <!-- 题目详情区域 -->
+            <div class="question-detail-section" id="questionDetailSection" style="display:none;">
+                <div class="detail-header">
+                    <span class="detail-title">题目详情</span>
+                </div>
+                <div class="detail-content">
+                    <!-- 电子版图片 -->
+                    <div class="page-images-wrapper">
+                        <div class="images-label">电子版图片</div>
+                        <div class="page-images" id="pageImages"></div>
+                    </div>
+                    <!-- 题目列表 -->
+                    <div class="question-list-wrapper">
+                        <div class="list-label">题目列表</div>
+                        <div class="question-list" id="questionList"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="result-header">
+                <span class="result-title">生成结果预览</span>
+                <div class="result-actions" id="resultActions" style="display:none;">
+                    <button class="btn btn-secondary btn-small" onclick="showJsonModal()">查看JSON</button>
+                    <button class="btn btn-secondary btn-small" onclick="exportExcel()">导出Excel</button>
+                    <button class="btn btn-primary btn-small" onclick="saveDataset()">保存为数据集</button>
+                </div>
+            </div>
+            
+            <!-- 数据集名称编辑区 -->
+            <div class="dataset-name-section" id="datasetNameSection" style="display:none;">
+                <div class="dataset-name-row">
+                    <span class="dataset-name-label">数据集名称</span>
+                    <input type="text" id="datasetNameInline" class="dataset-name-input" placeholder="输入数据集名称" maxlength="200">
+                </div>
+            </div>
+            
+            <!-- 空状态 -->
+            <div class="result-empty" id="resultEmpty">
+                <div class="empty-icon">--</div>
+                <div class="empty-text">选择书本页码和测试场景后，点击"生成基准效果"</div>
+            </div>
+            
+            <!-- 结果统计 -->
+            <div class="result-summary" id="resultSummary" style="display:none;">
+                <div class="summary-item">
+                    <span class="summary-value" id="totalCount">0</span>
+                    <span class="summary-label">测试用例</span>
+                </div>
+                <div class="summary-item correct">
+                    <span class="summary-value" id="correctCount">0</span>
+                    <span class="summary-label">预期正确</span>
+                </div>
+                <div class="summary-item wrong">
+                    <span class="summary-value" id="wrongCount">0</span>
+                    <span class="summary-label">预期错误</span>
+                </div>
+            </div>
+            
+            <!-- 结果表格 -->
+            <div class="result-table-container" id="resultTableContainer" style="display:none;">
+                <table class="result-table">
+                    <thead>
+                        <tr>
+                            <th style="width:60px;">题号</th>
+                            <th style="width:60px;">对错</th>
+                            <th style="width:120px;">标准答案</th>
+                            <th style="width:140px;">应填答案</th>
+                            <th style="width:180px;">标签</th>
+                            <th>填写指导</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JSON 查看弹窗 -->
+    <div class="modal" id="jsonModal" onclick="hideJsonModal(event)">
+        <div class="modal-content modal-large" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>原始 JSON 数据</h3>
+                <button class="close-btn" onclick="hideJsonModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <pre class="json-preview" id="jsonPreview"></pre>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="copyJson()">复制</button>
+                <button class="btn btn-primary" onclick="hideJsonModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- 图片弹窗 -->
+    <div class="modal" id="imageModal" onclick="hideImageModal(event)">
+        <div class="image-modal-content" onclick="event.stopPropagation()">
+            <button class="close-btn" onclick="hideImageModal()">×</button>
+            <img id="modalImage" src="" alt="大图预览" />
+        </div>
+    </div>
+
+    <script src="/static/js/testcase-generator.js?v=20260130b"></script>
+</body>
+</html>

@@ -1131,7 +1131,8 @@ body {
 }
 
 /* 编辑表格分数输入框 - 确保数字完整显示 */
-.edit-table input[type="number"].score-input {
+.edit-table input[type="number"].score-input,
+.edit-table input[type="number"].index-input {
     width: 60px;
     min-width: 60px;
     padding: 8px 6px;
@@ -1143,12 +1144,15 @@ body {
 }
 
 .edit-table input[type="number"].score-input::-webkit-outer-spin-button,
-.edit-table input[type="number"].score-input::-webkit-inner-spin-button {
+.edit-table input[type="number"].score-input::-webkit-inner-spin-button,
+.edit-table input[type="number"].index-input::-webkit-outer-spin-button,
+.edit-table input[type="number"].index-input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
 
-.edit-table input[type="number"].score-input:focus {
+.edit-table input[type="number"].score-input:focus,
+.edit-table input[type="number"].index-input:focus {
     outline: none;
     border-color: #1d1d1f;
 }

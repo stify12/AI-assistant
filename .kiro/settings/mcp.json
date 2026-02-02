@@ -7,7 +7,8 @@
       ],
       "disabled": false,
       "autoApprove": [
-        "bing_search"
+        "bing_search",
+        "crawl_webpage"
       ]
     },
     "mysql": {

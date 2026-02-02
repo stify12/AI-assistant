@@ -35,6 +35,7 @@ def register_blueprints(app):
     from .automation import automation_bp
     from .rfid_query import rfid_query_bp
     from .prompt_config import prompt_config_bp
+    from .testcase_generator import testcase_generator_bp
     
     # 注册通用路由（无前缀）
     app.register_blueprint(common_bp)
@@ -104,3 +105,6 @@ def register_blueprints(app):
     
     # 注册提示词配置路由
     app.register_blueprint(prompt_config_bp)
+    
+    # 注册测试用例生成路由
+    app.register_blueprint(testcase_generator_bp)

@@ -20,6 +20,8 @@ from services.physics_eval import normalize_physics_markdown
 from services.chemistry_eval import normalize_chemistry_markdown
 from services.ai_analysis_service import AIAnalysisService
 from services.prompt_config_service import PromptConfigService
+from services.clustering_service import ClusteringService
+from services.math_normalize_service import normalize_math_answer
 from utils.text_utils import normalize_answer, normalize_answer_science, has_format_diff, calculate_similarity, is_fuzzy_match
 
 batch_evaluation_bp = Blueprint('batch_evaluation', __name__)
@@ -2968,9 +2970,11 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
             severity = 'high'
         elif not base_correct:
             # 基准效果缺少correct字段，只能比较userAnswer
-            # 理科（数学2、物理3、化学4、生物5、地理6）使用保留小数点的标准化
-            is_science = subject_id in (2, 3, 4, 5, 6)
-            if is_science:
+            # 数学(2)使用数学专用标准化，其他理科使用保留小数点的标准化
+            if subject_id == 2:
+                norm_base_user = normalize_math_answer(base_user)
+                norm_hw_user = normalize_math_answer(hw_user)
+            elif subject_id in (3, 4, 5, 6):
                 norm_base_user = normalize_answer_science(base_user)
                 norm_hw_user = normalize_answer_science(hw_user)
             else:
@@ -3004,9 +3008,13 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
                     explanation = f'用户答案不一致：基准="{base_user}"，AI="{hw_user}"'
                     severity = 'high'
         else:
-            # 理科（数学2、物理3、化学4、生物5、地理6）使用保留小数点的标准化
-            is_science = subject_id in (2, 3, 4, 5, 6)
-            normalize_func = normalize_answer_science if is_science else normalize_answer
+            # 数学(2)使用数学专用标准化，其他理科使用保留小数点的标准化
+            if subject_id == 2:
+                normalize_func = normalize_math_answer
+            elif subject_id in (3, 4, 5, 6):
+                normalize_func = normalize_answer_science
+            else:
+                normalize_func = normalize_answer
             
             # 标准化答案进行比较
             if ignore_index_prefix:
@@ -3695,6 +3703,59 @@ def export_batch_excel(task_id):
         )
     except Exception as e:
         return jsonify({'success': False, 'error': f'导出失败: {str(e)}'})
+
+
+# ========== 错误聚类分析 API ==========
+
+@batch_evaluation_bp.route('/tasks/<task_id>/cluster-errors', methods=['POST'])
+def cluster_task_errors(task_id):
+    """
+    对任务的错误样本进行智能聚类分析
+    
+    两阶段处理：
+    1. 规则预聚类：按题号聚合
+    2. LLM分析：生成标签和根因
+    """
+    try:
+        from routes.auth import get_current_user_id
+        user_id = get_current_user_id()
+        result = ClusteringService.cluster_task_errors(task_id, user_id=user_id)
+        return jsonify(result)
+    except Exception as e:
+        print(f'[Clustering] 聚类分析失败: {e}')
+        return jsonify({'success': False, 'error': f'聚类分析失败: {str(e)}'})
+
+
+@batch_evaluation_bp.route('/tasks/<task_id>/cluster-errors/stream', methods=['GET'])
+def cluster_task_errors_stream(task_id):
+    """流式聚类分析：逐个返回分析结果"""
+    from flask import Response
+    from routes.auth import get_current_user_id
+    
+    try:
+        user_id = get_current_user_id()
+        return Response(
+            ClusteringService.cluster_task_errors_stream(task_id, user_id=user_id),
+            mimetype='text/event-stream',
+            headers={
+                'Cache-Control': 'no-cache',
+                'X-Accel-Buffering': 'no'
+            }
+        )
+    except Exception as e:
+        print(f'[Clustering] 流式聚类失败: {e}')
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@batch_evaluation_bp.route('/tasks/<task_id>/cluster-errors/clear', methods=['POST'])
+def clear_cluster_cache(task_id):
+    """清除聚类缓存，强制重新分析"""
+    try:
+        result = ClusteringService.clear_cluster_cache(task_id)
+        return jsonify(result)
+    except Exception as e:
+        print(f'[Clustering] 清除缓存失败: {e}')
+        return jsonify({'success': False, 'error': str(e)})
 
 
 # ========== AI分析报告 API ==========

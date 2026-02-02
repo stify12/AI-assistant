@@ -128,17 +128,11 @@ def normalize_answer(text):
         text = text.replace(symbol, replacement)
     
     # 6. 移除所有中英文标点符号（不影响答案语义的）
-    # 包括：句号、逗号、分号、冒号、问号、感叹号、引号、括号、顿号等
-    punctuation_to_remove = [
-        # 中文标点
-        '，', '。', '；', '：', '！', '？', '"', '"', ''', ''',
-        '（', '）', '【', '】', '《', '》', '、', '～', '—', '…',
-        '·', '「', '」', '『', '』', '〈', '〉', '〔', '〕', '｛', '｝',
-        # 英文标点
-        ',', '.', ';', ':', '!', '?', '"', "'", '(', ')', '[', ']',
-        '{', '}', '<', '>', '~', '-', '_', '/', '\\', '|', '@', '#',
-        '$', '%', '^', '&', '`'
-    ]
+    punctuation_to_remove = (
+        '，。；：！？""''（）【】《》、～—…·「」『』〈〉〔〕｛｝'  # 中文标点
+        ',.;:!?()[]{}/<>~-_|@#%^&`$'  # 英文标点 + $ (LaTeX标记)
+        '"' "'" '\\'  # 引号和反斜杠
+    )
     for punct in punctuation_to_remove:
         text = text.replace(punct, '')
     
@@ -168,6 +162,7 @@ def normalize_answer_strict(text):
     text = re.sub(r'[^\w\u4e00-\u9fff]', '', text)
     
     return text
+
 
 
 def normalize_answer_science(text):
@@ -213,16 +208,11 @@ def normalize_answer_science(text):
     
     # 6. 移除不影响理科答案语义的标点符号
     # 注意：保留 '.'（小数点）、'~'（范围）、'-'（负号，但需要特殊处理）
-    punctuation_to_remove = [
-        # 中文标点
-        '，', '。', '；', '：', '！', '？', '"', '"', ''', ''',
-        '（', '）', '【', '】', '《', '》', '、', '—', '…',
-        '·', '「', '」', '『', '』', '〈', '〉', '〔', '〕', '｛', '｝',
-        # 英文标点（不包括 '.'、'~'、'-'）
-        ',', ';', ':', '!', '?', '"', "'", '(', ')', '[', ']',
-        '{', '}', '<', '>', '_', '/', '\\', '|', '@', '#',
-        '$', '%', '^', '&', '`'
-    ]
+    punctuation_to_remove = (
+        '，。；：！？""''（）【】《》、—…·「」『』〈〉〔〕｛｝'  # 中文标点
+        ',;:!?()[]{}/<>_|@#%^&`$'  # 英文标点（不含 . ~ -）+ $ (LaTeX标记)
+        '"' "'" '\\'  # 引号和反斜杠
+    )
     for punct in punctuation_to_remove:
         text = text.replace(punct, '')
     
@@ -335,6 +325,7 @@ def extract_reason_from_text(content):
         return reason_match.group(1).strip()
     
     return ''
+
 
 
 def calculate_similarity(text1, text2):

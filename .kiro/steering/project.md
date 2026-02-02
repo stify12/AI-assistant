@@ -7,13 +7,15 @@
 
 | 模块 | 路由 | 功能 |
 |------|------|------|
-| 测试计划看板 | `/` | Dashboard，测试计划管理、数据概览 |
-| 批量评估 | `/batch-evaluation` | 批量评估 AI 批改结果 |
+| 测试计划看板 | `/` | Dashboard，测试计划管理、工作流状态追踪 |
+| 批量评估 | `/batch-evaluation` | 批量评估 AI 批改结果，按题型统计 |
 | 学科批改 | `/subject-grading` | 单份作业实时批改评估 |
 | 知识点类题 | `/knowledge-agent` | 提取知识点，生成类似题目 |
-| 数据分析 | `/data-analysis` | 可视化统计分析 |
+| 数据分析 | `/data-analysis` | 可视化统计分析、多维下钻 |
 | 数据集管理 | `/dataset-manage` | 管理基准效果数据集 |
 | 提示词优化 | `/prompt-optimize` | Prompt 调试、版本管理 |
+| 错误样本库 | `/error-samples` | 错误样本收集与分析 |
+| 测试用例生成 | `/testcase-generator` | AI 自动生成基准效果（规划中） |
 
 ---
 
@@ -22,7 +24,7 @@
 | 层 | 技术 |
 |-----|------|
 | 后端 | Flask + Gunicorn + PyMySQL |
-| 前端 | Jinja2 + 原生 CSS/JS |
+| 前端 | Jinja2 + 原生 CSS/JS (模块化) |
 | AI | 豆包(视觉) / DeepSeek(文本) / Qwen(备选) |
 | 部署 | Docker + Docker Compose |
 
@@ -33,11 +35,12 @@
 ```
 ├── app.py                 # Flask 入口
 ├── config.json            # 配置 (API密钥、数据库)
-├── routes/                # Flask 蓝图路由
-├── services/              # 业务服务层
+├── routes/                # Flask 蓝图路由 (30+)
+├── services/              # 业务服务层 (35+)
 ├── knowledge_agent/       # 知识点类题模块
-├── templates/             # Jinja2 模板
-├── static/                # CSS/JS
+├── templates/             # Jinja2 模板 (12个页面)
+├── static/js/             # JS (页面脚本 + modules/ + components/)
+├── static/css/            # CSS (页面样式 + modules/)
 └── tests/                 # 测试
 ```
 
@@ -48,6 +51,23 @@
 
 ---
 
+## 服务层架构
+
+| 类别 | 服务 | 职责 |
+|------|------|------|
+| 核心 | DatabaseService | 原业务数据库 (zpsmart) |
+| 核心 | AppDatabaseService | 应用数据库 (aiuser) |
+| 核心 | StorageService | 文件/数据库存储 |
+| 核心 | LLMService | LLM 调用 (多模型) |
+| 核心 | DashboardService | 看板统计 + 缓存管理 |
+| 业务 | AIAnalysisService | AI 分析与报告 |
+| 业务 | SemanticEvalService | 语义评估 |
+| 业务 | PromptConfigService | 提示词配置 |
+| 学科 | PhysicsEval | 物理公式标准化 |
+| 学科 | ChemistryEval | 化学 Markdown 标准化 |
+
+---
+
 ## 数据库
 
 | 库 | 地址 | 用途 |
@@ -55,19 +75,23 @@
 | zpsmart | 47.113.230.78:3306 | 业务数据、作业、提示词配置 |
 | aiuser | 47.82.64.147:3306 | 分析平台、数据集、测试计划 |
 
+### 核心表
+- `zp_homework` / `zp_homework_publish` / `zp_homework_result` (业务)
+- `test_plans` / `datasets` / `baseline_effects` / `batch_tasks` (平台)
+
 ---
 
 ## 学科配置
 
-| ID | 学科 | 匹配规则 | 提示词配置键 |
-|----|------|----------|--------------|
-| 0 | 英语 | index | EnglishHomeWorkPrompt |
-| 1 | 语文 | index (模糊85%) | ChineseHomeWorkRecognition |
-| 2 | 数学 | index | HomeWorkPrompt |
-| 3 | 物理 | index | PhysicsHomeWorkPrompt2 |
-| 4 | 化学 | index | ChemistryHomeWorkPrompt |
-| 5 | 生物 | index | BiologyHomeWorkPrompt |
-| 6 | 地理 | index | GeographyHomeWorkRecognition |
+| ID | 学科 | 提示词配置键 |
+|----|------|--------------|
+| 0 | 英语 | EnglishHomeWorkPrompt |
+| 1 | 语文 | ChineseHomeWorkRecognition |
+| 2 | 数学 | HomeWorkPrompt |
+| 3 | 物理 | PhysicsHomeWorkPrompt2 |
+| 4 | 化学 | ChemistryHomeWorkPrompt |
+| 5 | 生物 | BiologyHomeWorkPrompt |
+| 6 | 地理 | GeographyHomeWorkRecognition |
 
 ---
 
@@ -76,18 +100,14 @@
 ```python
 from services.llm_service import LLMService
 
-# 视觉识别
-LLMService.call_vision_model(image_base64, prompt)
-
-# 文本生成
-LLMService.call_deepseek(prompt, model='deepseek-v3.2')
+LLMService.call_vision_model(image_base64, prompt)  # 视觉识别
+LLMService.call_deepseek(prompt, model='deepseek-v3.2')  # 文本生成
 ```
 
 | 模型 | 用途 |
 |------|------|
 | doubao-1-5-vision-pro-32k | 视觉识别 (默认) |
-| doubao-seed-1-8 | 多模态 |
-| deepseek-chat | 通用对话 |
+| deepseek-chat | 通用对话/文本生成 |
 
 ---
 
@@ -107,19 +127,15 @@ def classify_question_type(data):
 
 ## 分数字段规范
 
-数据来源和字段名不统一，需要兼容处理：
-
 | 来源 | 字段名 | 说明 |
 |------|--------|------|
-| datavalue (原始数据) | `sorce` | 题目总分（注意拼写错误） |
-| datavalue (原始数据) | `ans` | 标准答案 |
-| 数据集 base_effects | `maxScore` | 题目总分（从 sorce 转换） |
-| 数据集 base_effects | `score` | 判断分值（AI 返回或计算） |
-| AI 批改结果 | `score` | AI 判断的得分 |
+| datavalue | `sorce` | 题目总分（注意拼写错误） |
+| datavalue | `ans` | 标准答案 |
+| base_effects | `maxScore` | 题目总分 |
+| base_effects | `score` | 判断分值 |
 
-获取分数时需要兼容三种字段名：
 ```python
-# 获取基准分数（兼容 maxScore、score、sorce）
+# 兼容三种字段名
 base_score = (
     item.get('maxScore') if item.get('maxScore') is not None 
     else item.get('score') if item.get('score') is not None 
@@ -127,59 +143,22 @@ base_score = (
 )
 ```
 
-### 分数比对数据流
-1. **数据集创建**：`routes/dataset_manage.py` 从 datavalue 的 `sorce` 字段提取，存储为 `maxScore`
-2. **批量评估**：`routes/batch_evaluation.py` 的 `do_evaluation` 函数从 `base_effect` 获取分数
-3. **错误详情**：`errors[].base_effect.score` 和 `errors[].ai_result.score` 用于前端展示
-4. **任务列表**：`has_score` 字段标识任务是否包含分数数据，用于显示"判分"标签
+---
 
-### 题型分数准确率统计实现
+## 缓存策略 (DashboardService)
 
-**功能**：按题型（选择题、客观填空题、主观题）统计分数准确率
-
-**核心函数**：`calculate_score_accuracy_by_type(base_effect, homework_result, type_map)`
-- 位置：`routes/batch_evaluation.py`
-- 作用：遍历全部题目，按题型分类，判断 AI 判分与基准分数是否一致
-- 返回：各题型的 `score_total`、`score_accurate`、`score_higher`、`score_lower`、`score_accuracy`
-
-**数据流**：
-```
-data_value (题目类型信息)
-    ↓ 构建 type_map
-do_evaluation() 
-    ↓ 调用模块化函数
-calculate_score_accuracy_by_type()
-    ↓ 返回分数统计
-type_stats (合并分数字段)
-    ↓ 聚合到任务级别
-overall_report.by_question_type
-    ↓ 前端渲染
-题型分数准确率对比图表
-```
-
-**关键点**：
-- `type_map` 必须从 `data_value` 构建并传递到所有评估函数
-- 使用模块化函数避免重复代码
-- 兼容两种评估模式：本地评估 (`do_evaluation`) 和 AI 语义评估 (`convert_semantic_to_batch_result`)
-- 分数字段需要在聚合时累加：`score_total`、`score_accurate`、`score_higher`、`score_lower`
-```
+| 数据类型 | TTL | 说明 |
+|----------|-----|------|
+| 概览统计 | 5分钟 | 需要较新数据 |
+| 数据集概览 | 15分钟 | 中等频率 |
+| 批量任务 | 30分钟 | 数据量大，变化不频繁 |
 
 ---
 
 ## 部署
 
 ```powershell
-# 一键部署
-.\deploy-quick.ps1
-
-# SSH 连接
-$SSH_KEY = "$env:USERPROFILE\.ssh\id_ed25519_baota"
-ssh -i $SSH_KEY root@47.82.64.147
-
-# 常用命令
-docker ps
-docker logs ai-grading-platform --tail 100
-docker restart ai-grading-platform
+.\deploy-quick.ps1  # 一键部署
 ```
 
 服务器: `47.82.64.147:5000` | 路径: `/www/wwwroot/ai-grading/Ai`
@@ -189,12 +168,7 @@ docker restart ai-grading-platform
 ## 常用命令
 
 ```bash
-# 开发
-python app.py
-
-# 测试
-USE_DB_STORAGE=false pytest tests/ -v
-
-# 部署
-.\deploy-quick.ps1
+python app.py                           # 开发
+USE_DB_STORAGE=false pytest tests/ -v   # 测试
+.\deploy-quick.ps1                      # 部署
 ```

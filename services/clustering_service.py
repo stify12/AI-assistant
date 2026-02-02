@@ -1,383 +1,441 @@
 """
-错误聚类服务模块 (US-27)
+错误聚类服务模块
 
-使用AI对相似错误进行自动聚类分析。
+并发批量调用LLM分析错误类型
+支持结果缓存、学科上下文、流式返回
 """
-import uuid
 import json
-from datetime import datetime
-from typing import Optional, List, Dict, Any
+import concurrent.futures
+from typing import Dict, List, Any, Generator
+from collections import defaultdict
 
-from .database_service import AppDatabaseService
 from .llm_service import LLMService
+from .storage_service import StorageService
+
+
+# 学科错误类型配置
+SUBJECT_ERROR_TYPES = {
+    # 语文(1)
+    1: [
+        "汉字识别错误", "形近字混淆", "同音字混淆", "汉字遗漏", "汉字多余",
+        "拼音识别错误", "标点符号错误", "语句理解错误",
+        "判分错误", "正确判为错误", "错误判为正确", "得分计算错误",
+        "空白误识别", "格式差异", "内容缺失", "字迹模糊误判", "其他错误"
+    ],
+    # 数学(2)
+    2: [
+        "数字识别错误", "数字遗漏", "小数点遗漏", "负号遗漏",
+        "运算符错误", "括号错误", "分数识别错误", "上下标错误",
+        "公式解析错误", "单位识别错误", "单位遗漏",
+        "判分错误", "正确判为错误", "错误判为正确", "得分计算错误",
+        "空白误识别", "格式差异", "内容缺失", "字迹模糊误判", "其他错误"
+    ],
+    # 英语(0)
+    0: [
+        "字母识别错误", "大小写错误", "单词拼写错误", "单词遗漏",
+        "标点符号错误", "语法理解错误",
+        "判分错误", "正确判为错误", "错误判为正确", "得分计算错误",
+        "空白误识别", "格式差异", "内容缺失", "字迹模糊误判", "其他错误"
+    ],
+    # 物理(3)
+    3: [
+        "数字识别错误", "数字遗漏", "小数点遗漏", "负号遗漏",
+        "单位识别错误", "单位遗漏", "公式解析错误", "上下标错误",
+        "符号识别错误", "运算符错误",
+        "判分错误", "正确判为错误", "错误判为正确", "得分计算错误",
+        "空白误识别", "格式差异", "内容缺失", "字迹模糊误判", "其他错误"
+    ],
+    # 化学(4)
+    4: [
+        "化学式错误", "元素符号错误", "上下标错误", "化学方程式错误",
+        "数字识别错误", "数字遗漏",
+        "判分错误", "正确判为错误", "错误判为正确", "得分计算错误",
+        "空白误识别", "格式差异", "内容缺失", "字迹模糊误判", "其他错误"
+    ],
+    # 生物(5)
+    5: [
+        "汉字识别错误", "形近字混淆", "专业术语错误",
+        "数字识别错误", "符号识别错误",
+        "判分错误", "正确判为错误", "错误判为正确", "得分计算错误",
+        "空白误识别", "格式差异", "内容缺失", "字迹模糊误判", "其他错误"
+    ],
+    # 地理(6)
+    6: [
+        "汉字识别错误", "形近字混淆", "地名识别错误",
+        "数字识别错误", "符号识别错误",
+        "判分错误", "正确判为错误", "错误判为正确", "得分计算错误",
+        "空白误识别", "格式差异", "内容缺失", "字迹模糊误判", "其他错误"
+    ]
+}
+
+# 学科名称映射
+SUBJECT_NAMES = {
+    0: "英语", 1: "语文", 2: "数学", 3: "物理", 4: "化学", 5: "生物", 6: "地理"
+}
+
+# 默认错误类型（通用）
+DEFAULT_ERROR_TYPES = [
+    "汉字识别错误", "形近字混淆", "同音字混淆", "汉字遗漏", "汉字多余",
+    "判分错误", "正确判为错误", "错误判为正确", "得分计算错误", "答案匹配错误",
+    "数字识别错误", "数字遗漏", "小数点遗漏", "负号遗漏",
+    "字母识别错误", "大小写错误",
+    "符号识别错误", "符号遗漏", "运算符错误", "括号错误",
+    "单位识别错误", "单位遗漏",
+    "公式解析错误", "分数识别错误", "上下标错误",
+    "化学式错误", "元素符号错误",
+    "空白误识别", "格式差异", "顺序错乱",
+    "内容缺失", "内容多余", "答案不完整",
+    "字迹模糊误判", "语义理解错误", "其他错误"
+]
 
 
 class ClusteringService:
     """错误聚类服务类"""
     
     @staticmethod
-    def cluster_errors(
-        error_type: str = None,
-        limit: int = 100
-    ) -> Dict[str, Any]:
-        """
-        对错误样本进行聚类 (US-27.1)
+    def cluster_task_errors(task_id: str, use_llm: bool = True, subject_id: int = None, user_id: str = None) -> Dict[str, Any]:
+        """智能聚类：并发调用LLM分析错误类型（支持缓存）"""
+        task_data = StorageService.load_batch_task(task_id)
+        if not task_data:
+            return {'success': False, 'error': '任务不存在'}
         
-        使用 DeepSeek 分析错误样本的相似性，自动生成聚类标签。
+        # 检查是否有缓存的聚类结果
+        cached_cluster = task_data.get('cluster_result')
+        if cached_cluster:
+            print(f'[Clustering] 使用缓存的聚类结果')
+            return {
+                'success': True,
+                'cached': True,
+                'clusters': cached_cluster.get('clusters', []),
+                'total_errors': cached_cluster.get('total_errors', 0),
+                'total_questions': cached_cluster.get('total_questions', 0)
+            }
         
-        Args:
-            error_type: 限定错误类型
-            limit: 最大样本数
+        # 获取学科ID
+        if subject_id is None:
+            subject_id = task_data.get('subject_id')
+        
+        # 提取所有错误
+        errors = ClusteringService._extract_errors(task_data)
+        if not errors:
+            return {
+                'success': True,
+                'clusters': [],
+                'total_errors': 0,
+                'message': '该任务没有错误样本'
+            }
+        
+        # 按页码+题号分组
+        by_question = defaultdict(list)
+        for err in errors:
+            page = err.get('page_num', '')
+            q_idx = str(err.get('question_index', '?'))
+            key = f"{page}_{q_idx}" if page else q_idx
+            by_question[key].append(err)
+        
+        # 准备每道题的分析数据
+        questions = []
+        for key, q_errors in by_question.items():
+            samples = ClusteringService._pick_representative(q_errors, max_count=2)
+            if '_' in key:
+                page, q_idx = key.rsplit('_', 1)
+            else:
+                page, q_idx = '', key
             
-        Returns:
-            dict: {clusters: list, total_samples: int}
-        """
-        # 获取待聚类的样本
-        where_clause = "cluster_id IS NULL"
-        params = []
-        
-        if error_type:
-            where_clause += " AND error_type = %s"
-            params.append(error_type)
-        
-        sql = f"""
-            SELECT sample_id, error_type, base_answer, base_user, hw_user,
-                   book_name, question_index
-            FROM error_samples 
-            WHERE {where_clause}
-            ORDER BY created_at DESC
-            LIMIT %s
-        """
-        params.append(limit)
-        
-        rows = AppDatabaseService.execute_query(sql, tuple(params))
-        
-        if not rows:
-            return {'clusters': [], 'total_samples': 0}
-        
-        # 准备样本数据
-        samples = []
-        for row in rows:
-            samples.append({
-                'sample_id': row['sample_id'],
-                'error_type': row['error_type'],
-                'base_answer': row.get('base_answer', ''),
-                'base_user': row.get('base_user', ''),
-                'hw_user': row.get('hw_user', ''),
-                'book_name': row.get('book_name', ''),
-                'question_index': row.get('question_index', '')
+            questions.append({
+                'key': key,
+                'page': page,
+                'question': q_idx,
+                'count': len(q_errors),
+                'samples': samples,
+                'all_errors': q_errors
             })
         
-        # 调用AI进行聚类
-        prompt = ClusteringService._generate_cluster_prompt(samples)
+        print(f'[Clustering] 开始并发LLM分析，共 {len(questions)} 道题，学科: {SUBJECT_NAMES.get(subject_id, "未知")}')
         
-        try:
-            response = LLMService.call_deepseek(prompt, model='deepseek-v3.2')
-            cluster_result = ClusteringService._parse_cluster_response(response)
-        except Exception as e:
-            print(f'[Clustering] AI聚类失败: {e}')
-            # 降级：按错误类型简单分组
-            cluster_result = ClusteringService._fallback_clustering(samples)
+        # 并发批量调用LLM
+        llm_result = ClusteringService._batch_analyze_with_llm(questions, subject_id=subject_id, user_id=user_id)
         
-        # 保存聚类结果
-        clusters = []
-        for cluster_data in cluster_result.get('clusters', []):
-            cluster_id = str(uuid.uuid4())[:8]
-            label = cluster_data.get('label', '未分类')
-            description = cluster_data.get('description', '')
-            sample_indices = cluster_data.get('sample_indices', [])
-            
-            # 获取聚类中的样本
-            cluster_samples = [samples[i] for i in sample_indices if i < len(samples)]
-            sample_count = len(cluster_samples)
-            
-            if sample_count == 0:
-                continue
-
-            # 保存聚类到数据库
-            try:
-                insert_sql = """
-                    INSERT INTO error_clusters 
-                    (cluster_id, label, description, error_type, sample_count, 
-                     representative_sample_id, ai_generated)
-                    VALUES (%s, %s, %s, %s, %s, %s, 1)
-                """
-                AppDatabaseService.execute_insert(insert_sql, (
-                    cluster_id, label, description,
-                    cluster_samples[0]['error_type'] if cluster_samples else None,
-                    sample_count,
-                    cluster_samples[0]['sample_id'] if cluster_samples else None
-                ))
-                
-                # 更新样本的聚类ID
-                sample_ids = [s['sample_id'] for s in cluster_samples]
-                if sample_ids:
-                    placeholders = ','.join(['%s'] * len(sample_ids))
-                    update_sql = f"""
-                        UPDATE error_samples 
-                        SET cluster_id = %s, cluster_label = %s
-                        WHERE sample_id IN ({placeholders})
-                    """
-                    AppDatabaseService.execute_update(
-                        update_sql, 
-                        tuple([cluster_id, label] + sample_ids)
-                    )
-                
-                clusters.append({
-                    'cluster_id': cluster_id,
-                    'label': label,
-                    'description': description,
-                    'sample_count': sample_count,
-                    'samples': cluster_samples[:5]  # 只返回前5个样本
-                })
-            except Exception as e:
-                print(f'[Clustering] 保存聚类失败: {e}')
+        if not llm_result.get('success'):
+            return {
+                'success': False,
+                'error': llm_result.get('error', 'LLM分析失败，请重试')
+            }
         
-        return {
+        clusters = llm_result.get('clusters', [])
+        
+        # 保存聚类结果到任务数据
+        cluster_result = {
             'clusters': clusters,
-            'total_samples': len(samples)
+            'total_errors': len(errors),
+            'total_questions': len(by_question),
+            'subject_id': subject_id
         }
-    
-    @staticmethod
-    def get_clusters(error_type: str = None) -> List[Dict[str, Any]]:
-        """
-        获取聚类列表 (US-27.2)
-        
-        Returns:
-            list: 聚类列表
-        """
-        where_clause = "1=1"
-        params = []
-        
-        if error_type:
-            where_clause += " AND error_type = %s"
-            params.append(error_type)
-        
-        sql = f"""
-            SELECT cluster_id, label, description, error_type, sample_count,
-                   representative_sample_id, ai_generated, created_at
-            FROM error_clusters 
-            WHERE {where_clause}
-            ORDER BY sample_count DESC
-        """
-        
-        rows = AppDatabaseService.execute_query(sql, tuple(params) if params else None)
-        
-        clusters = []
-        for row in rows:
-            clusters.append({
-                'cluster_id': row['cluster_id'],
-                'label': row['label'],
-                'description': row.get('description', ''),
-                'error_type': row.get('error_type'),
-                'sample_count': row['sample_count'],
-                'representative_sample_id': row.get('representative_sample_id'),
-                'ai_generated': bool(row.get('ai_generated')),
-                'created_at': row['created_at'].isoformat() if row.get('created_at') else ''
-            })
-        
-        return clusters
-    
-    @staticmethod
-    def get_cluster_samples(
-        cluster_id: str,
-        page: int = 1,
-        page_size: int = 20
-    ) -> Dict[str, Any]:
-        """获取聚类下的样本列表 (US-27.3)"""
-        # 查询总数
-        count_sql = "SELECT COUNT(*) as total FROM error_samples WHERE cluster_id = %s"
-        count_result = AppDatabaseService.execute_one(count_sql, (cluster_id,))
-        total = count_result['total'] if count_result else 0
-        
-        # 查询列表
-        offset = (page - 1) * page_size
-        list_sql = """
-            SELECT sample_id, task_id, homework_id, book_name, page_num,
-                   question_index, error_type, base_answer, base_user, hw_user,
-                   status, created_at
-            FROM error_samples 
-            WHERE cluster_id = %s
-            ORDER BY created_at DESC
-            LIMIT %s OFFSET %s
-        """
-        rows = AppDatabaseService.execute_query(list_sql, (cluster_id, page_size, offset))
-        
-        items = []
-        for row in rows:
-            items.append({
-                'sample_id': row['sample_id'],
-                'task_id': row['task_id'],
-                'homework_id': row['homework_id'],
-                'book_name': row.get('book_name', ''),
-                'page_num': row.get('page_num'),
-                'question_index': row['question_index'],
-                'error_type': row['error_type'],
-                'base_answer': row.get('base_answer', ''),
-                'base_user': row.get('base_user', ''),
-                'hw_user': row.get('hw_user', ''),
-                'status': row['status'],
-                'created_at': row['created_at'].isoformat() if row.get('created_at') else ''
-            })
+        task_data['cluster_result'] = cluster_result
+        StorageService.save_batch_task(task_id, task_data)
+        print(f'[Clustering] 聚类结果已保存到任务数据')
         
         return {
-            'items': items,
-            'total': total,
-            'page': page,
-            'page_size': page_size,
-            'total_pages': (total + page_size - 1) // page_size
+            'success': True,
+            'cached': False,
+            'clusters': clusters,
+            'total_errors': len(errors),
+            'total_questions': len(by_question)
         }
-
-    @staticmethod
-    def merge_clusters(cluster_ids: List[str], new_label: str) -> str:
-        """合并聚类 (US-27.4)"""
-        if len(cluster_ids) < 2:
-            raise ValueError('至少需要2个聚类才能合并')
-        
-        # 创建新聚类
-        new_cluster_id = str(uuid.uuid4())[:8]
-        
-        # 获取所有样本数
-        placeholders = ','.join(['%s'] * len(cluster_ids))
-        count_sql = f"""
-            SELECT COUNT(*) as total FROM error_samples 
-            WHERE cluster_id IN ({placeholders})
-        """
-        count_result = AppDatabaseService.execute_one(count_sql, tuple(cluster_ids))
-        total_samples = count_result['total'] if count_result else 0
-        
-        # 获取主要错误类型
-        type_sql = f"""
-            SELECT error_type, COUNT(*) as cnt FROM error_samples 
-            WHERE cluster_id IN ({placeholders})
-            GROUP BY error_type ORDER BY cnt DESC LIMIT 1
-        """
-        type_result = AppDatabaseService.execute_one(type_sql, tuple(cluster_ids))
-        main_error_type = type_result['error_type'] if type_result else None
-        
-        # 插入新聚类
-        insert_sql = """
-            INSERT INTO error_clusters 
-            (cluster_id, label, error_type, sample_count, ai_generated)
-            VALUES (%s, %s, %s, %s, 0)
-        """
-        AppDatabaseService.execute_insert(insert_sql, (
-            new_cluster_id, new_label, main_error_type, total_samples
-        ))
-        
-        # 更新样本的聚类ID
-        update_sql = f"""
-            UPDATE error_samples 
-            SET cluster_id = %s, cluster_label = %s
-            WHERE cluster_id IN ({placeholders})
-        """
-        AppDatabaseService.execute_update(
-            update_sql, 
-            tuple([new_cluster_id, new_label] + cluster_ids)
-        )
-        
-        # 删除旧聚类
-        delete_sql = f"DELETE FROM error_clusters WHERE cluster_id IN ({placeholders})"
-        AppDatabaseService.execute_update(delete_sql, tuple(cluster_ids))
-        
-        return new_cluster_id
     
     @staticmethod
-    def update_cluster_label(cluster_id: str, label: str) -> bool:
-        """更新聚类标签 (US-27.5)"""
-        # 更新聚类表
-        sql = "UPDATE error_clusters SET label = %s WHERE cluster_id = %s"
-        result = AppDatabaseService.execute_update(sql, (label, cluster_id))
+    def cluster_task_errors_stream(task_id: str, subject_id: int = None, user_id: str = None) -> Generator[str, None, None]:
+        """流式聚类：逐个返回分析结果"""
+        task_data = StorageService.load_batch_task(task_id)
+        if not task_data:
+            yield f"data: {json.dumps({'type': 'error', 'error': '任务不存在'})}\n\n"
+            return
         
-        # 同步更新样本表
-        if result > 0:
-            update_sql = "UPDATE error_samples SET cluster_label = %s WHERE cluster_id = %s"
-            AppDatabaseService.execute_update(update_sql, (label, cluster_id))
+        # 检查缓存
+        cached_cluster = task_data.get('cluster_result')
+        if cached_cluster:
+            yield f"data: {json.dumps({'type': 'cached', 'data': cached_cluster})}\n\n"
+            return
         
-        return result > 0
-    
-    @staticmethod
-    def delete_cluster(cluster_id: str) -> bool:
-        """删除聚类"""
-        # 清除样本的聚类关联
-        update_sql = """
-            UPDATE error_samples 
-            SET cluster_id = NULL, cluster_label = NULL
-            WHERE cluster_id = %s
-        """
-        AppDatabaseService.execute_update(update_sql, (cluster_id,))
+        # 获取学科ID
+        if subject_id is None:
+            subject_id = task_data.get('subject_id')
         
-        # 删除聚类
-        delete_sql = "DELETE FROM error_clusters WHERE cluster_id = %s"
-        result = AppDatabaseService.execute_update(delete_sql, (cluster_id,))
+        # 提取错误
+        errors = ClusteringService._extract_errors(task_data)
+        if not errors:
+            yield f"data: {json.dumps({'type': 'complete', 'clusters': [], 'total_errors': 0})}\n\n"
+            return
         
-        return result > 0
-    
-    @staticmethod
-    def _generate_cluster_prompt(samples: List[Dict]) -> str:
-        """生成聚类分析的 Prompt"""
-        # 简化样本数据
-        simplified = []
-        for i, s in enumerate(samples[:50]):  # 最多50个样本
-            simplified.append({
-                'index': i,
-                'error_type': s['error_type'],
-                'base': s.get('base_answer', '')[:50],
-                'user': s.get('base_user', '')[:50],
-                'ai': s.get('hw_user', '')[:50]
+        # 按题号分组
+        by_question = defaultdict(list)
+        for err in errors:
+            page = err.get('page_num', '')
+            q_idx = str(err.get('question_index', '?'))
+            key = f"{page}_{q_idx}" if page else q_idx
+            by_question[key].append(err)
+        
+        questions = []
+        for key, q_errors in by_question.items():
+            samples = ClusteringService._pick_representative(q_errors, max_count=2)
+            if '_' in key:
+                page, q_idx = key.rsplit('_', 1)
+            else:
+                page, q_idx = '', key
+            questions.append({
+                'key': key, 'page': page, 'question': q_idx,
+                'count': len(q_errors), 'samples': samples, 'all_errors': q_errors
             })
         
-        return f"""请分析以下AI批改错误样本，将相似的错误归类，并为每个类别生成简短的标签。
-
-错误样本（共{len(samples)}个，展示前{len(simplified)}个）：
-{json.dumps(simplified, ensure_ascii=False, indent=2)}
-
-请返回JSON格式（不要包含markdown代码块标记）：
-{{
-    "clusters": [
-        {{
-            "label": "聚类标签（简短描述）",
-            "description": "聚类描述（详细说明这类错误的特征）",
-            "sample_indices": [0, 1, 2]
-        }}
-    ]
-}}
-
-要求：
-1. 每个样本只能属于一个聚类
-2. 标签要简洁明了，不超过20字
-3. 相似的错误模式归为一类"""
+        total = len(questions)
+        yield f"data: {json.dumps({'type': 'start', 'total': total, 'subject': SUBJECT_NAMES.get(subject_id, '未知')})}\n\n"
+        
+        # 逐个分析并返回
+        results = []
+        for i, q in enumerate(questions[:50]):  # 限制50道
+            result = ClusteringService._analyze_single_question(q, subject_id=subject_id, user_id=user_id)
+            results.append(result)
+            yield f"data: {json.dumps({'type': 'progress', 'current': i+1, 'total': min(total, 50), 'result': result})}\n\n"
+        
+        # 聚合结果
+        clusters = ClusteringService._aggregate_results(results, {q['key']: q for q in questions})
+        
+        # 保存到任务
+        cluster_result = {
+            'clusters': clusters,
+            'total_errors': len(errors),
+            'total_questions': len(by_question),
+            'subject_id': subject_id
+        }
+        task_data['cluster_result'] = cluster_result
+        StorageService.save_batch_task(task_id, task_data)
+        
+        yield f"data: {json.dumps({'type': 'complete', 'clusters': clusters, 'total_errors': len(errors), 'total_questions': len(by_question)})}\n\n"
     
     @staticmethod
-    def _parse_cluster_response(response: str) -> Dict[str, Any]:
-        """解析AI聚类响应"""
+    def clear_cluster_cache(task_id: str) -> Dict[str, Any]:
+        """清除任务的聚类缓存"""
+        task_data = StorageService.load_batch_task(task_id)
+        if not task_data:
+            return {'success': False, 'error': '任务不存在'}
+        
+        if 'cluster_result' in task_data:
+            del task_data['cluster_result']
+            StorageService.save_batch_task(task_id, task_data)
+            return {'success': True, 'message': '缓存已清除'}
+        return {'success': True, 'message': '无缓存'}
+    
+    @staticmethod
+    def _extract_errors(task_data: Dict) -> List[Dict]:
+        """提取错误样本"""
+        errors = []
+        for hw in task_data.get('homework_items', []):
+            evaluation = hw.get('evaluation', {})
+            for err in evaluation.get('errors', []):
+                errors.append({
+                    'homework_id': hw.get('homework_id'),
+                    'student_name': hw.get('student_name', ''),
+                    'book_name': hw.get('book_name', ''),
+                    'page_num': hw.get('page_num'),
+                    'question_index': str(err.get('index', '')),
+                    'base_effect': err.get('base_effect', {}),
+                    'ai_result': err.get('ai_result', {}),
+                    'explanation': err.get('explanation', '')
+                })
+        return errors
+    
+    @staticmethod
+    def _pick_representative(errors: List[Dict], max_count: int = 2) -> List[Dict]:
+        """挑选代表性样本"""
+        if len(errors) <= max_count:
+            return errors
+        
+        def diff_score(err):
+            base = str(err.get('base_effect', {}).get('userAnswer', '') or '')
+            ai = str(err.get('ai_result', {}).get('userAnswer', '') or '')
+            return abs(len(base) - len(ai)) + (10 if base != ai else 0)
+        
+        sorted_errors = sorted(errors, key=diff_score, reverse=True)
+        return sorted_errors[:max_count]
+    
+    @staticmethod
+    def _analyze_single_question(question: Dict, subject_id: int = None, user_id: str = None) -> Dict:
+        """分析单道题的错误类型（带学科上下文）"""
+        samples_text = []
+        for s in question['samples']:
+            base = s.get('base_effect', {})
+            ai = s.get('ai_result', {})
+            base_ans = str(base.get('userAnswer', '') or '').strip()[:100]
+            ai_ans = str(ai.get('userAnswer', '') or '').strip()[:100]
+            base_correct = base.get('correct')
+            ai_correct = ai.get('correct')
+            
+            base_judge = '正确' if base_correct in [True, 'yes'] else ('错误' if base_correct in [False, 'no'] else '')
+            ai_judge = '正确' if ai_correct in [True, 'yes'] else ('错误' if ai_correct in [False, 'no'] else '')
+            
+            if base_ans or ai_ans:
+                line = f"人工标注: {base_ans or '(空)'}"
+                if base_judge:
+                    line += f" [{base_judge}]"
+                line += f"\nAI识别: {ai_ans or '(空)'}"
+                if ai_judge:
+                    line += f" [{ai_judge}]"
+                samples_text.append(line)
+        
+        if not samples_text:
+            return {'key': question['key'], 'label': '数据异常', 'reason': '无有效样本'}
+        
+        # 根据学科选择错误类型列表
+        error_types = SUBJECT_ERROR_TYPES.get(subject_id, DEFAULT_ERROR_TYPES)
+        types_str = "、".join(error_types[:25])
+        subject_name = SUBJECT_NAMES.get(subject_id, "")
+        subject_hint = f"这是{subject_name}学科的作业。" if subject_name else ""
+        
+        prompt = f"""这是AI作业批改系统的错误分析任务。{subject_hint}
+
+场景：学生手写答案，AI识别并判分。
+
+错误样本：
+{chr(10).join(samples_text)}
+
+分析差异，选择最准确的错误类型。
+可选类型：{types_str}
+
+返回JSON：{{"label":"错误类型","reason":"10字内原因"}}"""
+        
         try:
-            # 尝试提取JSON
+            result = LLMService.call_deepseek(prompt, timeout=30, user_id=user_id)
+            
+            if isinstance(result, dict):
+                if result.get('error'):
+                    return {'key': question['key'], 'label': '分析失败', 'reason': result.get('error')}
+                response = result.get('content', '')
+            else:
+                response = str(result)
+            
             response = response.strip()
             if response.startswith('```'):
                 lines = response.split('\n')
                 response = '\n'.join(lines[1:-1])
             
-            return json.loads(response)
-        except:
-            return {'clusters': []}
+            parsed = json.loads(response)
+            return {
+                'key': question['key'],
+                'label': parsed.get('label', '未知错误'),
+                'reason': parsed.get('reason', '')
+            }
+        except Exception as e:
+            print(f'[Clustering] 分析题目 {question["key"]} 失败: {e}')
+            return {'key': question['key'], 'label': '分析失败', 'reason': str(e)}
     
     @staticmethod
-    def _fallback_clustering(samples: List[Dict]) -> Dict[str, Any]:
-        """降级聚类：按错误类型分组"""
-        groups = {}
-        for i, sample in enumerate(samples):
-            error_type = sample['error_type']
-            if error_type not in groups:
-                groups[error_type] = []
-            groups[error_type].append(i)
+    def _batch_analyze_with_llm(questions: List[Dict], subject_id: int = None, user_id: str = None) -> Dict:
+        """并发批量调用LLM分析每道题"""
+        questions_to_analyze = questions[:50]
+        
+        results = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            future_to_q = {
+                executor.submit(ClusteringService._analyze_single_question, q, subject_id, user_id): q 
+                for q in questions_to_analyze
+            }
+            
+            for future in concurrent.futures.as_completed(future_to_q):
+                try:
+                    result = future.result()
+                    results.append(result)
+                except Exception as e:
+                    q = future_to_q[future]
+                    print(f'[Clustering] 并发任务失败 {q["key"]}: {e}')
+                    results.append({'key': q['key'], 'label': '分析失败', 'reason': str(e)})
+        
+        print(f'[Clustering] 并发分析完成，共 {len(results)} 个结果')
+        
+        question_map = {q['key']: q for q in questions}
+        clusters = ClusteringService._aggregate_results(results, question_map)
+        
+        print(f'[Clustering] 聚类完成，共 {len(clusters)} 个错误类型')
+        return {'success': True, 'clusters': clusters}
+    
+    @staticmethod
+    def _aggregate_results(results: List[Dict], question_map: Dict) -> List[Dict]:
+        """聚合分析结果"""
+        label_groups = defaultdict(list)
+        
+        for r in results:
+            label = r.get('label', '未知错误')
+            key = r.get('key')
+            if key:
+                label_groups[label].append({
+                    'key': key,
+                    'reason': r.get('reason', '')
+                })
         
         clusters = []
-        for error_type, indices in groups.items():
+        for label, items in label_groups.items():
+            question_ids = [item['key'] for item in items]
+            reasons = [item['reason'] for item in items if item.get('reason')]
+            
+            all_samples = []
+            error_count = 0
+            for qid in question_ids:
+                if qid in question_map:
+                    q = question_map[qid]
+                    all_samples.extend(q['all_errors'])
+                    error_count += q['count']
+            
             clusters.append({
-                'label': error_type,
-                'description': f'错误类型为"{error_type}"的样本',
-                'sample_indices': indices
+                'label': label,
+                'description': reasons[0] if reasons else '',
+                'question_ids': question_ids,
+                'error_count': error_count,
+                'samples': all_samples
             })
         
-        return {'clusters': clusters}
+        clusters.sort(key=lambda x: x['error_count'], reverse=True)
+        return clusters
+    
+    @staticmethod
+    def clear_cache():
+        """清除缓存（保留接口兼容）"""
+        pass
