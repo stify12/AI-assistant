@@ -94,6 +94,35 @@ MATH_TEMPLATES = {
         "correct": "no",
         "score_ratio": 0,
         "prompt_hint": "完全空白，未作答"
+    },
+    # 概念错误类
+    "math_formula_error": {
+        "name": "公式记错",
+        "tags": ["答案错误", "概念错误", "公式错误"],
+        "correct": "no",
+        "score_ratio": 0,
+        "prompt_hint": "公式应用错误：如圆面积用2πr（应为πr²）、球体积用4πr²（应为4/3πr³）、勾股定理a+b=c（应为a²+b²=c²）"
+    },
+    "math_order_error": {
+        "name": "运算顺序错",
+        "tags": ["答案错误", "概念错误", "运算顺序"],
+        "correct": "no",
+        "score_ratio": 0,
+        "prompt_hint": "运算顺序错误：如2+3×4=20（应为14，先乘后加）、8÷2×4=1（应为16，从左到右）"
+    },
+    "math_bracket_error": {
+        "name": "括号处理错",
+        "tags": ["答案错误", "概念错误", "括号展开"],
+        "correct": "no",
+        "score_ratio": 0,
+        "prompt_hint": "括号展开错误：如(a+b)²=a²+b²（应为a²+2ab+b²）、-(a-b)=-a-b（应为-a+b）、2(x+3)=2x+3（应为2x+6）"
+    },
+    "math_fraction_op": {
+        "name": "分数运算错",
+        "tags": ["答案错误", "概念错误", "分数运算"],
+        "correct": "no",
+        "score_ratio": 0,
+        "prompt_hint": "分数运算错误：如1/2+1/3=2/5（应为5/6，通分后相加）、1/2×1/3=1/5（应为1/6）、1/2÷1/3=1/6（应为3/2）"
     }
 }
 
@@ -123,6 +152,11 @@ TEMPLATE_COMBINATIONS = {
         "name": "错误判断专项",
         "templates": ["math_wrong_common", "math_wrong_careless", "math_partial", "math_similar_looking", "math_blank"],
         "description": "专项测试错误答案的判断能力（全部错误场景）"
+    },
+    "concept_error": {
+        "name": "概念错误专项",
+        "templates": ["math_formula_error", "math_order_error", "math_bracket_error", "math_fraction_op"],
+        "description": "专项测试概念性错误的判断能力（公式、运算顺序、括号、分数）"
     }
 }
 
