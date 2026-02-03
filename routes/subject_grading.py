@@ -322,8 +322,9 @@ def evaluate_grading():
     base_effect = data.get('base_effect', [])
     homework_result = data.get('homework_result', [])
     use_ai_compare = data.get('use_ai_compare', False)  # 是否使用AI模型比对
+    subject_id = data.get('subject_id')  # 获取学科ID
     
-    print(f"[Evaluate] use_ai_compare={use_ai_compare}, base_effect_count={len(base_effect)}, homework_result_count={len(homework_result)}")
+    print(f"[Evaluate] use_ai_compare={use_ai_compare}, subject_id={subject_id}, base_effect_count={len(base_effect)}, homework_result_count={len(homework_result)}")
     
     if not base_effect:
         return jsonify({'success': False, 'error': '缺少基准效果数据'})
@@ -339,7 +340,7 @@ def evaluate_grading():
         print("[Evaluate] AI比对失败，回退到本地计算")
     
     # 本地对比计算
-    evaluation = do_local_evaluation(base_effect, homework_result)
+    evaluation = do_local_evaluation(base_effect, homework_result, subject_id)
     
     return jsonify({'success': True, 'evaluation': evaluation})
 
@@ -541,8 +542,29 @@ def convert_ai_compare_to_evaluation(compare_results, base_effect, homework_resu
     }
 
 
-def do_local_evaluation(base_effect, homework_result):
-    """本地对比计算评估结果 - 全部按tempIndex匹配"""
+def do_local_evaluation(base_effect, homework_result, subject_id=None):
+    """本地对比计算评估结果 - 全部按tempIndex匹配
+    
+    Args:
+        base_effect: 基准效果数据
+        homework_result: AI批改结果
+        subject_id: 学科ID（2=数学，用于选择标准化函数）
+    """
+    # 转换 subject_id 为整数（前端可能传字符串）
+    try:
+        subject_id = int(subject_id) if subject_id is not None else None
+    except (ValueError, TypeError):
+        subject_id = None
+    
+    # 根据学科选择标准化函数
+    if subject_id == 2:  # 数学学科
+        from services.math_eval import normalize_math_answer
+        normalize_func = normalize_math_answer
+        print(f"[Evaluate] 使用数学学科标准化函数 (subject_id={subject_id})")
+    else:
+        normalize_func = normalize_answer
+        print(f"[Evaluate] 使用通用标准化函数 (subject_id={subject_id})")
+    
     total = len(base_effect)
     correct_count = 0
     errors = []
@@ -613,9 +635,9 @@ def do_local_evaluation(base_effect, homework_result):
             explanation = f'AI批改结果中缺少第{idx}题'
             severity = 'high'
         elif not base_correct:
-            # 基准效果缺少correct字段，只能比较userAnswer
-            norm_base_user = normalize_answer(base_user)
-            norm_hw_user = normalize_answer(hw_user)
+            # 基准效果缺少correct字段，只能比较userAnswer（使用学科专用标准化函数）
+            norm_base_user = normalize_func(base_user)
+            norm_hw_user = normalize_func(hw_user)
             
             if norm_base_user == norm_hw_user:
                 is_match = True
@@ -626,10 +648,14 @@ def do_local_evaluation(base_effect, homework_result):
                 explanation = f'用户答案不一致：基准="{base_user}"，AI="{hw_user}"（基准效果缺少判断结果，无法判断correct是否正确）'
                 severity = 'high'
         else:
-            # 标准化答案进行比较
-            norm_base_user = normalize_answer(base_user)
-            norm_hw_user = normalize_answer(hw_user)
-            norm_base_answer = normalize_answer(base_answer)
+            # 标准化答案进行比较（使用学科专用标准化函数）
+            norm_base_user = normalize_func(base_user)
+            norm_hw_user = normalize_func(hw_user)
+            norm_base_answer = normalize_func(base_answer)
+            
+            # 调试日志
+            if base_user != hw_user:
+                print(f"[Evaluate] 题{idx}: base_user='{base_user}' -> '{norm_base_user}', hw_user='{hw_user}' -> '{norm_hw_user}', match={norm_base_user == norm_hw_user}")
             
             user_match = norm_base_user == norm_hw_user
             correct_match = base_correct == hw_correct

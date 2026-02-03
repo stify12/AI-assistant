@@ -561,6 +561,19 @@ async function saveDataset() {
     const name = document.getElementById('datasetNameInline').value.trim();
     if (!name) { alert('请输入数据集名称'); return; }
     
+    // 获取是否保存评分的开关状态
+    const saveScore = document.getElementById('saveScoreToggle')?.checked || false;
+    
+    // 根据开关状态处理数据
+    let effectsToSave = state.generatedEffects;
+    if (!saveScore) {
+        // 不保存评分时，移除 score 和 maxScore 字段
+        effectsToSave = state.generatedEffects.map(item => {
+            const { score, maxScore, ...rest } = item;
+            return rest;
+        });
+    }
+    
     showLoading('保存中...');
     try {
         const data = await apiCall('/api/testcase/save', {
@@ -570,9 +583,10 @@ async function saveDataset() {
                 book_name: state.currentBook?.book_name,
                 subject_id: state.subjectId,
                 page_num: state.pageNum,
-                base_effects: state.generatedEffects,
+                base_effects: effectsToSave,
                 dataset_name: name,
-                description: ''
+                description: '',
+                save_score: saveScore
             })
         });
         alert(`保存成功！数据集ID: ${data.dataset_id}`);

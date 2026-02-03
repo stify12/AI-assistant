@@ -623,9 +623,14 @@ class TestcaseGeneratorService:
         page_num: int,
         base_effects: List[Dict],
         dataset_name: str = None,
-        description: str = None
+        description: str = None,
+        save_score: bool = False
     ) -> Dict:
-        """保存生成的基准效果为数据集"""
+        """保存生成的基准效果为数据集
+        
+        Args:
+            save_score: 是否保存评分字段(score/maxScore)，默认不保存
+        """
         import uuid
         
         try:
@@ -646,12 +651,18 @@ class TestcaseGeneratorService:
             )
             
             for effect in base_effects:
+                # 根据 save_score 决定是否保存分数字段
+                max_score_val = effect.get('maxScore') if save_score else None
+                score_val = effect.get('score') if save_score else None
+                
                 extra_data = {
                     'questionType': effect.get('questionType', 'objective'),
-                    'bvalue': effect.get('bvalue', '4'),
-                    'maxScore': effect.get('maxScore'),
-                    'score': effect.get('score')
+                    'bvalue': effect.get('bvalue', '4')
                 }
+                # 仅在保存评分时添加分数到 extra_data
+                if save_score:
+                    extra_data['maxScore'] = effect.get('maxScore')
+                    extra_data['score'] = effect.get('score')
                 
                 tags = effect.get('tags', [])
                 tags_json = json.dumps(tags, ensure_ascii=False) if tags else None
@@ -672,8 +683,8 @@ class TestcaseGeneratorService:
                     effect.get('userAnswer', ''),
                     effect.get('correct', 'no'),
                     tags_json,
-                    effect.get('maxScore'),
-                    effect.get('score'),
+                    max_score_val,
+                    score_val,
                     effect.get('fillGuide', ''),
                     json.dumps(extra_data, ensure_ascii=False)
                 ))

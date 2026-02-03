@@ -576,6 +576,10 @@ body {
     gap: 12px;
 }
 
+.dataset-name-row + .dataset-name-row {
+    margin-top: 10px;
+}
+
 .dataset-name-label {
     font-size: 13px;
     font-weight: 500;
@@ -596,6 +600,33 @@ body {
 .dataset-name-input:focus {
     border-color: var(--text-primary);
     outline: none;
+}
+
+/* 开关按钮样式 */
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.toggle-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--text-primary);
+}
+
+.toggle-text {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.toggle-hint {
+    font-size: 12px;
+    color: var(--text-muted);
 }
 
 /* ========== 表格内编辑输入框 ========== */

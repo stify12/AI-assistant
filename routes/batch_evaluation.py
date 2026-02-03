@@ -21,7 +21,7 @@ from services.chemistry_eval import normalize_chemistry_markdown
 from services.ai_analysis_service import AIAnalysisService
 from services.prompt_config_service import PromptConfigService
 from services.clustering_service import ClusteringService
-from services.math_normalize_service import normalize_math_answer
+from services.math_eval import normalize_math_markdown, normalize_math_answer
 from utils.text_utils import normalize_answer, normalize_answer_science, has_format_diff, calculate_similarity, is_fuzzy_match
 
 batch_evaluation_bp = Blueprint('batch_evaluation', __name__)
@@ -909,14 +909,27 @@ def remove_index_prefix(text):
         "（2）答案内容" -> "答案内容"
         "1.答案内容" -> "答案内容"
         "1、答案内容" -> "答案内容"
+    
+    注意：不会移除整个答案，只移除题号前缀
+    如: "3" -> "3" (纯数字答案保持不变)
+        "(1)3" -> "3" (移除题号前缀，保留答案)
     """
     import re
     if not text:
         return text
     text = str(text).strip()
+    
     # 匹配常见的题号前缀格式：(1) （1） 1. 1、 1) 等
-    pattern = r'^[\(（]?\d+[\)）]?[\.、\s]*'
-    return re.sub(pattern, '', text).strip()
+    # 必须后面有非数字内容，避免移除纯数字答案
+    # 模式：可选括号 + 数字 + 可选括号 + 可选分隔符（.、空格等）
+    pattern = r'^[\(（]\d+[\)）][\.、\s]*|^\d+[\.、\s]+'
+    result = re.sub(pattern, '', text).strip()
+    
+    # 如果结果为空，说明整个字符串都被匹配了（纯数字答案），返回原始值
+    if not result:
+        return text
+    
+    return result
 
 
 def classify_error(base_item, hw_item, is_chinese=False, fuzzy_threshold=0.85, ignore_index_prefix=True):
@@ -2961,7 +2974,8 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         # 判断是否为语文非选择题（用于模糊匹配）
         # 语文学科的所有非选择题（包括客观填空题和主观题）都使用模糊匹配
         is_chinese_fuzzy = is_chinese and not question_category['is_choice']
-        print(f"[DEBUG] do_evaluation 题{idx}: is_chinese={is_chinese}, is_choice={question_category['is_choice']}, is_chinese_fuzzy={is_chinese_fuzzy}, is_physics={is_physics}, is_chemistry={is_chemistry}")
+        is_math = subject_id == 2
+        print(f"[DEBUG] do_evaluation 题{idx}: subject_id={subject_id}, is_math={is_math}, is_chinese={is_chinese}, is_physics={is_physics}, is_chemistry={is_chemistry}")
         
         if not hw_item:
             is_match = False
@@ -2974,6 +2988,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
             if subject_id == 2:
                 norm_base_user = normalize_math_answer(base_user)
                 norm_hw_user = normalize_math_answer(hw_user)
+                print(f"[DEBUG] 数学标准化(无correct): 题{idx}, base_user='{base_user}' -> '{norm_base_user}', hw_user='{hw_user}' -> '{norm_hw_user}'")
             elif subject_id in (3, 4, 5, 6):
                 norm_base_user = normalize_answer_science(base_user)
                 norm_hw_user = normalize_answer_science(hw_user)
@@ -3026,6 +3041,10 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
                 # 直接标准化，不移除题号前缀
                 norm_base_user = normalize_func(base_user)
                 norm_hw_user = normalize_func(hw_user)
+            
+            # 数学学科调试日志
+            if subject_id == 2:
+                print(f"[DEBUG] 数学标准化(有correct): 题{idx}, base_user='{base_user}' -> '{norm_base_user}', hw_user='{hw_user}' -> '{norm_hw_user}', match={norm_base_user == norm_hw_user}")
                 norm_base_answer = normalize_func(base_answer)
             
             user_match = norm_base_user == norm_hw_user

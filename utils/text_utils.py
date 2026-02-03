@@ -186,9 +186,10 @@ def normalize_answer_science(text):
     # 2. 移除HTML标签（如 <br>）
     text = re.sub(r'<[^>]+>', '', text)
     
-    # 3. 将换行符和制表符替换为空格
+    # 3. 统一所有空白字符（换行、制表符、全角空格等）为单个空格
     text = text.replace('\\n', ' ').replace('\\r', ' ').replace('\\t', ' ')
     text = text.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
+    text = text.replace('\u3000', ' ')  # 全角空格
     
     # 4. 移除markdown格式标记
     text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)  # **bold**
@@ -207,10 +208,11 @@ def normalize_answer_science(text):
         text = text.replace(symbol, replacement)
     
     # 6. 移除不影响理科答案语义的标点符号
-    # 注意：保留 '.'（小数点）、'~'（范围）、'-'（负号，但需要特殊处理）
+    # 注意：保留 '.'（小数点）、'~'（范围）、'-'（负号）、'/'（分数）
+    # $ 符号已在 math_eval.py 中移除，这里再次确保清除
     punctuation_to_remove = (
         '，。；：！？""''（）【】《》、—…·「」『』〈〉〔〕｛｝'  # 中文标点
-        ',;:!?()[]{}/<>_|@#%^&`$'  # 英文标点（不含 . ~ -）+ $ (LaTeX标记)
+        ',;:!?()[]{}<>_|@#%^&`$'  # 英文标点（不含 . ~ - /）+ $ (LaTeX标记)
         '"' "'" '\\'  # 引号和反斜杠
     )
     for punct in punctuation_to_remove:
@@ -221,8 +223,8 @@ def normalize_answer_science(text):
     for c in circled_numbers:
         text = text.replace(c, '')
     
-    # 8. 移除所有空白字符
-    text = re.sub(r'\s+', '', text)
+    # 8. 移除所有空白字符（包括全角空格）
+    text = re.sub(r'[\s\u3000]+', '', text)
     
     return text
 

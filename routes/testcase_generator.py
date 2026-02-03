@@ -87,6 +87,7 @@ def save_dataset():
     base_effects = data.get('base_effects', [])
     dataset_name = data.get('dataset_name')
     description = data.get('description')
+    save_score = data.get('save_score', False)  # 是否保存评分字段，默认不保存
     
     if not book_id or page_num is None:
         return jsonify({'success': False, 'error': '缺少书本ID或页码'})
@@ -101,7 +102,8 @@ def save_dataset():
         page_num=page_num,
         base_effects=base_effects,
         dataset_name=dataset_name,
-        description=description
+        description=description,
+        save_score=save_score
     )
     
     return jsonify(result)

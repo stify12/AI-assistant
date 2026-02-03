@@ -72,14 +72,35 @@ const GREEK_LETTERS = {
 
 // 数学运算符映射
 const MATH_OPERATORS = {
-    '\\times': '×', '\\div': '÷', '\\pm': '±', '\\cdot': '·',
+    // 基本运算
+    '\\times': '×', '\\div': '÷', '\\pm': '±', '\\mp': '∓', '\\cdot': '·',
+    // 比较关系（长命令在前，确保优先匹配）
+    '\\geqslant': '≥', '\\leqslant': '≤',
     '\\leq': '≤', '\\le': '≤', '\\geq': '≥', '\\ge': '≥',
-    '\\neq': '≠', '\\approx': '≈', '\\equiv': '≡',
+    '\\neq': '≠', '\\ne': '≠', '\\approx': '≈', '\\equiv': '≡',
+    '\\lt': '<', '\\gt': '>',
+    // 集合关系
+    '\\in': '∈', '\\notin': '∉', '\\ni': '∋',
+    '\\subset': '⊂', '\\supset': '⊃', '\\subseteq': '⊆', '\\supseteq': '⊇',
+    '\\cap': '∩', '\\cup': '∪', '\\emptyset': '∅', '\\varnothing': '∅',
+    // 逻辑符号
+    '\\forall': '∀', '\\exists': '∃', '\\nexists': '∄',
+    '\\land': '∧', '\\lor': '∨', '\\lnot': '¬', '\\neg': '¬',
+    // 箭头
+    '\\rightarrow': '→', '\\leftarrow': '←', '\\leftrightarrow': '↔',
+    '\\Rightarrow': '⇒', '\\Leftarrow': '⇐', '\\Leftrightarrow': '⇔',
+    '\\to': '→', '\\gets': '←', '\\implies': '⇒', '\\iff': '⇔',
+    // 几何符号
+    '\\angle': '∠', '\\perp': '⊥', '\\parallel': '∥', '\\triangle': '△',
+    '\\therefore': '∴', '\\because': '∵',
+    // 微积分
     '\\infty': '∞', '\\partial': '∂', '\\nabla': '∇',
-    '\\angle': '∠', '\\perp': '⊥', '\\parallel': '∥',
-    '\\triangle': '△', '\\rightarrow': '→', '\\leftarrow': '←',
-    '\\Rightarrow': '⇒', '\\Leftarrow': '⇐',
-    '\\int': '∫', '\\sum': 'Σ', '\\prod': 'Π'
+    '\\int': '∫', '\\iint': '∬', '\\iiint': '∭',
+    '\\sum': 'Σ', '\\prod': 'Π',
+    // 特殊集合
+    '\\mathbb{R}': 'ℝ', '\\mathbb{N}': 'ℕ', '\\mathbb{Z}': 'ℤ',
+    '\\mathbb{Q}': 'ℚ', '\\mathbb{C}': 'ℂ',
+    '\\R': 'ℝ', '\\N': 'ℕ', '\\Z': 'ℤ', '\\Q': 'ℚ', '\\C': 'ℂ'
 };
 
 // 上标字符映射
@@ -112,7 +133,11 @@ function normalizeMarkdownFormula(text) {
     if (!text) return '';
     text = String(text);
     
-    // 1. 双反斜杠转单反斜杠
+    // 1. 处理转义的大括号（JSON中常见的 \\{ \\}）
+    text = text.replace(/\\\\{/g, '⟨LBRACE⟩');  // 临时占位
+    text = text.replace(/\\\\}/g, '⟨RBRACE⟩');
+    
+    // 2. 双反斜杠转单反斜杠
     text = text.replace(/\\\\/g, '\\');
     
     // 2. 移除 $ 符号
@@ -186,10 +211,26 @@ function normalizeMarkdownFormula(text) {
     text = text.replace(/\\qquad/g, '    ');
     text = text.replace(/\\[,;:\s!]/g, ' ');
     
-    // 10. 移除剩余的 LaTeX 命令
-    text = text.replace(/\\[a-zA-Z]+\s*(?:\[[^\]]*\])?\s*(?:\{[^{}]*\})?/g, '');
+    // 9.5 处理AI识别产生的异常命令（如 \slant）
+    text = text.replace(/\\slant\{?(\d+)\}?/g, '$1');  // \slant{1} 或 \slant1 -> 1
+    text = text.replace(/\\slant/g, '');  // 残留的 \slant 直接移除
     
-    // 11. 清理空白
+    // 10. 移除剩余的 LaTeX 命令（保留内容）
+    text = text.replace(/\\[a-zA-Z]+\s*(?:\[[^\]]*\])?\s*\{([^{}]*)\}/g, '$1');
+    text = text.replace(/\\[a-zA-Z]+/g, '');
+    
+    // 11. 清理残留的转义符号和括号
+    text = text.replace(/\\\{/g, '{');  // \{ → {
+    text = text.replace(/\\\}/g, '}');  // \} → }
+    text = text.replace(/\\\|/g, '|');  // \| → |
+    text = text.replace(/\\\\/g, '');   // \\ → 空
+    text = text.replace(/\\(?![a-zA-Z])/g, ''); // 清理孤立的反斜杠
+    
+    // 12. 还原临时占位的大括号
+    text = text.replace(/⟨LBRACE⟩/g, '{');
+    text = text.replace(/⟨RBRACE⟩/g, '}');
+    
+    // 13. 清理空白
     text = text.replace(/[ \t]+/g, ' ').trim();
     
     return text;
@@ -462,14 +503,14 @@ function showClusterErrors(clusterIdx) {
                             <span>基准（人工标注）</span>
                             ${baseCorrectText ? `<span style="font-weight: 600;">${baseCorrectText}</span>` : ''}
                         </div>
-                        <div style="font-size: 13px; color: #1d1d1f; word-break: break-all;">${escapeHtml(String(base.userAnswer || '-'))}</div>
+                        <div style="font-size: 13px; color: #1d1d1f; word-break: break-all;">${escapeHtml(normalizeMarkdownFormula(String(base.userAnswer || '-')))}</div>
                     </div>
                     <div style="background: #fef2f2; border-radius: 4px; padding: 8px;">
                         <div style="font-size: 11px; color: #dc2626; margin-bottom: 4px; display: flex; justify-content: space-between;">
                             <span>AI识别结果</span>
                             ${aiCorrectText ? `<span style="font-weight: 600;">${aiCorrectText}</span>` : ''}
                         </div>
-                        <div style="font-size: 13px; color: #1d1d1f; word-break: break-all;">${escapeHtml(String(ai.userAnswer || '-'))}</div>
+                        <div style="font-size: 13px; color: #1d1d1f; word-break: break-all;">${escapeHtml(normalizeMarkdownFormula(String(ai.userAnswer || '-')))}</div>
                     </div>
                 </div>
             </div>
@@ -1112,6 +1153,22 @@ function renderOverallReport(report, completedItems) {
     }
     document.getElementById('statsDetail').innerHTML = detailHtml;
     
+    // DOM 更新后渲染题目类型分类统计图表（需要等待 Chart.js 加载）
+    if (window._questionTypeData) {
+        setTimeout(async () => {
+            // 确保 Chart.js 已加载
+            if (typeof Chart === 'undefined' && window.loadChartJS) {
+                try {
+                    await window.loadChartJS();
+                } catch (e) {
+                    console.error('加载 Chart.js 失败:', e);
+                    return;
+                }
+            }
+            renderQuestionTypeBarChart();
+        }, 0);
+    }
+    
     // 保存组合统计数据供后续使用
     window.combinedStatsData = byCombined;
     
@@ -1415,7 +1472,8 @@ async function renderOverallCharts(report, completedItems) {
     }
     
     // 6. 题目类型分类统计横向柱状图
-    renderQuestionTypeBarChart();
+    // 注意：此时 canvas 元素可能还未创建（在 renderOverallReport 的 detailHtml 中）
+    // 需要延迟到 DOM 更新后再渲染，由 renderOverallReport 中调用
 }
 
 /**
@@ -3286,15 +3344,15 @@ function renderEvalDetail(detail) {
                                         <tbody>
                                             <tr class="highlight-row">
                                                 <td class="field-name">用户答案</td>
-                                                <td class="base-value user-answer">${escapeHtml(baseEffect.userAnswer || '-')}</td>
-                                                <td class="ai-value user-answer">${escapeHtml(aiResult.userAnswer || '-')}</td>
-                                                <td class="match-status">${normalizeAnswerForCompare(baseEffect.userAnswer || '') === normalizeAnswerForCompare(aiResult.userAnswer || '') ? '<span class="match-yes">✓</span>' : '<span class="match-no">✗</span>'}</td>
+                                                <td class="base-value user-answer">${escapeHtml(normalizeMarkdownFormula(baseEffect.userAnswer) || '-')}</td>
+                                                <td class="ai-value user-answer">${escapeHtml(normalizeMarkdownFormula(aiResult.userAnswer) || '-')}</td>
+                                                <td class="match-status">${(err.analysis?.recognition_match === true) ? '<span class="match-yes">✓</span>' : (err.analysis?.recognition_match === false) ? '<span class="match-no">✗</span>' : '-'}</td>
                                             </tr>
                                             <tr>
                                                 <td class="field-name">判断结果</td>
                                                 <td class="base-value"><span class="${baseEffect.correct === 'yes' ? 'text-success' : 'text-error'}">${baseEffect.correct || '-'}</span></td>
                                                 <td class="ai-value"><span class="${aiResult.correct === 'yes' ? 'text-success' : 'text-error'}">${aiResult.correct || '-'}</span></td>
-                                                <td class="match-status">${(baseEffect.correct || '') === (aiResult.correct || '') ? '<span class="match-yes">✓</span>' : '<span class="match-no">✗</span>'}</td>
+                                                <td class="match-status">${(err.analysis?.judgment_match === true) ? '<span class="match-yes">✓</span>' : (err.analysis?.judgment_match === false) ? '<span class="match-no">✗</span>' : '-'}</td>
                                             </tr>
                                             ${hasScore ? `
                                             <tr>
@@ -3309,7 +3367,7 @@ function renderEvalDetail(detail) {
                                 </div>
                                 <div class="error-explanation">
                                     <span class="explanation-label">分析：</span>
-                                    <span class="explanation-text">${escapeHtml(err.explanation || '-')}</span>
+                                    <span class="explanation-text">${escapeHtml(normalizeMarkdownFormula(err.explanation || '-'))}</span>
                                 </div>
                             </div>
                         </div>
@@ -4757,7 +4815,7 @@ function showEditBaselineModal(homeworkDetail) {
                                         ${aiResult.map(item => `
                                             <tr>
                                                 <td>${escapeHtml(String(item.index || '-'))}</td>
-                                                <td>${escapeHtml(item.userAnswer || '-')}</td>
+                                                <td>${escapeHtml(normalizeMarkdownFormula(item.userAnswer) || '-')}</td>
                                                 <td><span class="${item.correct === 'yes' ? 'text-success' : 'text-error'}">${item.correct || '-'}</span></td>
                                                 ${hasScore ? `<td>${item.score !== undefined && item.score !== null ? item.score : '-'}</td>` : ''}
                                             </tr>
@@ -5004,7 +5062,7 @@ function renderCompareBaseTable() {
                 ${baselineEditData.map(item => `
                     <tr>
                         <td>${escapeHtml(String(item.index || '-'))}</td>
-                        <td>${escapeHtml(item.userAnswer || '-')}</td>
+                        <td>${escapeHtml(normalizeMarkdownFormula(item.userAnswer) || '-')}</td>
                         <td><span class="${item.correct === 'yes' ? 'text-success' : 'text-error'}">${item.correct || '-'}</span></td>
                         ${hasScore ? `
                         <td>${item.maxScore !== undefined && item.maxScore !== null ? item.maxScore : '-'}</td>
@@ -5779,12 +5837,12 @@ function renderTypeDetailContent(data) {
                     <div class="item-compare">
                         <div class="compare-row">
                             <span class="compare-label">基准答案:</span>
-                            <span class="compare-value base">${escapeHtml(baseEffect.userAnswer || '-')}</span>
+                            <span class="compare-value base">${escapeHtml(normalizeMarkdownFormula(baseEffect.userAnswer) || '-')}</span>
                             <span class="compare-correct ${baseEffect.correct === 'yes' ? 'yes' : 'no'}">${baseEffect.correct === 'yes' ? '对' : baseEffect.correct === 'no' ? '错' : '-'}</span>
                         </div>
                         <div class="compare-row">
                             <span class="compare-label">AI识别:</span>
-                            <span class="compare-value ai">${escapeHtml(aiResult.userAnswer || '-')}</span>
+                            <span class="compare-value ai">${escapeHtml(normalizeMarkdownFormula(aiResult.userAnswer) || '-')}</span>
                             <span class="compare-correct ${aiResult.correct === 'yes' ? 'yes' : 'no'}">${aiResult.correct === 'yes' ? '对' : aiResult.correct === 'no' ? '错' : '-'}</span>
                         </div>
                     </div>
