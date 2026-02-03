@@ -1754,6 +1754,42 @@ body {
     color: #424245;
 }
 
+/* 标签和填写指导 */
+.error-tags,
+.error-fill-guide {
+    background: #f5f5f7;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+.error-tags {
+    border-left: 3px solid #6e6e73;
+}
+
+.error-fill-guide {
+    border-left: 3px solid #86868b;
+}
+
+.tags-list {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tag-item {
+    background: #e8e8ed;
+    color: #1d1d1f;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.fill-guide-text {
+    color: #424245;
+}
+
 
 /* ========== 完整数据对比表格 ========== */
 .data-tables-container {

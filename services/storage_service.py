@@ -247,6 +247,17 @@ class StorageService:
                         effect_item['maxScore'] = extra_data.get('maxScore')
                     if extra_data.get('score') is not None:
                         effect_item['score'] = extra_data.get('score')
+                    # 添加 tags 和 fillGuide 字段（如果存在）
+                    if effect.get('tags'):
+                        tags = effect['tags']
+                        if isinstance(tags, str):
+                            try:
+                                tags = json.loads(tags)
+                            except:
+                                tags = []
+                        effect_item['tags'] = tags
+                    if effect.get('fill_guide'):
+                        effect_item['fillGuide'] = effect['fill_guide']
                     
                     base_effects[page_key].append(effect_item)
                 
