@@ -718,9 +718,9 @@ def do_local_evaluation(base_effect, homework_result, subject_id=None):
             if error_type:
                 error_distribution[error_type] = error_distribution.get(error_type, 0) + 1
             
-            # 计算分析数据
-            recognition_match = normalize_answer(base_user) == normalize_answer(hw_user) if base_user or hw_user else None
-            judgment_match = base_correct == hw_correct if base_correct and hw_correct else None
+            # 计算分析数据（直接使用上面已计算的 user_match 和 correct_match）
+            recognition_match = user_match if (base_user or hw_user) else None
+            judgment_match = correct_match if (base_correct and hw_correct) else None
             
             errors.append({
                 'index': idx,

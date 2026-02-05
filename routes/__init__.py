@@ -36,6 +36,8 @@ def register_blueprints(app):
     from .rfid_query import rfid_query_bp
     from .prompt_config import prompt_config_bp
     from .testcase_generator import testcase_generator_bp
+    from .nfc_api import nfc_api_bp
+    from .rfid_simulator_routes import rfid_simulator_bp
     
     # 注册通用路由（无前缀）
     app.register_blueprint(common_bp)
@@ -108,3 +110,9 @@ def register_blueprints(app):
     
     # 注册测试用例生成路由
     app.register_blueprint(testcase_generator_bp)
+    
+    # 注册 NFC App API 路由
+    app.register_blueprint(nfc_api_bp)
+    
+    # 注册 RFID 模拟器路由
+    app.register_blueprint(rfid_simulator_bp)

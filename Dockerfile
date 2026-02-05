@@ -40,6 +40,8 @@ RUN mkdir -p datasets batch_tasks baseline_effects sessions chat_sessions \
 EXPOSE 5000
 
 # 启动命令 - 使用 gunicorn 生产服务器
-# --workers 4: 4个worker进程处理请求
+# --worker-class gevent: 支持 WebSocket 连接
+# --workers 1: 单 worker 确保 WebSocket 状态共享
 # --timeout 300: 支持长时间的 AI 识别请求
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "300", "--graceful-timeout", "300", "app:app"]
+# --keep-alive 120: 保持 HTTP 连接 120 秒
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--worker-class", "gevent", "--workers", "1", "--timeout", "300", "--graceful-timeout", "300", "--keep-alive", "120", "app:app"]

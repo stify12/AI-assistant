@@ -247,10 +247,18 @@ function normalizeAnswerForCompare(text) {
     // 1. 先用 normalizeMarkdownFormula 处理 LaTeX
     text = normalizeMarkdownFormula(text);
     
-    // 2. 移除所有空白字符
+    // 2. 移除常见前缀（解：答：等）
+    text = text.replace(/^(解|答|证明?|分析)[：:]\s*/i, '');
+    
+    // 3. 移除题号前缀（只支持明确的题号格式）
+    // 格式：(1) （1） 和 1. 两种
+    text = text.replace(/^[\(（]\d+[\)）]\s*/g, '');  // (1) （1）
+    text = text.replace(/^\d+\.\s*/g, '');  // 1. 2. 3.
+    
+    // 4. 移除所有空白字符
     text = text.replace(/\s+/g, '');
     
-    // 3. 移除常见标点符号
+    // 5. 移除常见标点符号
     text = text.replace(/[，。；：！？""''（）【】《》、～—…·「」『』〈〉〔〕｛｝]/g, '');
     text = text.replace(/[,.;:!?"'()\[\]{}<>~\-_\/\\|@#%^&`$]/g, '');
     

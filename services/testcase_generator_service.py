@@ -504,6 +504,19 @@ class TestcaseGeneratorService:
             if not base_effects:
                 return {'success': False, 'error': '无法解析生成结果', 'raw_content': content[:500]}
             
+            # 补全 AI 返回数据中缺失的 tags 和 fillGuide 字段
+            # 从 assignments 中获取预设的 tags
+            assignments_map = {a['question']['index']: a for a in assignments}
+            for effect in base_effects:
+                idx = effect.get('index', '')
+                assignment = assignments_map.get(idx)
+                # 如果 AI 没有返回 tags，使用 assignment 中的预设 tags
+                if not effect.get('tags') and assignment:
+                    effect['tags'] = assignment.get('tags', [])
+                # 确保 fillGuide 字段存在
+                if not effect.get('fillGuide'):
+                    effect['fillGuide'] = ''
+            
             summary = TestcaseGeneratorService._summarize_results(base_effects)
             
             return {'success': True, 'data': {'base_effects': base_effects, 'summary': summary}}
@@ -684,7 +697,15 @@ class TestcaseGeneratorService:
                 description=description
             )
             
+            # 调试日志：打印第一条数据的完整结构
+            if base_effects:
+                print(f"[TestcaseGenerator] 第一条数据完整结构: {base_effects[0]}")
+                print(f"[TestcaseGenerator] 第一条数据的keys: {list(base_effects[0].keys())}")
+            
             for effect in base_effects:
+                # 调试日志：检查 tags 和 fillGuide 是否存在
+                print(f"[TestcaseGenerator] 保存 effect: index={effect.get('index')}, tags={effect.get('tags')}, fillGuide={effect.get('fillGuide')}")
+                
                 # 根据 save_score 决定是否保存分数字段
                 max_score_val = effect.get('maxScore') if save_score else None
                 score_val = effect.get('score') if save_score else None
@@ -700,6 +721,7 @@ class TestcaseGeneratorService:
                 
                 tags = effect.get('tags', [])
                 tags_json = json.dumps(tags, ensure_ascii=False) if tags else None
+                print(f"[TestcaseGenerator] tags_json={tags_json}")
                 
                 sql = """
                     INSERT INTO baseline_effects 

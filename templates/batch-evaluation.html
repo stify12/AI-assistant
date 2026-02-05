@@ -233,6 +233,7 @@
                                     <div class="chart-box">
                                         <div class="chart-title">准确率分析</div>
                                         <div class="accuracy-progress-container" id="accuracyProgressContainer">
+                                            <!-- 识别准确率 -->
                                             <div class="accuracy-progress-item" onclick="showAccuracyDetail('recognition')">
                                                 <div class="accuracy-progress-header">
                                                     <span class="accuracy-progress-label">识别准确率</span>
@@ -243,6 +244,7 @@
                                                 </div>
                                                 <div class="accuracy-progress-stats" id="recognitionStats">正确 0 / 总计 0</div>
                                             </div>
+                                            <!-- 批改准确率 -->
                                             <div class="accuracy-progress-item" onclick="showAccuracyDetail('grading')">
                                                 <div class="accuracy-progress-header">
                                                     <span class="accuracy-progress-label">批改准确率</span>
@@ -907,17 +909,52 @@
     
     <!-- Chart.js 和 html2canvas 按需加载 -->
     <script>
-    // 延迟加载 Chart.js（仅在需要图表时加载）
+    // Chart.js 加载状态
+    window._chartJSPromise = null;
+    
+    // 加载 Chart.js（带备用 CDN）
     window.loadChartJS = function() {
-        return new Promise((resolve, reject) => {
-            if (window.Chart) { resolve(window.Chart); return; }
-            const script = document.createElement('script');
-            script.src = 'https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
-            script.onload = () => resolve(window.Chart);
-            script.onerror = reject;
-            document.head.appendChild(script);
+        if (window.Chart) return Promise.resolve(window.Chart);
+        if (window._chartJSPromise) return window._chartJSPromise;
+        
+        window._chartJSPromise = new Promise((resolve, reject) => {
+            const cdnList = [
+                'https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.1/chart.umd.min.js',
+                'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
+                'https://unpkg.com/chart.js@4.4.1/dist/chart.umd.min.js'
+            ];
+            
+            let index = 0;
+            function tryLoad() {
+                if (index >= cdnList.length) {
+                    window._chartJSPromise = null;
+                    reject(new Error('所有 CDN 加载失败'));
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = cdnList[index];
+                script.onload = () => {
+                    console.log('[Chart.js] 加载成功:', cdnList[index]);
+                    resolve(window.Chart);
+                };
+                script.onerror = () => {
+                    console.warn('[Chart.js] CDN 失败，尝试备用:', cdnList[index]);
+                    index++;
+                    tryLoad();
+                };
+                document.head.appendChild(script);
+            }
+            tryLoad();
         });
+        return window._chartJSPromise;
     };
+    
+    // 页面空闲时预加载 Chart.js
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => window.loadChartJS(), { timeout: 3000 });
+    } else {
+        setTimeout(() => window.loadChartJS(), 1000);
+    }
     // 延迟加载 html2canvas（仅在导出时加载）
     window.loadHtml2Canvas = function() {
         return new Promise((resolve, reject) => {

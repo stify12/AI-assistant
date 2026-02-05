@@ -2,6 +2,13 @@
 AI批改效果分析平台 - 主入口文件
 Flask 应用初始化和蓝图注册
 """
+# Gevent monkey patch - 必须在最开头，支持 WebSocket
+try:
+    from gevent import monkey
+    monkey.patch_all()
+except ImportError:
+    pass  # 开发环境可能没有 gevent
+
 import os
 import secrets
 import atexit
@@ -61,6 +68,20 @@ def add_cache_headers(response):
 # 注册所有路由蓝图
 from routes import register_blueprints
 register_blueprints(app)
+
+# 初始化 Flask-Sock (WebSocket 支持)
+try:
+    from flask_sock import Sock
+    from routes.rfid_simulator_routes import init_websocket
+    sock = Sock(app)
+    # 注意：flask-sock 不支持 SOCK_SERVER_OPTIONS 配置
+    # WebSocket 保活完全依赖应用层心跳机制
+    init_websocket(sock, app)
+    print("[App] WebSocket 服务初始化成功")
+except ImportError:
+    print("[App] flask-sock 未安装，WebSocket 功能不可用")
+except Exception as e:
+    print(f"[App] WebSocket 初始化失败: {e}")
 
 # 注册认证蓝图
 from routes.auth import auth_bp

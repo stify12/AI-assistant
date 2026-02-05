@@ -301,15 +301,17 @@ def normalize_math_answer(text):
     
     流程：
     1. 先格式化 LaTeX（移除 $ 等标记）
-    2. 移除常见前缀（解：等）
+    2. 移除常见前缀（解：等）和题号前缀（(1)、（1）等）
     3. 统一 LaTeX 环境标记
     4. 再用理科标准化（保留负号、小数点等数学符号）
+    5. 移除非小数点的句号（保留数字间的小数点如 3.14）
     
     示例：
     - "$6$" -> "6"
     - "$1$" -> "1"
     - "$\\frac{1}{2}$" -> "1/2"
     - "解：x=2" -> "x=2"
+    - "解:(1)由题可知..." -> "由题可知..."
     """
     if not text:
         return ''
@@ -322,15 +324,31 @@ def normalize_math_answer(text):
     # 2. 移除常见前缀（解：解:答：答:等，支持中英文冒号）
     text = re.sub(r'^(解|答|证明?|分析)[：:]\s*', '', text)
     
+    # 2.1 移除题号前缀（只支持明确的题号格式）
+    # 格式：(1) （1） 和 1. 两种
+    # 注意：1、 1) 等不是题号格式，不移除；40 等纯数字是答案内容，不移除
+    text = re.sub(r'^[\(（]\d+[\)）]\s*', '', text)  # (1) （1）
+    text = re.sub(r'^\d+\.\s*', '', text)  # 1. 2. 3. （数字+点号）
+    
     # 3. 统一 LaTeX 环境标记（begin{xxx}/end{xxx} -> 空）
     # 处理 \begin{cases}, \end{cases}, begin{cases}, end{cases} 等
     text = re.sub(r'\\?(begin|end)\{[a-zA-Z*]+\}', '', text)
     # 处理残留的 cases, array, matrix 等环境名（可能紧挨着其他字符）
     text = re.sub(r'(cases|array|matrix|pmatrix|bmatrix|vmatrix|align|aligned|equation|gather)', '', text)
     
-    # 4. 统一逗号/分号（数学中这两者常互换使用）
-    text = text.replace(';', ',').replace('；', ',')
+    # 4. 统一分隔符处理（数学填空题中空格、逗号、分号、顿号都是答案分隔符，语义等价）
+    # 先将所有分隔符统一为空格，后续 normalize_answer_science 会移除空格
+    text = text.replace(';', ' ').replace('；', ' ')  # 分号
+    text = text.replace(',', ' ').replace('，', ' ')  # 逗号
+    text = text.replace('、', ' ')  # 顿号
     
-    # 5. 用理科标准化（保留负号、小数点）
+    # 5. 用理科标准化（保留负号、小数点，会移除空格）
     from utils.text_utils import normalize_answer_science
-    return normalize_answer_science(text)
+    result = normalize_answer_science(text)
+    
+    # 6. 移除非小数点的句号（保留数字间的小数点如 3.14、0.5）
+    # 只保留 "数字.数字" 格式的小数点，其他句号都移除
+    result = re.sub(r'\.(?!\d)', '', result)  # 移除后面不是数字的句号
+    result = re.sub(r'(?<!\d)\.', '', result)  # 移除前面不是数字的句号
+    
+    return result

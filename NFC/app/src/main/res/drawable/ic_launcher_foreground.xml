@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- 背景圆 - 用 path 画圆 -->
+    <path
+        android:pathData="M54,14 A40,40 0 1,1 53.99,14 Z"
+        android:fillColor="#1D1D1F"/>
+    
+    <!-- 外圈信号波 -->
+    <path
+        android:pathData="M54,30 A24,24 0 0,1 54,78"
+        android:strokeWidth="3.5"
+        android:strokeColor="#FFFFFF"
+        android:fillColor="@android:color/transparent"
+        android:strokeLineCap="round"/>
+    
+    <!-- 中圈信号波 -->
+    <path
+        android:pathData="M54,38 A16,16 0 0,1 54,70"
+        android:strokeWidth="3.5"
+        android:strokeColor="#FFFFFF"
+        android:fillColor="@android:color/transparent"
+        android:strokeLineCap="round"/>
+    
+    <!-- 内圈信号波 -->
+    <path
+        android:pathData="M54,46 A8,8 0 0,1 54,62"
+        android:strokeWidth="3.5"
+        android:strokeColor="#FFFFFF"
+        android:fillColor="@android:color/transparent"
+        android:strokeLineCap="round"/>
+    
+    <!-- 中心圆点 -->
+    <path
+        android:pathData="M54,50 A4,4 0 1,1 53.99,50 Z"
+        android:fillColor="#FFFFFF"/>
+</vector>

@@ -1,8 +1,12 @@
 flask
+flask-sock
+gevent
+gevent-websocket
 requests
 openpyxl
 python-docx
 pymysql
+DBUtils
 langchain
 langchain-core
 apscheduler

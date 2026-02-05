@@ -11,12 +11,15 @@ from .config_service import ConfigService
 
 
 class DatabaseService:
-    """数据库服务类 - 原业务数据库"""
+    """数据库服务类 - 原业务数据库（带连接池）"""
     
     # 配置缓存
     _config_cache = None
     _config_cache_time = 0
     _CONFIG_CACHE_TTL = 60  # 配置缓存60秒
+    
+    # 连接池
+    _pool = None
     
     @staticmethod
     def _get_cached_config():
@@ -30,11 +33,49 @@ class DatabaseService:
         return DatabaseService._config_cache
     
     @staticmethod
+    def _get_pool():
+        """获取或创建连接池"""
+        if DatabaseService._pool is None:
+            try:
+                from dbutils.pooled_db import PooledDB
+                import pymysql
+                
+                mysql_config = DatabaseService._get_cached_config()
+                DatabaseService._pool = PooledDB(
+                    creator=pymysql,
+                    maxconnections=10,  # 最大连接数
+                    mincached=2,        # 初始空闲连接
+                    maxcached=5,        # 最大空闲连接
+                    blocking=True,      # 连接池满时阻塞等待
+                    host=mysql_config.get('host', '47.113.230.78'),
+                    port=mysql_config.get('port', 3306),
+                    user=mysql_config.get('user', 'zpsmart'),
+                    password=mysql_config.get('password', 'rootyouerkj!'),
+                    database=mysql_config.get('database', 'zpsmart'),
+                    charset='utf8mb4',
+                    cursorclass=pymysql.cursors.DictCursor,
+                    connect_timeout=30,
+                    read_timeout=60,
+                    write_timeout=60
+                )
+                print("[MySQL] Connection pool created")
+            except ImportError:
+                print("[MySQL] DBUtils not installed, using direct connection")
+                return None
+        return DatabaseService._pool
+    
+    @staticmethod
     def get_connection(retries=3):
-        """获取原业务数据库连接，带重试机制"""
+        """获取原业务数据库连接（优先使用连接池）"""
         import pymysql
         import time
         
+        # 尝试从连接池获取
+        pool = DatabaseService._get_pool()
+        if pool:
+            return pool.connection()
+        
+        # 降级：直接连接
         mysql_config = DatabaseService._get_cached_config()
         
         last_error = None
@@ -371,6 +412,21 @@ class AppDatabaseService:
             else:
                 item['questionType'] = 'objective'
                 item['bvalue'] = '4'
+            
+            # 添加 tags 字段（标签）
+            if row.get('tags'):
+                tags = row['tags']
+                if isinstance(tags, str):
+                    try:
+                        tags = json.loads(tags)
+                    except:
+                        tags = []
+                item['tags'] = tags
+            
+            # 添加 fillGuide 字段（填写指导）
+            if row.get('fill_guide'):
+                item['fillGuide'] = row['fill_guide']
+            
             result.append(item)
         return result
     
@@ -393,9 +449,22 @@ class AppDatabaseService:
             # 存储 score（判断分值）
             if effect.get('score') is not None:
                 extra_data['score'] = effect.get('score')
+            
+            # 处理 tags 字段
+            tags_value = None
+            if effect.get('tags'):
+                tags = effect.get('tags')
+                if isinstance(tags, list):
+                    tags_value = json.dumps(tags, ensure_ascii=False)
+                elif isinstance(tags, str):
+                    tags_value = tags
+            
+            # 处理 fillGuide 字段
+            fill_guide_value = effect.get('fillGuide', '') or ''
+            
             sql = """INSERT INTO baseline_effects 
-                     (dataset_id, page_num, question_index, temp_index, question_type, answer, user_answer, is_correct, extra_data)
-                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+                     (dataset_id, page_num, question_index, temp_index, question_type, answer, user_answer, is_correct, tags, fill_guide, extra_data)
+                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
             AppDatabaseService.execute_insert(sql, (
                 dataset_id, page_num,
                 effect.get('index', ''),
@@ -404,6 +473,8 @@ class AppDatabaseService:
                 effect.get('answer', ''),
                 effect.get('userAnswer', ''),
                 effect.get('correct', ''),
+                tags_value,
+                fill_guide_value if fill_guide_value else None,
                 json.dumps(extra_data, ensure_ascii=False)
             ))
     
