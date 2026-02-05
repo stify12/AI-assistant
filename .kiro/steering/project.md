@@ -16,6 +16,7 @@
 | 提示词优化 | `/prompt-optimize` | Prompt 调试、版本管理 |
 | 错误样本库 | `/error-samples` | 错误样本收集与分析 |
 | 测试用例生成 | `/testcase-generator` | AI 自动生成基准效果（规划中） |
+| RFID 模拟器 | `/rfid-simulator` | 远程控制安卓设备模拟 RFID 刷卡 |
 
 ---
 
@@ -65,6 +66,36 @@
 | 业务 | PromptConfigService | 提示词配置 |
 | 学科 | PhysicsEval | 物理公式标准化 |
 | 学科 | ChemistryEval | 化学 Markdown 标准化 |
+| 工具 | RfidSimulatorService | RFID 模拟器 WebSocket 管理 |
+
+---
+
+## RFID 模拟器架构
+
+```
+┌─────────────┐    WebSocket    ┌─────────────┐    ADB     ┌─────────────┐
+│  网页前端   │ ◄────────────► │  Flask 服务  │ ◄────────► │  ADB 客户端  │
+│ (浏览器)    │                │ (单 worker)  │            │ (本地电脑)   │
+└─────────────┘                └─────────────┘            └──────┬──────┘
+                                                                 │
+                                                            ADB 无线
+                                                                 │
+                                                          ┌──────▼──────┐
+                                                          │  安卓设备   │
+                                                          │ (被控设备)  │
+                                                          └─────────────┘
+```
+
+### 关键设计
+- **单 worker 模式**: Gunicorn 必须配置 `--workers 1`，确保 WebSocket 和 HTTP 请求在同一进程
+- **WebSocket 存储**: 仅在路由层 `_active_websockets` 存储，service 层通过注入函数获取
+- **心跳机制**: 客户端 15s 发送心跳，服务端 90s 超时清理
+- **状态文件**: `sessions/rfid_state.json` 存储客户端状态（跨请求共享）
+
+### 相关文件
+- `routes/rfid_simulator_routes.py` - HTTP API + WebSocket 路由
+- `services/rfid_simulator_service.py` - 状态管理 + 命令构建
+- `tools/adb_client.py` - 本地 ADB 客户端脚本
 
 ---
 
