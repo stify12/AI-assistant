@@ -38,6 +38,7 @@ def register_blueprints(app):
     from .testcase_generator import testcase_generator_bp
     from .nfc_api import nfc_api_bp
     from .rfid_simulator_routes import rfid_simulator_bp
+    from .workflow_routes import workflow_bp
     
     # 注册通用路由（无前缀）
     app.register_blueprint(common_bp)
@@ -116,3 +117,6 @@ def register_blueprints(app):
     
     # 注册 RFID 模拟器路由
     app.register_blueprint(rfid_simulator_bp)
+    
+    # 注册流程编排路由
+    app.register_blueprint(workflow_bp)

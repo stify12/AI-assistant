@@ -17,9 +17,11 @@ import com.example.nfc.ui.screens.BookSearchScreen
 import com.example.nfc.ui.screens.DatabaseScreen
 import com.example.nfc.ui.screens.MainScreen
 import com.example.nfc.ui.screens.RfidSimulatorScreen
+import com.example.nfc.ui.screens.AutomationScreen
 import com.example.nfc.ui.theme.NFCTheme
 import com.example.nfc.viewmodel.NfcViewModel
 import com.example.nfc.viewmodel.RfidSimulatorViewModel
+import com.example.nfc.viewmodel.AutomationViewModel
 
 class MainActivity : ComponentActivity() {
     
@@ -81,7 +83,71 @@ class MainActivity : ComponentActivity() {
                 val isBookLoading by viewModel.isBookLoading.collectAsState()
                 val lastUsedBook by viewModel.lastUsedBook.collectAsState()
 
-                NavHost(navController = navController, startDestination = "rfid_simulator") {
+                NavHost(navController = navController, startDestination = "automation") {
+                    // 自动化流程页面（新主界面）
+                    composable("automation") {
+                        val automationViewModel: AutomationViewModel = viewModel()
+                        
+                        val autoConnectionStatus by automationViewModel.connectionStatus.collectAsState()
+                        val automationStatus by automationViewModel.automationStatus.collectAsState()
+                        val autoConfig by automationViewModel.config.collectAsState()
+                        val autoLogs by automationViewModel.logs.collectAsState()
+                        val autoIsLoading by automationViewModel.isLoading.collectAsState()
+                        val autoErrorMessage by automationViewModel.errorMessage.collectAsState()
+                        val autoBooks by automationViewModel.books.collectAsState()
+                        val autoSelectedBook by automationViewModel.selectedBook.collectAsState()
+                        val autoBookClasses by automationViewModel.bookClasses.collectAsState()
+                        val autoSelectedBookClass by automationViewModel.selectedBookClass.collectAsState()
+                        val autoBookStudents by automationViewModel.bookStudents.collectAsState()
+                        val autoSearchKeyword by automationViewModel.searchKeyword.collectAsState()
+                        // 新增状态
+                        val autoRecentUsages by automationViewModel.recentUsages.collectAsState()
+                        val autoFavoriteBooks by automationViewModel.favoriteBooks.collectAsState()
+                        val autoSelectedSubjectId by automationViewModel.selectedSubjectId.collectAsState()
+                        val autoSelectedGradeId by automationViewModel.selectedGradeId.collectAsState()
+                        
+                        AutomationScreen(
+                            connectionStatus = autoConnectionStatus,
+                            automationStatus = automationStatus,
+                            config = autoConfig,
+                            logs = autoLogs,
+                            isLoading = autoIsLoading,
+                            errorMessage = autoErrorMessage,
+                            books = autoBooks,
+                            selectedBook = autoSelectedBook,
+                            bookClasses = autoBookClasses,
+                            selectedBookClass = autoSelectedBookClass,
+                            bookStudents = autoBookStudents,
+                            searchKeyword = autoSearchKeyword,
+                            // 新增参数
+                            recentUsages = autoRecentUsages,
+                            favoriteBooks = autoFavoriteBooks,
+                            selectedSubjectId = autoSelectedSubjectId,
+                            selectedGradeId = autoSelectedGradeId,
+                            onSearchBooks = automationViewModel::searchBooks,
+                            onSelectBook = automationViewModel::selectBook,
+                            onSelectBookClass = automationViewModel::selectBookClass,
+                            onUpdatePageNumber = automationViewModel::updatePageNumber,
+                            onUpdateUsername = automationViewModel::updateUsername,
+                            onUpdatePassword = automationViewModel::updatePassword,
+                            onUpdateHomeworkName = automationViewModel::updateHomeworkName,
+                            onUpdatePhotoInterval = automationViewModel::updatePhotoInterval,
+                            onToggleDoublePageMode = automationViewModel::toggleDoublePageMode,
+                            onStartAutomation = automationViewModel::startAutomation,
+                            onStopAutomation = automationViewModel::stopAutomation,
+                            onClearLogs = automationViewModel::clearLogs,
+                            onClearError = automationViewModel::clearError,
+                            onRefreshLogs = automationViewModel::refreshLogs,
+                            onNavigateToManual = { navController.navigate("rfid_simulator") },
+                            // 新增回调
+                            onQuickStartFromRecent = automationViewModel::quickStartFromRecent,
+                            onToggleFavorite = automationViewModel::toggleFavorite,
+                            onSelectSubject = automationViewModel::selectSubject,
+                            onSelectGrade = automationViewModel::selectGrade,
+                            isFavorite = automationViewModel::isFavorite
+                        )
+                    }
+
                     // 主页面
                     composable("main") {
                         MainScreen(
@@ -255,7 +321,8 @@ class MainActivity : ComponentActivity() {
                             onToggleStudent = rfidViewModel::toggleStudent,
                             onSelectAllStudents = rfidViewModel::selectAllStudents,
                             onLoadClasses = rfidViewModel::loadClasses,
-                            onLoadBooks = rfidViewModel::loadBooks
+                            onLoadBooks = rfidViewModel::loadBooks,
+                            onNavigateBack = { navController.popBackStack() }
                         )
                     }
                 }

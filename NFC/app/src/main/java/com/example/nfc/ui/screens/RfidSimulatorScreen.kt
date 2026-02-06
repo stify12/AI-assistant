@@ -67,7 +67,8 @@ fun RfidSimulatorScreen(
     onToggleStudent: (String) -> Unit,
     onSelectAllStudents: (Boolean) -> Unit,
     onLoadClasses: () -> Unit,
-    onLoadBooks: () -> Unit
+    onLoadBooks: () -> Unit,
+    onNavigateBack: (() -> Unit)? = null
 ) {
     var currentTab by remember { mutableStateOf(0) }
     val isRunning = taskStatus.status == "running"
@@ -96,12 +97,35 @@ fun RfidSimulatorScreen(
                         .padding(horizontal = 20.dp)
                         .padding(top = 16.dp, bottom = 12.dp)
                 ) {
-                    Text(
-                        text = "RFID 模拟",
-                        style = MaterialTheme.typography.headlineLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = AppleBlack
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            // 返回按钮
+                            onNavigateBack?.let { onBack ->
+                                IconButton(
+                                    onClick = onBack,
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.ArrowBack,
+                                        contentDescription = "返回",
+                                        tint = AppleGray500,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                            Text(
+                                text = "手动模式",
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = AppleBlack
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(

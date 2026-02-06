@@ -571,4 +571,33 @@ object DatabaseRepository {
             Result.failure(e)
         }
     }
+    
+    /** 执行自动化流程 */
+    suspend fun runWorkflow(
+        workflowId: String,
+        params: Map<String, Any> = emptyMap()
+    ): Result<Boolean> = withContext(Dispatchers.IO) {
+        try {
+            val paramsJson = JSONObject()
+            params.forEach { (key, value) ->
+                paramsJson.put(key, value)
+            }
+            
+            val body = JSONObject().apply {
+                put("params", paramsJson)
+            }
+            
+            val response = httpPost("/api/rfid-simulator/workflows/$workflowId/run", body)
+            val json = JSONObject(response)
+            
+            if (json.optBoolean("success", false)) {
+                Result.success(true)
+            } else {
+                Result.failure(Exception(json.optString("error", "执行流程失败")))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "执行流程失败: ${e.message}")
+            Result.failure(e)
+        }
+    }
 }

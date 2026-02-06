@@ -323,6 +323,10 @@ class AdbClient:
                 self.paused = False
                 logger.info("批量任务已停止")
             
+            elif msg_type == 'workflow_step':
+                # 处理工作流步骤
+                self.handle_workflow_step(data)
+            
         except Exception as e:
             logger.error(f"处理消息失败: {e}")
             self.ws.send(json.dumps({
@@ -399,6 +403,345 @@ class AdbClient:
             logger.info("批量任务完成")
         
         self.current_task = None
+    
+    # ==================== 原子操作 ====================
+    
+    def handle_workflow_step(self, data: dict):
+        """处理工作流步骤（兼容旧版）"""
+        action = data.get('action')
+        step_name = data.get('desc', action)
+        success = False
+        error = ''
+        
+        try:
+            # 原子操作映射
+            if action == 'tap':
+                x = data.get('x', 0)
+                y = data.get('y', 0)
+                success = self.atom_tap(x, y)
+                step_name = f"点击 ({x}, {y})"
+            elif action == 'long_press':
+                success = self.atom_long_press(data.get('x', 0), data.get('y', 0), data.get('duration', 1000))
+            elif action == 'swipe':
+                success = self.atom_swipe(data.get('x1', 0), data.get('y1', 0), 
+                                          data.get('x2', 0), data.get('y2', 0), data.get('duration', 300))
+            elif action == 'input':
+                text = data.get('text', '')
+                success = self.atom_input(text)
+                step_name = f"输入: {text[:20]}..."
+            elif action == 'clear':
+                success = self.atom_clear()
+                step_name = "清除输入"
+            elif action == 'key':
+                key = data.get('key', 'enter')
+                success = self.atom_key(key)
+                step_name = f"按键: {key}"
+            elif action == 'wait':
+                seconds = data.get('seconds', 1)
+                time.sleep(seconds)
+                success = True
+                step_name = f"等待 {seconds}s"
+            elif action == 'launch':
+                package = data.get('package', 'com.zpzn.terminal')
+                success = self.atom_launch(package)
+                step_name = f"启动: {package}"
+            elif action == 'stop_app':
+                package = data.get('package', '')
+                success = self.atom_stop_app(package)
+                step_name = f"停止: {package}"
+            elif action == 'screenshot':
+                success = self.atom_screenshot()
+                step_name = "截图"
+            # 兼容旧版复合操作
+            elif action == 'launch_app':
+                success = self.atom_launch(data.get('package_name', 'com.zpzn.terminal'))
+                step_name = '打开应用'
+            elif action == 'click':
+                coord = data.get('coord', '')
+                coord_info = self.COORDINATES.get(coord, {})
+                success = self.atom_tap(coord_info.get('x', 0), coord_info.get('y', 0))
+                step_name = f"点击 {coord}"
+            elif action == 'input_credentials':
+                success = self.input_credentials(data)
+                step_name = '输入账号密码'
+            elif action == 'input_homework_name':
+                success = self.input_homework_name(data)
+                step_name = '输入作业名称'
+            elif action == 'select_page':
+                success = self.select_page()
+                step_name = '选择页码'
+            elif action == 'send_rfid':
+                rfid_code = data.get('rfid_code', '')
+                success = self.send_rfid(rfid_code, self.device_path, True)
+                step_name = f"发送 RFID {rfid_code}"
+            else:
+                error = f"未知操作: {action}"
+                logger.warning(error)
+        except Exception as e:
+            error = str(e)
+            logger.error(f"执行步骤失败: {e}")
+        
+        # 发送结果
+        self.ws.send(json.dumps({
+            'type': 'workflow_step_result',
+            'step_name': step_name,
+            'action': action,
+            'success': success,
+            'error': error
+        }))
+    
+    # ==================== 原子操作实现 ====================
+    
+    def atom_tap(self, x: int, y: int) -> bool:
+        """点击坐标"""
+        try:
+            logger.info(f"点击: ({x}, {y})")
+            cmd = f"adb -s {self.device_ip} shell input tap {x} {y}"
+            result = subprocess.run(cmd, shell=True, capture_output=True, timeout=5)
+            return result.returncode == 0
+        except Exception as e:
+            logger.error(f"点击失败: {e}")
+            return False
+    
+    def atom_long_press(self, x: int, y: int, duration: int = 1000) -> bool:
+        """长按"""
+        try:
+            logger.info(f"长按: ({x}, {y}) {duration}ms")
+            cmd = f"adb -s {self.device_ip} shell input swipe {x} {y} {x} {y} {duration}"
+            result = subprocess.run(cmd, shell=True, capture_output=True, timeout=10)
+            return result.returncode == 0
+        except Exception as e:
+            logger.error(f"长按失败: {e}")
+            return False
+    
+    def atom_swipe(self, x1: int, y1: int, x2: int, y2: int, duration: int = 300) -> bool:
+        """滑动"""
+        try:
+            logger.info(f"滑动: ({x1}, {y1}) -> ({x2}, {y2})")
+            cmd = f"adb -s {self.device_ip} shell input swipe {x1} {y1} {x2} {y2} {duration}"
+            result = subprocess.run(cmd, shell=True, capture_output=True, timeout=10)
+            return result.returncode == 0
+        except Exception as e:
+            logger.error(f"滑动失败: {e}")
+            return False
+    
+    def atom_input(self, text: str) -> bool:
+        """输入文本"""
+        try:
+            logger.info(f"输入: {text[:30]}...")
+            # 转义特殊字符
+            escaped = text.replace(' ', '%s').replace('&', '\\&').replace('<', '\\<').replace('>', '\\>').replace('|', '\\|').replace('"', '\\"')
+            cmd = f'adb -s {self.device_ip} shell input text "{escaped}"'
+            result = subprocess.run(cmd, shell=True, capture_output=True, timeout=10)
+            return result.returncode == 0
+        except Exception as e:
+            logger.error(f"输入失败: {e}")
+            return False
+    
+    def atom_clear(self) -> bool:
+        """清除输入框内容（全选+删除）"""
+        try:
+            logger.info("清除输入框")
+            # 全选 Ctrl+A
+            cmd1 = f"adb -s {self.device_ip} shell input keyevent 29 --longpress"  # KEYCODE_A
+            subprocess.run(cmd1, shell=True, capture_output=True, timeout=5)
+            time.sleep(0.1)
+            # 或者用组合键
+            cmd2 = f"adb -s {self.device_ip} shell input keyevent 67"  # KEYCODE_DEL 删除
+            result = subprocess.run(cmd2, shell=True, capture_output=True, timeout=5)
+            # 多删几次确保清空
+            for _ in range(20):
+                subprocess.run(cmd2, shell=True, capture_output=True, timeout=2)
+            return True
+        except Exception as e:
+            logger.error(f"清除失败: {e}")
+            return False
+    
+    def atom_key(self, key: str) -> bool:
+        """按键"""
+        key_map = {
+            'enter': 66, 'back': 4, 'home': 3, 'tab': 61,
+            'del': 67, 'delete': 67, 'space': 62,
+            'up': 19, 'down': 20, 'left': 21, 'right': 22
+        }
+        keycode = key_map.get(key.lower(), key)
+        try:
+            logger.info(f"按键: {key} ({keycode})")
+            cmd = f"adb -s {self.device_ip} shell input keyevent {keycode}"
+            result = subprocess.run(cmd, shell=True, capture_output=True, timeout=5)
+            return result.returncode == 0
+        except Exception as e:
+            logger.error(f"按键失败: {e}")
+            return False
+    
+    def atom_launch(self, package: str) -> bool:
+        """启动应用"""
+        try:
+            logger.info(f"启动应用: {package}")
+            # 先停止
+            stop_cmd = f"adb -s {self.device_ip} shell am force-stop {package}"
+            subprocess.run(stop_cmd, shell=True, capture_output=True, timeout=5)
+            time.sleep(1)
+            # 用 monkey 启动
+            start_cmd = f"adb -s {self.device_ip} shell monkey -p {package} -c android.intent.category.LAUNCHER 1"
+            result = subprocess.run(start_cmd, shell=True, capture_output=True, text=True, encoding='utf-8', errors='ignore', timeout=10)
+            if "No activities found" in result.stdout or "No activities found" in result.stderr:
+                logger.error(f"未找到应用: {package}")
+                return False
+            logger.info("应用启动成功")
+            return True
+        except Exception as e:
+            logger.error(f"启动应用失败: {e}")
+            return False
+    
+    def atom_stop_app(self, package: str) -> bool:
+        """停止应用"""
+        try:
+            logger.info(f"停止应用: {package}")
+            cmd = f"adb -s {self.device_ip} shell am force-stop {package}"
+            result = subprocess.run(cmd, shell=True, capture_output=True, timeout=5)
+            return result.returncode == 0
+        except Exception as e:
+            logger.error(f"停止应用失败: {e}")
+            return False
+    
+    def atom_screenshot(self) -> bool:
+        """截图并保存"""
+        try:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            remote_path = f"/sdcard/screenshot_{timestamp}.png"
+            logger.info(f"截图: {remote_path}")
+            cmd = f"adb -s {self.device_ip} shell screencap -p {remote_path}"
+            result = subprocess.run(cmd, shell=True, capture_output=True, timeout=10)
+            return result.returncode == 0
+        except Exception as e:
+            logger.error(f"截图失败: {e}")
+            return False
+    
+    # 坐标配置（兼容旧版）
+    COORDINATES = {
+        'login_entry_button': {'x': 370, 'y': 600},
+        'teacher_login_button': {'x': 1800, 'y': 70},
+        'username_input': {'x': 930, 'y': 426},
+        'password_input': {'x': 880, 'y': 530},
+        'login_submit_button': {'x': 960, 'y': 670},
+        'publish_homework_button': {'x': 400, 'y': 560},
+        'select_page_button': {'x': 870, 'y': 379},
+        'page_number_selector': {'x': 659, 'y': 233},
+        'page_number_select_button': {'x': 830, 'y': 230},
+        'confirm_page_button': {'x': 950, 'y': 900},
+        'homework_name_input': {'x': 833, 'y': 557},
+        'publish_submit_button': {'x': 960, 'y': 960}
+    }
+    
+    def input_credentials(self, data: dict) -> bool:
+        """输入账号密码（修复版：先清除再输入）"""
+        username = data.get('username', 'shuxue')
+        password = data.get('password', '123456zp.')
+        
+        try:
+            # 1. 点击账号输入框
+            logger.info("点击账号输入框")
+            self.atom_tap(1230, 426)
+            time.sleep(0.5)
+            
+            # 2. 清除账号内容
+            logger.info("清除账号内容")
+            self.atom_clear()
+            time.sleep(0.3)
+            
+            # 3. 输入账号
+            logger.info(f"输入账号: {username}")
+            self.atom_input(username)
+            time.sleep(0.5)
+            
+            # 4. 按回车
+            self.atom_key('enter')
+            time.sleep(0.5)
+            
+            # 5. 点击密码输入框
+            logger.info("点击密码输入框")
+            self.atom_tap(1230, 540)
+            time.sleep(0.5)
+            
+            # 6. 清除密码内容
+            logger.info("清除密码内容")
+            self.atom_clear()
+            time.sleep(0.3)
+            
+            # 7. 输入密码
+            logger.info("输入密码")
+            self.atom_input(password)
+            time.sleep(0.5)
+            
+            # 8. 按回车
+            self.atom_key('enter')
+            time.sleep(0.5)
+            
+            # 9. 点击登录按钮
+            logger.info("点击登录按钮")
+            self.atom_tap(960, 670)
+            
+            logger.info("账号密码输入完成")
+            return True
+        except Exception as e:
+            logger.error(f"输入账号密码异常: {e}")
+            return False
+    
+    def input_homework_name(self, data: dict) -> bool:
+        """输入作业名称"""
+        homework_name = data.get('homework_name', '')
+        
+        # 如果没有指定名称，自动生成
+        if not homework_name:
+            homework_name = f"auto_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        try:
+            # 点击作业名称输入框
+            logger.info("点击作业名称输入框")
+            self.atom_tap(833, 557)
+            time.sleep(0.5)
+            
+            # 输入作业名称
+            logger.info(f"输入作业名称: {homework_name}")
+            self.atom_input(homework_name)
+            time.sleep(0.5)
+            
+            # 按回车关闭键盘
+            self.atom_key('enter')
+            
+            return True
+        except Exception as e:
+            logger.error(f"输入作业名称异常: {e}")
+            return False
+    
+    def select_page(self) -> bool:
+        """选择页码"""
+        try:
+            # 点击选择页码按钮
+            logger.info("点击选择页码按钮")
+            self.atom_tap(870, 379)
+            time.sleep(1)
+            
+            # 点击页码选择器
+            logger.info("点击页码选择器")
+            self.atom_tap(659, 233)
+            time.sleep(0.5)
+            
+            # 点击页码确认按钮
+            logger.info("点击页码确认")
+            self.atom_tap(830, 230)
+            time.sleep(0.5)
+            
+            # 点击确认页码按钮
+            logger.info("确认页码")
+            self.atom_tap(950, 900)
+            
+            logger.info("页码选择完成")
+            return True
+        except Exception as e:
+            logger.error(f"选择页码异常: {e}")
+            return False
     
     def on_error(self, ws, error):
         """处理错误"""

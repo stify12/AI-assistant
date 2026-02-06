@@ -8,261 +8,146 @@
 </head>
 <body>
     <div class="page-container">
-        <!-- 左侧：选择区 -->
+        <!-- 第1栏：班级选择 -->
         <div class="select-panel">
             <div class="panel-header">
-                <a href="/" class="back-link">
-                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-                </a>
-                <h1 class="panel-title">选择班级</h1>
+                <a href="/" class="back-link"><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></a>
+                <h1 class="panel-title">班级选择</h1>
             </div>
-
-            <!-- 年级筛选 -->
-            <div class="grade-filter">
-                <button class="grade-btn active" data-grade="0">全部</button>
-                <button class="grade-btn" data-grade="7">七年级</button>
-                <button class="grade-btn" data-grade="8">八年级</button>
-                <button class="grade-btn" data-grade="9">九年级</button>
-                <button class="grade-btn" data-grade="10">高一</button>
-                <button class="grade-btn" data-grade="11">高二</button>
-                <button class="grade-btn" data-grade="12">高三</button>
+            <div class="favorite-section" id="favoriteSection">
+                <div class="section-header"><span class="section-title">最近使用</span><button class="btn-text-sm" onclick="clearFavorites()">清空</button></div>
+                <div class="favorite-cards" id="favoriteCards"><div class="favorite-empty">暂无记录</div></div>
             </div>
-
-            <!-- Tab 切换 -->
             <div class="tab-bar">
                 <button class="tab-btn active" data-tab="class">按班级</button>
                 <button class="tab-btn" data-tab="book">按书本</button>
             </div>
-
-            <!-- 搜索框 -->
+            <div class="filter-bar" id="gradeFilterBar">
+                <select class="grade-select" id="gradeSelect">
+                    <option value="0">全部年级</option>
+                    <option value="1">一年级</option>
+                    <option value="2">二年级</option>
+                    <option value="3">三年级</option>
+                    <option value="4">四年级</option>
+                    <option value="5">五年级</option>
+                    <option value="6">六年级</option>
+                    <option value="7">七年级</option>
+                    <option value="8">八年级</option>
+                    <option value="9">九年级</option>
+                    <option value="10">高一</option>
+                    <option value="11">高二</option>
+                    <option value="12">高三</option>
+                </select>
+            </div>
+            <div class="filter-bar" id="subjectFilterBar" style="display:none;">
+                <button class="filter-btn active" data-subject="0">全部</button>
+                <button class="filter-btn" data-subject="2">数学</button>
+                <button class="filter-btn" data-subject="3">物理</button>
+            </div>
             <div class="search-box">
                 <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                <input type="text" id="searchInput" class="search-input" placeholder="搜索班级名称...">
+                <input type="text" id="searchInput" class="search-input" placeholder="搜索班级...">
             </div>
+            <div class="list-container" id="listContainer"><div class="list-loading">加载中...</div></div>
+        </div>
 
-            <!-- 列表区 -->
-            <div class="list-container" id="listContainer">
-                <div class="list-loading">加载中...</div>
+        <!-- 第2栏：自动化流程 -->
+        <div class="workflow-panel center-panel">
+            <div class="panel-header"><h2 class="panel-title">自动化流程</h2><button class="btn-text-sm" onclick="openCoordinateConfig()">坐标配置</button></div>
+            <!-- 发布作业 -->
+            <div class="workflow-card expanded" id="publishWorkflow">
+                <div class="workflow-card-header" onclick="toggleWorkflowCard('publish')">
+                    <div class="workflow-card-title"><span>发布作业</span></div>
+                    <div class="workflow-card-status" id="publishStatus">待执行</div>
+                </div>
+                <div class="workflow-card-body" id="publishBody">
+                    <div class="workflow-steps-list" id="publishStepsList"><div class="steps-loading">加载中...</div></div>
+                    <button class="btn-add-step" onclick="addNewStep('publish_homework')">添加步骤</button>
+                    <div class="workflow-params-inline">
+                        <div class="param-row"><label>账号</label><input type="text" id="publishUsername" placeholder="教师账号" value="shuxue"></div>
+                        <div class="param-row"><label>密码</label><input type="password" id="publishPassword" placeholder="密码" value="123456zp."></div>
+                        <div class="param-row"><label>作业名称</label><input type="text" id="publishHomeworkName" placeholder="留空则自动生成"></div>
+                    </div>
+                    <button class="btn-workflow" onclick="runPublishWorkflow()">执行发布流程</button>
+                </div>
+            </div>
+            <!-- 提交作业 -->
+            <div class="workflow-card" id="submitWorkflow">
+                <div class="workflow-card-header" onclick="toggleWorkflowCard('submit')">
+                    <div class="workflow-card-title"><span>提交作业</span></div>
+                    <div class="workflow-card-status" id="submitStatus">待执行</div>
+                </div>
+                <div class="workflow-card-body" id="submitBody">
+                    <div class="workflow-steps-list" id="submitStepsList"><div class="steps-loading">加载中...</div></div>
+                    <button class="btn-add-step" onclick="addNewStep('submit_homework')">添加步骤</button>
+                    <div class="workflow-params-inline">
+                        <div class="param-row"><label>拍照间隔</label><input type="number" id="submitPhotoInterval" value="2" min="1" max="10"> 秒</div>
+                        <div class="param-row"><label>双页模式</label><input type="checkbox" id="submitDoublePageMode" checked> 启用</div>
+                    </div>
+                    <div class="workflow-student-info" id="workflowStudentInfo" style="display:none;"><span>已选学生: </span><strong id="workflowStudentCount">0</strong> 人</div>
+                    <button class="btn-workflow" onclick="runSubmitWorkflow()">执行提交流程</button>
+                </div>
+            </div>
+            <!-- 执行日志 -->
+            <div class="execution-log">
+                <div class="log-header">
+                    <span class="log-title">执行日志</span>
+                    <div class="log-stats"><span class="stat-badge success"><b id="logSuccessCount">0</b> 成功</span><span class="stat-badge error"><b id="logFailCount">0</b> 失败</span></div>
+                    <button class="btn-text-sm" onclick="clearLogs()">清空</button>
+                </div>
+                <div class="log-list" id="logList"><div class="log-empty">暂无日志</div></div>
             </div>
         </div>
 
-        <!-- 右侧：控制区 -->
+        <!-- 第3栏：RFID模拟 -->
         <div class="control-panel">
-            
-            <!-- 主操作区（首屏核心） -->
-            <div class="main-action-area">
-                <div class="action-header">
-                    <h2 class="action-title">RFID 模拟</h2>
-                    <p class="action-desc">选择班级后，批量发送学生 RFID 卡号到被控设备</p>
-                </div>
-                
-                <!-- 已选信息 -->
-                <div class="selected-info" id="selectedInfo" style="display:none;">
-                    <div class="selected-row">
-                        <span class="selected-name" id="selectedTitle">-</span>
-                        <button class="btn-clear" onclick="clearSelection()">清除</button>
-                    </div>
-                    <div class="selected-meta">
-                        <span class="meta-item">学生 <strong id="studentCount">0</strong></span>
-                        <span class="meta-item">课代表 <strong id="repCount">0</strong></span>
-                        <span class="meta-item">有效卡 <strong id="validCount">0</strong></span>
-                    </div>
-                </div>
-                
-                <!-- 筛选 -->
-                <div class="filter-row" id="filterRow" style="display:none;">
-                    <label class="filter-radio">
-                        <input type="radio" name="studentFilter" value="all" checked onchange="applyFilter()">
-                        <span>全部</span>
-                    </label>
-                    <label class="filter-radio">
-                        <input type="radio" name="studentFilter" value="rep" onchange="applyFilter()">
-                        <span>仅课代表</span>
-                    </label>
-                    <label class="filter-radio">
-                        <input type="radio" name="studentFilter" value="normal" onchange="applyFilter()">
-                        <span>仅普通学生</span>
-                    </label>
-                </div>
-                
-                <!-- 学生预览 -->
-                <div class="student-preview" id="studentPreview" style="display:none;"></div>
-                
-                <!-- 配置 -->
-                <div class="config-section" id="configSection" style="display:none;">
-                    <div class="config-row">
-                        <span class="config-label">发送间隔</span>
-                        <div class="interval-group">
-                            <div class="interval-btns" id="intervalBtns">
-                                <button class="interval-btn" data-value="3">3s</button>
-                                <button class="interval-btn active" data-value="5">5s</button>
-                                <button class="interval-btn" data-value="10">10s</button>
-                                <button class="interval-btn" data-value="15">15s</button>
-                            </div>
-                            <input type="number" id="customInterval" class="custom-interval" placeholder="自定义" min="1" max="60">
-                        </div>
-                    </div>
-                    <div class="config-row">
-                        <span class="config-label">发送回车</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="sendEnter" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- 进度 -->
-                <div class="progress-card" id="progressCard" style="display:none;">
-                    <div class="progress-header">
-                        <span class="progress-title">执行中</span>
-                        <span class="progress-status" id="taskStatus">运行中</span>
-                    </div>
-                    <div class="current-sending" id="currentSending">
-                        <span class="sending-label">正在发送</span>
-                        <span class="sending-name" id="currentName">-</span>
-                        <span class="sending-card" id="currentCard">-</span>
-                    </div>
-                    <div class="progress-info">
-                        <span id="progressText">0 / 0</span>
-                        <span class="countdown" id="countdown">-</span>
-                    </div>
-                    <div class="progress-bar-wrap">
-                        <div class="progress-bar" id="progressBar"></div>
-                    </div>
-                    <div class="exec-stats">
-                        <div class="exec-stat">
-                            <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                            <span id="successCount">0</span>
-                        </div>
-                        <div class="exec-stat">
-                            <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                            <span id="failCount">0</span>
-                        </div>
-                        <div class="exec-stat">
-                            <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
-                            <span id="elapsedTime">0:00</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 操作按钮 -->
-                <button class="btn-primary" id="startBtn" onclick="startBatch()" disabled>
-                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
-                    开始模拟
-                </button>
-                <div class="btn-group" id="runningBtns" style="display:none;">
-                    <button class="btn-secondary" id="pauseBtn" onclick="pauseBatch()">
-                        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                        暂停
-                    </button>
-                    <button class="btn-secondary" id="resumeBtn" onclick="resumeBatch()" style="display:none;">
-                        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
-                        继续
-                    </button>
-                    <button class="btn-danger" id="stopBtn" onclick="stopBatch()">
-                        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 6h12v12H6z"/></svg>
-                        停止
-                    </button>
-                </div>
-                <div class="shortcut-hint">Space 暂停/继续 · Esc 停止</div>
+            <div class="panel-header"><h2 class="panel-title">RFID 模拟</h2></div>
+            <!-- 关联书籍卡片 -->
+            <div class="related-books-card" id="relatedBooksCard" style="display:none;">
+                <div class="card-header"><span class="card-title">关联书籍</span><span class="book-count" id="bookCount">0</span></div>
+                <div class="books-list" id="booksList"></div>
             </div>
-
-            <!-- 连接状态（次要信息） -->
+            <div class="empty-hint" id="emptyHint"><span>从左侧选择班级或书本</span></div>
+            <div class="selected-info-card" id="selectedInfo" style="display:none;">
+                <div class="card-header"><span class="card-title" id="selectedTitle">-</span><button class="btn-text-sm" onclick="clearSelection()">清除</button></div>
+                <div class="selected-meta">
+                    <span class="meta-item">学生 <strong id="studentCount">0</strong></span>
+                    <span class="meta-item">课代表 <strong id="repCount">0</strong></span>
+                    <span class="meta-item">有效卡 <strong id="validCount">0</strong></span>
+                </div>
+                <div class="student-filter">
+                    <label class="filter-radio"><input type="radio" name="studentFilter" value="all" checked><span>全部</span></label>
+                    <label class="filter-radio"><input type="radio" name="studentFilter" value="rep"><span>课代表</span></label>
+                    <label class="filter-radio"><input type="radio" name="studentFilter" value="normal"><span>普通学生</span></label>
+                </div>
+                <div class="student-list" id="studentList"><div class="student-empty">暂无学生数据</div></div>
+            </div>
+            <button class="btn-primary" id="startBtn" onclick="startBatch()" disabled>开始模拟</button>
+            <div class="btn-group" id="runningBtns" style="display:none;">
+                <button class="btn-secondary" id="pauseBtn" onclick="pauseBatch()">暂停</button>
+                <button class="btn-secondary" id="resumeBtn" onclick="resumeBatch()" style="display:none;">继续</button>
+                <button class="btn-danger" id="stopBtn" onclick="stopBatch()">停止</button>
+            </div>
             <div class="connection-card">
-                <div class="card-header">
-                    <span class="card-title">连接状态</span>
-                    <div class="header-actions">
-                        <button class="btn-icon" onclick="refreshStatus()" title="刷新">
-                            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- 未连接提示 -->
-                <div class="connect-hint" id="connectHint">
-                    <div class="hint-icon">
-                        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                    </div>
-                    <div class="hint-content">
-                        <div class="hint-title">未检测到客户端</div>
-                        <div class="hint-desc">请在本地电脑运行：</div>
-                        <div class="hint-cmd">
-                            <code id="cmdText">python tools/adb_client.py --device 设备IP</code>
-                            <button class="btn-copy" onclick="copyCommand()">复制</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 连接链路 -->
-                <div class="connection-chain" id="connectionChain" style="display:none;">
-                    <div class="chain-node">
-                        <div class="node-dot" id="clientDot"></div>
-                        <div class="node-info">
-                            <span class="node-label">本地客户端</span>
-                            <span class="node-value" id="clientIp">-</span>
-                        </div>
-                        <span class="node-status" id="clientStatus">离线</span>
-                    </div>
-                    <div class="chain-line"></div>
-                    <div class="chain-node">
-                        <div class="node-dot online"></div>
-                        <div class="node-info">
-                            <span class="node-label">服务器</span>
-                            <span class="node-value">47.82.64.147</span>
-                        </div>
-                        <span class="node-status online">运行中</span>
-                    </div>
-                    <div class="chain-line"></div>
-                    <div class="chain-node">
-                        <div class="node-dot" id="deviceDot"></div>
-                        <div class="node-info">
-                            <span class="node-label">被控设备</span>
-                            <span class="node-value" id="deviceIp">-</span>
-                        </div>
-                        <span class="node-status" id="deviceStatus">未知</span>
-                    </div>
-                    <div class="device-detail" id="deviceDetail" style="display:none;">
-                        <span>型号 <b id="deviceModel">-</b></span>
-                        <span>输入 <b id="devicePath">-</b></span>
-                    </div>
-                </div>
-                
-                <!-- 便捷操作 -->
-                <div class="quick-actions" id="quickActions" style="display:none;">
-                    <button class="btn-action" onclick="testConnection()">测试连接</button>
-                    <button class="btn-action" onclick="detectDevice()">检测设备</button>
+                <div class="card-header"><span class="card-title">连接状态</span><button class="btn-icon" onclick="refreshStatus()" title="刷新"><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button></div>
+                <div class="connection-chain" id="connectionChain">
+                    <div class="chain-node"><div class="node-dot" id="clientDot"></div><span class="node-label">客户端</span><span class="node-value" id="clientIp">未连接</span></div>
+                    <div class="chain-node"><div class="node-dot online"></div><span class="node-label">服务器</span><span class="node-value">在线</span></div>
+                    <div class="chain-node"><div class="node-dot" id="deviceDot"></div><span class="node-label">设备</span><span class="node-value" id="deviceIp">-</span></div>
                 </div>
             </div>
-
-            <!-- 快捷测试 -->
             <div class="quick-test-card">
-                <div class="card-header">
-                    <span class="card-title">快捷测试</span>
-                </div>
-                <div class="quick-test-form">
-                    <input type="text" id="testCardNo" class="test-input" placeholder="输入卡号...">
-                    <button class="btn-send" onclick="sendTestCard()">发送</button>
-                </div>
+                <div class="card-header"><span class="card-title">快捷测试</span></div>
+                <div class="quick-test-form"><input type="text" id="testCardNo" class="test-input" placeholder="输入卡号..."><button class="btn-send" onclick="sendTestCard()">发送</button></div>
                 <div class="preset-cards">
                     <button class="preset-btn" onclick="sendPreset('1234567890')">测试卡1</button>
                     <button class="preset-btn" onclick="sendPreset('9876543210')">测试卡2</button>
-                    <button class="preset-btn" onclick="sendPreset('1111111111')">测试卡3</button>
                 </div>
             </div>
 
-            <!-- 日志 -->
-            <div class="log-card">
-                <div class="log-header">
-                    <span class="log-title">执行日志</span>
-                    <button class="btn-text" onclick="clearLogs()">清空</button>
-                </div>
-                <div class="log-list" id="logList">
-                    <div class="log-empty">暂无日志</div>
-                </div>
-            </div>
         </div>
     </div>
-
     <script src="/static/js/rfid-simulator.js"></script>
+    <script src="/static/js/workflow-builder.js"></script>
 </body>
 </html>

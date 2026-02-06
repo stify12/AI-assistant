@@ -31,6 +31,7 @@ $items = @(
     "app.py", "requirements.txt", "Dockerfile",
     "docker-compose.yml", "docker-compose.dev.yml",
     "prompts.json", "config.example.json", "database_schema.sql",
+    "workflow_config.json",
     "routes", "services", "utils", "templates", "static", "knowledge_agent", "tests", "migrations"
 )
 

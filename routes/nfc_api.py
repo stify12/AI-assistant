@@ -333,6 +333,45 @@ def get_book_class_students(book_id, class_id):
         return jsonify({'success': False, 'error': str(e)})
 
 
+@nfc_api_bp.route('/class/<int:class_id>/books', methods=['GET'])
+def get_class_books(class_id):
+    """获取班级关联的书籍列表（通过 RFID 绑定关系）"""
+    try:
+        sql = """
+            SELECT DISTINCT b.id, b.book_name, b.cover_path, b.subject_id, b.grade_id,
+                   COUNT(DISTINCT br.student_id) as student_count
+            FROM zp_bind_rfid br
+            JOIN zp_student s ON br.student_id = s.id
+            JOIN zp_make_book b ON br.book_id = b.id
+            WHERE s.class_id = %s AND br.rfid_no IS NOT NULL AND br.rfid_no != ''
+            GROUP BY b.id, b.book_name, b.cover_path, b.subject_id, b.grade_id
+            ORDER BY student_count DESC
+            LIMIT 10
+        """
+        
+        result = db.execute_query(sql, (class_id,))
+        
+        subject_map = {
+            0: '英语', 1: '语文', 2: '数学',
+            3: '物理', 4: '化学', 5: '生物', 6: '地理'
+        }
+        
+        books = []
+        for row in result:
+            books.append({
+                'id': row['id'],
+                'book_name': row['book_name'],
+                'cover_path': row.get('cover_path', ''),
+                'subject_id': row.get('subject_id'),
+                'subject_name': subject_map.get(row.get('subject_id'), ''),
+                'student_count': row.get('student_count', 0)
+            })
+        
+        return jsonify({'success': True, 'data': books})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
 @nfc_api_bp.route('/class/<int:class_id>/students', methods=['GET'])
 def get_class_students(class_id):
     """获取班级学生及其 RFID，课代表优先排序 - 带缓存"""

@@ -59,6 +59,7 @@ services:
       - ./saved_filters:/app/saved_filters
       - ./prompts.json:/app/prompts.json
       - ./config.json:/app/config.json
+      - ./workflow_config.json:/app/workflow_config.json
 
     environment:
       - FLASK_ENV=production
