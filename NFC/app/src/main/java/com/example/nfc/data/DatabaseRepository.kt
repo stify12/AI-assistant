@@ -352,21 +352,18 @@ object DatabaseRepository {
             
             if (json.optBoolean("success", false)) {
                 val data = json.getJSONObject("data")
-                val connJson = data.optJSONObject("connection")
+                
+                // 服务端返回: { connected: bool, client: {...}, task: {...} }
+                val clientJson = data.optJSONObject("client")
                 val taskJson = data.optJSONObject("task")
                 
-                val connection = if (connJson != null) {
-                    val clientJson = connJson.optJSONObject("client")
-                    AdbClientStatus(
-                        connected = connJson.optBoolean("connected", false),
-                        clientId = clientJson?.optString("client_id"),
-                        ipAddress = clientJson?.optString("ip_address"),
-                        connectedAt = clientJson?.optString("connected_at"),
-                        lastHeartbeat = clientJson?.optString("last_heartbeat")
-                    )
-                } else {
-                    AdbClientStatus()
-                }
+                val connection = AdbClientStatus(
+                    connected = data.optBoolean("connected", false),
+                    clientId = clientJson?.optString("client_id"),
+                    ipAddress = clientJson?.optString("ip_address"),
+                    connectedAt = clientJson?.optString("connected_at"),
+                    lastHeartbeat = clientJson?.optString("last_heartbeat")
+                )
                 
                 val task = if (taskJson != null && taskJson.has("task_id")) {
                     SimulationTaskStatus(
