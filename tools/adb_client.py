@@ -13,7 +13,10 @@ import logging
 import argparse
 import uuid
 import socket
+import re
+import xml.etree.ElementTree as ET
 from datetime import datetime
+from typing import Optional, List, Dict, Tuple
 
 try:
     import websocket
@@ -65,6 +68,8 @@ class AdbClient:
         self.device_path = "/dev/input/event2"
         self._heartbeat_running = False  # 心跳线程控制标志
         self._cached_device_info = None  # 缓存的设备信息
+        self._ui_cache = None  # 缓存的 UI 结构
+        self._ui_cache_time = 0  # UI 缓存时间
         
     def get_local_ip(self) -> str:
         """获取本机 IP"""
@@ -323,9 +328,69 @@ class AdbClient:
                 self.paused = False
                 logger.info("批量任务已停止")
             
+            elif msg_type == 'run_workflow':
+                # 执行完整流程（发布+提交联动）
+                self.current_task = data
+                self.paused = False
+                threading.Thread(target=self.run_full_workflow, daemon=True).start()
+            
             elif msg_type == 'workflow_step':
                 # 处理工作流步骤
                 self.handle_workflow_step(data)
+            
+            elif msg_type == 'dump_ui':
+                # 导出 UI 结构
+                summary = self.get_ui_summary()
+                self.ws.send(json.dumps({
+                    'type': 'ui_dump_result',
+                    **summary
+                }))
+            
+            elif msg_type == 'find_element':
+                # 查找元素
+                elem = self.find_element(
+                    text=data.get('text'),
+                    resource_id=data.get('resource_id'),
+                    content_desc=data.get('content_desc'),
+                    partial_match=data.get('partial_match', True)
+                )
+                self.ws.send(json.dumps({
+                    'type': 'find_element_result',
+                    'success': elem is not None,
+                    'element': elem
+                }))
+            
+            elif msg_type == 'tap_element':
+                # 通过选择器点击元素
+                success = self.tap_element(
+                    text=data.get('text'),
+                    resource_id=data.get('resource_id'),
+                    content_desc=data.get('content_desc'),
+                    partial_match=data.get('partial_match', True),
+                    retry=data.get('retry', 3)
+                )
+                self.ws.send(json.dumps({
+                    'type': 'tap_element_result',
+                    'success': success,
+                    'selector': {
+                        'text': data.get('text'),
+                        'resource_id': data.get('resource_id'),
+                        'content_desc': data.get('content_desc')
+                    }
+                }))
+            
+            elif msg_type == 'wait_for_element':
+                # 等待元素出现
+                elem = self.wait_for_element(
+                    text=data.get('text'),
+                    resource_id=data.get('resource_id'),
+                    timeout=data.get('timeout', 10)
+                )
+                self.ws.send(json.dumps({
+                    'type': 'wait_element_result',
+                    'success': elem is not None,
+                    'element': elem
+                }))
             
         except Exception as e:
             logger.error(f"处理消息失败: {e}")
@@ -403,19 +468,201 @@ class AdbClient:
             logger.info("批量任务完成")
         
         self.current_task = None
+
+    def run_full_workflow(self):
+        """执行完整提交作业流程（发布+提交联动）"""
+        if not self.current_task:
+            return
+        
+        workflow_id = self.current_task.get('workflow_id', '')
+        students = self.current_task.get('students', [])
+        representative = self.current_task.get('representative')  # 课代表
+        photo_interval = self.current_task.get('photo_interval', 2)
+        enable_double_page = self.current_task.get('enable_double_page', True)
+        
+        logger.info(f"开始执行流程: {workflow_id}, 学生数: {len(students)}")
+        
+        # 坐标配置
+        COORDS = {
+            'submit_homework_button': (1200, 400),
+            'double_page_button': (400, 551),
+            'camera_capture_button': (667, 978),
+            'submit_button': (1593, 955),
+            'confirm_submit_button': (886, 781)
+        }
+        
+        try:
+            # 1. 启动 APP
+            self._send_progress('启动应用...')
+            if not self.atom_launch('com.zpzn.terminal'):
+                raise Exception("启动应用失败")
+            time.sleep(5)
+            
+            # 2. 点击提交作业按钮
+            self._send_progress('进入提交界面...')
+            x, y = COORDS['submit_homework_button']
+            if not self.atom_tap(x, y):
+                raise Exception("点击提交作业按钮失败")
+            time.sleep(2)
+            
+            # 3. 刷课代表卡
+            if representative:
+                self._send_progress(f"刷课代表卡: {representative.get('name', '')}")
+                rfid = representative.get('rfid_no', representative.get('card_number', ''))
+                if not self.send_rfid(rfid, self.device_path, True):
+                    raise Exception("刷课代表卡失败")
+                time.sleep(2)
+                
+                # 4. 点击双页模式（只在第一次）
+                if enable_double_page:
+                    self._send_progress('开启双页模式...')
+                    x, y = COORDS['double_page_button']
+                    self.atom_tap(x, y)
+                    time.sleep(1)
+                
+                # 5. 拍照
+                self._send_progress('课代表拍照...')
+                x, y = COORDS['camera_capture_button']
+                if not self.atom_tap(x, y):
+                    raise Exception("拍照失败")
+                time.sleep(photo_interval)
+            
+            # 6. 循环处理学生
+            for i, student in enumerate(students):
+                if self.current_task is None:
+                    logger.info("流程已停止")
+                    return
+                
+                while self.paused and self.current_task is not None:
+                    time.sleep(0.5)
+                
+                if self.current_task is None:
+                    return
+                
+                name = student.get('name', '')
+                rfid = student.get('rfid_no', student.get('card_number', ''))
+                
+                self._send_progress(f"处理学生 [{i+1}/{len(students)}]: {name}")
+                
+                # 刷卡
+                if not self.send_rfid(rfid, self.device_path, True):
+                    logger.error(f"刷卡失败: {name}")
+                    self.ws.send(json.dumps({
+                        'type': 'workflow_student_result',
+                        'index': i,
+                        'name': name,
+                        'success': False,
+                        'error': '刷卡失败'
+                    }))
+                    continue
+                
+                time.sleep(1)
+                
+                # 拍照
+                x, y = COORDS['camera_capture_button']
+                if not self.atom_tap(x, y):
+                    logger.error(f"拍照失败: {name}")
+                
+                self.ws.send(json.dumps({
+                    'type': 'workflow_student_result',
+                    'index': i,
+                    'name': name,
+                    'success': True
+                }))
+                
+                # 等待拍照完成
+                time.sleep(photo_interval)
+            
+            # 7. 提交作业
+            self._send_progress('提交作业...')
+            x, y = COORDS['submit_button']
+            if not self.atom_tap(x, y):
+                raise Exception("点击提交按钮失败")
+            time.sleep(2)
+            
+            # 8. 确认提交
+            self._send_progress('确认提交...')
+            x, y = COORDS['confirm_submit_button']
+            if not self.atom_tap(x, y):
+                raise Exception("点击确认提交失败")
+            time.sleep(3)
+            
+            # 完成
+            self.ws.send(json.dumps({
+                'type': 'workflow_complete',
+                'workflow_id': workflow_id,
+                'success': True,
+                'student_count': len(students)
+            }))
+            logger.info(f"流程完成: {workflow_id}")
+            
+        except Exception as e:
+            logger.error(f"流程执行失败: {e}")
+            self.ws.send(json.dumps({
+                'type': 'workflow_complete',
+                'workflow_id': workflow_id,
+                'success': False,
+                'error': str(e)
+            }))
+        finally:
+            self.current_task = None
+    
+    def _send_progress(self, message: str):
+        """发送进度消息"""
+        logger.info(f"[进度] {message}")
+        self.ws.send(json.dumps({
+            'type': 'workflow_progress',
+            'message': message
+        }))
     
     # ==================== 原子操作 ====================
     
     def handle_workflow_step(self, data: dict):
-        """处理工作流步骤（兼容旧版）"""
+        """处理工作流步骤（支持坐标和元素选择器两种模式）"""
         action = data.get('action')
         step_name = data.get('desc', action)
         success = False
         error = ''
         
         try:
-            # 原子操作映射
-            if action == 'tap':
+            # ========== 新增：元素选择器操作 ==========
+            if action == 'tap_element':
+                # 通过选择器点击
+                success = self.tap_element(
+                    text=data.get('text'),
+                    resource_id=data.get('resource_id'),
+                    content_desc=data.get('content_desc'),
+                    partial_match=data.get('partial_match', True),
+                    retry=data.get('retry', 3)
+                )
+                step_name = f"点击元素: {data.get('text') or data.get('resource_id') or data.get('content_desc')}"
+            
+            elif action == 'wait_element':
+                # 等待元素出现
+                elem = self.wait_for_element(
+                    text=data.get('text'),
+                    resource_id=data.get('resource_id'),
+                    timeout=data.get('timeout', 10)
+                )
+                success = elem is not None
+                step_name = f"等待元素: {data.get('text') or data.get('resource_id')}"
+            
+            elif action == 'input_to_element':
+                # 先点击元素，再输入文本
+                text_to_input = data.get('input_text', '')
+                if self.tap_element(
+                    text=data.get('text'),
+                    resource_id=data.get('resource_id'),
+                    content_desc=data.get('content_desc')
+                ):
+                    time.sleep(0.3)
+                    self.atom_clear()
+                    time.sleep(0.2)
+                    success = self.atom_input(text_to_input)
+                step_name = f"输入到元素: {text_to_input[:20]}..."
+            
+            # ========== 原有原子操作 ==========
+            elif action == 'tap':
                 x = data.get('x', 0)
                 y = data.get('y', 0)
                 success = self.atom_tap(x, y)
@@ -617,6 +864,319 @@ class AdbClient:
         except Exception as e:
             logger.error(f"截图失败: {e}")
             return False
+    
+    # ==================== UI 分析功能 ====================
+    
+    def dump_ui(self, force_refresh: bool = False) -> Optional[str]:
+        """
+        导出当前界面的 UI 层级结构
+        
+        Args:
+            force_refresh: 是否强制刷新（忽略缓存）
+        
+        Returns:
+            XML 字符串，失败返回 None
+        """
+        # 检查缓存（2秒内有效）
+        if not force_refresh and self._ui_cache and (time.time() - self._ui_cache_time) < 2:
+            return self._ui_cache
+        
+        try:
+            logger.info("导出 UI 结构...")
+            # 导出到设备
+            dump_cmd = f"adb -s {self.device_ip} shell uiautomator dump /sdcard/ui_dump.xml"
+            result = subprocess.run(dump_cmd, shell=True, capture_output=True, text=True, 
+                                    encoding='utf-8', errors='ignore', timeout=10)
+            
+            if result.returncode != 0:
+                logger.error(f"UI dump 失败: {result.stderr}")
+                return None
+            
+            # 读取内容
+            cat_cmd = f"adb -s {self.device_ip} shell cat /sdcard/ui_dump.xml"
+            result = subprocess.run(cat_cmd, shell=True, capture_output=True, text=True,
+                                    encoding='utf-8', errors='ignore', timeout=10)
+            
+            if result.returncode == 0 and result.stdout:
+                self._ui_cache = result.stdout
+                self._ui_cache_time = time.time()
+                logger.info(f"UI 结构导出成功，大小: {len(result.stdout)} 字节")
+                return result.stdout
+            
+            return None
+        except Exception as e:
+            logger.error(f"导出 UI 结构失败: {e}")
+            return None
+    
+    def parse_ui_elements(self, xml_content: str) -> List[Dict]:
+        """
+        解析 UI XML，提取所有可交互元素
+        
+        Returns:
+            元素列表，每个元素包含: text, resource_id, class, bounds, clickable, center
+        """
+        elements = []
+        try:
+            root = ET.fromstring(xml_content)
+            
+            def parse_node(node, depth=0):
+                attrs = node.attrib
+                
+                # 提取关键属性
+                text = attrs.get('text', '')
+                resource_id = attrs.get('resource-id', '')
+                class_name = attrs.get('class', '')
+                bounds_str = attrs.get('bounds', '')
+                clickable = attrs.get('clickable', 'false') == 'true'
+                enabled = attrs.get('enabled', 'true') == 'true'
+                content_desc = attrs.get('content-desc', '')
+                
+                # 解析 bounds: [x1,y1][x2,y2]
+                center = None
+                bounds = None
+                if bounds_str:
+                    match = re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', bounds_str)
+                    if match:
+                        x1, y1, x2, y2 = map(int, match.groups())
+                        bounds = (x1, y1, x2, y2)
+                        center = ((x1 + x2) // 2, (y1 + y2) // 2)
+                
+                # 只保留有意义的元素（有文本、有 resource-id、或可点击）
+                if text or resource_id or clickable or content_desc:
+                    elements.append({
+                        'text': text,
+                        'resource_id': resource_id,
+                        'class': class_name,
+                        'content_desc': content_desc,
+                        'bounds': bounds,
+                        'center': center,
+                        'clickable': clickable,
+                        'enabled': enabled,
+                        'depth': depth
+                    })
+                
+                # 递归处理子节点
+                for child in node:
+                    parse_node(child, depth + 1)
+            
+            parse_node(root)
+            logger.info(f"解析到 {len(elements)} 个元素")
+            
+        except ET.ParseError as e:
+            logger.error(f"XML 解析失败: {e}")
+        except Exception as e:
+            logger.error(f"解析 UI 元素失败: {e}")
+        
+        return elements
+    
+    def find_element(self, 
+                     text: str = None, 
+                     resource_id: str = None, 
+                     class_name: str = None,
+                     content_desc: str = None,
+                     partial_match: bool = True,
+                     refresh: bool = True) -> Optional[Dict]:
+        """
+        查找元素
+        
+        Args:
+            text: 按文本查找
+            resource_id: 按 resource-id 查找
+            class_name: 按类名查找
+            content_desc: 按 content-desc 查找
+            partial_match: 是否部分匹配
+            refresh: 是否刷新 UI 结构
+        
+        Returns:
+            找到的元素，包含 center 坐标
+        """
+        xml = self.dump_ui(force_refresh=refresh)
+        if not xml:
+            return None
+        
+        elements = self.parse_ui_elements(xml)
+        
+        for elem in elements:
+            # 按 resource-id 匹配（优先级最高）
+            if resource_id:
+                if partial_match:
+                    if resource_id in elem.get('resource_id', ''):
+                        return elem
+                else:
+                    if elem.get('resource_id') == resource_id:
+                        return elem
+            
+            # 按文本匹配
+            if text:
+                elem_text = elem.get('text', '')
+                if partial_match:
+                    if text in elem_text:
+                        return elem
+                else:
+                    if elem_text == text:
+                        return elem
+            
+            # 按 content-desc 匹配
+            if content_desc:
+                elem_desc = elem.get('content_desc', '')
+                if partial_match:
+                    if content_desc in elem_desc:
+                        return elem
+                else:
+                    if elem_desc == content_desc:
+                        return elem
+            
+            # 按类名匹配
+            if class_name and not text and not resource_id and not content_desc:
+                if class_name in elem.get('class', ''):
+                    return elem
+        
+        return None
+    
+    def find_elements(self, 
+                      text: str = None, 
+                      resource_id: str = None,
+                      class_name: str = None,
+                      clickable_only: bool = False,
+                      refresh: bool = True) -> List[Dict]:
+        """
+        查找所有匹配的元素
+        """
+        xml = self.dump_ui(force_refresh=refresh)
+        if not xml:
+            return []
+        
+        elements = self.parse_ui_elements(xml)
+        results = []
+        
+        for elem in elements:
+            if clickable_only and not elem.get('clickable'):
+                continue
+            
+            match = True
+            if text and text not in elem.get('text', ''):
+                match = False
+            if resource_id and resource_id not in elem.get('resource_id', ''):
+                match = False
+            if class_name and class_name not in elem.get('class', ''):
+                match = False
+            
+            if match:
+                results.append(elem)
+        
+        return results
+    
+    def tap_element(self, 
+                    text: str = None, 
+                    resource_id: str = None,
+                    content_desc: str = None,
+                    partial_match: bool = True,
+                    retry: int = 3,
+                    wait_before: float = 0.3) -> bool:
+        """
+        通过元素选择器点击
+        
+        Args:
+            text: 按文本查找并点击
+            resource_id: 按 resource-id 查找并点击
+            content_desc: 按 content-desc 查找并点击
+            partial_match: 是否部分匹配
+            retry: 重试次数
+            wait_before: 点击前等待时间
+        
+        Returns:
+            是否成功
+        """
+        for attempt in range(retry):
+            time.sleep(wait_before)
+            
+            elem = self.find_element(
+                text=text, 
+                resource_id=resource_id, 
+                content_desc=content_desc,
+                partial_match=partial_match,
+                refresh=True
+            )
+            
+            if elem and elem.get('center'):
+                x, y = elem['center']
+                logger.info(f"找到元素: text='{elem.get('text')}' id='{elem.get('resource_id')}' -> 点击 ({x}, {y})")
+                if self.atom_tap(x, y):
+                    return True
+            
+            if attempt < retry - 1:
+                logger.warning(f"未找到元素，重试 {attempt + 2}/{retry}...")
+                time.sleep(1)
+        
+        logger.error(f"点击元素失败: text={text}, resource_id={resource_id}, content_desc={content_desc}")
+        return False
+    
+    def wait_for_element(self, 
+                         text: str = None, 
+                         resource_id: str = None,
+                         timeout: int = 10,
+                         interval: float = 0.5) -> Optional[Dict]:
+        """
+        等待元素出现
+        
+        Args:
+            text: 等待的文本
+            resource_id: 等待的 resource-id
+            timeout: 超时时间（秒）
+            interval: 检查间隔
+        
+        Returns:
+            找到的元素，超时返回 None
+        """
+        start = time.time()
+        while time.time() - start < timeout:
+            elem = self.find_element(text=text, resource_id=resource_id, refresh=True)
+            if elem:
+                logger.info(f"元素已出现: text='{text}' resource_id='{resource_id}'")
+                return elem
+            time.sleep(interval)
+        
+        logger.warning(f"等待元素超时: text={text}, resource_id={resource_id}")
+        return None
+    
+    def get_ui_summary(self) -> Dict:
+        """
+        获取当前界面摘要（用于调试）
+        
+        Returns:
+            包含可点击元素列表的摘要
+        """
+        xml = self.dump_ui(force_refresh=True)
+        if not xml:
+            return {'success': False, 'error': '无法获取 UI 结构'}
+        
+        elements = self.parse_ui_elements(xml)
+        
+        # 分类整理
+        clickable = []
+        text_elements = []
+        
+        for elem in elements:
+            info = {
+                'text': elem.get('text', ''),
+                'resource_id': elem.get('resource_id', ''),
+                'content_desc': elem.get('content_desc', ''),
+                'center': elem.get('center'),
+                'class': elem.get('class', '').split('.')[-1]  # 只保留类名
+            }
+            
+            if elem.get('clickable'):
+                clickable.append(info)
+            elif elem.get('text'):
+                text_elements.append(info)
+        
+        return {
+            'success': True,
+            'clickable_count': len(clickable),
+            'text_count': len(text_elements),
+            'clickable_elements': clickable[:30],  # 限制数量
+            'text_elements': text_elements[:20]
+        }
     
     # 坐标配置（兼容旧版）
     COORDINATES = {
@@ -855,8 +1415,69 @@ def main():
                         help='WebSocket 服务器地址')
     parser.add_argument('--device', '-d', default='192.168.4.143',
                         help='被控安卓设备 IP')
+    parser.add_argument('--dump-ui', action='store_true',
+                        help='导出当前界面 UI 结构并退出')
+    parser.add_argument('--output', '-o', default='ui_dump.json',
+                        help='UI 结构输出文件')
     
     args = parser.parse_args()
+    
+    # 如果是 dump-ui 模式，直接导出并退出
+    if args.dump_ui:
+        print("=" * 50)
+        print("UI 结构导出模式")
+        print("=" * 50)
+        print(f"被控设备: {args.device}")
+        print()
+        
+        client = AdbClient('', args.device)
+        
+        # 检查连接
+        if not client.check_adb_connection():
+            print("错误: ADB 设备未连接")
+            return
+        
+        # 先截图
+        screenshot_path = args.output.replace('.json', '.png')
+        print(f"正在截图...")
+        try:
+            # 截图到设备
+            subprocess.run(
+                f"adb -s {args.device} shell screencap -p /sdcard/screen_dump.png",
+                shell=True, capture_output=True, timeout=10
+            )
+            # 拉取到本地
+            subprocess.run(
+                f"adb -s {args.device} pull /sdcard/screen_dump.png {screenshot_path}",
+                shell=True, capture_output=True, timeout=10
+            )
+            print(f"✓ 截图已保存到: {screenshot_path}")
+        except Exception as e:
+            print(f"截图失败: {e}")
+        
+        # 导出 UI
+        print("正在导出 UI 结构...")
+        summary = client.get_ui_summary()
+        
+        if summary.get('success'):
+            # 保存到文件
+            with open(args.output, 'w', encoding='utf-8') as f:
+                json.dump(summary, f, ensure_ascii=False, indent=2)
+            
+            print(f"\n✓ UI 结构已保存到: {args.output}")
+            print(f"  - 可点击元素: {summary['clickable_count']} 个")
+            print(f"  - 文本元素: {summary['text_count']} 个")
+            print()
+            print("可点击元素列表:")
+            print("-" * 50)
+            for i, elem in enumerate(summary.get('clickable_elements', [])[:15]):
+                text = elem.get('text', '') or elem.get('content_desc', '') or '(无文本)'
+                rid = elem.get('resource_id', '')
+                center = elem.get('center', (0, 0))
+                print(f"  {i+1}. [{text[:20]}] id={rid[-30:] if rid else ''} pos={center}")
+        else:
+            print(f"错误: {summary.get('error', '未知错误')}")
+        return
     
     print("=" * 50)
     print("ADB 客户端 - RFID 模拟器")

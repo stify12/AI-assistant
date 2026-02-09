@@ -36,6 +36,7 @@
       "name": "提交作业",
       "description": "自动提交作业流程（需先选择班级）",
       "steps": [
+        { "action": "launch", "package": "com.zpzn.terminal", "wait": 5, "desc": "打开应用" },
         { "action": "tap", "x": 1200, "y": 400, "wait": 2, "desc": "进入提交界面" },
         { "action": "rfid", "target": "rep", "wait": 2, "desc": "刷课代表卡" },
         { "action": "tap", "x": 400, "y": 551, "wait": 1, "desc": "点击双页模式" },
@@ -53,7 +54,10 @@
     }
   },
   "atom_actions": {
-    "tap": { "name": "点击", "params": ["x", "y"] },
+    "tap": { "name": "点击坐标", "params": ["x", "y"] },
+    "tap_element": { "name": "点击元素", "params": ["text", "resource_id", "content_desc", "partial_match", "retry"] },
+    "wait_element": { "name": "等待元素", "params": ["text", "resource_id", "timeout"] },
+    "input_to_element": { "name": "输入到元素", "params": ["text", "resource_id", "input_text"] },
     "long_press": { "name": "长按", "params": ["x", "y", "duration"] },
     "swipe": { "name": "滑动", "params": ["x1", "y1", "x2", "y2", "duration"] },
     "input": { "name": "输入文本", "params": ["text"] },

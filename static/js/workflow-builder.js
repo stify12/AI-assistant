@@ -7,7 +7,11 @@
 
 const workflowState = {
     publishRunning: false,
+    publishPaused: false,
+    publishStopped: false,
     submitRunning: false,
+    submitPaused: false,
+    submitStopped: false,
     currentStep: null,
     logs: [],
     workflows: {},      // 流程配置缓存
@@ -146,6 +150,9 @@ async function runPublishWorkflow() {
     }
     
     workflowState.publishRunning = true;
+    workflowState.publishPaused = false;
+    workflowState.publishStopped = false;
+    updatePublishButtons('running');
     updateWorkflowStatus('publish', 'running', '执行中');
     
     const username = document.getElementById('publishUsername')?.value || 'shuxue';
@@ -157,6 +164,7 @@ async function runPublishWorkflow() {
     if (!workflow) {
         addWorkflowLog('error', '未找到发布作业流程配置');
         workflowState.publishRunning = false;
+        updatePublishButtons('idle');
         return;
     }
     
@@ -173,17 +181,29 @@ async function runPublishWorkflow() {
     
     try {
         for (let i = 0; i < steps.length; i++) {
+            // 检查停止
+            if (workflowState.publishStopped) {
+                addWorkflowLog('warning', '流程已停止');
+                break;
+            }
+            
+            // 检查暂停
+            while (workflowState.publishPaused && !workflowState.publishStopped) {
+                await sleep(200);
+            }
+            if (workflowState.publishStopped) break;
+            
             const step = steps[i];
             setStepActive('publish_homework', i);
             
             const detail = formatStepDetail(step);
-            addWorkflowLog('info', `执行: ${step.desc || step.action} ${detail}`);
+            addWorkflowLog('info', `[${i + 1}/${steps.length}] 执行: ${step.desc || step.action} ${detail}`);
             
             const success = await executeAtomStep(step);
             
             if (success) {
                 setStepDone('publish_homework', i);
-                addWorkflowLog('success', `完成: ${step.desc || step.action}`);
+                addWorkflowLog('success', `步骤完成: ${step.desc || step.action}`);
             } else {
                 setStepError('publish_homework', i);
                 addWorkflowLog('error', `失败: ${step.desc || step.action}`);
@@ -197,13 +217,70 @@ async function runPublishWorkflow() {
             }
         }
         
-        updateWorkflowStatus('publish', 'success', '已完成');
-        addWorkflowLog('success', '发布作业流程完成');
+        if (!workflowState.publishStopped) {
+            updateWorkflowStatus('publish', 'success', '已完成');
+            addWorkflowLog('success', '发布作业流程完成');
+        } else {
+            updateWorkflowStatus('publish', 'warning', '已停止');
+        }
     } catch (e) {
         updateWorkflowStatus('publish', 'error', '执行失败');
         addWorkflowLog('error', `流程异常: ${e.message}`);
     } finally {
         workflowState.publishRunning = false;
+        workflowState.publishPaused = false;
+        updatePublishButtons('idle');
+    }
+}
+
+// 暂停发布流程
+function pausePublishWorkflow() {
+    if (!workflowState.publishRunning) return;
+    workflowState.publishPaused = true;
+    updatePublishButtons('paused');
+    updateWorkflowStatus('publish', 'warning', '已暂停');
+    addWorkflowLog('warning', '流程已暂停');
+}
+
+// 继续发布流程
+function resumePublishWorkflow() {
+    if (!workflowState.publishRunning || !workflowState.publishPaused) return;
+    workflowState.publishPaused = false;
+    updatePublishButtons('running');
+    updateWorkflowStatus('publish', 'running', '执行中');
+    addWorkflowLog('info', '流程继续执行');
+}
+
+// 停止发布流程
+function stopPublishWorkflow() {
+    if (!workflowState.publishRunning) return;
+    workflowState.publishStopped = true;
+    workflowState.publishPaused = false;
+    addWorkflowLog('warning', '正在停止流程...');
+}
+
+// 更新发布流程按钮状态
+function updatePublishButtons(state) {
+    const startBtn = document.getElementById('publishStartBtn');
+    const pauseBtn = document.getElementById('publishPauseBtn');
+    const resumeBtn = document.getElementById('publishResumeBtn');
+    const stopBtn = document.getElementById('publishStopBtn');
+    
+    if (state === 'idle') {
+        startBtn.style.display = 'flex';
+        pauseBtn.style.display = 'none';
+        resumeBtn.style.display = 'none';
+        stopBtn.style.display = 'none';
+    } else if (state === 'running') {
+        startBtn.style.display = 'none';
+        pauseBtn.style.display = 'flex';
+        resumeBtn.style.display = 'none';
+        stopBtn.style.display = 'flex';
+    } else if (state === 'paused') {
+        startBtn.style.display = 'none';
+        pauseBtn.style.display = 'none';
+        resumeBtn.style.display = 'flex';
+        stopBtn.style.display = 'flex';
     }
 }
 
@@ -511,12 +588,16 @@ async function runSubmitWorkflow() {
     }
     
     workflowState.submitRunning = true;
+    workflowState.submitPaused = false;
+    workflowState.submitStopped = false;
+    updateSubmitButtons('running');
     updateWorkflowStatus('submit', 'running', '执行中');
     
     const workflow = workflowState.workflows['submit_homework'];
     if (!workflow) {
         addWorkflowLog('error', '未找到提交作业流程配置');
         workflowState.submitRunning = false;
+        updateSubmitButtons('idle');
         return;
     }
     
@@ -530,6 +611,7 @@ async function runSubmitWorkflow() {
     if (!rep) {
         addWorkflowLog('error', '未找到课代表');
         workflowState.submitRunning = false;
+        updateSubmitButtons('idle');
         updateWorkflowStatus('submit', 'error', '无课代表');
         return;
     }
@@ -540,6 +622,18 @@ async function runSubmitWorkflow() {
         const steps = workflow.steps;
         
         for (let i = 0; i < steps.length; i++) {
+            // 检查停止
+            if (workflowState.submitStopped) {
+                addWorkflowLog('warning', '流程已停止');
+                break;
+            }
+            
+            // 检查暂停
+            while (workflowState.submitPaused && !workflowState.submitStopped) {
+                await sleep(200);
+            }
+            if (workflowState.submitStopped) break;
+            
             const step = steps[i];
             setStepActive('submit_homework', i);
             
@@ -557,33 +651,46 @@ async function runSubmitWorkflow() {
                 addWorkflowLog('info', `开始循环处理 ${normalStudents.length} 名学生`);
                 
                 for (let j = 0; j < normalStudents.length; j++) {
+                    // 检查停止
+                    if (workflowState.submitStopped) break;
+                    
+                    // 检查暂停
+                    while (workflowState.submitPaused && !workflowState.submitStopped) {
+                        await sleep(200);
+                    }
+                    if (workflowState.submitStopped) break;
+                    
                     const student = normalStudents[j];
                     addWorkflowLog('info', `[${j + 1}/${normalStudents.length}] 处理学生: ${student.name}`);
                     
                     // 执行循环内的子步骤
                     for (const subStep of step.steps) {
+                        if (workflowState.submitStopped) break;
+                        
                         if (subStep.action === 'rfid' && subStep.target === 'current') {
                             addWorkflowLog('info', `刷学生卡: ${student.name} (${student.rfid_no})`);
                             const success = await sendRfidCard(student.rfid_no);
                             if (!success) {
                                 addWorkflowLog('error', `刷卡失败: ${student.name}`);
                             }
-                            if (subStep.wait) await sleep(subStep.wait * 1000);
+                            if (subStep.wait) await interruptibleSleep(subStep.wait * 1000);
                         } else if (subStep.action === 'tap') {
                             addWorkflowLog('info', `${subStep.desc || '点击'}`);
                             await executeAtomStep(subStep);
                             // 使用参数中的拍照间隔
                             const waitTime = subStep.text === '${photo_interval}' ? photoInterval : (subStep.wait || 1);
-                            await sleep(waitTime * 1000);
+                            await interruptibleSleep(waitTime * 1000);
                         } else {
                             await executeAtomStep(subStep);
-                            if (subStep.wait) await sleep(subStep.wait * 1000);
+                            if (subStep.wait) await interruptibleSleep(subStep.wait * 1000);
                         }
                     }
                 }
                 
-                setStepDone('submit_homework', i);
-                addWorkflowLog('success', '学生循环处理完成');
+                if (!workflowState.submitStopped) {
+                    setStepDone('submit_homework', i);
+                    addWorkflowLog('success', '学生循环处理完成');
+                }
             } else {
                 // 普通原子操作
                 addWorkflowLog('info', `执行: ${step.desc || step.action}`);
@@ -599,17 +706,74 @@ async function runSubmitWorkflow() {
             
             // 等待
             if (step.wait && step.action !== 'loop') {
-                await sleep(step.wait * 1000);
+                await interruptibleSleep(step.wait * 1000);
             }
         }
         
-        updateWorkflowStatus('submit', 'success', '已完成');
-        addWorkflowLog('success', '提交作业流程完成');
+        if (!workflowState.submitStopped) {
+            updateWorkflowStatus('submit', 'success', '已完成');
+            addWorkflowLog('success', '提交作业流程完成');
+        } else {
+            updateWorkflowStatus('submit', 'warning', '已停止');
+        }
     } catch (e) {
         updateWorkflowStatus('submit', 'error', '执行失败');
         addWorkflowLog('error', `流程异常: ${e.message}`);
     } finally {
         workflowState.submitRunning = false;
+        workflowState.submitPaused = false;
+        updateSubmitButtons('idle');
+    }
+}
+
+// 暂停提交流程
+function pauseSubmitWorkflow() {
+    if (!workflowState.submitRunning) return;
+    workflowState.submitPaused = true;
+    updateSubmitButtons('paused');
+    updateWorkflowStatus('submit', 'warning', '已暂停');
+    addWorkflowLog('warning', '流程已暂停');
+}
+
+// 继续提交流程
+function resumeSubmitWorkflow() {
+    if (!workflowState.submitRunning || !workflowState.submitPaused) return;
+    workflowState.submitPaused = false;
+    updateSubmitButtons('running');
+    updateWorkflowStatus('submit', 'running', '执行中');
+    addWorkflowLog('info', '流程继续执行');
+}
+
+// 停止提交流程
+function stopSubmitWorkflow() {
+    if (!workflowState.submitRunning) return;
+    workflowState.submitStopped = true;
+    workflowState.submitPaused = false;
+    addWorkflowLog('warning', '正在停止流程...');
+}
+
+// 更新提交流程按钮状态
+function updateSubmitButtons(state) {
+    const startBtn = document.getElementById('submitStartBtn');
+    const pauseBtn = document.getElementById('submitPauseBtn');
+    const resumeBtn = document.getElementById('submitResumeBtn');
+    const stopBtn = document.getElementById('submitStopBtn');
+    
+    if (state === 'idle') {
+        startBtn.style.display = 'flex';
+        pauseBtn.style.display = 'none';
+        resumeBtn.style.display = 'none';
+        stopBtn.style.display = 'none';
+    } else if (state === 'running') {
+        startBtn.style.display = 'none';
+        pauseBtn.style.display = 'flex';
+        resumeBtn.style.display = 'none';
+        stopBtn.style.display = 'flex';
+    } else if (state === 'paused') {
+        startBtn.style.display = 'none';
+        pauseBtn.style.display = 'none';
+        resumeBtn.style.display = 'flex';
+        stopBtn.style.display = 'flex';
     }
 }
 
@@ -716,6 +880,21 @@ function clearWorkflowLog() {
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/** 可中断的 sleep，每 200ms 检查一次停止标志 */
+function interruptibleSleep(ms) {
+    return new Promise(resolve => {
+        const start = Date.now();
+        const check = () => {
+            if (workflowState.submitStopped || Date.now() - start >= ms) {
+                resolve();
+            } else {
+                setTimeout(check, 200);
+            }
+        };
+        check();
+    });
 }
 
 // ==================== 坐标配置 ====================
