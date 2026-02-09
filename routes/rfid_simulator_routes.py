@@ -10,6 +10,7 @@ from flask_sock import Sock
 from datetime import datetime
 
 from services.rfid_simulator_service import rfid_simulator_service, set_websocket_getter
+from services.homework_publish_service import homework_publish_service
 
 logger = logging.getLogger(__name__)
 
@@ -269,22 +270,16 @@ def execute_workflow_step():
                 'error': '没有可用的 ADB 客户端连接'
             })
         
-        # 构建发送给客户端的消息
+        # 直接转发完整步骤数据，添加必要的元信息
         message = {
             'type': 'workflow_step',
-            'action': action,
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
+            **data  # 包含 action, x, y, text, desc, wait 等所有字段
         }
         
-        if action == 'click':
-            message['coord'] = data.get('coord')
-        elif action == 'launch_app':
-            # 启动应用
-            message['package_name'] = 'com.zpzn.terminal'
-            message['activity'] = '.MainActivity'
-        elif action == 'send_rfid':
+        # 特殊处理：send_rfid 需要构建命令
+        if action == 'send_rfid':
             rfid_code = data.get('rfid_code', '')
-            message['rfid_code'] = rfid_code
             message['commands'] = rfid_simulator_service.build_rfid_commands(
                 rfid_code, 
                 rfid_simulator_service.DEFAULT_DEVICE_PATH, 
@@ -292,17 +287,17 @@ def execute_workflow_step():
             )
             message['inter_char_delay'] = rfid_simulator_service.DEFAULT_INTER_CHAR_DELAY
             message['enter_delay'] = rfid_simulator_service.DEFAULT_ENTER_DELAY
-        elif action == 'input_credentials':
-            message['username'] = data.get('username', '')
-            message['password'] = data.get('password', '')
-        elif action == 'input_homework_name':
-            message['homework_name'] = data.get('homeworkName', '')
-        elif action == 'select_page':
-            pass  # 客户端处理页码选择逻辑
         
         ws.send(json.dumps(message))
         
-        rfid_simulator_service._add_log('info', f'执行步骤: {action}')
+        # 日志显示更详细的步骤信息
+        desc = data.get('desc', action)
+        detail = ''
+        if action == 'tap' and 'x' in data and 'y' in data:
+            detail = f" ({data['x']}, {data['y']})"
+        elif action == 'input' and 'text' in data:
+            detail = f" {data['text'][:15]}..."
+        rfid_simulator_service._add_log('info', f'执行步骤: {desc}{detail}')
         return jsonify({'success': True})
     except Exception as e:
         logger.error(f"[RfidSimulator] 执行流程步骤失败: {e}")
@@ -336,6 +331,145 @@ def get_coordinates():
         return jsonify({'success': True, 'data': coords})
     except Exception as e:
         logger.error(f"[RfidSimulator] 获取坐标配置失败: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+
+# ==================== 发布作业 API ====================
+
+@rfid_simulator_bp.route('/api/rfid-simulator/homework/login', methods=['POST'])
+def homework_login():
+    """登录后台获取 token"""
+    try:
+        data = request.get_json()
+        username = data.get('username', '')
+        password = data.get('password', '')
+        
+        if not username or not password:
+            return jsonify({'success': False, 'error': '用户名和密码不能为空'})
+        
+        result = homework_publish_service.login(username, password)
+        
+        if result.get('success'):
+            token = result.get('token')
+            login_data = result.get('data', {})
+            
+            # 登录成功后自动获取教师信息（书本、班级列表）
+            teacher_info = homework_publish_service.get_teacher_info(token)
+            teacher_data = teacher_info.get('data', {}) if teacher_info.get('success') else {}
+            
+            return jsonify({
+                'success': True,
+                'data': {
+                    'token': token,
+                    'userInfo': login_data.get('userInfo', {}),
+                    'bookList': teacher_data.get('bookList', []),
+                    'classList': teacher_data.get('classList', [])
+                }
+            })
+        
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"[RfidSimulator] 登录失败: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@rfid_simulator_bp.route('/api/rfid-simulator/homework/teacher-info', methods=['GET'])
+def get_teacher_info():
+    """获取教师信息（书本、班级列表）"""
+    try:
+        token = homework_publish_service.get_token()
+        if not token:
+            return jsonify({'success': False, 'error': '未登录，请先登录'})
+        
+        result = homework_publish_service.get_teacher_info(token)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"[RfidSimulator] 获取教师信息失败: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@rfid_simulator_bp.route('/api/rfid-simulator/homework/publish', methods=['POST'])
+def publish_homework():
+    """发布作业"""
+    try:
+        data = request.get_json()
+        
+        # 必需参数
+        book_id = data.get('bookId', '')
+        class_id = data.get('classId', '')
+        subject_id = data.get('subjectId')
+        page_region = data.get('pageRegion', '')
+        
+        if not all([book_id, class_id, subject_id is not None, page_region]):
+            return jsonify({'success': False, 'error': '缺少必需参数'})
+        
+        # 可选参数
+        end_time = data.get('endTime')
+        content = data.get('content')
+        
+        token = homework_publish_service.get_token()
+        if not token:
+            return jsonify({'success': False, 'error': '未登录，请先登录'})
+        
+        result = homework_publish_service.publish_homework(
+            token=token,
+            book_id=book_id,
+            class_id=class_id,
+            subject_id=subject_id,
+            page_region=page_region,
+            end_time=end_time,
+            content=content
+        )
+        
+        if result.get('success'):
+            rfid_simulator_service._add_log('success', f'作业发布成功: 页码 {page_region}')
+        else:
+            rfid_simulator_service._add_log('error', f'作业发布失败: {result.get("error")}')
+        
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"[RfidSimulator] 发布作业失败: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@rfid_simulator_bp.route('/api/rfid-simulator/homework/one-click', methods=['POST'])
+def one_click_publish():
+    """一键发布作业（登录 + 发布）"""
+    try:
+        data = request.get_json()
+        
+        # 登录信息
+        username = data.get('username', '')
+        password = data.get('password', '')
+        
+        # 作业信息（兼容 snake_case 和 camelCase）
+        book_id = data.get('book_id') or data.get('bookId', '')
+        class_id = data.get('class_id') or data.get('classId', '')
+        subject_id = data.get('subject_id') if data.get('subject_id') is not None else data.get('subjectId')
+        page_region = data.get('page_region') or data.get('pageRegion', '')
+        end_time = data.get('end_time') or data.get('endTime')
+        
+        if not all([username, password, book_id, class_id, subject_id is not None, page_region]):
+            return jsonify({'success': False, 'error': '缺少必需参数'})
+        
+        result = homework_publish_service.one_click_publish(
+            username=username,
+            password=password,
+            book_id=book_id,
+            class_id=class_id,
+            subject_id=subject_id,
+            page_region=page_region,
+            end_time=end_time
+        )
+        
+        if result.get('success'):
+            rfid_simulator_service._add_log('success', f'一键发布成功: 页码 {page_region}')
+        else:
+            rfid_simulator_service._add_log('error', f'一键发布失败: {result.get("error")}')
+        
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"[RfidSimulator] 一键发布失败: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
 
@@ -458,6 +592,8 @@ def run_workflow(workflow_id):
     try:
         data = request.get_json() or {}
         params = data.get('params', {})
+        students = data.get('students', [])  # 学生列表
+        representative = data.get('representative')  # 课代表
         
         config = _load_workflow_config()
         workflow = config.get('workflows', {}).get(workflow_id)
@@ -468,22 +604,18 @@ def run_workflow(workflow_id):
         if not ws:
             return jsonify({'success': False, 'error': '没有可用的 ADB 客户端连接'})
         
-        # 替换参数变量
-        steps = workflow.get('steps', [])
-        for step in steps:
-            if 'text' in step and step['text'].startswith('${'):
-                var_name = step['text'][2:-1]
-                step['text'] = params.get(var_name, workflow.get('params', {}).get(var_name, {}).get('default', ''))
-        
         # 发送流程到客户端执行
         ws.send(json.dumps({
             'type': 'run_workflow',
             'workflow_id': workflow_id,
-            'steps': steps,
+            'students': students,
+            'representative': representative,
+            'photo_interval': params.get('photo_interval', 2),
+            'enable_double_page': params.get('enable_double_page', True),
             'timestamp': datetime.now().isoformat()
         }))
         
-        rfid_simulator_service._add_log('info', f'开始执行流程: {workflow.get("name", workflow_id)}')
+        rfid_simulator_service._add_log('info', f'开始执行流程: {workflow.get("name", workflow_id)}, 学生数: {len(students)}')
         return jsonify({'success': True})
     except Exception as e:
         logger.error(f"[RfidSimulator] 执行流程失败: {e}")

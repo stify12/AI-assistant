@@ -105,6 +105,10 @@ class MainActivity : ComponentActivity() {
                         val autoFavoriteBooks by automationViewModel.favoriteBooks.collectAsState()
                         val autoSelectedSubjectId by automationViewModel.selectedSubjectId.collectAsState()
                         val autoSelectedGradeId by automationViewModel.selectedGradeId.collectAsState()
+                        // 智能发布状态
+                        val autoSmartTeachers by automationViewModel.smartTeachers.collectAsState()
+                        val autoSelectedSmartTeacher by automationViewModel.selectedSmartTeacher.collectAsState()
+                        val autoNeedSelectTeacher by automationViewModel.needSelectTeacher.collectAsState()
                         
                         AutomationScreen(
                             connectionStatus = autoConnectionStatus,
@@ -124,13 +128,14 @@ class MainActivity : ComponentActivity() {
                             favoriteBooks = autoFavoriteBooks,
                             selectedSubjectId = autoSelectedSubjectId,
                             selectedGradeId = autoSelectedGradeId,
+                            // 智能发布参数
+                            smartTeachers = autoSmartTeachers,
+                            selectedSmartTeacher = autoSelectedSmartTeacher,
+                            needSelectTeacher = autoNeedSelectTeacher,
                             onSearchBooks = automationViewModel::searchBooks,
                             onSelectBook = automationViewModel::selectBook,
                             onSelectBookClass = automationViewModel::selectBookClass,
                             onUpdatePageNumber = automationViewModel::updatePageNumber,
-                            onUpdateUsername = automationViewModel::updateUsername,
-                            onUpdatePassword = automationViewModel::updatePassword,
-                            onUpdateHomeworkName = automationViewModel::updateHomeworkName,
                             onUpdatePhotoInterval = automationViewModel::updatePhotoInterval,
                             onToggleDoublePageMode = automationViewModel::toggleDoublePageMode,
                             onStartAutomation = automationViewModel::startAutomation,
@@ -144,7 +149,9 @@ class MainActivity : ComponentActivity() {
                             onToggleFavorite = automationViewModel::toggleFavorite,
                             onSelectSubject = automationViewModel::selectSubject,
                             onSelectGrade = automationViewModel::selectGrade,
-                            isFavorite = automationViewModel::isFavorite
+                            isFavorite = automationViewModel::isFavorite,
+                            // 智能发布回调
+                            onSelectSmartTeacher = automationViewModel::selectSmartTeacher
                         )
                     }
 

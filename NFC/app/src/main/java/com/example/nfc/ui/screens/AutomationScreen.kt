@@ -54,14 +54,15 @@ fun AutomationScreen(
     favoriteBooks: List<FavoriteBook>,
     selectedSubjectId: Int,
     selectedGradeId: Int,
+    // 智能发布：老师
+    smartTeachers: List<SmartPublishTeacher>,
+    selectedSmartTeacher: SmartPublishTeacher?,
+    needSelectTeacher: Boolean,
     // 回调
     onSearchBooks: (String) -> Unit,
     onSelectBook: (BookInfo) -> Unit,
     onSelectBookClass: (BookClassInfo) -> Unit,
     onUpdatePageNumber: (Int) -> Unit,
-    onUpdateUsername: (String) -> Unit,
-    onUpdatePassword: (String) -> Unit,
-    onUpdateHomeworkName: (String) -> Unit,
     onUpdatePhotoInterval: (Int) -> Unit,
     onToggleDoublePageMode: () -> Unit,
     onStartAutomation: () -> Unit,
@@ -75,12 +76,18 @@ fun AutomationScreen(
     onToggleFavorite: (BookInfo) -> Unit,
     onSelectSubject: (Int) -> Unit,
     onSelectGrade: (Int) -> Unit,
-    isFavorite: (String) -> Boolean
+    isFavorite: (String) -> Boolean,
+    // 智能发布回调
+    onSelectSmartTeacher: (SmartPublishTeacher) -> Unit
 ) {
+    // 老师选择弹窗状态
+    var showTeacherDialog by remember { mutableStateOf(false) }
+    
     val isRunning = automationStatus.phase != AutomationPhase.IDLE && 
                     automationStatus.phase != AutomationPhase.COMPLETED &&
                     automationStatus.phase != AutomationPhase.ERROR
-    val canStart = selectedBook != null && bookStudents.isNotEmpty() && connectionStatus.connected
+    val canStart = selectedBook != null && bookStudents.isNotEmpty() && 
+                   connectionStatus.connected && selectedSmartTeacher != null
 
     Scaffold(
         containerColor = AppleGray50,
@@ -146,6 +153,18 @@ fun AutomationScreen(
                 }
             }
 
+            // 老师显示区域（选择书本后自动匹配）
+            if (selectedBook != null && selectedSmartTeacher != null) {
+                item(key = "teacher_info") {
+                    TeacherInfoCard(
+                        teacher = selectedSmartTeacher,
+                        needSelect = needSelectTeacher,
+                        teacherCount = smartTeachers.size,
+                        onClickChange = { showTeacherDialog = true }
+                    )
+                }
+            }
+
             // 步骤2: 选择班级
             if (selectedBook != null && bookClasses.isNotEmpty()) {
                 item(key = "step_class") {
@@ -188,9 +207,6 @@ fun AutomationScreen(
                     AdvancedSettingsCard(
                         config = config,
                         isEnabled = !isRunning,
-                        onUpdateUsername = onUpdateUsername,
-                        onUpdatePassword = onUpdatePassword,
-                        onUpdateHomeworkName = onUpdateHomeworkName,
                         onUpdatePhotoInterval = onUpdatePhotoInterval,
                         onToggleDoublePageMode = onToggleDoublePageMode
                     )
@@ -223,6 +239,19 @@ fun AutomationScreen(
             action = { TextButton(onClick = onClearError) { Text("关闭", color = AppleWhite) } },
             containerColor = AppleRed
         ) { Text(msg, color = AppleWhite) }
+    }
+    
+    // 老师选择弹窗
+    if (showTeacherDialog && smartTeachers.isNotEmpty()) {
+        TeacherSelectDialog(
+            teachers = smartTeachers,
+            selectedTeacher = selectedSmartTeacher,
+            onSelect = { teacher ->
+                onSelectSmartTeacher(teacher)
+                showTeacherDialog = false
+            },
+            onDismiss = { showTeacherDialog = false }
+        )
     }
 }
 
@@ -860,9 +889,6 @@ private fun PageSelector(
 private fun AdvancedSettingsCard(
     config: AutomationConfig,
     isEnabled: Boolean,
-    onUpdateUsername: (String) -> Unit,
-    onUpdatePassword: (String) -> Unit,
-    onUpdateHomeworkName: (String) -> Unit,
     onUpdatePhotoInterval: (Int) -> Unit,
     onToggleDoublePageMode: () -> Unit
 ) {
@@ -899,59 +925,6 @@ private fun AdvancedSettingsCard(
             
             AnimatedVisibility(visible = expanded) {
                 Column(modifier = Modifier.padding(top = Spacing.md)) {
-                    // 账号
-                    OutlinedTextField(
-                        value = config.username,
-                        onValueChange = onUpdateUsername,
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("教师账号") },
-                        enabled = isEnabled,
-                        shape = RoundedCornerShape(Radius.sm),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AppleBlack,
-                            unfocusedBorderColor = AppleGray200
-                        ),
-                        singleLine = true
-                    )
-                    
-                    Spacer(modifier = Modifier.height(Spacing.sm))
-                    
-                    // 密码
-                    OutlinedTextField(
-                        value = config.password,
-                        onValueChange = onUpdatePassword,
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("密码") },
-                        enabled = isEnabled,
-                        visualTransformation = PasswordVisualTransformation(),
-                        shape = RoundedCornerShape(Radius.sm),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AppleBlack,
-                            unfocusedBorderColor = AppleGray200
-                        ),
-                        singleLine = true
-                    )
-                    
-                    Spacer(modifier = Modifier.height(Spacing.sm))
-                    
-                    // 作业名称
-                    OutlinedTextField(
-                        value = config.homeworkName,
-                        onValueChange = onUpdateHomeworkName,
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("作业名称") },
-                        placeholder = { Text("留空则自动生成", color = AppleGray400) },
-                        enabled = isEnabled,
-                        shape = RoundedCornerShape(Radius.sm),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AppleBlack,
-                            unfocusedBorderColor = AppleGray200
-                        ),
-                        singleLine = true
-                    )
-                    
-                    Spacer(modifier = Modifier.height(Spacing.md))
-                    
                     // 拍照间隔
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1163,4 +1136,150 @@ private fun LogSection(logs: List<RfidLogEntry>, onClear: () -> Unit) {
             }
         }
     }
+}
+
+// ==================== 老师信息卡片 ====================
+
+@Composable
+private fun TeacherInfoCard(
+    teacher: SmartPublishTeacher,
+    needSelect: Boolean,
+    teacherCount: Int,
+    onClickChange: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+        shape = RoundedCornerShape(Radius.lg),
+        colors = CardDefaults.cardColors(containerColor = AppleWhite)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.md),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // 老师图标
+                Surface(
+                    modifier = Modifier.size(40.dp),
+                    shape = CircleShape,
+                    color = AppleGray100
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = null,
+                            tint = AppleGray500,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        text = teacher.teacherName,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                        color = AppleBlack
+                    )
+                    Text(
+                        text = teacher.className,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AppleGray500
+                    )
+                }
+            }
+            
+            // 切换按钮（多老师时显示）
+            if (needSelect && teacherCount > 1) {
+                Surface(
+                    modifier = Modifier.clickable { onClickChange() },
+                    shape = RoundedCornerShape(Radius.sm),
+                    color = AppleGray100
+                ) {
+                    Text(
+                        text = "切换",
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = AppleGray600
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ==================== 老师选择弹窗 ====================
+
+@Composable
+private fun TeacherSelectDialog(
+    teachers: List<SmartPublishTeacher>,
+    selectedTeacher: SmartPublishTeacher?,
+    onSelect: (SmartPublishTeacher) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "选择老师",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+        },
+        text = {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(teachers, key = { it.id }) { teacher ->
+                    val isSelected = selectedTeacher?.id == teacher.id
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(teacher) },
+                        shape = RoundedCornerShape(Radius.md),
+                        color = if (isSelected) AppleBlack else AppleGray50
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = teacher.teacherName,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (isSelected) AppleWhite else AppleBlack
+                                )
+                                Text(
+                                    text = teacher.className,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (isSelected) AppleGray400 else AppleGray500
+                                )
+                            }
+                            if (isSelected) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = AppleWhite,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("关闭", color = AppleBlack)
+            }
+        },
+        containerColor = AppleWhite,
+        shape = RoundedCornerShape(Radius.xl)
+    )
 }

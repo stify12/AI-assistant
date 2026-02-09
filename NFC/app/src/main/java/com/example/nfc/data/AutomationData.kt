@@ -120,3 +120,42 @@ data class PageOption(
         )
     }
 }
+
+
+// ==================== 智能发布相关数据类 ====================
+
+/** 智能发布书本信息 */
+data class SmartPublishBook(
+    val id: String,
+    val bookName: String,
+    val subjectId: Int?,
+    val subjectName: String?,
+    val gradeId: Int?
+)
+
+/** 智能发布老师信息 */
+data class SmartPublishTeacher(
+    val id: String,
+    val teacherName: String,
+    val classId: String,
+    val className: String,
+    val gradeId: String?,
+    val subjectId: Int?
+)
+
+/** 智能发布老师列表响应 */
+data class SmartPublishTeachersResponse(
+    val teachers: List<SmartPublishTeacher>,
+    val needSelect: Boolean,
+    val selectedTeacher: SmartPublishTeacher?
+)
+
+/** 智能发布结果 */
+data class SmartPublishResult(
+    val homeworkName: String,
+    val teacherName: String,
+    val className: String,
+    val pages: String,
+    val submitTriggered: Boolean = false,  // 服务端是否已自动触发提交
+    val submitError: String? = null        // 自动提交失败原因
+)

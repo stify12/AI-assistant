@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RFID 模拟器</title>
+    <title>自动化模拟</title>
     <link rel="stylesheet" href="/static/css/rfid-simulator.css">
 </head>
 <body>
@@ -61,14 +61,68 @@
                     <div class="workflow-card-status" id="publishStatus">待执行</div>
                 </div>
                 <div class="workflow-card-body" id="publishBody">
-                    <div class="workflow-steps-list" id="publishStepsList"><div class="steps-loading">加载中...</div></div>
-                    <button class="btn-add-step" onclick="addNewStep('publish_homework')">添加步骤</button>
-                    <div class="workflow-params-inline">
-                        <div class="param-row"><label>账号</label><input type="text" id="publishUsername" placeholder="教师账号" value="shuxue"></div>
-                        <div class="param-row"><label>密码</label><input type="password" id="publishPassword" placeholder="密码" value="123456zp."></div>
-                        <div class="param-row"><label>作业名称</label><input type="text" id="publishHomeworkName" placeholder="留空则自动生成"></div>
+                    <!-- 模式切换 -->
+                    <div class="publish-mode-switch">
+                        <button class="mode-btn active" data-mode="smart" onclick="switchPublishMode('smart')">智能模式</button>
+                        <button class="mode-btn" data-mode="manual" onclick="switchPublishMode('manual')">手动模式</button>
                     </div>
-                    <button class="btn-workflow" onclick="runPublishWorkflow()">执行发布流程</button>
+                    
+                    <!-- 智能模式 -->
+                    <div class="publish-mode-content" id="smartModeContent">
+                        <div class="param-row">
+                            <label>选择书本</label>
+                            <select id="smartBookSelect" onchange="onSmartBookChange()">
+                                <option value="">请选择书本...</option>
+                            </select>
+                        </div>
+                        <div class="teacher-auto-info" id="teacherAutoInfo" style="display:none;">
+                            <div class="auto-info-row">
+                                <span class="auto-label">老师/班级</span>
+                                <span class="auto-value" id="autoTeacherDisplay">-</span>
+                                <button class="btn-text-sm" id="changeTeacherBtn" onclick="showTeacherSelectModal()" style="display:none;">切换</button>
+                            </div>
+                        </div>
+                        <div class="param-row">
+                            <label>页码</label>
+                            <input type="text" id="smartPageRegion" placeholder="如: 1-3 或 5" oninput="updateSmartPublishBtn()">
+                        </div>
+                        <div class="preview-row" id="homeworkPreview" style="display:none;">
+                            <span class="preview-label">作业名称</span>
+                            <span class="preview-value" id="homeworkNamePreview">-</span>
+                        </div>
+                        <div class="workflow-btn-group">
+                            <button class="btn-workflow" id="smartPublishBtn" onclick="smartPublish()" disabled>一键发布作业</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 手动模式 -->
+                    <div class="publish-mode-content" id="manualModeContent" style="display:none;">
+                        <div class="workflow-params-inline">
+                            <div class="param-row"><label>账号</label><input type="text" id="apiUsername" placeholder="教师账号" value="shuxue"></div>
+                            <div class="param-row"><label>密码</label><input type="password" id="apiPassword" placeholder="密码" value="123456zp."></div>
+                        </div>
+                        <div class="api-login-status" id="apiLoginStatus">
+                            <span class="status-dot offline"></span>
+                            <span class="status-text">未登录</span>
+                            <button class="btn-text-sm" onclick="apiLogin()">登录</button>
+                        </div>
+                        <div class="teacher-info-card" id="teacherInfoCard" style="display:none;">
+                            <div class="info-row"><label>教师</label><span id="teacherName">-</span></div>
+                            <div class="info-row"><label>科目</label><span id="teacherSubject">-</span></div>
+                            <div class="param-row">
+                                <label>书本</label>
+                                <select id="apiBookSelect" onchange="onBookChange()"><option value="">请选择书本</option></select>
+                            </div>
+                            <div class="param-row">
+                                <label>班级</label>
+                                <select id="apiClassSelect"><option value="">请选择班级</option></select>
+                            </div>
+                            <div class="param-row"><label>页码</label><input type="text" id="apiPageRegion" placeholder="如: 1-3 或 5"></div>
+                        </div>
+                        <div class="workflow-btn-group">
+                            <button class="btn-workflow" id="apiPublishBtn" onclick="oneClickPublish()" disabled>一键发布作业</button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <!-- 提交作业 -->
@@ -85,7 +139,12 @@
                         <div class="param-row"><label>双页模式</label><input type="checkbox" id="submitDoublePageMode" checked> 启用</div>
                     </div>
                     <div class="workflow-student-info" id="workflowStudentInfo" style="display:none;"><span>已选学生: </span><strong id="workflowStudentCount">0</strong> 人</div>
-                    <button class="btn-workflow" onclick="runSubmitWorkflow()">执行提交流程</button>
+                    <div class="workflow-btn-group">
+                        <button class="btn-workflow" id="submitStartBtn" onclick="runSubmitWorkflow()">执行提交流程</button>
+                        <button class="btn-workflow-ctrl" id="submitPauseBtn" onclick="pauseSubmitWorkflow()" style="display:none;">暂停</button>
+                        <button class="btn-workflow-ctrl" id="submitResumeBtn" onclick="resumeSubmitWorkflow()" style="display:none;">继续</button>
+                        <button class="btn-workflow-stop" id="submitStopBtn" onclick="stopSubmitWorkflow()" style="display:none;">停止</button>
+                    </div>
                 </div>
             </div>
             <!-- 执行日志 -->
@@ -147,6 +206,21 @@
 
         </div>
     </div>
+    
+    <!-- 老师选择弹窗 -->
+    <div class="modal" id="teacherSelectModal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>选择老师/班级</h3>
+                <button class="modal-close" onclick="closeTeacherSelectModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>该书本有多个老师绑定，请选择：</p>
+                <div class="teacher-select-list" id="teacherSelectList"></div>
+            </div>
+        </div>
+    </div>
+    
     <script src="/static/js/rfid-simulator.js"></script>
     <script src="/static/js/workflow-builder.js"></script>
 </body>

@@ -572,7 +572,9 @@ object DatabaseRepository {
     /** 执行自动化流程 */
     suspend fun runWorkflow(
         workflowId: String,
-        params: Map<String, Any> = emptyMap()
+        params: Map<String, Any> = emptyMap(),
+        students: List<Map<String, String>> = emptyList(),
+        representative: Map<String, String>? = null
     ): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
             val paramsJson = JSONObject()
@@ -580,8 +582,21 @@ object DatabaseRepository {
                 paramsJson.put(key, value)
             }
             
+            val studentsArray = JSONArray()
+            students.forEach { student ->
+                studentsArray.put(JSONObject().apply {
+                    student.forEach { (k, v) -> put(k, v) }
+                })
+            }
+            
             val body = JSONObject().apply {
                 put("params", paramsJson)
+                put("students", studentsArray)
+                representative?.let { rep ->
+                    put("representative", JSONObject().apply {
+                        rep.forEach { (k, v) -> put(k, v) }
+                    })
+                }
             }
             
             val response = httpPost("/api/rfid-simulator/workflows/$workflowId/run", body)
@@ -594,6 +609,123 @@ object DatabaseRepository {
             }
         } catch (e: Exception) {
             Log.e(TAG, "执行流程失败: ${e.message}")
+            Result.failure(e)
+        }
+    }
+    
+    // ========== 智能发布 API ==========
+    
+    /** 获取智能发布书本列表 */
+    suspend fun getSmartPublishBooks(): Result<List<SmartPublishBook>> = withContext(Dispatchers.IO) {
+        try {
+            val response = httpGet("/api/smart-publish/books")
+            val json = JSONObject(response)
+            
+            if (json.optBoolean("success", false)) {
+                val data = json.getJSONArray("data")
+                val books = mutableListOf<SmartPublishBook>()
+                for (i in 0 until data.length()) {
+                    val item = data.getJSONObject(i)
+                    books.add(SmartPublishBook(
+                        id = item.getString("id"),
+                        bookName = item.getString("book_name"),
+                        subjectId = item.optInt("subject_id", -1).takeIf { it >= 0 },
+                        subjectName = item.optString("subject_name", null).takeIf { it.isNotBlank() },
+                        gradeId = item.optInt("grade_id", -1).takeIf { it >= 0 }
+                    ))
+                }
+                Result.success(books)
+            } else {
+                Result.failure(Exception(json.optString("error", "获取书本失败")))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "获取智能发布书本失败: ${e.message}")
+            Result.failure(e)
+        }
+    }
+    
+    /** 根据书本获取老师列表 */
+    suspend fun getSmartPublishTeachers(bookId: String): Result<SmartPublishTeachersResponse> = withContext(Dispatchers.IO) {
+        try {
+            val response = httpGet("/api/smart-publish/teachers?book_id=$bookId")
+            val json = JSONObject(response)
+            
+            if (json.optBoolean("success", false)) {
+                val data = json.getJSONObject("data")
+                val teachersArray = data.getJSONArray("teachers")
+                val teachers = mutableListOf<SmartPublishTeacher>()
+                
+                for (i in 0 until teachersArray.length()) {
+                    val item = teachersArray.getJSONObject(i)
+                    teachers.add(SmartPublishTeacher(
+                        id = item.getString("id"),
+                        teacherName = item.getString("teacher_name"),
+                        classId = item.getString("class_id"),
+                        className = item.getString("class_name"),
+                        gradeId = item.optString("grade_id", null),
+                        subjectId = item.optInt("subject_id", -1).takeIf { it >= 0 }
+                    ))
+                }
+                
+                val selectedTeacherJson = data.optJSONObject("selected_teacher")
+                val selectedTeacher = if (selectedTeacherJson != null) {
+                    SmartPublishTeacher(
+                        id = selectedTeacherJson.getString("id"),
+                        teacherName = selectedTeacherJson.getString("teacher_name"),
+                        classId = selectedTeacherJson.getString("class_id"),
+                        className = selectedTeacherJson.getString("class_name"),
+                        gradeId = selectedTeacherJson.optString("grade_id", null),
+                        subjectId = selectedTeacherJson.optInt("subject_id", -1).takeIf { it >= 0 }
+                    )
+                } else null
+                
+                Result.success(SmartPublishTeachersResponse(
+                    teachers = teachers,
+                    needSelect = data.optBoolean("need_select", false),
+                    selectedTeacher = selectedTeacher
+                ))
+            } else {
+                Result.failure(Exception(json.optString("error", "获取老师失败")))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "获取智能发布老师失败: ${e.message}")
+            Result.failure(e)
+        }
+    }
+    
+    /** 智能发布作业 */
+    suspend fun smartPublish(
+        bookId: String,
+        teacherId: String,
+        classId: String,
+        pages: String
+    ): Result<SmartPublishResult> = withContext(Dispatchers.IO) {
+        try {
+            val body = JSONObject().apply {
+                put("book_id", bookId)
+                put("teacher_id", teacherId)
+                put("class_id", classId)
+                put("pages", pages)
+            }
+            
+            val response = httpPost("/api/smart-publish/publish", body)
+            val json = JSONObject(response)
+            
+            if (json.optBoolean("success", false)) {
+                val data = json.getJSONObject("data")
+                Result.success(SmartPublishResult(
+                    homeworkName = data.getString("homework_name"),
+                    teacherName = data.getString("teacher_name"),
+                    className = data.getString("class_name"),
+                    pages = data.getString("pages"),
+                    submitTriggered = data.optBoolean("submit_triggered", false),
+                    submitError = data.optString("submit_error", null).takeIf { it.isNotBlank() }
+                ))
+            } else {
+                Result.failure(Exception(json.optString("error", "发布失败")))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "智能发布失败: ${e.message}")
             Result.failure(e)
         }
     }

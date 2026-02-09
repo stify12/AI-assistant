@@ -68,6 +68,16 @@ class AutomationViewModel(application: Application) : AndroidViewModel(applicati
     private val _searchKeyword = MutableStateFlow("")
     val searchKeyword: StateFlow<String> = _searchKeyword.asStateFlow()
 
+    // ========== 智能发布（老师自动匹配） ==========
+    private val _smartTeachers = MutableStateFlow<List<SmartPublishTeacher>>(emptyList())
+    val smartTeachers: StateFlow<List<SmartPublishTeacher>> = _smartTeachers.asStateFlow()
+
+    private val _selectedSmartTeacher = MutableStateFlow<SmartPublishTeacher?>(null)
+    val selectedSmartTeacher: StateFlow<SmartPublishTeacher?> = _selectedSmartTeacher.asStateFlow()
+
+    private val _needSelectTeacher = MutableStateFlow(false)
+    val needSelectTeacher: StateFlow<Boolean> = _needSelectTeacher.asStateFlow()
+
     // ========== 加载状态 ==========
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -335,7 +345,52 @@ class AutomationViewModel(application: Application) : AndroidViewModel(applicati
         _selectedBook.value = book
         _selectedBookClass.value = null
         _bookStudents.value = emptyList()
+        // 清空老师选择
+        _smartTeachers.value = emptyList()
+        _selectedSmartTeacher.value = null
+        _needSelectTeacher.value = false
+        // 加载老师（智能发布）
+        loadSmartTeachers(book.id)
+        // 加载班级（用于学生列表）
         loadBookClasses(book.id)
+    }
+
+    /** 加载智能发布老师列表 */
+    private fun loadSmartTeachers(bookId: String) {
+        viewModelScope.launch {
+            try {
+                DatabaseRepository.getSmartPublishTeachers(bookId).onSuccess { response ->
+                    _smartTeachers.value = response.teachers
+                    _needSelectTeacher.value = response.needSelect
+                    _selectedSmartTeacher.value = response.selectedTeacher
+                    
+                    // 如果自动选中了老师，同步选择对应的班级
+                    response.selectedTeacher?.let { teacher ->
+                        syncBookClassFromTeacher(teacher)
+                    }
+                }.onFailure { e ->
+                    addLog("error", "加载老师失败: ${e.message}")
+                }
+            } catch (e: Exception) {
+                addLog("error", "加载老师失败: ${e.message}")
+            }
+        }
+    }
+
+    /** 选择老师（多老师时用户手动选择） */
+    fun selectSmartTeacher(teacher: SmartPublishTeacher) {
+        _selectedSmartTeacher.value = teacher
+        // 同步选择对应的班级
+        syncBookClassFromTeacher(teacher)
+    }
+
+    /** 根据老师同步班级选择 */
+    private fun syncBookClassFromTeacher(teacher: SmartPublishTeacher) {
+        val matchingClass = _bookClasses.value.find { it.id == teacher.classId }
+        if (matchingClass != null) {
+            _selectedBookClass.value = matchingClass
+            loadBookStudents()
+        }
     }
 
     private fun loadBookClasses(bookId: String) {
@@ -447,7 +502,7 @@ class AutomationViewModel(application: Application) : AndroidViewModel(applicati
     /** 执行自动化流程 */
     private suspend fun runAutomationFlow() {
         try {
-            // 阶段1: 发布作业
+            // 阶段1: 发布作业（服务端发布成功后会自动触发提交）
             _automationStatus.value = AutomationStatus(
                 phase = AutomationPhase.PUBLISHING,
                 stepDescription = "正在发布作业..."
@@ -455,7 +510,7 @@ class AutomationViewModel(application: Application) : AndroidViewModel(applicati
             addLog("info", "开始发布作业流程")
             
             val publishResult = runPublishWorkflow()
-            if (!publishResult) {
+            if (publishResult == null) {
                 _automationStatus.value = AutomationStatus(
                     phase = AutomationPhase.ERROR,
                     errorMessage = "发布作业失败"
@@ -463,37 +518,34 @@ class AutomationViewModel(application: Application) : AndroidViewModel(applicati
                 return
             }
             
-            addLog("success", "发布作业完成")
+            addLog("success", "发布作业完成: ${publishResult.homeworkName}")
             
-            // 阶段2: 等待
-            _automationStatus.value = AutomationStatus(
-                phase = AutomationPhase.WAITING,
-                stepDescription = "等待3秒后开始提交..."
-            )
-            delay(3000)
-            
-            // 阶段3: 提交作业
-            _automationStatus.value = AutomationStatus(
-                phase = AutomationPhase.SUBMITTING,
-                stepDescription = "正在提交作业..."
-            )
-            addLog("info", "开始提交作业流程")
-            
-            val submitResult = runSubmitWorkflow()
-            if (!submitResult) {
+            // 阶段2: 检查服务端自动提交状态
+            if (publishResult.submitTriggered) {
+                // 服务端已自动触发提交流程（和网页端一致）
                 _automationStatus.value = AutomationStatus(
-                    phase = AutomationPhase.ERROR,
-                    errorMessage = "提交作业失败"
+                    phase = AutomationPhase.SUBMITTING,
+                    stepDescription = "服务端已自动触发提交流程，请关注 ADB 客户端执行状态"
                 )
-                return
+                addLog("success", "服务端已自动触发提交作业流程")
+                
+                // 等待一小段时间让用户看到状态
+                delay(2000)
+                
+                _automationStatus.value = AutomationStatus(
+                    phase = AutomationPhase.COMPLETED,
+                    stepDescription = "发布完成，提交流程已自动触发"
+                )
+                addLog("success", "自动化流程完成")
+            } else {
+                // 服务端未触发提交（无 ADB 连接或无学生数据）
+                val errorHint = publishResult.submitError ?: "无 ADB 客户端连接或无学生数据"
+                _automationStatus.value = AutomationStatus(
+                    phase = AutomationPhase.COMPLETED,
+                    stepDescription = "发布完成，但未自动提交: $errorHint"
+                )
+                addLog("warning", "发布成功但未自动提交: $errorHint")
             }
-            
-            // 完成
-            _automationStatus.value = AutomationStatus(
-                phase = AutomationPhase.COMPLETED,
-                stepDescription = "全部完成"
-            )
-            addLog("success", "自动化流程完成")
             
         } catch (e: Exception) {
             _automationStatus.value = AutomationStatus(
@@ -504,51 +556,36 @@ class AutomationViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    /** 执行发布作业流程 */
-    private suspend fun runPublishWorkflow(): Boolean {
+    /** 执行发布作业流程（使用智能发布 API，服务端会自动触发提交） */
+    private suspend fun runPublishWorkflow(): SmartPublishResult? {
+        val book = _selectedBook.value ?: return null
+        val teacher = _selectedSmartTeacher.value
+        
+        // 如果没有老师，说明需要用户选择
+        if (teacher == null) {
+            addLog("error", "请先选择老师")
+            return null
+        }
+        
         val cfg = _config.value
+        
         return try {
-            DatabaseRepository.runWorkflow(
-                workflowId = "publish_homework",
-                params = mapOf(
-                    "username" to cfg.username,
-                    "password" to cfg.password,
-                    "homework_name" to cfg.homeworkName.ifBlank { 
-                        "自动作业_${System.currentTimeMillis() % 10000}" 
-                    }
-                )
-            ).isSuccess
+            var result: SmartPublishResult? = null
+            DatabaseRepository.smartPublish(
+                bookId = book.id,
+                teacherId = teacher.id,
+                classId = teacher.classId,
+                pages = cfg.pageNumber.toString()
+            ).onSuccess { publishResult ->
+                addLog("success", "发布成功: ${publishResult.homeworkName}")
+                result = publishResult
+            }.onFailure { e ->
+                addLog("error", "发布失败: ${e.message}")
+            }
+            result
         } catch (e: Exception) {
             addLog("error", "发布流程失败: ${e.message}")
-            false
-        }
-    }
-
-    /** 执行提交作业流程 */
-    private suspend fun runSubmitWorkflow(): Boolean {
-        val students = _bookStudents.value
-        if (students.isEmpty()) return false
-        
-        val cards = students.map { mapOf("name" to it.name, "card_number" to it.rfidNo) }
-        val cfg = _config.value
-        
-        return try {
-            // 先执行提交流程的前置步骤
-            DatabaseRepository.runWorkflow(
-                workflowId = "submit_homework",
-                params = mapOf("photo_interval" to cfg.photoInterval)
-            )
-            
-            // 然后批量刷卡
-            DatabaseRepository.startRfidBatch(
-                cards = cards,
-                intervalSeconds = cfg.photoInterval + 1,
-                sendEnter = true,
-                devicePath = "/dev/input/event2"
-            ).isSuccess
-        } catch (e: Exception) {
-            addLog("error", "提交流程失败: ${e.message}")
-            false
+            null
         }
     }
 

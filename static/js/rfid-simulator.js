@@ -995,3 +995,392 @@ function saveEditTag() {
     
     closeEditTagModal();
 }
+
+
+// ==================== 一键发布作业 ====================
+
+// 发布状态
+const publishState = {
+    loggedIn: false,
+    token: null,
+    teacherInfo: null,
+    bookList: [],
+    classList: []
+};
+
+// API 登录
+async function apiLogin() {
+    const username = document.getElementById('apiUsername').value.trim();
+    const password = document.getElementById('apiPassword').value.trim();
+    
+    if (!username || !password) {
+        alert('请输入账号和密码');
+        return;
+    }
+    
+    const statusEl = document.getElementById('apiLoginStatus');
+    const statusDot = statusEl.querySelector('.status-dot');
+    const statusText = statusEl.querySelector('.status-text');
+    const loginBtn = statusEl.querySelector('button');
+    
+    statusText.textContent = '登录中...';
+    loginBtn.disabled = true;
+    
+    try {
+        const result = await apiCall('/api/rfid-simulator/homework/login', {
+            method: 'POST',
+            body: JSON.stringify({ username, password })
+        });
+        
+        publishState.loggedIn = true;
+        publishState.token = result.token;
+        publishState.teacherInfo = result.userInfo;
+        publishState.bookList = result.bookList || [];
+        publishState.classList = result.classList || [];
+        
+        // 更新登录状态
+        statusDot.className = 'status-dot online';
+        statusText.textContent = '已登录';
+        loginBtn.textContent = '重新登录';
+        
+        // 显示教师信息
+        showTeacherInfo(result);
+        
+    } catch (e) {
+        statusDot.className = 'status-dot offline';
+        statusText.textContent = '登录失败';
+        alert('登录失败: ' + e.message);
+    } finally {
+        loginBtn.disabled = false;
+    }
+}
+
+// 显示教师信息
+function showTeacherInfo(data) {
+    const card = document.getElementById('teacherInfoCard');
+    card.style.display = 'block';
+    
+    // 教师名称
+    const userInfo = data.userInfo || {};
+    document.getElementById('teacherName').textContent = userInfo.realname || userInfo.username || '-';
+    
+    // 科目（从书本列表推断）
+    const subjectMap = { 0: '英语', 1: '语文', 2: '数学', 3: '物理', 4: '化学', 5: '生物', 6: '地理' };
+    const subjectId = publishState.bookList[0]?.subjectId;
+    document.getElementById('teacherSubject').textContent = subjectMap[subjectId] || '-';
+    
+    // 填充书本下拉框
+    const bookSelect = document.getElementById('apiBookSelect');
+    bookSelect.innerHTML = '<option value="">请选择书本</option>' + 
+        publishState.bookList.map(book => 
+            `<option value="${book.id}" data-subject="${book.subjectId}">${escapeHtml(book.bookName)}</option>`
+        ).join('');
+    
+    // 填充班级下拉框
+    const classSelect = document.getElementById('apiClassSelect');
+    classSelect.innerHTML = '<option value="">请选择班级</option>' + 
+        publishState.classList.map(cls => 
+            `<option value="${cls.id}">${escapeHtml(cls.className || cls.name)}</option>`
+        ).join('');
+    
+    // 启用发布按钮
+    updatePublishBtnState();
+}
+
+// 书本选择变化
+function onBookChange() {
+    updatePublishBtnState();
+}
+
+// 更新发布按钮状态
+function updatePublishBtnState() {
+    const bookId = document.getElementById('apiBookSelect').value;
+    const classId = document.getElementById('apiClassSelect').value;
+    const pageRegion = document.getElementById('apiPageRegion').value.trim();
+    
+    const btn = document.getElementById('apiPublishBtn');
+    btn.disabled = !publishState.loggedIn || !bookId || !classId || !pageRegion;
+}
+
+// 一键发布作业
+async function oneClickPublish() {
+    const bookId = document.getElementById('apiBookSelect').value;
+    const classId = document.getElementById('apiClassSelect').value;
+    const pageRegion = document.getElementById('apiPageRegion').value.trim();
+    
+    if (!bookId || !classId || !pageRegion) {
+        alert('请填写完整信息');
+        return;
+    }
+    
+    // 获取科目 ID
+    const bookOption = document.getElementById('apiBookSelect').selectedOptions[0];
+    const subjectId = parseInt(bookOption.dataset.subject) || 2;
+    
+    const btn = document.getElementById('apiPublishBtn');
+    const originalText = btn.textContent;
+    btn.textContent = '发布中...';
+    btn.disabled = true;
+    
+    try {
+        const username = document.getElementById('apiUsername').value.trim();
+        const password = document.getElementById('apiPassword').value.trim();
+        
+        await apiCall('/api/rfid-simulator/homework/one-click', {
+            method: 'POST',
+            body: JSON.stringify({
+                username,
+                password,
+                book_id: bookId,
+                class_id: classId,
+                subject_id: subjectId,
+                page_region: pageRegion
+            })
+        });
+        
+        alert('作业发布成功！');
+        
+        // 更新发布状态
+        const statusEl = document.getElementById('publishStatus');
+        if (statusEl) {
+            statusEl.textContent = '已完成';
+            statusEl.className = 'workflow-card-status success';
+        }
+        
+    } catch (e) {
+        alert('发布失败: ' + e.message);
+    } finally {
+        btn.textContent = originalText;
+        updatePublishBtnState();
+    }
+}
+
+// 页码输入监听
+document.addEventListener('DOMContentLoaded', () => {
+    const pageInput = document.getElementById('apiPageRegion');
+    if (pageInput) {
+        pageInput.addEventListener('input', updatePublishBtnState);
+    }
+    
+    const classSelect = document.getElementById('apiClassSelect');
+    if (classSelect) {
+        classSelect.addEventListener('change', updatePublishBtnState);
+    }
+});
+
+
+// ==================== 智能发布作业 ====================
+
+// 智能发布状态
+const smartPublishState = {
+    mode: 'smart',  // smart | manual
+    books: [],
+    teachers: [],
+    selectedTeacher: null,
+    selectedBook: null
+};
+
+// 切换发布模式
+function switchPublishMode(mode) {
+    smartPublishState.mode = mode;
+    
+    // 更新按钮状态
+    document.querySelectorAll('.publish-mode-switch .mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+    
+    // 切换内容显示
+    document.getElementById('smartModeContent').style.display = mode === 'smart' ? 'block' : 'none';
+    document.getElementById('manualModeContent').style.display = mode === 'manual' ? 'block' : 'none';
+}
+
+// 加载书本列表（智能模式）
+async function loadSmartBooks() {
+    const select = document.getElementById('smartBookSelect');
+    if (!select) return;
+    
+    try {
+        const result = await apiCall('/api/smart-publish/books');
+        smartPublishState.books = result || [];
+        
+        select.innerHTML = '<option value="">请选择书本...</option>' + 
+            smartPublishState.books.map(book => 
+                `<option value="${book.id}">${escapeHtml(book.book_name)} (${book.subject_name})</option>`
+            ).join('');
+    } catch (e) {
+        console.error('加载书本列表失败:', e);
+        select.innerHTML = '<option value="">加载失败</option>';
+    }
+}
+
+// 书本选择变化
+async function onSmartBookChange() {
+    const bookId = document.getElementById('smartBookSelect').value;
+    const teacherInfo = document.getElementById('teacherAutoInfo');
+    const teacherDisplay = document.getElementById('autoTeacherDisplay');
+    const changeBtn = document.getElementById('changeTeacherBtn');
+    
+    if (!bookId) {
+        teacherInfo.style.display = 'none';
+        smartPublishState.selectedTeacher = null;
+        smartPublishState.teachers = [];
+        updateSmartPublishBtn();
+        return;
+    }
+    
+    try {
+        const result = await apiCall(`/api/smart-publish/teachers?book_id=${bookId}`);
+        smartPublishState.teachers = result.teachers || [];
+        smartPublishState.selectedTeacher = result.selected_teacher;
+        
+        teacherInfo.style.display = 'block';
+        
+        if (smartPublishState.selectedTeacher) {
+            const t = smartPublishState.selectedTeacher;
+            teacherDisplay.textContent = `${t.teacher_name} - ${t.class_name}`;
+        } else if (smartPublishState.teachers.length > 0) {
+            teacherDisplay.textContent = '请选择老师';
+        } else {
+            teacherDisplay.textContent = '无绑定老师';
+        }
+        
+        // 多个老师时显示切换按钮
+        changeBtn.style.display = result.need_select ? 'inline-block' : 'none';
+        
+    } catch (e) {
+        console.error('加载老师列表失败:', e);
+        teacherInfo.style.display = 'block';
+        teacherDisplay.textContent = '加载失败';
+    }
+    
+    updateSmartPublishBtn();
+}
+
+// 更新智能发布按钮状态
+function updateSmartPublishBtn() {
+    const bookId = document.getElementById('smartBookSelect').value;
+    const pageRegion = document.getElementById('smartPageRegion').value.trim();
+    const btn = document.getElementById('smartPublishBtn');
+    const preview = document.getElementById('homeworkPreview');
+    const previewValue = document.getElementById('homeworkNamePreview');
+    
+    const canPublish = bookId && smartPublishState.selectedTeacher && pageRegion;
+    btn.disabled = !canPublish;
+    
+    // 更新作业名称预览
+    if (pageRegion) {
+        const timestamp = new Date().toISOString().slice(0,10).replace(/-/g,'') + '_' + 
+                         new Date().toTimeString().slice(0,8).replace(/:/g,'');
+        previewValue.textContent = `自动测试P${pageRegion}_${timestamp}`;
+        preview.style.display = 'flex';
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+// 执行智能发布
+async function smartPublish() {
+    const bookId = document.getElementById('smartBookSelect').value;
+    const pageRegion = document.getElementById('smartPageRegion').value.trim();
+    
+    if (!bookId || !smartPublishState.selectedTeacher || !pageRegion) {
+        alert('请填写完整信息');
+        return;
+    }
+    
+    const btn = document.getElementById('smartPublishBtn');
+    const originalText = btn.textContent;
+    btn.textContent = '发布中...';
+    btn.disabled = true;
+    
+    try {
+        const result = await apiCall('/api/smart-publish/publish', {
+            method: 'POST',
+            body: JSON.stringify({
+                book_id: bookId,
+                teacher_id: smartPublishState.selectedTeacher.id,
+                class_id: smartPublishState.selectedTeacher.class_id,
+                pages: pageRegion
+            })
+        });
+        
+        // 根据是否触发了提交流程显示不同提示
+        let msg = `发布成功！\n作业名称: ${result.homework_name}\n老师: ${result.teacher_name}\n班级: ${result.class_name}`;
+        if (result.submit_triggered) {
+            msg += '\n\n已自动触发提交作业流程，请关注 ADB 客户端执行状态。';
+        } else if (result.submit_error) {
+            msg += `\n\n自动提交失败: ${result.submit_error}`;
+        } else {
+            msg += '\n\n未触发自动提交（无 ADB 连接或无学生数据）';
+        }
+        alert(msg);
+        
+        // 更新发布状态
+        const statusEl = document.getElementById('publishStatus');
+        if (statusEl) {
+            statusEl.textContent = result.submit_triggered ? '发布+提交中' : '已发布';
+            statusEl.className = 'workflow-card-status success';
+        }
+        
+        // 清空页码输入
+        document.getElementById('smartPageRegion').value = '';
+        updateSmartPublishBtn();
+        
+    } catch (e) {
+        alert('发布失败: ' + e.message);
+    } finally {
+        btn.textContent = originalText;
+        updateSmartPublishBtn();
+    }
+}
+
+// 显示老师选择弹窗
+function showTeacherSelectModal() {
+    const modal = document.getElementById('teacherSelectModal');
+    const list = document.getElementById('teacherSelectList');
+    
+    if (!smartPublishState.teachers || smartPublishState.teachers.length === 0) {
+        alert('没有可选择的老师');
+        return;
+    }
+    
+    list.innerHTML = smartPublishState.teachers.map(t => `
+        <div class="teacher-select-item ${smartPublishState.selectedTeacher?.id === t.id && smartPublishState.selectedTeacher?.class_id === t.class_id ? 'selected' : ''}" 
+             onclick="selectSmartTeacher('${t.id}', '${t.class_id}')">
+            <div>
+                <div class="teacher-name">${escapeHtml(t.teacher_name)}</div>
+                <div class="teacher-class">${escapeHtml(t.class_name)}</div>
+            </div>
+        </div>
+    `).join('');
+    
+    modal.style.display = 'flex';
+}
+
+// 关闭老师选择弹窗
+function closeTeacherSelectModal() {
+    document.getElementById('teacherSelectModal').style.display = 'none';
+}
+
+// 选择老师
+function selectSmartTeacher(teacherId, classId) {
+    const teacher = smartPublishState.teachers.find(t => t.id === teacherId && t.class_id === classId);
+    if (teacher) {
+        smartPublishState.selectedTeacher = teacher;
+        document.getElementById('autoTeacherDisplay').textContent = `${teacher.teacher_name} - ${teacher.class_name}`;
+        updateSmartPublishBtn();
+    }
+    closeTeacherSelectModal();
+}
+
+// 初始化智能发布
+document.addEventListener('DOMContentLoaded', () => {
+    // 加载书本列表
+    loadSmartBooks();
+    
+    // 页码输入监听
+    const smartPageInput = document.getElementById('smartPageRegion');
+    if (smartPageInput) {
+        smartPageInput.addEventListener('input', updateSmartPublishBtn);
+    }
+});

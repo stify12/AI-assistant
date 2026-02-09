@@ -199,8 +199,6 @@ body {
 }
 
 .fav-actions {
-    display: none;
-}
     display: flex;
     gap: 2px;
     opacity: 0;
@@ -1377,6 +1375,59 @@ body {
     flex-shrink: 0;
 }
 
+/* 流程按钮组 */
+.workflow-btn-group {
+    display: flex;
+    gap: var(--space-sm);
+    width: 100%;
+}
+
+.workflow-btn-group .btn-workflow {
+    flex: 1;
+}
+
+/* 流程控制按钮（暂停/继续） */
+.btn-workflow-ctrl {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px var(--space-md);
+    background: var(--bg-active);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-workflow-ctrl:hover {
+    background: var(--bg-hover);
+}
+
+/* 停止按钮 */
+.btn-workflow-stop {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px var(--space-md);
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-workflow-stop:hover {
+    background: #fecaca;
+}
+
 /* 流程日志 */
 .workflow-log {
     flex: 1;
@@ -2383,4 +2434,521 @@ body {
     color: var(--text-muted);
     font-size: 12px;
     padding: var(--space-md);
+}
+
+
+/* ==================== 一键发布模式 ==================== */
+.workflow-mode-tabs {
+    display: flex;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-md);
+    padding: var(--space-xs);
+    background: var(--bg-page);
+    border-radius: var(--radius-sm);
+}
+
+.mode-tab {
+    flex: 1;
+    padding: var(--space-sm) var(--space-md);
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-xs);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.mode-tab:hover {
+    color: var(--text-primary);
+}
+
+.mode-tab.active {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.publish-mode-content {
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.api-login-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-page);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-md);
+    font-size: 13px;
+}
+
+.api-login-status .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+}
+
+.api-login-status .status-dot.online {
+    background: #34c759;
+}
+
+.api-login-status .status-dot.offline {
+    background: var(--text-muted);
+}
+
+.api-login-status .status-text {
+    flex: 1;
+    color: var(--text-secondary);
+}
+
+.teacher-info-card {
+    background: var(--bg-page);
+    border-radius: var(--radius-sm);
+    padding: var(--space-md);
+    margin-bottom: var(--space-md);
+}
+
+.teacher-info-card .info-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+    font-size: 13px;
+}
+
+.teacher-info-card .info-row label {
+    color: var(--text-muted);
+    min-width: 48px;
+}
+
+.teacher-info-card .info-row span {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.teacher-info-card .param-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+}
+
+.teacher-info-card .param-row label {
+    color: var(--text-muted);
+    min-width: 48px;
+    font-size: 13px;
+}
+
+.teacher-info-card select,
+.teacher-info-card input {
+    flex: 1;
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    background: var(--bg-card);
+}
+
+.teacher-info-card select:focus,
+.teacher-info-card input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+
+/* ==================== 一键发布作业样式 ==================== */
+
+/* 发布模式切换 Tab */
+.workflow-mode-tabs {
+    display: flex;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-md);
+    padding: 3px;
+    background: var(--bg-page);
+    border-radius: var(--radius-sm);
+}
+
+.mode-tab {
+    flex: 1;
+    padding: 8px var(--space-md);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-xs);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.mode-tab:hover {
+    color: var(--text-primary);
+}
+
+.mode-tab.active {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+/* 发布模式内容区 */
+.publish-mode-content {
+    animation: fadeIn 0.2s ease;
+}
+
+/* API 登录状态 */
+.api-login-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-md);
+}
+
+.api-login-status .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.api-login-status .status-dot.online {
+    background: #22c55e;
+}
+
+.api-login-status .status-dot.offline {
+    background: var(--text-muted);
+}
+
+.api-login-status .status-text {
+    flex: 1;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.api-login-status button {
+    padding: 4px 10px;
+    background: var(--bg-page);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xs);
+    font-size: 11px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.api-login-status button:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.api-login-status button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 教师信息卡片 */
+.teacher-info-card {
+    padding: var(--space-md);
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-md);
+}
+
+.teacher-info-card .info-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+    font-size: 13px;
+}
+
+.teacher-info-card .info-row label {
+    width: 50px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.teacher-info-card .info-row span {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.teacher-info-card .param-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+}
+
+.teacher-info-card .param-row:last-child {
+    margin-bottom: 0;
+}
+
+.teacher-info-card .param-row label {
+    width: 50px;
+    font-size: 12px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.teacher-info-card select,
+.teacher-info-card input[type="text"] {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    background: var(--bg-page);
+    color: var(--text-primary);
+}
+
+.teacher-info-card select:focus,
+.teacher-info-card input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* 一键发布按钮 */
+#apiPublishBtn {
+    margin-top: var(--space-sm);
+}
+
+#apiPublishBtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+
+/* ==================== 智能发布模式样式 ==================== */
+
+/* 模式切换按钮组 */
+.publish-mode-switch {
+    display: flex;
+    gap: var(--space-xs);
+    padding: 3px;
+    background: var(--bg-page);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-md);
+}
+
+.publish-mode-switch .mode-btn {
+    flex: 1;
+    padding: 8px var(--space-md);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-xs);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.publish-mode-switch .mode-btn:hover {
+    color: var(--text-primary);
+}
+
+.publish-mode-switch .mode-btn.active {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+/* 智能模式 - 老师自动匹配信息 */
+.teacher-auto-info {
+    padding: var(--space-md);
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-md);
+}
+
+.auto-info-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 13px;
+}
+
+.auto-label {
+    color: var(--text-muted);
+    min-width: 60px;
+}
+
+.auto-value {
+    flex: 1;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* 作业名称预览 */
+.preview-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-page);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-md);
+    font-size: 12px;
+}
+
+.preview-label {
+    color: var(--text-muted);
+}
+
+.preview-value {
+    flex: 1;
+    color: var(--text-secondary);
+    font-family: 'Monaco', 'Consolas', monospace;
+}
+
+/* 智能模式下拉框和输入框 */
+#smartModeContent .param-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+#smartModeContent .param-row label {
+    width: 60px;
+    font-size: 12px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+#smartModeContent select,
+#smartModeContent input[type="text"] {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    transition: border-color 0.15s ease;
+}
+
+#smartModeContent select:focus,
+#smartModeContent input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* 老师选择弹窗 */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+}
+
+.modal .modal-content {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: 400px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow: hidden;
+    animation: slideUp 0.2s ease;
+}
+
+.modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.modal .modal-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modal .modal-close {
+    padding: var(--space-xs);
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--text-muted);
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.15s ease;
+}
+
+.modal .modal-close:hover {
+    color: var(--text-primary);
+}
+
+.modal .modal-body {
+    padding: var(--space-lg);
+    overflow-y: auto;
+    max-height: 60vh;
+}
+
+.modal .modal-body p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-md);
+}
+
+/* 老师选择列表 */
+.teacher-select-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.teacher-select-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--bg-page);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.teacher-select-item:hover {
+    background: var(--bg-hover);
+}
+
+.teacher-select-item.selected {
+    background: var(--accent);
+    color: #fff;
+}
+
+.teacher-select-item .teacher-name {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.teacher-select-item .teacher-class {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.teacher-select-item.selected .teacher-class {
+    color: rgba(255,255,255,0.7);
 }
