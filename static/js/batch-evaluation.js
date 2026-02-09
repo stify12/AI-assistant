@@ -265,6 +265,130 @@ function normalizeAnswerForCompare(text) {
     return text;
 }
 
+/**
+ * 标准化文本用于diff比对（移除空格、标点等格式差异）
+ */
+function normalizeForDiff(text) {
+    if (!text) return '';
+    text = String(text).trim();
+    
+    // 1. 移除常见前缀（解：答：等）
+    text = text.replace(/^(解|答|证明?|分析)[：:]\s*/i, '');
+    
+    // 2. 移除所有空白字符
+    text = text.replace(/\s+/g, '');
+    
+    // 3. 统一标点符号（中文转英文）
+    text = text.replace(/，/g, ',').replace(/。/g, '.').replace(/；/g, ';').replace(/：/g, ':');
+    text = text.replace(/（/g, '(').replace(/）/g, ')');
+    
+    // 4. 移除度数符号（数学中 174 和 174° 视为等价）
+    text = text.replace(/°/g, '');
+    
+    // 5. 移除逗号、句号等标点（这些不影响答案正确性）
+    text = text.replace(/[,.:;]/g, '');
+    
+    return text;
+}
+
+// ========== 文本差异对比 ==========
+
+/**
+ * 计算两个字符串的差异
+ * 用标准化文本做diff，显示标准化后的文本并高亮差异
+ */
+function computeTextDiff(baseText, aiText) {
+    if (!baseText && !aiText) return { baseHtml: '-', aiHtml: '-', isMatch: true };
+    
+    // 转换LaTeX为可读文本
+    const baseDisplay = normalizeMarkdownFormula(baseText) || '';
+    const aiDisplay = normalizeMarkdownFormula(aiText) || '';
+    
+    if (!baseDisplay) return { baseHtml: '-', aiHtml: escapeHtml(aiDisplay), isMatch: false };
+    if (!aiDisplay) return { baseHtml: escapeHtml(baseDisplay), aiHtml: '-', isMatch: false };
+    
+    // 标准化后比对
+    const baseNorm = normalizeForDiff(baseDisplay);
+    const aiNorm = normalizeForDiff(aiDisplay);
+    
+    // 如果标准化后相同，说明只是格式差异，不需要高亮
+    if (baseNorm === aiNorm) {
+        return { 
+            baseHtml: escapeHtml(baseDisplay), 
+            aiHtml: escapeHtml(aiDisplay), 
+            isMatch: true 
+        };
+    }
+    
+    // 用标准化文本做LCS diff
+    const m = baseNorm.length;
+    const n = aiNorm.length;
+    
+    // 过长文本不做diff
+    if (m > 300 || n > 300) {
+        return {
+            baseHtml: escapeHtml(baseDisplay),
+            aiHtml: escapeHtml(aiDisplay),
+            isMatch: false
+        };
+    }
+    
+    // 构建LCS表
+    const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+    for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+            if (baseNorm[i - 1] === aiNorm[j - 1]) {
+                dp[i][j] = dp[i - 1][j - 1] + 1;
+            } else {
+                dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+            }
+        }
+    }
+    
+    // 回溯标记差异位置
+    const baseDiff = new Array(m).fill(false);  // true = 差异字符
+    const aiDiff = new Array(n).fill(false);
+    
+    let i = m, j = n;
+    while (i > 0 || j > 0) {
+        if (i > 0 && j > 0 && baseNorm[i - 1] === aiNorm[j - 1]) {
+            i--; j--;
+        } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+            aiDiff[j - 1] = true;
+            j--;
+        } else {
+            baseDiff[i - 1] = true;
+            i--;
+        }
+    }
+    
+    // 生成带高亮的HTML（基于标准化文本）
+    function renderWithHighlight(text, diffMarks, delClass) {
+        let html = '';
+        let inDiff = false;
+        
+        for (let k = 0; k < text.length; k++) {
+            if (diffMarks[k] && !inDiff) {
+                html += `<span class="${delClass}">`;
+                inDiff = true;
+            } else if (!diffMarks[k] && inDiff) {
+                html += '</span>';
+                inDiff = false;
+            }
+            html += escapeHtml(text[k]);
+        }
+        if (inDiff) html += '</span>';
+        
+        return html || '-';
+    }
+    
+    return {
+        baseHtml: renderWithHighlight(baseNorm, baseDiff, 'diff-del'),
+        aiHtml: renderWithHighlight(aiNorm, aiDiff, 'diff-add'),
+        isMatch: false
+    };
+}
+
 // ========== 错误聚类分析 ==========
 
 /**
@@ -3471,6 +3595,11 @@ function renderEvalDetail(detail) {
                     const hasScore = baseEffect.score !== undefined && baseEffect.score !== null;
                     const scoreMatch = err.score_match;
                     
+                    // 计算用户答案的差异高亮
+                    const baseUserAnswer = normalizeMarkdownFormula(baseEffect.userAnswer) || '';
+                    const aiUserAnswer = normalizeMarkdownFormula(aiResult.userAnswer) || '';
+                    const userAnswerDiff = computeTextDiff(baseUserAnswer, aiUserAnswer);
+                    
                     return `
                         <div class="${cardClass}" data-page="${detail.page_num || ''}" data-index="${err.index || ''}">
                             <div class="${headerClass}">
@@ -3483,40 +3612,38 @@ function renderEvalDetail(detail) {
                                 </div>
                             </div>
                             <div class="error-card-body">
-                                <div class="compare-table-wrap">
-                                    <table class="compare-detail-table">
-                                        <thead>
-                                            <tr>
-                                                <th class="field-col">字段</th>
-                                                <th class="base-col">基准效果</th>
-                                                <th class="ai-col">AI批改结果</th>
-                                                <th class="match-col">匹配</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr class="highlight-row">
-                                                <td class="field-name">用户答案</td>
-                                                <td class="base-value user-answer">${escapeHtml(normalizeMarkdownFormula(baseEffect.userAnswer) || '-')}</td>
-                                                <td class="ai-value user-answer">${escapeHtml(normalizeMarkdownFormula(aiResult.userAnswer) || '-')}</td>
-                                                <td class="match-status">${(err.analysis?.recognition_match === true) ? '<span class="match-yes">✓</span>' : (err.analysis?.recognition_match === false) ? '<span class="match-no">✗</span>' : '-'}</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="field-name">判断结果</td>
-                                                <td class="base-value"><span class="${baseEffect.correct === 'yes' ? 'text-success' : 'text-error'}">${baseEffect.correct || '-'}</span></td>
-                                                <td class="ai-value"><span class="${aiResult.correct === 'yes' ? 'text-success' : 'text-error'}">${aiResult.correct || '-'}</span></td>
-                                                <td class="match-status">${(err.analysis?.judgment_match === true) ? '<span class="match-yes">✓</span>' : (err.analysis?.judgment_match === false) ? '<span class="match-no">✗</span>' : '-'}</td>
-                                            </tr>
-                                            ${hasScore ? `
-                                            <tr>
-                                                <td class="field-name">分数</td>
-                                                <td class="base-value">${baseEffect.score}</td>
-                                                <td class="ai-value">${aiResult.score !== undefined && aiResult.score !== null ? aiResult.score : '-'}</td>
-                                                <td class="match-status">${scoreMatch === true ? '<span class="match-yes">✓</span>' : scoreMatch === false ? '<span class="match-no">✗</span>' : '-'}</td>
-                                            </tr>
-                                            ` : ''}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                <table class="compare-table-clean">
+                                    <thead>
+                                        <tr>
+                                            <th class="col-field">字段</th>
+                                            <th class="col-base">基准效果</th>
+                                            <th class="col-ai">AI批改结果</th>
+                                            <th class="col-match">匹配</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="cell-field">用户答案</td>
+                                            <td class="cell-base">${userAnswerDiff.baseHtml || '-'}</td>
+                                            <td class="cell-ai">${userAnswerDiff.aiHtml || '-'}</td>
+                                            <td class="cell-match">${(err.analysis?.recognition_match === true) ? '<span class="match-yes">✓</span>' : (err.analysis?.recognition_match === false) ? '<span class="match-no">✗</span>' : '-'}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="cell-field">判断结果</td>
+                                            <td class="cell-base"><span class="${baseEffect.correct === 'yes' ? 'text-success' : 'text-error'}">${baseEffect.correct || '-'}</span></td>
+                                            <td class="cell-ai"><span class="${aiResult.correct === 'yes' ? 'text-success' : 'text-error'}">${aiResult.correct || '-'}</span></td>
+                                            <td class="cell-match">${(err.analysis?.judgment_match === true) ? '<span class="match-yes">✓</span>' : (err.analysis?.judgment_match === false) ? '<span class="match-no">✗</span>' : '-'}</td>
+                                        </tr>
+                                        ${hasScore ? `
+                                        <tr>
+                                            <td class="cell-field">分数</td>
+                                            <td class="cell-base">${baseEffect.score}</td>
+                                            <td class="cell-ai">${aiResult.score !== undefined && aiResult.score !== null ? aiResult.score : '-'}</td>
+                                            <td class="cell-match">${scoreMatch === true ? '<span class="match-yes">✓</span>' : scoreMatch === false ? '<span class="match-no">✗</span>' : '-'}</td>
+                                        </tr>
+                                        ` : ''}
+                                    </tbody>
+                                </table>
                                 <div class="error-explanation">
                                     <span class="explanation-label">分析：</span>
                                     <span class="explanation-text">${escapeHtml(normalizeMarkdownFormula(err.explanation || '-'))}</span>
