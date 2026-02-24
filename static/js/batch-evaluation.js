@@ -133,6 +133,17 @@ function normalizeMarkdownFormula(text) {
     if (!text) return '';
     text = String(text);
     
+    // 0. 修复 JSON 解析导致的控制字符问题
+    // Python json.loads 会将 \f \t \n \r \b 解释为控制字符
+    // 需要还原为 LaTeX 命令前缀
+    text = text.replace(/\f/g, '\\f');   // 换页符 → \f (修复 \frac)
+    text = text.replace(/\x08/g, '\\b'); // 退格符(ASCII 8) → \b (修复 \beta)，注意：/\b/ 是单词边界，不是退格符
+    // 注意：\t \n \r 在文本中可能是有意义的换行，需谨慎处理
+    // 仅当后面紧跟 LaTeX 命令特征时才还原
+    text = text.replace(/\t(?=ext|heta|imes|riangle|au)/g, '\\t');
+    text = text.replace(/\n(?=eq|eg|abla|u)/g, '\\n');
+    text = text.replace(/\r(?=ho|ightarrow|ac)/g, '\\r');
+    
     // 1. 处理转义的大括号（JSON中常见的 \\{ \\}）
     text = text.replace(/\\\\{/g, '⟨LBRACE⟩');  // 临时占位
     text = text.replace(/\\\\}/g, '⟨RBRACE⟩');
@@ -1240,7 +1251,7 @@ function renderOverallReport(report, completedItems) {
         const subjective = byType.subjective || byType.other || {};
         
         detailHtml += `
-            <div class="list-header">题目类型分类统计</div>
+            <div class="list-header">批改准确率分类统计</div>
             <div class="type-stats-grid" style="display: flex; gap: 16px; flex-wrap: wrap;">
                 <div class="type-stats-section" style="flex: 1; min-width: 320px;">
                     <canvas id="questionTypeBarChart" height="160"></canvas>
@@ -1287,7 +1298,7 @@ function renderOverallReport(report, completedItems) {
     document.getElementById('statsDetail').innerHTML = detailHtml;
     
     // DOM 更新后渲染题目类型分类统计图表（需要等待 Chart.js 加载）
-    if (window._questionTypeData) {
+    if (window.accuracyStats || window._questionTypeData) {
         setTimeout(async () => {
             // 确保 Chart.js 已加载
             if (typeof Chart === 'undefined' && window.loadChartJS) {
@@ -1562,15 +1573,17 @@ async function renderOverallCharts(report, completedItems) {
     
     // 4. 准确率分析进度条
     console.log('Before calculateAccuracyStats - completedItems:', completedItems.length);
+    console.log('report.by_question_type:', report.by_question_type);
     if (completedItems.length > 0) {
         console.log('First item for accuracy:', JSON.stringify({
             status: completedItems[0].status,
             hasEvaluation: !!completedItems[0].evaluation,
             total_questions: completedItems[0].evaluation?.total_questions,
-            error_distribution: completedItems[0].evaluation?.error_distribution
+            error_distribution: completedItems[0].evaluation?.error_distribution,
+            by_question_type: completedItems[0].evaluation?.by_question_type
         }));
     }
-    const accuracyStats = calculateAccuracyStats(completedItems);
+    const accuracyStats = calculateAccuracyStats(completedItems, report.by_question_type);
     console.log('Accuracy stats:', accuracyStats);
     
     // 渲染识别准确率进度条
@@ -1610,29 +1623,65 @@ async function renderOverallCharts(report, completedItems) {
 }
 
 /**
- * 渲染题目类型分类统计横向柱状图
+ * 渲染题目类型批改准确率横向柱状图
+ * 批改准确率 = 基准correct与AI correct是否一致
  */
 function renderQuestionTypeBarChart() {
     const canvas = document.getElementById('questionTypeBarChart');
-    if (!canvas || !window._questionTypeData) return;
+    if (!canvas) return;
     
-    const { choice, objectiveFill, subjective } = window._questionTypeData;
+    // 优先使用后端返回的 grading_accuracy_stats（by_question_type 中的 grading_* 字段）
+    const typeData = window._questionTypeData;
+    const stats = window.accuracyStats?.byType;
     
-    // 数据准备
+    if (!typeData && !stats) return;
+    
     const labels = ['选择题', '客观填空题', '主观题'];
     const typeKeys = ['choice', 'objective_fill', 'subjective'];
-    const totals = [choice.total || 0, objectiveFill.total || 0, subjective.total || 0];
-    const corrects = [choice.correct || 0, objectiveFill.correct || 0, subjective.correct || 0];
-    const accuracies = [
-        choice.total > 0 ? (choice.accuracy || 0) * 100 : 0,
-        objectiveFill.total > 0 ? (objectiveFill.accuracy || 0) * 100 : 0,
-        subjective.total > 0 ? (subjective.accuracy || 0) * 100 : 0
-    ];
     
-    // 使用页面饼图的彩色配色
+    let totals, corrects, accuracies;
+    
+    // 优先使用后端返回的 grading_* 字段（直接统计 correct 是否一致）
+    const backendHasGradingData = typeData && (
+        typeData.choice?.grading_total > 0 || 
+        typeData.objectiveFill?.grading_total > 0 || 
+        typeData.subjective?.grading_total > 0
+    );
+    
+    if (backendHasGradingData) {
+        // 使用后端直接统计的批改准确率数据
+        const { choice, objectiveFill, subjective } = typeData;
+        totals = [choice?.grading_total || 0, objectiveFill?.grading_total || 0, subjective?.grading_total || 0];
+        corrects = [choice?.grading_correct || 0, objectiveFill?.grading_correct || 0, subjective?.grading_correct || 0];
+        accuracies = [
+            (choice?.grading_rate || 0) * 100,
+            (objectiveFill?.grading_rate || 0) * 100,
+            (subjective?.grading_rate || 0) * 100
+        ];
+        console.log('[renderQuestionTypeBarChart] 使用后端 grading_* 数据:', { totals, corrects, accuracies });
+    } else if (stats && (stats.choice?.total > 0 || stats.objective_fill?.total > 0 || stats.subjective?.total > 0)) {
+        // 降级：使用前端计算的 accuracyStats.byType
+        totals = [stats.choice?.total || 0, stats.objective_fill?.total || 0, stats.subjective?.total || 0];
+        corrects = [stats.choice?.gradCorrect || 0, stats.objective_fill?.gradCorrect || 0, stats.subjective?.gradCorrect || 0];
+        accuracies = [stats.choice?.gradRate || 0, stats.objective_fill?.gradRate || 0, stats.subjective?.gradRate || 0];
+        console.log('[renderQuestionTypeBarChart] 使用前端 accuracyStats.byType:', { totals, corrects, accuracies });
+    } else if (typeData) {
+        // 最后降级：使用后端 by_question_type 的综合准确率
+        const { choice, objectiveFill, subjective } = typeData;
+        totals = [choice?.total || 0, objectiveFill?.total || 0, subjective?.total || 0];
+        corrects = [choice?.correct || 0, objectiveFill?.correct || 0, subjective?.correct || 0];
+        accuracies = [
+            choice?.total > 0 ? (choice?.accuracy || 0) * 100 : 0,
+            objectiveFill?.total > 0 ? (objectiveFill?.accuracy || 0) * 100 : 0,
+            subjective?.total > 0 ? (subjective?.accuracy || 0) * 100 : 0
+        ];
+        console.log('[renderQuestionTypeBarChart] 使用后端 by_question_type.accuracy:', { totals, corrects, accuracies });
+    } else {
+        return;
+    }
+    
     const colors = ['#3b82f6', '#f59e0b', '#10b981'];
     
-    // 销毁旧图表
     if (batchChartInstances.typeBar) {
         batchChartInstances.typeBar.destroy();
     }
@@ -1642,7 +1691,7 @@ function renderQuestionTypeBarChart() {
         data: {
             labels: labels,
             datasets: [{
-                label: '准确率',
+                label: '批改准确率',
                 data: accuracies,
                 backgroundColor: colors,
                 borderRadius: 4,
@@ -1650,11 +1699,11 @@ function renderQuestionTypeBarChart() {
             }]
         },
         options: {
-            indexAxis: 'y',  // 横向柱状图
+            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
             layout: {
-                padding: { right: 50 }  // 为末端数字留空间
+                padding: { right: 50 }
             },
             onClick: (event, elements) => {
                 if (elements.length > 0) {
@@ -1685,8 +1734,8 @@ function renderQuestionTypeBarChart() {
                         label: (ctx) => {
                             const idx = ctx.dataIndex;
                             return [
-                                `准确率: ${accuracies[idx].toFixed(1)}%`,
-                                `正确: ${corrects[idx]} / 总数: ${totals[idx]}`,
+                                `批改准确率: ${accuracies[idx].toFixed(1)}%`,
+                                `批改正确: ${corrects[idx]} / 总数: ${totals[idx]}`,
                                 '点击查看详情'
                             ];
                         }
@@ -1695,7 +1744,6 @@ function renderQuestionTypeBarChart() {
             }
         },
         plugins: [{
-            // 自定义插件：在柱状图末端显示数字
             id: 'barEndLabels',
             afterDatasetsDraw(chart) {
                 const { ctx } = chart;
@@ -1722,7 +1770,7 @@ function renderQuestionTypeBarChart() {
 
 // ========== 计算识别准确率和批改准确率 ==========
 // 简化版：直接使用后端计算的 correct_count 和 error_distribution
-function calculateAccuracyStats(completedItems) {
+function calculateAccuracyStats(completedItems, reportByType) {
     let totalQuestions = 0;
     let recognitionCorrect = 0;
     let gradingCorrect = 0;
@@ -1799,6 +1847,21 @@ function calculateAccuracyStats(completedItems) {
                 questionTypeMap[String(qIndex)] = classifyQuestionType(q);
             }
         });
+        
+        // 补充：从 errors 的 question_category 获取题型（当 hwResult 为空时）
+        if (hwResult.length === 0) {
+            errors.forEach(err => {
+                const qIndex = err.index || '-';
+                const cat = err.question_category;
+                if (cat && qIndex !== '-') {
+                    let qType = 'subjective';
+                    if (cat.is_choice) qType = 'choice';
+                    else if (cat.is_fill) qType = 'objective_fill';
+                    questionTypeMap[qIndex] = qType;
+                    questionTypeMap[String(qIndex)] = qType;
+                }
+            });
+        }
         
         // 收集错误题目详情
         const errorIndexSet = new Set(); // 记录有错误的题号
@@ -1899,6 +1962,37 @@ function calculateAccuracyStats(completedItems) {
             }
         });
         
+        // 当 hwResult 为空时，用 evaluation.by_question_type 补充题型统计
+        if (hwResult.length === 0 && evaluation.by_question_type) {
+            const evalByType = evaluation.by_question_type;
+            
+            // 从 errors 统计每题型的批改/识别错误数
+            const gradErrByType = { choice: 0, objective_fill: 0, subjective: 0 };
+            const recErrByType = { choice: 0, objective_fill: 0, subjective: 0 };
+            
+            errors.forEach(err => {
+                const cat = err.question_category;
+                const errType = err.error_type || '';
+                let qType = 'subjective';
+                if (cat) {
+                    if (cat.is_choice) qType = 'choice';
+                    else if (cat.is_fill) qType = 'objective_fill';
+                }
+                if (gradingErrorTypes.includes(errType)) gradErrByType[qType]++;
+                if (recognitionErrorTypes.includes(errType)) recErrByType[qType]++;
+            });
+            
+            // 累加每个题型的统计（使用当前作业的 total，而不是累加后的 total）
+            ['choice', 'objective_fill', 'subjective'].forEach(key => {
+                const typeData = evalByType[key] || {};
+                const typeTotal = typeData.total || 0;
+                byType[key].total += typeTotal;
+                // 批改正确数 = 当前作业的 total - 当前作业的批改错误数
+                byType[key].gradCorrect += Math.max(0, typeTotal - gradErrByType[key]);
+                byType[key].recCorrect += Math.max(0, typeTotal - recErrByType[key]);
+            });
+        }
+        
         // 如果没有 error_distribution，使用 correct_count 作为备选
         if (Object.keys(errorDist).length === 0) {
             recognitionCorrect += correctCount;
@@ -1923,6 +2017,40 @@ function calculateAccuracyStats(completedItems) {
             gradingCorrect += (total - gradErrors);
         }
     });
+    
+    // 最终 fallback：如果 byType 全是 0（hwResult 为空且 evaluation.by_question_type 不存在），
+    // 用 reportByType（后端汇总数据）+ errors 的 question_category 补充
+    const byTypeHasData = byType.choice.total > 0 || byType.objective_fill.total > 0 || byType.subjective.total > 0;
+    console.log('byTypeHasData:', byTypeHasData, 'reportByType:', reportByType);
+    if (!byTypeHasData && reportByType) {
+        const qtd = reportByType;
+        byType.choice.total = qtd.choice?.total || 0;
+        byType.objective_fill.total = qtd.objective_fill?.total || 0;
+        byType.subjective.total = (qtd.subjective || qtd.other)?.total || 0;
+        
+        // 从所有 completedItems 的 errors 中统计每题型的批改/识别错误数
+        const gradErrByType = { choice: 0, objective_fill: 0, subjective: 0 };
+        const recErrByType = { choice: 0, objective_fill: 0, subjective: 0 };
+        completedItems.forEach(item => {
+            (item.evaluation?.errors || []).forEach(err => {
+                const cat = err.question_category;
+                const errType = err.error_type || '';
+                let qType = 'subjective';
+                if (cat) {
+                    if (cat.is_choice) qType = 'choice';
+                    else if (cat.is_fill) qType = 'objective_fill';
+                }
+                if (gradingErrorTypes.includes(errType)) gradErrByType[qType]++;
+                if (recognitionErrorTypes.includes(errType)) recErrByType[qType]++;
+            });
+        });
+        
+        ['choice', 'objective_fill', 'subjective'].forEach(key => {
+            byType[key].gradCorrect = Math.max(0, byType[key].total - gradErrByType[key]);
+            byType[key].recCorrect = Math.max(0, byType[key].total - recErrByType[key]);
+        });
+        console.log('byType fallback applied from reportByType:', byType);
+    }
     
     console.log('Final stats:', { totalQuestions, recognitionCorrect, gradingCorrect });
     console.log('byType stats:', byType);
@@ -3574,6 +3702,27 @@ function renderEvalDetail(detail) {
     
     // 错误题目详情 - 卡片式展示
     if (errors.length > 0) {
+        // 构建原始数据索引，用于 userAnswer 为空时的 fallback 查找
+        const origBaseByIndex = {};
+        const origAiByIndex = {};
+        const dataValueByIndex = {};  // 从 data_value 获取选择题的 userAnswer
+        (detail.base_effect || []).forEach(item => {
+            if (item.index !== undefined) origBaseByIndex[String(item.index)] = item;
+        });
+        // 构建 data_value 索引（选择题的 userAnswer 在这里）
+        (detail.data_value || []).forEach(item => {
+            if (item.index !== undefined) dataValueByIndex[String(item.index)] = item;
+            // 处理 children（小题）
+            (item.children || []).forEach(child => {
+                if (child.index !== undefined) dataValueByIndex[String(child.index)] = child;
+            });
+        });
+        // 展开AI结果的children后建立索引
+        const flatOrigAi = flattenHomeworkResult(detail.ai_result || []);
+        flatOrigAi.forEach(item => {
+            if (item.index !== undefined) origAiByIndex[String(item.index)] = item;
+        });
+
         html += `<div class="list-header">错误题目详情</div>
             <div class="error-cards-container">
                 ${errors.map(err => {
@@ -3596,8 +3745,23 @@ function renderEvalDetail(detail) {
                     const scoreMatch = err.score_match;
                     
                     // 计算用户答案的差异高亮
-                    const baseUserAnswer = normalizeMarkdownFormula(baseEffect.userAnswer) || '';
-                    const aiUserAnswer = normalizeMarkdownFormula(aiResult.userAnswer) || '';
+                    // 当 error 记录中 userAnswer 为空时，依次从 origBase、dataValue 中按题号 fallback 查找
+                    const errIdx = String(err.index || '');
+                    let rawBaseUserAnswer = baseEffect.userAnswer || '';
+                    let rawAiUserAnswer = aiResult.userAnswer || '';
+                    // fallback 1: 从 base_effect 原始数据查找
+                    if (!rawBaseUserAnswer && errIdx && origBaseByIndex[errIdx]) {
+                        rawBaseUserAnswer = origBaseByIndex[errIdx].userAnswer || '';
+                    }
+                    // fallback 2: 从 data_value 查找（选择题的 userAnswer 通常在这里）
+                    if (!rawBaseUserAnswer && errIdx && dataValueByIndex[errIdx]) {
+                        rawBaseUserAnswer = dataValueByIndex[errIdx].userAnswer || '';
+                    }
+                    if (!rawAiUserAnswer && errIdx && origAiByIndex[errIdx]) {
+                        rawAiUserAnswer = origAiByIndex[errIdx].userAnswer || '';
+                    }
+                    const baseUserAnswer = normalizeMarkdownFormula(rawBaseUserAnswer) || '';
+                    const aiUserAnswer = normalizeMarkdownFormula(rawAiUserAnswer) || '';
                     const userAnswerDiff = computeTextDiff(baseUserAnswer, aiUserAnswer);
                     
                     return `
@@ -3669,8 +3833,33 @@ function renderEvalDetail(detail) {
     }
     
     // 添加完整的基准效果和AI批改结果数据表格
-    const baseEffect = detail.base_effect || [];
+    let baseEffect = detail.base_effect || [];
     const aiResult = detail.ai_result || [];
+    const dataValue = detail.data_value || [];
+    
+    // 用 data_value 补充 base_effect 中缺失的 userAnswer/answer 字段（选择题常见情况）
+    if (dataValue.length > 0 && baseEffect.length > 0) {
+        // 构建 data_value 索引（按 index 和 tempIndex）
+        const dvByIndex = {};
+        const dvByTempIndex = {};
+        dataValue.forEach(item => {
+            if (item.index !== undefined) dvByIndex[String(item.index)] = item;
+            if (item.tempIndex !== undefined) dvByTempIndex[item.tempIndex] = item;
+        });
+        // 补充缺失字段
+        baseEffect = baseEffect.map((item, i) => {
+            const dv = dvByIndex[String(item.index)] || dvByTempIndex[item.tempIndex] || dvByTempIndex[i];
+            if (dv) {
+                return {
+                    ...item,
+                    userAnswer: item.userAnswer || dv.userAnswer || '',
+                    answer: item.answer || dv.answer || '',
+                    bvalue: item.bvalue || dv.bvalue || ''
+                };
+            }
+            return item;
+        });
+    }
     
     // 展开AI结果中的children结构
     const flattenAiResult = flattenHomeworkResult(aiResult);
@@ -6201,24 +6390,29 @@ function renderTypeDetailContent(data) {
     // 构建HTML
     let html = '';
     
-    // 统计卡片
+    // 统计卡片 - 使用批改准确率数据
+    const gradingTotal = stats.grading_total || stats.total || 0;
+    const gradingCorrect = stats.grading_correct || 0;
+    const gradingError = gradingTotal - gradingCorrect;
+    const gradingRate = stats.grading_rate !== undefined ? stats.grading_rate : stats.accuracy;
+    
     html += `
         <div class="type-detail-stats">
             <div class="stat-card highlight">
-                <div class="stat-value">${stats.total || 0}</div>
+                <div class="stat-value">${gradingTotal}</div>
                 <div class="stat-label">总数</div>
             </div>
             <div class="stat-card success">
-                <div class="stat-value">${stats.correct || 0}</div>
-                <div class="stat-label">正确</div>
+                <div class="stat-value">${gradingCorrect}</div>
+                <div class="stat-label">批改正确</div>
             </div>
             <div class="stat-card error">
-                <div class="stat-value">${(stats.total || 0) - (stats.correct || 0)}</div>
-                <div class="stat-label">错误</div>
+                <div class="stat-value">${gradingError}</div>
+                <div class="stat-label">批改错误</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">${stats.accuracy ? (stats.accuracy * 100).toFixed(1) + '%' : '-'}</div>
-                <div class="stat-label">准确率</div>
+                <div class="stat-value">${gradingRate !== undefined && gradingRate !== null ? (gradingRate * 100).toFixed(1) + '%' : '-'}</div>
+                <div class="stat-label">批改准确率</div>
             </div>
         </div>
     `;
