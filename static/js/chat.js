@@ -20,6 +20,7 @@ let fpConversationHistory = []; // 第一性原理对话历史
 
 const VISION_MODELS = [
     'doubao-1-5-vision-pro-32k-250115',
+    'doubao-seed-2-0-pro-260215',
     'doubao-seed-1-6-vision-250815',
     'doubao-seed-1-6-251015',
     'doubao-seed-1-8-251228',
@@ -29,6 +30,7 @@ const VISION_MODELS = [
 
 // 支持思考程度调节的模型
 const REASONING_MODELS = [
+    'doubao-seed-2-0-pro-260215',
     'doubao-seed-1-6-251015',
     'doubao-seed-1-8-251228',
     'doubao-seed-1-6-thinking-250715'
@@ -244,6 +246,7 @@ function renderChatMessages() {
 function getModelDisplayName(modelId) {
     const modelNames = {
         'doubao-1-5-vision-pro-32k-250115': 'Vision Pro',
+        'doubao-seed-2-0-pro-260215': 'Seed 2.0',
         'doubao-seed-1-6-vision-250815': 'Seed Vision',
         'doubao-seed-1-6-251015': 'Seed 1.6',
         'doubao-seed-1-8-251228': 'Seed 1.8',

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片预处理工具</title>
+    <!-- 预加载关键资源 -->
+    <link rel="preload" href="/static/css/common.css?v=20260125" as="style">
+    <link rel="preload" href="/static/css/image-preprocess.css?v=20260226" as="style">
+    <!-- 样式表 -->
+    <link rel="stylesheet" href="/static/css/common.css?v=20260125">
+    <link rel="stylesheet" href="/static/css/image-preprocess.css?v=20260226">
+    <link rel="stylesheet" href="/static/css/modules/image-lightbox.css?v=20260228">
+    <!-- 首屏关键CSS -->
+    <style>
+        .loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.95);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9999}
+        .loading-overlay.show{display:flex}
+        .spinner{width:40px;height:40px;border:3px solid #e5e5e5;border-top-color:#1d1d1f;border-radius:50%;animation:spin 0.8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="logo">图片预处理工具</div>
+        <div style="display:flex;gap:12px;align-items:center;">
+            <button class="back-btn" onclick="window.location.href='/'">返回</button>
+        </div>
+    </nav>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">处理中...</div>
+    </div>
+
+    <!-- 主容器 - 左右布局 -->
+    <div class="main-layout">
+        <!-- 左侧控制面板 -->
+        <div class="left-panel" style="width:360px;min-width:360px;max-width:360px;">
+
+            <!-- 上传图片 -->
+            <div class="section">
+                <div class="section-title">上传图片</div>
+                <input type="file" id="imageUploadInput" accept=".jpg,.jpeg,.png" style="display:none;">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-placeholder" id="uploadPlaceholder">
+                        <div class="upload-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#86868b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                        </div>
+                        <div class="upload-text">点击或拖拽上传作业图片</div>
+                        <div class="upload-subtext">支持 JPG/PNG，最大 10MB</div>
+                    </div>
+                    <img class="upload-preview" id="uploadPreview" style="display:none;" alt="上传预览">
+                </div>
+            </div>
+
+            <!-- 处理步骤 -->
+            <div class="section">
+                <div class="section-title">处理步骤</div>
+                <div class="step-list">
+                    <div class="step-row">
+                        <span class="step-label">智能高清化</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle_super_resolution">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="step-row">
+                        <span class="step-label">灰度转换</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle_grayscale" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="step-row">
+                        <span class="step-label">去噪</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle_denoise">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="step-row">
+                        <span class="step-label">背景净化</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle_background_clean" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="step-row">
+                        <span class="step-label">色阶调整</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle_levels" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="step-row">
+                        <span class="step-label">文字锐化</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle_sharpen" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="step-row">
+                        <span class="step-label">对比度增强</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle_contrast" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="step-row">
+                        <span class="step-label">倾斜矫正</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle_deskew" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="step-row">
+                        <span class="step-label">自适应二值化</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle_binarize">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="step-row">
+                        <span class="step-label">边缘裁剪</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle_crop" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 参数调节 -->
+            <div class="section">
+                <div class="section-title">参数调节</div>
+
+                <!-- 智能高清化参数 -->
+                <div class="param-group" id="params_super_resolution" style="display:none;">
+                    <div class="param-group-title">智能高清化</div>
+                    <div class="param-item">
+                        <span class="param-label">放大倍数</span>
+                        <div class="param-radio-group">
+                            <label class="param-radio">
+                                <input type="radio" name="param_super_resolution_scale" value="2" checked>
+                                <span>2x</span>
+                            </label>
+                            <label class="param-radio">
+                                <input type="radio" name="param_super_resolution_scale" value="4">
+                                <span>4x</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="param-item">
+                        <span class="param-label">锐化强度</span>
+                        <div class="param-slider-wrap">
+                            <input type="range" class="param-slider" id="param_super_resolution_sharpen_strength" min="0" max="2" step="0.1" value="0.3">
+                            <span class="param-value" id="value_super_resolution_sharpen_strength">0.3</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 去噪参数 -->
+                <div class="param-group" id="params_denoise">
+                    <div class="param-group-title">去噪</div>
+                    <div class="param-item">
+                        <span class="param-label">核大小</span>
+                        <div class="param-slider-wrap">
+                            <input type="range" class="param-slider" id="param_denoise_kernel_size" min="3" max="15" step="2" value="3">
+                            <span class="param-value" id="value_denoise_kernel_size">3</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 背景净化参数 -->
+                <div class="param-group" id="params_background_clean">
+                    <div class="param-group-title">背景净化</div>
+                    <div class="param-item">
+                        <span class="param-label">核大小</span>
+                        <div class="param-slider-wrap">
+                            <input type="range" class="param-slider" id="param_background_clean_morph_size" min="5" max="99" step="2" value="25">
+                            <span class="param-value" id="value_background_clean_morph_size">25</span>
+                        </div>
+                    </div>
+                    <div class="param-item">
+                        <span class="param-label">净化强度</span>
+                        <div class="param-slider-wrap">
+                            <input type="range" class="param-slider" id="param_background_clean_strength" min="0.1" max="1" step="0.1" value="0.9">
+                            <span class="param-value" id="value_background_clean_strength">0.9</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 色阶调整参数 -->
+                <div class="param-group" id="params_levels">
+                    <div class="param-group-title">色阶调整</div>
+                    <div class="param-item">
+                        <span class="param-label">黑点</span>
+                        <div class="param-slider-wrap">
+                            <input type="range" class="param-slider" id="param_levels_black_point" min="0" max="120" step="5" value="90">
+                            <span class="param-value" id="value_levels_black_point">90</span>
+                        </div>
+                    </div>
+                    <div class="param-item">
+                        <span class="param-label">白点</span>
+                        <div class="param-slider-wrap">
+                            <input type="range" class="param-slider" id="param_levels_white_point" min="150" max="250" step="5" value="170">
+                            <span class="param-value" id="value_levels_white_point">170</span>
+                        </div>
+                    </div>
+                    <div class="param-item">
+                        <span class="param-label">Gamma</span>
+                        <div class="param-slider-wrap">
+                            <input type="range" class="param-slider" id="param_levels_gamma" min="0.5" max="3" step="0.1" value="1.0">
+                            <span class="param-value" id="value_levels_gamma">1.0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 文字锐化参数 -->
+                <div class="param-group" id="params_sharpen">
+                    <div class="param-group-title">文字锐化</div>
+                    <div class="param-item">
+                        <span class="param-label">锐化强度</span>
+                        <div class="param-slider-wrap">
+                            <input type="range" class="param-slider" id="param_sharpen_amount" min="0.5" max="5" step="0.1" value="2.5">
+                            <span class="param-value" id="value_sharpen_amount">2.5</span>
+                        </div>
+                    </div>
+                    <div class="param-item">
+                        <span class="param-label">半径</span>
+                        <div class="param-slider-wrap">
+                            <input type="range" class="param-slider" id="param_sharpen_radius" min="1" max="5" step="1" value="1">
+                            <span class="param-value" id="value_sharpen_radius">1</span>
+                        </div>
+                    </div>
+                    <div class="param-item">
+                        <span class="param-label">阈值</span>
+                        <div class="param-slider-wrap">
+                            <input type="range" class="param-slider" id="param_sharpen_threshold" min="0" max="50" step="1" value="0">
+                            <span class="param-value" id="value_sharpen_threshold">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 对比度增强参数 -->
+                <div class="param-group" id="params_contrast">
+                    <div class="param-group-title">对比度增强</div>
+                    <div class="param-item">
+                        <span class="param-label">clipLimit</span>
+                        <div class="param-slider-wrap">
+                            <input type="range" class="param-slider" id="param_contrast_clip_limit" min="1" max="10" step="0.5" value="1.5">
+                            <span class="param-value" id="value_contrast_clip_limit">1.5</span>
+                        </div>
+                    </div>
+                    <div class="param-item">
+                        <span class="param-label">tileGridSize</span>
+                        <div class="param-slider-wrap">
+                            <input type="range" class="param-slider" id="param_contrast_tile_grid_size" min="2" max="16" step="1" value="8">
+                            <span class="param-value" id="value_contrast_tile_grid_size">8</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 自适应二值化参数 -->
+                <div class="param-group" id="params_binarize">
+                    <div class="param-group-title">自适应二值化</div>
+                    <div class="param-item">
+                        <span class="param-label">blockSize</span>
+                        <div class="param-slider-wrap">
+                            <input type="range" class="param-slider" id="param_binarize_block_size" min="3" max="99" step="2" value="31">
+                            <span class="param-value" id="value_binarize_block_size">31</span>
+                        </div>
+                    </div>
+                    <div class="param-item">
+                        <span class="param-label">常数 C</span>
+                        <div class="param-slider-wrap">
+                            <input type="range" class="param-slider" id="param_binarize_constant_c" min="0" max="20" step="1" value="10">
+                            <span class="param-value" id="value_binarize_constant_c">10</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 无参数时的提示 -->
+                <div class="param-empty" id="paramEmpty" style="display:none;">
+                    <span class="param-empty-text">当前启用的步骤无可调参数</span>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="action-buttons">
+                <button class="btn btn-primary btn-full" id="processBtn">开始处理</button>
+                <button class="btn btn-secondary btn-full" id="recognizeBtn" disabled>识别测试</button>
+            </div>
+        </div>
+
+        <!-- 右侧预览面板 -->
+        <div class="right-panel" style="flex:1;min-width:0;">
+
+            <!-- 图片对比区域 -->
+            <div class="section">
+                <div class="image-compare">
+                    <div class="image-box">
+                        <div class="image-box-label">原始图片</div>
+                        <div class="image-display" id="originalImageBox">
+                            <img id="originalImage" style="display:none;" alt="原始图片">
+                            <div class="image-placeholder" id="originalPlaceholder">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d2d2d7" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                    <polyline points="21 15 16 10 5 21"/>
+                                </svg>
+                                <span>等待上传图片</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="image-box">
+                        <div class="image-box-label">处理后图片</div>
+                        <div class="image-display" id="processedImageBox">
+                            <img id="processedImage" style="display:none;" alt="处理后图片">
+                            <div class="image-placeholder" id="processedPlaceholder">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d2d2d7" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                    <polyline points="21 15 16 10 5 21"/>
+                                </svg>
+                                <span>等待处理结果</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 处理步骤预览 -->
+            <div class="section">
+                <div class="section-title">处理步骤预览</div>
+                <div class="step-thumbnails" id="stepThumbnails">
+                    <div class="step-thumb-empty">处理后将在此展示每个步骤的中间结果</div>
+                </div>
+            </div>
+
+            <!-- 识别结果对比 -->
+            <div class="section" id="recognizeSection" style="display:none;">
+                <div class="section-title">识别结果对比</div>
+                <div class="recognize-compare">
+                    <div class="recognize-box">
+                        <div class="recognize-box-label">原图识别结果</div>
+                        <div class="recognize-content" id="originalResult"></div>
+                    </div>
+                    <div class="recognize-box">
+                        <div class="recognize-box-label">处理后识别结果</div>
+                        <div class="recognize-content" id="processedResult"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 警告信息 -->
+            <div class="section warnings-section" id="warningsSection" style="display:none;">
+                <div class="section-title">处理提示</div>
+                <div class="warnings-list" id="warningsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页面脚本 -->
+    <script src="/static/js/modules/image-lightbox.js?v=20260228"></script>
+    <script src="/static/js/image-preprocess.js?v=20260226"></script>
+</body>
+</html>

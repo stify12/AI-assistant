@@ -60,6 +60,7 @@ services:
       - ./prompts.json:/app/prompts.json
       - ./config.json:/app/config.json
       - ./workflow_config.json:/app/workflow_config.json
+      - ./models:/app/models
 
     environment:
       - FLASK_ENV=production

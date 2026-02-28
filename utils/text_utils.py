@@ -108,14 +108,43 @@ def normalize_answer(text):
     # 2. 移除HTML标签（如 <br>）
     text = re.sub(r'<[^>]+>', '', text)
     
-    # 3. 将换行符和制表符替换为空格（而不是直接移除）
+    # 3. 修复 JSON 解析导致的控制字符问题
+    # 数据库 JSON 中 \frac 等 LaTeX 命令的反斜杠被 json.loads 解释为转义序列
+    # 如 \f→换页符, \t→制表符, \n→换行, \b→退格, \r→回车
+    # 只还原后面紧跟字母的控制字符（构成 LaTeX 命令的情况）
+    text = re.sub(r'\x0c(?=[a-zA-Z])', r'\\f', text)  # 换页符+字母 → \f (修复 \frac)
+    text = re.sub(r'\x08(?=[a-zA-Z])', r'\\b', text)  # 退格符+字母 → \b (修复 \beta)
+    text = re.sub(r'\t(?=[a-zA-Z])', r'\\t', text)    # 制表符+字母 → \t (修复 \text, \theta)
+    text = re.sub(r'\n(?=[a-zA-Z])', r'\\n', text)    # 换行符+字母 → \n (修复 \neq, \neg)
+    text = re.sub(r'\r(?=[a-zA-Z])', r'\\r', text)    # 回车符+字母 → \r (修复 \rho)
+    # 剩余的独立控制字符替换为空格
     text = text.replace('\\n', ' ').replace('\\r', ' ').replace('\\t', ' ')
     text = text.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
+    text = text.replace('\x0c', ' ').replace('\x08', ' ')
     
     # 4. 移除markdown格式标记
     text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)  # **bold**
     text = re.sub(r'\*([^*]+)\*', r'\1', text)      # *italic*
     text = re.sub(r'`([^`]+)`', r'\1', text)        # `code`
+    
+    # 4.5 基础 LaTeX 预处理（处理常见的 LaTeX 分数/上标，避免格式差异导致误判）
+    # 移除 $ 定界符
+    text = re.sub(r'\$\$(.*?)\$\$', r'\1', text, flags=re.DOTALL)
+    text = re.sub(r'\$(.*?)\$', r'\1', text)
+    text = text.replace('$', '')
+    # \frac{a}{b} → a/b（支持 \dfrac, \tfrac, \cfrac）
+    for _ in range(3):
+        prev = text
+        text = re.sub(r'\\(?:d|t|c)?frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}', r'\1/\2', text)
+        if text == prev:
+            break
+    # 上标 ^{2} → 2，^2 → 2（简单处理，不转 Unicode）
+    text = re.sub(r'\^\{([^{}]*)\}', r'\1', text)
+    text = re.sub(r'\^([0-9])', r'\1', text)
+    # 下标 _{n} → n
+    text = re.sub(r'_\{([^{}]*)\}', r'\1', text)
+    # 移除常见 LaTeX 命令残留（\text{}, \mathrm{} 等）
+    text = re.sub(r'\\(?:text|mathrm|mathbf|textbf)\s*\{([^{}]*)\}', r'\1', text)
     
     # 5. 统一数学符号（保留这些符号，因为它们影响语义）
     math_symbol_map = {
@@ -186,15 +215,36 @@ def normalize_answer_science(text):
     # 2. 移除HTML标签（如 <br>）
     text = re.sub(r'<[^>]+>', '', text)
     
-    # 3. 统一所有空白字符（换行、制表符、全角空格等）为单个空格
+    # 3. 修复 JSON 解析导致的控制字符问题（同 normalize_answer）
+    text = re.sub(r'\x0c(?=[a-zA-Z])', r'\\f', text)
+    text = re.sub(r'\x08(?=[a-zA-Z])', r'\\b', text)
+    text = re.sub(r'\t(?=[a-zA-Z])', r'\\t', text)
+    text = re.sub(r'\n(?=[a-zA-Z])', r'\\n', text)
+    text = re.sub(r'\r(?=[a-zA-Z])', r'\\r', text)
+    # 剩余的独立控制字符替换为空格
     text = text.replace('\\n', ' ').replace('\\r', ' ').replace('\\t', ' ')
     text = text.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
+    text = text.replace('\x0c', ' ').replace('\x08', ' ')
     text = text.replace('\u3000', ' ')  # 全角空格
     
     # 4. 移除markdown格式标记
     text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)  # **bold**
     text = re.sub(r'\*([^*]+)\*', r'\1', text)      # *italic*
     text = re.sub(r'`([^`]+)`', r'\1', text)        # `code`
+    
+    # 4.5 基础 LaTeX 预处理（处理常见的 LaTeX 分数/上标）
+    text = re.sub(r'\$\$(.*?)\$\$', r'\1', text, flags=re.DOTALL)
+    text = re.sub(r'\$(.*?)\$', r'\1', text)
+    text = text.replace('$', '')
+    for _ in range(3):
+        prev = text
+        text = re.sub(r'\\(?:d|t|c)?frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}', r'\1/\2', text)
+        if text == prev:
+            break
+    text = re.sub(r'\^\{([^{}]*)\}', r'\1', text)
+    text = re.sub(r'\^([0-9])', r'\1', text)
+    text = re.sub(r'_\{([^{}]*)\}', r'\1', text)
+    text = re.sub(r'\\(?:text|mathrm|mathbf|textbf)\s*\{([^{}]*)\}', r'\1', text)
     
     # 5. 统一数学符号
     math_symbol_map = {

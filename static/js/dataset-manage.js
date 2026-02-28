@@ -16,6 +16,13 @@ const SUBJECT_NAMES = {
     0: '英语', 1: '语文', 2: '数学', 3: '物理', 4: '化学', 5: '生物', 6: '地理'
 };
 
+// 支持思考程度的模型
+const REASONING_MODELS = [
+    'doubao-seed-2-0-pro-260215',
+    'doubao-seed-1-8-251228',
+    'qwen3.5-plus'
+];
+
 // ========== 初始化 ==========
 document.addEventListener('DOMContentLoaded', () => {
     // 优先加载数据集概览（快速）
@@ -23,6 +30,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // 后台加载书本列表（较慢，不阻塞页面）
     loadBooks();
 });
+
+// ========== 模型切换 ==========
+function onRecognizeModelChange() {
+    const model = document.getElementById('recognizeModelSelect')?.value || '';
+    const reasoningWrapper = document.getElementById('reasoningSelectorWrapper');
+    if (reasoningWrapper) {
+        reasoningWrapper.style.display = REASONING_MODELS.includes(model) ? 'flex' : 'none';
+    }
+}
 
 // ========== 返回导航 ==========
 function goBack() {
@@ -777,13 +793,18 @@ async function recognizePage(page) {
     const timeoutId = setTimeout(() => controller.abort(), 300000); // 5分钟超时
     
     try {
+        const model = document.getElementById('recognizeModelSelect')?.value || 'doubao-seed-2-0-pro-260215';
+        const reasoningEffort = document.getElementById('reasoningEffortSelect')?.value || 'medium';
+        
         const res = await fetch('/api/dataset/recognize', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 homework_id: hw.id,
                 pic_path: hw.pic_path,
-                subject_id: selectedBook.subject_id
+                subject_id: selectedBook.subject_id,
+                model: model,
+                reasoning_effort: REASONING_MODELS.includes(model) ? reasoningEffort : null
             }),
             signal: controller.signal
         });
@@ -1778,13 +1799,18 @@ async function startReRecognize() {
     document.getElementById('startReRecognizeBtn').disabled = true;
     
     try {
+        const model = document.getElementById('recognizeModelSelect')?.value || 'doubao-seed-2-0-pro-260215';
+        const reasoningEffort = document.getElementById('reasoningEffortSelect')?.value || 'medium';
+        
         const res = await fetch('/api/dataset/recognize', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 homework_id: selectedReRecognizeImage.id,
                 pic_path: selectedReRecognizeImage.pic_path,
-                subject_id: editingDataset.subject_id || selectedBook?.subject_id || 0
+                subject_id: editingDataset.subject_id || selectedBook?.subject_id || 0,
+                model: model,
+                reasoning_effort: REASONING_MODELS.includes(model) ? reasoningEffort : null
             })
         });
         

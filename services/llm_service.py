@@ -151,19 +151,30 @@ class LLMService:
             return {'error': str(e)}
     
     @staticmethod
-    def call_vision_model(image, prompt, model=None, timeout=120, user_id=None):
-        """调用视觉模型"""
+    def call_vision_model(image, prompt, model=None, timeout=120, user_id=None, reasoning_effort=None):
+        """调用视觉模型，支持思考程度调节"""
         config = ConfigService.load_config(user_id=user_id)
-        api_url = config.get('api_url', 'https://ark.cn-beijing.volces.com/api/v3/chat/completions')
-        api_key = config.get('api_key')
-        
-        print(f"[Vision] user_id={user_id}, model={model}, api_key={'已配置' if api_key else '未配置'}")
-        
-        if not api_key:
-            return {'error': '请先配置 API Key'}
         
         if model is None:
             model = config.get('model', 'doubao-1-5-vision-pro-32k-250115')
+        
+        print(f"[Vision] user_id={user_id}, model={model}, reasoning_effort={reasoning_effort}")
+        
+        # Qwen 模型使用 DashScope API
+        if model.startswith('qwen'):
+            return LLMService._call_qwen_vision(image, prompt, model, timeout, user_id, reasoning_effort, config)
+        
+        # 豆包模型使用火山引擎 API
+        return LLMService._call_doubao_vision(image, prompt, model, timeout, user_id, reasoning_effort, config)
+    
+    @staticmethod
+    def _call_doubao_vision(image, prompt, model, timeout, user_id, reasoning_effort, config):
+        """调用豆包视觉模型"""
+        api_url = config.get('api_url', 'https://ark.cn-beijing.volces.com/api/v3/chat/completions')
+        api_key = config.get('api_key')
+        
+        if not api_key:
+            return {'error': '请先配置豆包 API Key'}
         
         messages = [{
             'role': 'user',
@@ -178,22 +189,71 @@ class LLMService:
             'messages': messages
         }
         
+        # Seed 系列模型支持 reasoning_effort 参数
+        if reasoning_effort and ('seed-2-0' in model or 'seed-1-8' in model):
+            payload['reasoning_effort'] = reasoning_effort
+        
         headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {api_key}'
         }
         
         try:
-            response = requests.post(
-                api_url,
-                json=payload,
-                headers=headers,
-                timeout=timeout
-            )
+            response = requests.post(api_url, json=payload, headers=headers, timeout=timeout)
             result = response.json()
             
             if 'choices' in result:
                 content = result['choices'][0]['message']['content']
+                return {'success': True, 'content': content, 'raw': result}
+            else:
+                error_msg = result.get('error', {}).get('message', '请求失败')
+                return {'error': error_msg}
+        except requests.Timeout:
+            return {'error': '请求超时'}
+        except Exception as e:
+            return {'error': str(e)}
+    
+    @staticmethod
+    def _call_qwen_vision(image, prompt, model, timeout, user_id, reasoning_effort, config):
+        """调用 Qwen 视觉模型（DashScope API）"""
+        api_key = config.get('qwen_api_key')
+        
+        if not api_key:
+            return {'error': '请先配置 Qwen API Key'}
+        
+        api_url = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
+        
+        messages = [{
+            'role': 'user',
+            'content': [
+                {'type': 'image_url', 'image_url': {'url': image}},
+                {'type': 'text', 'text': prompt}
+            ]
+        }]
+        
+        payload = {
+            'model': model,
+            'messages': messages
+        }
+        
+        # qwen3.5-plus 支持 enable_thinking 参数
+        if model == 'qwen3.5-plus' and reasoning_effort:
+            # minimal 表示不思考，其他都开启思考
+            payload['enable_thinking'] = (reasoning_effort != 'minimal')
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {api_key}'
+        }
+        
+        try:
+            response = requests.post(api_url, json=payload, headers=headers, timeout=timeout)
+            result = response.json()
+            
+            if 'choices' in result:
+                content = result['choices'][0]['message']['content']
+                # 移除思考过程标签
+                content = LLMService.remove_think_tags(content)
                 return {'success': True, 'content': content, 'raw': result}
             else:
                 error_msg = result.get('error', {}).get('message', '请求失败')
@@ -538,25 +598,105 @@ class LLMService:
         user_id: str = None
     ) -> List[dict]:
         """
-        同步包装的并行调用方法（用于非异步环境）
+        同步包装的并行调用方法（兼容 gevent 环境）
         """
+        # 直接尝试 asyncio，失败则降级为同步调用
         try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+            import nest_asyncio
+            nest_asyncio.apply()
+        except ImportError:
+            pass
         
-        return loop.run_until_complete(
-            LLMService.parallel_call(
+        try:
+            loop = asyncio.new_event_loop()
+            try:
+                return loop.run_until_complete(
+                    LLMService.parallel_call(
+                        prompts=prompts,
+                        max_concurrent=max_concurrent,
+                        model=model,
+                        temperature=temperature,
+                        timeout=timeout,
+                        max_retries=max_retries,
+                        user_id=user_id
+                    )
+                )
+            finally:
+                loop.close()
+        except Exception as e:
+            # gevent 环境下 asyncio 可能抛各种异常，统一降级为同步串行调用
+            print(f"[LLM] asyncio 不可用，降级为同步调用: {type(e).__name__}: {e}")
+            return LLMService._sync_parallel_call(
                 prompts=prompts,
-                max_concurrent=max_concurrent,
                 model=model,
                 temperature=temperature,
                 timeout=timeout,
                 max_retries=max_retries,
                 user_id=user_id
             )
-        )
+    
+    @staticmethod
+    def _sync_parallel_call(
+        prompts: List[dict],
+        model: str = 'deepseek-v3.2',
+        temperature: float = 0.2,
+        timeout: int = 60,
+        max_retries: int = 3,
+        user_id: str = None
+    ) -> List[dict]:
+        """同步逐个调用 LLM（asyncio 不可用时的降级方案）"""
+        results = []
+        for i, item in enumerate(prompts):
+            prompt = item.get('prompt', '')
+            system_prompt = item.get('system_prompt', '你是一个专业的AI助手。')
+            item_id = item.get('id', str(i))
+            
+            last_error = None
+            for attempt in range(max_retries):
+                try:
+                    result = LLMService.call_deepseek(
+                        prompt=prompt,
+                        system_prompt=system_prompt,
+                        model=model,
+                        timeout=timeout,
+                        user_id=user_id
+                    )
+                    # call_deepseek 返回 {'success': True, 'content': ...} 或 {'error': ...}
+                    if isinstance(result, dict) and result.get('error'):
+                        last_error = result['error']
+                        if attempt < max_retries - 1:
+                            time.sleep(2 ** attempt)
+                            continue
+                        results.append({
+                            'id': item_id,
+                            'success': False,
+                            'error': last_error,
+                            'tokens': 0,
+                            'duration': 0
+                        })
+                    else:
+                        content = result if isinstance(result, str) else result.get('content', '')
+                        results.append({
+                            'id': item_id,
+                            'success': True,
+                            'content': content,
+                            'tokens': 0,
+                            'duration': 0
+                        })
+                    break
+                except Exception as e:
+                    last_error = str(e)
+                    if attempt == max_retries - 1:
+                        results.append({
+                            'id': item_id,
+                            'success': False,
+                            'error': last_error,
+                            'tokens': 0,
+                            'duration': 0
+                        })
+                    else:
+                        time.sleep(2 ** attempt)
+        return results
     
     @staticmethod
     def log_llm_call(

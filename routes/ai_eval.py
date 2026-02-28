@@ -170,7 +170,14 @@ def rule_precheck():
         if not base_item or not ai_item:
             return jsonify({'error': '缺少 base_item 或 ai_item'}), 400
         
-        certainty, result = SemanticEvalService.rule_based_precheck(base_item, ai_item)
+        subject_id = data.get('subject_id')
+        if subject_id is not None:
+            try:
+                subject_id = int(subject_id)
+            except (ValueError, TypeError):
+                subject_id = None
+        
+        certainty, result = SemanticEvalService.rule_based_precheck(base_item, ai_item, subject_id=subject_id)
         
         return jsonify({
             'certainty': certainty,

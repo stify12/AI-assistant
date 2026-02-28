@@ -60,7 +60,8 @@
         "performance_start_trace",
         "performance_analyze_insight",
         "performance_stop_trace",
-        "hover"
+        "hover",
+        "upload_file"
       ]
     }
   }

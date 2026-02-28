@@ -174,6 +174,14 @@ def normalize_math_markdown(text):
     
     text = str(text).strip()
     
+    # 0. 修复 JSON 解析导致的控制字符问题
+    # 数据库 JSON 中 \frac 等 LaTeX 命令的反斜杠被 json.loads 解释为转义序列
+    text = re.sub(r'\x0c(?=[a-zA-Z])', r'\\f', text)  # 换页符+字母 → \f
+    text = re.sub(r'\x08(?=[a-zA-Z])', r'\\b', text)  # 退格符+字母 → \b
+    text = re.sub(r'\t(?=[a-zA-Z])', r'\\t', text)    # 制表符+字母 → \t
+    text = re.sub(r'\n(?=[a-zA-Z])', r'\\n', text)    # 换行符+字母 → \n
+    text = re.sub(r'\r(?=[a-zA-Z])', r'\\r', text)    # 回车符+字母 → \r
+    
     # 1. 双反斜杠转单反斜杠（处理 JSON 转义）
     text = text.replace('\\\\', '\\')
     
@@ -341,7 +349,12 @@ def normalize_math_answer(text):
     # 处理残留的 cases, array, matrix 等环境名（可能紧挨着其他字符）
     text = re.sub(r'(cases|array|matrix|pmatrix|bmatrix|vmatrix|align|aligned|equation|gather)', '', text)
     
-    # 4. 统一分隔符处理（数学填空题中空格、逗号、分号、顿号都是答案分隔符，语义等价）
+    # 4. 统一几何符号（平行符号的多种写法统一为 ∥）
+    # ∥ (U+2225), ‖ (U+2016), // (两个斜杠) 都表示平行
+    text = text.replace('‖', '∥')  # 双竖线 → 平行符号
+    text = re.sub(r'(?<![:/])//(?![:/])', '∥', text)  # 双斜杠 → 平行符号（排除 URL 中的 :// 和路径中的 //）
+    
+    # 5. 统一分隔符处理（数学填空题中空格、逗号、分号、顿号都是答案分隔符，语义等价）
     # 先将所有分隔符统一为空格，后续 normalize_answer_science 会移除空格
     text = text.replace(';', ' ').replace('；', ' ')  # 分号
     text = text.replace(',', ' ').replace('，', ' ')  # 逗号

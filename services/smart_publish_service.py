@@ -24,6 +24,38 @@ class SmartPublishService:
     """智能发布作业服务"""
     
     @classmethod
+    def _normalize_page_region(cls, pages: str) -> str:
+        """
+        将页码参数标准化为逗号分隔格式（Java后台APP要求）
+        
+        支持输入格式：
+          "1"       → "1"
+          "2,4"     → "2,4"
+          "2-5"     → "2,3,4,5"
+          "2,4-6,8" → "2,4,5,6,8"（混合格式）
+        """
+        result = []
+        for part in pages.split(','):
+            part = part.strip()
+            if not part:
+                continue
+            if '-' in part:
+                # 范围格式：2-5 → 2,3,4,5
+                try:
+                    start, end = part.split('-', 1)
+                    start, end = int(start.strip()), int(end.strip())
+                    result.extend(range(start, end + 1))
+                except (ValueError, TypeError):
+                    # 解析失败，原样保留
+                    result.append(part)
+            else:
+                try:
+                    result.append(int(part))
+                except ValueError:
+                    result.append(part)
+        return ','.join(str(p) for p in result)
+    
+    @classmethod
     def _ensure_config_dir(cls):
         """确保配置目录存在"""
         config_dir = os.path.dirname(CONFIG_FILE)
@@ -275,17 +307,21 @@ class SmartPublishService:
             
             token = login_result.get('token')
             
-            # 6. 生成作业名称
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            homework_name = f"自动测试P{pages}_{timestamp}"
+            # 6. 标准化页码格式（"4-5" → "4,5"，Java后台要求逗号分隔）
+            normalized_pages = cls._normalize_page_region(pages)
+            logger.info(f"[SmartPublish] 页码标准化: {pages} → {normalized_pages}")
             
-            # 7. 调用发布 API
+            # 7. 生成作业名称
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            homework_name = f"自动测试P{normalized_pages}_{timestamp}"
+            
+            # 8. 调用发布 API
             publish_result = HomeworkPublishService.publish_homework(
                 token=token,
                 book_id=book_id,
                 class_id=class_id,
                 subject_id=teacher['subject_id'],
-                page_region=pages,
+                page_region=normalized_pages,
                 content=homework_name
             )
             

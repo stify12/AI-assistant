@@ -81,13 +81,6 @@ MATH_TEMPLATES = {
         "score_ratio": 1.0,
         "prompt_hint": "有涂改痕迹但最终答案正确：划掉重写、涂黑修改"
     },
-    "math_partial": {
-        "name": "部分正确",
-        "tags": ["部分正确"],
-        "correct": "partial",
-        "score_ratio": 0.5,
-        "prompt_hint": "多步骤解答题，部分步骤正确，部分步骤错误"
-    },
     "math_blank": {
         "name": "空白未答",
         "tags": ["空白"],
@@ -150,7 +143,7 @@ TEMPLATE_COMBINATIONS = {
     },
     "error_focus": {
         "name": "错误判断专项",
-        "templates": ["math_wrong_common", "math_wrong_careless", "math_partial", "math_similar_looking", "math_blank"],
+        "templates": ["math_wrong_common", "math_wrong_careless", "math_similar_looking", "math_blank"],
         "description": "专项测试错误答案的判断能力（全部错误场景）"
     },
     "concept_error": {
@@ -470,7 +463,7 @@ class TestcaseGeneratorService:
         template_ratios: Dict[str, int] = None,
         user_id: str = None
     ) -> Dict:
-        """生成基准效果"""
+        """生成基准效果（单页，每题并行调用 LLM）"""
         if not questions:
             return {'success': False, 'error': '题目列表为空'}
         
@@ -485,44 +478,181 @@ class TestcaseGeneratorService:
                 questions, selected_templates, template_ratios
             )
             
-            prompt = TestcaseGeneratorService._build_generation_prompt(questions, assignments)
+            # 每题独立生成 prompt，根据题型选择不同 prompt 构建方法
+            prompts = []
+            system_prompt = '你是一个专业的 AI 批改系统测试用例设计师，擅长设计各种边界场景的测试用例。请严格按照 JSON 格式输出。'
+            for i, a in enumerate(assignments):
+                bvalue = str(a['question'].get('bvalue', '4'))
+                is_choice = bvalue in ('1', '2', '3')  # 单选/多选/判断
+                if is_choice:
+                    single_prompt = TestcaseGeneratorService._build_choice_question_prompt(a)
+                else:
+                    single_prompt = TestcaseGeneratorService._build_single_question_prompt(a)
+                prompts.append({
+                    'id': str(i),
+                    'prompt': single_prompt,
+                    'system_prompt': system_prompt
+                })
             
-            result = LLMService.call_deepseek(
-                prompt=prompt,
-                system_prompt='你是一个专业的 AI 批改系统测试用例设计师，擅长设计各种边界场景的测试用例。请严格按照 JSON 格式输出。',
+            results = LLMService.run_parallel_call(
+                prompts=prompts,
+                max_concurrent=10,
                 model='deepseek-chat',
                 timeout=120,
+                max_retries=3,
                 user_id=user_id
             )
             
-            if result.get('error'):
-                return {'success': False, 'error': result['error']}
-            
-            content = result.get('content', '')
-            base_effects = LLMService.extract_json_array(content)
+            # 解析并行结果
+            base_effects = []
+            errors = []
+            for i, result in enumerate(results):
+                if result.get('success') is False or result.get('error'):
+                    errors.append(f"题{i+1}: {result.get('error', '未知错误')}")
+                    continue
+                content = result.get('content', '')
+                parsed = LLMService.extract_json_array(content)
+                if parsed:
+                    for effect in parsed:
+                        # 补全缺失字段
+                        assignment = assignments[i] if i < len(assignments) else None
+                        if not effect.get('tags') and assignment:
+                            effect['tags'] = assignment.get('tags', [])
+                        if not effect.get('fillGuide'):
+                            effect['fillGuide'] = ''
+                        # 附加原始信息，供单题重新生成使用
+                        if assignment:
+                            effect['_question'] = assignment['question']
+                            effect['_templateId'] = assignment['template_id']
+                        base_effects.append(effect)
+                else:
+                    # 尝试解析为单个 JSON 对象
+                    try:
+                        obj = LLMService.parse_json_response(content)
+                        if obj and isinstance(obj, dict):
+                            assignment = assignments[i] if i < len(assignments) else None
+                            if not obj.get('tags') and assignment:
+                                obj['tags'] = assignment.get('tags', [])
+                            if not obj.get('fillGuide'):
+                                obj['fillGuide'] = ''
+                            if assignment:
+                                obj['_question'] = assignment['question']
+                                obj['_templateId'] = assignment['template_id']
+                            base_effects.append(obj)
+                        else:
+                            errors.append(f"题{i+1}: 无法解析生成结果")
+                    except Exception:
+                        errors.append(f"题{i+1}: 无法解析生成结果")
             
             if not base_effects:
-                return {'success': False, 'error': '无法解析生成结果', 'raw_content': content[:500]}
-            
-            # 补全 AI 返回数据中缺失的 tags 和 fillGuide 字段
-            # 从 assignments 中获取预设的 tags
-            assignments_map = {a['question']['index']: a for a in assignments}
-            for effect in base_effects:
-                idx = effect.get('index', '')
-                assignment = assignments_map.get(idx)
-                # 如果 AI 没有返回 tags，使用 assignment 中的预设 tags
-                if not effect.get('tags') and assignment:
-                    effect['tags'] = assignment.get('tags', [])
-                # 确保 fillGuide 字段存在
-                if not effect.get('fillGuide'):
-                    effect['fillGuide'] = ''
+                return {'success': False, 'error': '所有题目生成失败: ' + '; '.join(errors[:5])}
             
             summary = TestcaseGeneratorService._summarize_results(base_effects)
+            if errors:
+                summary['errors'] = errors
             
             return {'success': True, 'data': {'base_effects': base_effects, 'summary': summary}}
             
         except Exception as e:
             print(f"[TestcaseGenerator] 生成失败: {e}")
+            import traceback
+            traceback.print_exc()
+            return {'success': False, 'error': str(e)}
+    
+    @staticmethod
+    def generate_batch_pages(
+        book_id: str,
+        page_nums: List[int],
+        selected_templates: List[str],
+        template_ratios: Dict[str, int] = None,
+        user_id: str = None
+    ) -> Dict:
+        """多页逐页生成基准效果（每页内部题目并行）"""
+        if not page_nums:
+            return {'success': False, 'error': '页码列表为空'}
+        if not selected_templates:
+            return {'success': False, 'error': '未选择测试场景'}
+        
+        try:
+            all_effects = []
+            page_results = {}
+            errors = []
+            
+            # 逐页串行生成（每页内部 LLM 调用已并行，避免 gevent 事件循环冲突）
+            for page_num in page_nums:
+                try:
+                    # 获取题目
+                    q_result = TestcaseGeneratorService.get_questions_from_datavalue(book_id, page_num)
+                    if not q_result.get('success'):
+                        page_results[page_num] = {'page_num': page_num, 'success': False, 'error': q_result.get('error', '获取题目失败')}
+                        errors.append(f"P{page_num}: {q_result.get('error', '获取题目失败')}")
+                        continue
+                    
+                    questions = q_result['data']['questions']
+                    if not questions:
+                        page_results[page_num] = {'page_num': page_num, 'success': False, 'error': f'页码 {page_num} 无题目'}
+                        errors.append(f"P{page_num}: 无题目")
+                        continue
+                    
+                    # 生成基准效果（内部每题并行）
+                    gen_result = TestcaseGeneratorService.generate_base_effects(
+                        questions=questions,
+                        selected_templates=selected_templates,
+                        template_ratios=template_ratios,
+                        user_id=user_id
+                    )
+                    
+                    if not gen_result.get('success'):
+                        page_results[page_num] = {'page_num': page_num, 'success': False, 'error': gen_result.get('error', '生成失败')}
+                        errors.append(f"P{page_num}: {gen_result.get('error', '生成失败')}")
+                        continue
+                    
+                    effects = gen_result['data']['base_effects']
+                    for e in effects:
+                        e['pageNum'] = page_num
+                    
+                    all_effects.extend(effects)
+                    page_results[page_num] = {
+                        'page_num': page_num,
+                        'success': True,
+                        'effects': effects,
+                        'question_count': len(questions),
+                        'effect_count': len(effects)
+                    }
+                except Exception as e:
+                    errors.append(f"P{page_num}: {str(e)}")
+                    page_results[page_num] = {'page_num': page_num, 'success': False, 'error': str(e)}
+            
+            if not all_effects:
+                return {'success': False, 'error': '所有页面生成失败: ' + '; '.join(errors[:5])}
+            
+            summary = TestcaseGeneratorService._summarize_results(all_effects)
+            summary['page_count'] = len(page_nums)
+            summary['success_pages'] = sum(1 for r in page_results.values() if r.get('success'))
+            summary['failed_pages'] = sum(1 for r in page_results.values() if not r.get('success'))
+            if errors:
+                summary['errors'] = errors
+            
+            page_detail = {}
+            for p in sorted(page_results.keys()):
+                r = page_results[p]
+                page_detail[p] = {
+                    'success': r.get('success', False),
+                    'effect_count': r.get('effect_count', 0),
+                    'error': r.get('error')
+                }
+            
+            return {
+                'success': True,
+                'data': {
+                    'base_effects': all_effects,
+                    'summary': summary,
+                    'page_detail': page_detail
+                }
+            }
+            
+        except Exception as e:
+            print(f"[TestcaseGenerator] 批量生成失败: {e}")
             import traceback
             traceback.print_exc()
             return {'success': False, 'error': str(e)}
@@ -641,6 +771,193 @@ class TestcaseGeneratorService:
         return prompt
     
     @staticmethod
+    def _build_choice_question_prompt(assignment: Dict) -> str:
+        """为选择题构建 LLM 生成提示词（bvalue 1=单选 2=多选 3=判断）"""
+        q = assignment['question']
+        bvalue = str(q.get('bvalue', '1'))
+        
+        # 题型描述
+        type_map = {'1': '单选题', '2': '多选题', '3': '判断题'}
+        type_name = type_map.get(bvalue, '选择题')
+        
+        # 选项范围
+        if bvalue == '3':
+            options_desc = '对/错（或 √/×、A/B）'
+        elif bvalue == '2':
+            options_desc = 'A、B、C、D 中的多个（如 AB、ACD）'
+        else:
+            options_desc = 'A、B、C、D 中的一个'
+        
+        info = {
+            'index': q['index'],
+            'tempIndex': q['tempIndex'],
+            'standardAnswer': q['answer'],
+            'maxScore': q.get('maxScore'),
+            'questionType': type_name,
+            'content': q['content'][:300] if q.get('content') else '',
+            'testScenario': assignment['template_name'],
+            'scenarioTags': assignment['tags'],
+            'expectedResult': assignment['correct'],
+            'scenarioHint': assignment['prompt_hint']
+        }
+        info_json = json.dumps(info, ensure_ascii=False, indent=2)
+        
+        return f"""这是一道{type_name}，请生成测试用例。
+
+## 题目信息
+{info_json}
+
+## 选择题规则
+这是{type_name}，答案只能是 {options_desc}。
+
+### 生成 userAnswer 的规则：
+- expectedResult 为 "yes"（预期正确）：userAnswer 直接写标准答案
+- expectedResult 为 "no"（预期错误）：userAnswer 写一个错误选项
+  - 单选题：从其他选项中选一个（如标准答案是 B，写 A 或 C 或 D）
+  - 多选题：少选、多选或选错（如标准答案是 AB，写 A 或 ABC 或 CD）
+  - 判断题：写相反的答案
+
+### fillGuide 规则：
+只描述怎么写，不解释原因。例如：
+- "写 A"、"写 CD"、"写 ×"
+- "把 B 写成 D"
+- "少选了 C，只写 AB"
+
+## 输出格式
+返回 JSON 数组（只含一个元素），包含：
+- index: 题号（复制原值）
+- tempIndex: 序号（复制原值）
+- answer: 标准答案（复制 standardAnswer）
+- userAnswer: 学生填写的选项
+- correct: 预期结果 yes/no（复制 expectedResult）
+- maxScore: 满分（复制原值）
+- score: 得分（yes=满分, no=0）
+- tags: 标签数组（复制 scenarioTags）
+- fillGuide: 怎么写的描述
+
+请直接输出 JSON 数组，不要有其他内容。"""
+
+    @staticmethod
+    def _build_single_question_prompt(assignment: Dict) -> str:
+        """为非选择题（填空/主观）构建 LLM 生成提示词"""
+        q = assignment['question']
+        info = {
+            'index': q['index'],
+            'tempIndex': q['tempIndex'],
+            'standardAnswer': q['answer'],
+            'maxScore': q.get('maxScore'),
+            'bvalue': q['bvalue'],
+            'content': q['content'][:500] if q.get('content') else '',
+            'testScenario': assignment['template_name'],
+            'scenarioTags': assignment['tags'],
+            'expectedResult': assignment['correct'],
+            'scenarioHint': assignment['prompt_hint']
+        }
+        info_json = json.dumps(info, ensure_ascii=False, indent=2)
+        
+        return f"""你是一位有10年教学经验的中学老师，非常了解学生在考试中的真实作答习惯和常见错误模式。
+请为这道填空/主观题模拟一个真实学生的作答。
+
+## 题目信息
+{info_json}
+
+## 核心要求：模拟真实学生错误
+生成的 userAnswer 必须像真实学生写的，不能是简单地把正确答案改一个数字。
+
+### 真实错误类型参考（根据场景选择合适的）：
+- **计算错误**：进位忘了、退位错了、乘法口诀记混（如 7×8=54）、小数点位置算错
+- **概念混淆**：把面积公式记成周长公式、混淆"大于"和"不小于"、把并集当交集
+- **审题失误**：求的是面积写成周长、单位没换算、漏看"不等于"条件
+- **步骤遗漏**：多步计算只做了前几步、化简没化到最简、忘记检验
+- **符号/格式错误**：负号漏写、括号不配对、分数线位置不对
+- **粗心抄错**：从草稿纸抄到答题卡时抄错数字、看错行
+- **知识盲区**：公式记错一个系数、特殊值记混（如 sin30°=1/2 记成 √2/2）
+
+### 场景对应规则：
+- expectedResult 为 "yes"（预期正确）：userAnswer 和标准答案相同或等价
+- expectedResult 为 "no"（预期错误）：userAnswer 必须是错误的，但要像真实学生会犯的错
+
+## 生成规则
+1. **answer**：直接复制 standardAnswer
+2. **userAnswer**：根据上述真实错误模式生成，不要简单改数字
+3. **correct**：使用 expectedResult 的值
+4. **tags**：使用 scenarioTags 的值
+5. **fillGuide**：只描述怎么写，不解释原因。例如："把 120 写成 126"、"写成 2πr"、"漏写负号，写成 3"、"小数点左移一位，写成 3.75"
+6. **score**：根据 correct 和 maxScore 计算（yes=满分, no=0）
+
+## 输出格式
+返回 JSON 数组（只含一个元素），包含：index, tempIndex, answer, userAnswer, correct, maxScore, score, tags, fillGuide
+
+请直接输出 JSON 数组，不要有其他内容。"""
+    
+    @staticmethod
+    def regenerate_single_effect(question: Dict, template_id: str, user_id: str = None) -> Dict:
+        """单题重新生成一条基准效果"""
+        if not question:
+            return {'success': False, 'error': '题目信息为空'}
+        
+        template_info = MATH_TEMPLATES.get(template_id)
+        if not template_info:
+            return {'success': False, 'error': f'模板 {template_id} 不存在'}
+        
+        try:
+            assignment = {
+                'question': question,
+                'template_id': template_id,
+                'template_name': template_info.get('name', template_id),
+                'tags': template_info.get('tags', []),
+                'correct': template_info.get('correct', 'yes'),
+                'score_ratio': template_info.get('score_ratio', 1.0),
+                'prompt_hint': template_info.get('prompt_hint', '')
+            }
+            
+            bvalue = str(question.get('bvalue', '4'))
+            is_choice = bvalue in ('1', '2', '3')
+            if is_choice:
+                prompt = TestcaseGeneratorService._build_choice_question_prompt(assignment)
+            else:
+                prompt = TestcaseGeneratorService._build_single_question_prompt(assignment)
+            
+            system_prompt = '你是一个专业的 AI 批改系统测试用例设计师，擅长设计各种边界场景的测试用例。请严格按照 JSON 格式输出。'
+            
+            result = LLMService.call_deepseek(prompt, system_prompt=system_prompt, model='deepseek-chat', user_id=user_id)
+            if not result:
+                return {'success': False, 'error': 'LLM 调用失败'}
+            
+            # 检查 LLM 返回错误
+            if isinstance(result, dict) and result.get('error'):
+                return {'success': False, 'error': f"LLM 调用失败: {result['error']}"}
+            
+            content = result if isinstance(result, str) else result.get('content', '')
+            if not content:
+                print(f"[TestcaseGenerator] LLM 返回内容为空, result={result}")
+                return {'success': False, 'error': 'LLM 返回内容为空'}
+            parsed = LLMService.extract_json_array(content)
+            
+            if parsed and len(parsed) > 0:
+                effect = parsed[0]
+            else:
+                obj = LLMService.parse_json_response(content)
+                if obj and isinstance(obj, dict):
+                    effect = obj
+                else:
+                    return {'success': False, 'error': '无法解析生成结果'}
+            
+            # 补全字段
+            if not effect.get('tags'):
+                effect['tags'] = assignment['tags']
+            if not effect.get('fillGuide'):
+                effect['fillGuide'] = ''
+            effect['_question'] = question
+            effect['_templateId'] = template_id
+            
+            return {'success': True, 'data': effect}
+            
+        except Exception as e:
+            print(f"[TestcaseGenerator] 单题重新生成失败: {e}")
+            return {'success': False, 'error': str(e)}
+    
+    @staticmethod
     def _summarize_results(base_effects: List[Dict]) -> Dict:
         """统计生成结果"""
         summary = {
@@ -667,29 +984,46 @@ class TestcaseGeneratorService:
         book_id: str,
         book_name: str,
         subject_id: int,
-        page_num: int,
-        base_effects: List[Dict],
+        page_num=None,
+        base_effects: List[Dict] = None,
         dataset_name: str = None,
         description: str = None,
-        save_score: bool = False
+        save_score: bool = False,
+        pages: List[int] = None
     ) -> Dict:
-        """保存生成的基准效果为数据集
+        """保存生成的基准效果为数据集（支持多页）
         
         Args:
+            page_num: 单页页码（向后兼容）
+            pages: 多页页码列表（优先使用）
             save_score: 是否保存评分字段(score/maxScore)，默认不保存
         """
         import uuid
+        
+        if base_effects is None:
+            base_effects = []
+        
+        # 兼容单页和多页
+        if pages:
+            page_list = pages
+        elif page_num is not None:
+            page_list = [page_num]
+        else:
+            return {'success': False, 'error': '缺少页码信息'}
         
         try:
             dataset_id = str(uuid.uuid4())[:8]
             
             if not dataset_name:
-                dataset_name = f"{book_name}P{page_num}-AI生成测试用例"
+                if len(page_list) == 1:
+                    dataset_name = f"{book_name}P{page_list[0]}-AI生成测试用例"
+                else:
+                    dataset_name = f"{book_name}P{'_'.join(str(p) for p in sorted(page_list))}-AI生成测试用例"
             
             AppDatabaseService.create_dataset(
                 dataset_id=dataset_id,
                 book_id=book_id,
-                pages=[page_num],
+                pages=sorted(page_list),
                 book_name=book_name,
                 subject_id=subject_id,
                 question_count=len(base_effects),
@@ -697,16 +1031,10 @@ class TestcaseGeneratorService:
                 description=description
             )
             
-            # 调试日志：打印第一条数据的完整结构
-            if base_effects:
-                print(f"[TestcaseGenerator] 第一条数据完整结构: {base_effects[0]}")
-                print(f"[TestcaseGenerator] 第一条数据的keys: {list(base_effects[0].keys())}")
-            
             for effect in base_effects:
-                # 调试日志：检查 tags 和 fillGuide 是否存在
-                print(f"[TestcaseGenerator] 保存 effect: index={effect.get('index')}, tags={effect.get('tags')}, fillGuide={effect.get('fillGuide')}")
+                # 每条 effect 可能带有 pageNum 字段（多页生成时）
+                effect_page = effect.get('pageNum', page_list[0] if page_list else 0)
                 
-                # 根据 save_score 决定是否保存分数字段
                 max_score_val = effect.get('maxScore') if save_score else None
                 score_val = effect.get('score') if save_score else None
                 
@@ -714,14 +1042,12 @@ class TestcaseGeneratorService:
                     'questionType': effect.get('questionType', 'objective'),
                     'bvalue': effect.get('bvalue', '4')
                 }
-                # 仅在保存评分时添加分数到 extra_data
                 if save_score:
                     extra_data['maxScore'] = effect.get('maxScore')
                     extra_data['score'] = effect.get('score')
                 
                 tags = effect.get('tags', [])
                 tags_json = json.dumps(tags, ensure_ascii=False) if tags else None
-                print(f"[TestcaseGenerator] tags_json={tags_json}")
                 
                 sql = """
                     INSERT INTO baseline_effects 
@@ -731,7 +1057,7 @@ class TestcaseGeneratorService:
                 """
                 AppDatabaseService.execute_insert(sql, (
                     dataset_id,
-                    page_num,
+                    effect_page,
                     effect.get('index', ''),
                     effect.get('tempIndex', 0),
                     effect.get('questionType', 'objective'),
@@ -750,7 +1076,8 @@ class TestcaseGeneratorService:
                 'data': {
                     'dataset_id': dataset_id,
                     'name': dataset_name,
-                    'question_count': len(base_effects)
+                    'question_count': len(base_effects),
+                    'page_count': len(page_list)
                 }
             }
             

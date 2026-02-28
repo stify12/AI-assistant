@@ -90,6 +90,17 @@
                             <span class="preview-label">作业名称</span>
                             <span class="preview-value" id="homeworkNamePreview">-</span>
                         </div>
+                        <!-- 自动提交开关 -->
+                        <div class="auto-loop-row">
+                            <div class="auto-loop-left">
+                                <span class="auto-loop-label">自动提交</span>
+                                <span class="auto-loop-hint">发布后自动触发提交作业流程</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="autoSubmitToggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
                         <div class="workflow-btn-group">
                             <button class="btn-workflow" id="smartPublishBtn" onclick="smartPublish()" disabled>一键发布作业</button>
                         </div>

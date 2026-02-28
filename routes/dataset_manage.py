@@ -388,6 +388,8 @@ def dataset_recognize():
         homework_id = data.get('homework_id')
         pic_path = data.get('pic_path', '')
         subject_id = data.get('subject_id', 0)
+        model = data.get('model', 'doubao-seed-2-0-pro-260215')
+        reasoning_effort = data.get('reasoning_effort')  # 可为 None
         
         if not homework_id and not pic_path:
             return jsonify({'success': False, 'error': '缺少作业ID或图片路径'}), 400
@@ -450,7 +452,7 @@ def dataset_recognize():
             prompt = prompts_config.get(prompt_key, prompts_config.get('recognize', '请识别图片中作业的每道题答案。'))
         
         # 调用视觉模型，设置较长的超时时间以支持多题目识别
-        result = LLMService.call_vision_model(pic_url, prompt, 'doubao-seed-1-8-251228', timeout=240, user_id=user_id)
+        result = LLMService.call_vision_model(pic_url, prompt, model, timeout=240, user_id=user_id, reasoning_effort=reasoning_effort)
         
         if result.get('error'):
             return jsonify({'success': False, 'error': result['error']})

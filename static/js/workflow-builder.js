@@ -356,6 +356,7 @@ function createStepEditorModal() {
                         <option value="stop_app">停止应用</option>
                         <option value="screenshot">截图</option>
                         <option value="rfid">刷RFID卡</option>
+                        <option value="loop">循环</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -444,6 +445,23 @@ function updateStepParamsUI(step) {
                 </div>
             `;
             break;
+        case 'loop': {
+            const subSteps = step?.steps || [];
+            html = `
+                <div class="form-group">
+                    <label>循环目标</label>
+                    <input type="text" id="stepLoopTarget" value="${step?.target || 'students'}" readonly style="opacity:0.6">
+                </div>
+                <div class="form-group">
+                    <label>子步骤 (${subSteps.length} 个，不可在此编辑)</label>
+                    <div style="background:#f5f5f7;border-radius:6px;padding:12px;font-size:13px;color:#6e6e73;">
+                        ${subSteps.map((s, i) => `${i+1}. ${s.desc || s.action} (等待${s.wait || 0}s)`).join('<br>')}
+                        ${subSteps.length === 0 ? '<span style="color:#86868b">无子步骤</span>' : ''}
+                    </div>
+                </div>
+            `;
+            break;
+        }
     }
     container.innerHTML = html;
 }
@@ -505,6 +523,15 @@ async function saveStepEdit() {
         case 'rfid':
             step.target = document.getElementById('stepTarget').value;
             break;
+        case 'loop': {
+            // loop 步骤：保留原有的 steps 子数组和 target
+            const originalLoop = workflow.steps[stepIndex];
+            if (originalLoop) {
+                step.target = originalLoop.target || 'students';
+                step.steps = originalLoop.steps || [];
+            }
+            break;
+        }
     }
     
     // 新增或更新
@@ -667,22 +694,29 @@ async function runSubmitWorkflow() {
                     for (const subStep of step.steps) {
                         if (workflowState.submitStopped) break;
                         
+                        // 解析等待时间：支持 use_param 引用参数，回退到 wait 数值
+                        const resolveWait = (s) => {
+                            if (s.use_param === 'photo_interval') return photoInterval;
+                            const w = parseFloat(s.wait);
+                            return isNaN(w) ? 1 : w;
+                        };
+                        
                         if (subStep.action === 'rfid' && subStep.target === 'current') {
                             addWorkflowLog('info', `刷学生卡: ${student.name} (${student.rfid_no})`);
                             const success = await sendRfidCard(student.rfid_no);
                             if (!success) {
                                 addWorkflowLog('error', `刷卡失败: ${student.name}`);
                             }
-                            if (subStep.wait) await interruptibleSleep(subStep.wait * 1000);
+                            // 刷卡后必须等待，让 APP 处理 RFID 输入
+                            await interruptibleSleep(resolveWait(subStep) * 1000);
                         } else if (subStep.action === 'tap') {
                             addWorkflowLog('info', `${subStep.desc || '点击'}`);
                             await executeAtomStep(subStep);
-                            // 使用参数中的拍照间隔
-                            const waitTime = subStep.text === '${photo_interval}' ? photoInterval : (subStep.wait || 1);
-                            await interruptibleSleep(waitTime * 1000);
+                            await interruptibleSleep(resolveWait(subStep) * 1000);
                         } else {
                             await executeAtomStep(subStep);
-                            if (subStep.wait) await interruptibleSleep(subStep.wait * 1000);
+                            const w = resolveWait(subStep);
+                            if (w > 0) await interruptibleSleep(w * 1000);
                         }
                     }
                 }

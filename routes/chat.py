@@ -217,8 +217,8 @@ def analyze():
         'stream': stream
     }
     
-    # Seed 1.8 模型支持 reasoning_effort 参数
-    if 'seed-1-8' in model:
+    # Seed 系列模型支持 reasoning_effort 参数
+    if 'seed-1-8' in model or 'seed-2-0' in model or 'seed-1-6-251015' in model or 'seed-1-6-thinking' in model:
         payload['reasoning_effort'] = reasoning_effort
     
     if stream:

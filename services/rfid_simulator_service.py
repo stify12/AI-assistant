@@ -7,7 +7,6 @@ import json
 import os
 import time
 import logging
-import fcntl
 from typing import Dict, Optional, List, Any
 from datetime import datetime
 from dataclasses import dataclass
@@ -235,7 +234,7 @@ class RfidSimulatorService:
         return "; ".join(events)
     
     def build_rfid_commands(self, rfid_code: str, device_path: str, send_enter: bool = True) -> List[str]:
-        """构建完整的 RFID 发送命令序列"""
+        """构建完整的 RFID 发送命令序列（逐字符，兼容旧逻辑）"""
         commands = []
         for char in rfid_code:
             cmd = self.build_char_command(char, device_path)
@@ -246,6 +245,26 @@ class RfidSimulatorService:
             if enter_cmd:
                 commands.append(enter_cmd)
         return commands
+    
+    def build_rfid_batch_command(self, rfid_code: str, device_path: str, send_enter: bool = True) -> Optional[str]:
+        """构建批量 RFID 命令（所有 sendevent 合并为一条 shell 命令）"""
+        all_events = []
+        for char in rfid_code:
+            if char not in self.RFID_EVENT_MAP:
+                logger.warning(f"[RfidSimulator] 跳过不支持的字符: {char}")
+                continue
+            for event in self.RFID_EVENT_MAP[char]:
+                type_code, code, value = event
+                all_events.append(f"sendevent {device_path} {type_code} {code} {value}")
+        
+        if send_enter:
+            for event in self.RFID_EVENT_MAP['enter']:
+                type_code, code, value = event
+                all_events.append(f"sendevent {device_path} {type_code} {code} {value}")
+        
+        if not all_events:
+            return None
+        return "; ".join(all_events)
     
     # ==================== 日志管理 ====================
     
@@ -273,6 +292,33 @@ class RfidSimulatorService:
         """清空日志"""
         state = _read_state()
         state['logs'] = []
+        _write_state(state)
+    
+    # ==================== 工作流完成状态（供自动循环检测） ====================
+    
+    def set_workflow_complete(self, success: bool):
+        """记录工作流执行完成状态"""
+        state = _read_state()
+        state['workflow_complete'] = {
+            'completed': True,
+            'success': success,
+            'timestamp': datetime.now().isoformat()
+        }
+        _write_state(state)
+    
+    def get_workflow_complete(self) -> dict:
+        """获取并消费工作流完成状态（读后清除）"""
+        state = _read_state()
+        result = state.get('workflow_complete', {'completed': False})
+        if result.get('completed'):
+            state['workflow_complete'] = {'completed': False}
+            _write_state(state)
+        return result
+    
+    def clear_workflow_complete(self):
+        """清除工作流完成状态"""
+        state = _read_state()
+        state['workflow_complete'] = {'completed': False}
         _write_state(state)
     
     # ==================== 任务管理 ====================

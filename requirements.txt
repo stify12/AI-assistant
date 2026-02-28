@@ -11,3 +11,7 @@ langchain
 langchain-core
 apscheduler
 aiohttp
+nest_asyncio
+opencv-python-headless
+numpy
+onnxruntime

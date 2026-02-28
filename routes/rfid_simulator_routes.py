@@ -604,7 +604,7 @@ def run_workflow(workflow_id):
         if not ws:
             return jsonify({'success': False, 'error': '没有可用的 ADB 客户端连接'})
         
-        # 发送流程到客户端执行
+        # 发送流程到客户端执行（附带步骤配置，统一使用配置文件的等待时间和坐标）
         ws.send(json.dumps({
             'type': 'run_workflow',
             'workflow_id': workflow_id,
@@ -612,6 +612,7 @@ def run_workflow(workflow_id):
             'representative': representative,
             'photo_interval': params.get('photo_interval', 2),
             'enable_double_page': params.get('enable_double_page', True),
+            'steps': workflow.get('steps', []),
             'timestamp': datetime.now().isoformat()
         }))
         
@@ -754,8 +755,11 @@ def init_websocket(sock: Sock, app):
                             rfid_simulator_service._add_log('error', f'步骤失败: {step_name} - {error}')
                     
                     elif msg_type == 'workflow_complete':
-                        # 流程执行完成
-                        rfid_simulator_service._add_log('success', '流程执行完成')
+                        # 流程执行完成，记录状态供自动循环检测
+                        wf_success = data.get('success', True)
+                        rfid_simulator_service._add_log('success' if wf_success else 'error', 
+                            '流程执行完成' if wf_success else f"流程执行失败: {data.get('error', '')}")
+                        rfid_simulator_service.set_workflow_complete(wf_success)
                     
                 except json.JSONDecodeError:
                     logger.warning(f"[RfidSimulator] 无效的 JSON 消息: {message}")

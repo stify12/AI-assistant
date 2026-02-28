@@ -1288,6 +1288,8 @@ async function smartPublish() {
         return;
     }
     
+    const autoSubmit = document.getElementById('autoSubmitToggle')?.checked ?? true;
+    
     const btn = document.getElementById('smartPublishBtn');
     const originalText = btn.textContent;
     btn.textContent = '发布中...';
@@ -1300,13 +1302,16 @@ async function smartPublish() {
                 book_id: bookId,
                 teacher_id: smartPublishState.selectedTeacher.id,
                 class_id: smartPublishState.selectedTeacher.class_id,
-                pages: pageRegion
+                pages: pageRegion,
+                auto_submit: autoSubmit
             })
         });
         
         // 根据是否触发了提交流程显示不同提示
         let msg = `发布成功！\n作业名称: ${result.homework_name}\n老师: ${result.teacher_name}\n班级: ${result.class_name}`;
-        if (result.submit_triggered) {
+        if (!autoSubmit) {
+            msg += '\n\n自动提交已关闭，仅发布作业。';
+        } else if (result.submit_triggered) {
             msg += '\n\n已自动触发提交作业流程，请关注 ADB 客户端执行状态。';
         } else if (result.submit_error) {
             msg += `\n\n自动提交失败: ${result.submit_error}`;

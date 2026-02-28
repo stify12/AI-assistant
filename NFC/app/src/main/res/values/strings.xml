@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">NFC</string>
-    <string name="service_desc">NFC 卡片模拟服务</string>
-    <string name="aid_group_desc">RFID 卡号模拟</string>
-</resources>

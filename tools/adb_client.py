@@ -193,65 +193,68 @@ class AdbClient:
                   send_enter: bool = True, inter_char_delay: float = 0.005,
                   enter_delay: float = 0.05) -> bool:
         """
-        发送 RFID 卡号
+        发送 RFID 卡号（批量模式：所有 sendevent 合并为一条 shell 命令）
         
         Args:
-            rfid_code: RFID 卡号
+            rfid_code: RFID 卡号（纯数字）
             device_path: 输入设备路径
             send_enter: 是否发送回车
-            inter_char_delay: 字符间延迟（秒）
-            enter_delay: 回车前延迟（秒）
+            inter_char_delay: 未使用（保留参数兼容）
+            enter_delay: 未使用（保留参数兼容）
         """
         device_path = device_path or self.device_path
+        
+        # 参数校验
+        if not rfid_code or not rfid_code.strip():
+            logger.error("RFID 卡号为空")
+            return False
+        
+        rfid_code = rfid_code.strip()
+        
+        # 检查是否包含不支持的字符
+        for char in rfid_code:
+            if char not in self.RFID_EVENT_MAP:
+                logger.error(f"卡号包含不支持的字符: '{char}'，卡号: {rfid_code}")
+                return False
         
         try:
             logger.info(f"发送 RFID: {rfid_code}")
             
-            # 发送每个字符
-            for i, char in enumerate(rfid_code):
-                cmd = self.build_char_command(char, device_path)
-                if not cmd:
-                    logger.warning(f"跳过未知字符: {char}")
-                    continue
-                
-                result = subprocess.run(
-                    f"adb -s {self.device_ip} shell \"{cmd}\"",
-                    shell=True,
-                    capture_output=True,
-                    text=True,
-                    encoding='utf-8',
-                    errors='ignore',
-                    timeout=3
-                )
-                
-                if result.returncode != 0:
-                    logger.error(f"字符 {char} 发送失败: {result.stderr}")
-                    return False
-                
-                # 字符间延迟
-                if i < len(rfid_code) - 1:
-                    time.sleep(inter_char_delay)
+            # 构建所有字符（含回车）的 sendevent，合并为一条命令
+            all_events = []
+            for char in rfid_code:
+                for event in self.RFID_EVENT_MAP[char]:
+                    type_code, code, value = event
+                    all_events.append(f"sendevent {device_path} {type_code} {code} {value}")
             
-            # 发送回车
+            # 追加回车
             if send_enter:
-                time.sleep(enter_delay)
-                enter_cmd = self.build_char_command('enter', device_path)
-                result = subprocess.run(
-                    f"adb -s {self.device_ip} shell \"{enter_cmd}\"",
-                    shell=True,
-                    capture_output=True,
-                    text=True,
-                    encoding='utf-8',
-                    errors='ignore',
-                    timeout=3
-                )
-                
-                if result.returncode != 0:
-                    logger.error(f"回车发送失败: {result.stderr}")
-                    return False
+                for event in self.RFID_EVENT_MAP['enter']:
+                    type_code, code, value = event
+                    all_events.append(f"sendevent {device_path} {type_code} {code} {value}")
+            
+            # 用 ";" 拼接成一条 shell 命令，一次 adb 调用完成
+            batch_cmd = "; ".join(all_events)
+            
+            result = subprocess.run(
+                f"adb -s {self.device_ip} shell \"{batch_cmd}\"",
+                shell=True,
+                capture_output=True,
+                text=True,
+                encoding='utf-8',
+                errors='ignore',
+                timeout=10
+            )
+            
+            if result.returncode != 0:
+                logger.error(f"RFID 批量发送失败: {result.stderr}")
+                return False
             
             logger.info(f"RFID 发送成功: {rfid_code}")
             return True
+        except subprocess.TimeoutExpired:
+            logger.error(f"RFID 发送超时: {rfid_code}")
+            return False
         except Exception as e:
             logger.error(f"发送 RFID 失败: {e}")
             return False
@@ -470,7 +473,7 @@ class AdbClient:
         self.current_task = None
 
     def run_full_workflow(self):
-        """执行完整提交作业流程（发布+提交联动）"""
+        """执行完整提交作业流程（从配置读取步骤和等待时间）"""
         if not self.current_task:
             return
         
@@ -479,31 +482,62 @@ class AdbClient:
         representative = self.current_task.get('representative')  # 课代表
         photo_interval = self.current_task.get('photo_interval', 2)
         enable_double_page = self.current_task.get('enable_double_page', True)
+        steps = self.current_task.get('steps', [])
         
-        logger.info(f"开始执行流程: {workflow_id}, 学生数: {len(students)}")
+        logger.info(f"开始执行流程: {workflow_id}, 学生数: {len(students)}, 配置步骤数: {len(steps)}")
         
-        # 坐标配置
-        COORDS = {
-            'submit_homework_button': (1200, 400),
-            'double_page_button': (400, 551),
-            'camera_capture_button': (667, 978),
-            'submit_button': (1593, 955),
-            'confirm_submit_button': (886, 781)
-        }
+        # 从 steps 构建等待时间和坐标映射（按步骤顺序对应）
+        # steps 结构: [launch, tap进入提交, rfid课代表, tap双页, tap拍照, loop学生, tap提交, tap确认]
+        def _get_step(index, default_wait=2, default_x=0, default_y=0):
+            """从配置步骤中获取等待时间和坐标"""
+            if index < len(steps):
+                s = steps[index]
+                return {
+                    'wait': float(s.get('wait', default_wait)),
+                    'x': int(s.get('x', default_x)),
+                    'y': int(s.get('y', default_y)),
+                }
+            return {'wait': default_wait, 'x': default_x, 'y': default_y}
+        
+        def _get_loop_substep(loop_index, sub_index, default_wait=2):
+            """从循环步骤的子步骤中获取等待时间"""
+            if loop_index < len(steps):
+                loop_step = steps[loop_index]
+                sub_steps = loop_step.get('steps', [])
+                if sub_index < len(sub_steps):
+                    s = sub_steps[sub_index]
+                    wait = float(s.get('wait', default_wait))
+                    # 支持 use_param 引用 photo_interval
+                    if s.get('use_param') == 'photo_interval':
+                        wait = photo_interval
+                    return wait
+            return default_wait
+        
+        # 步骤索引（对应 workflow_config.json 中 submit_homework 的 steps 顺序）
+        # 0: launch, 1: tap进入提交, 2: rfid课代表, 3: tap双页, 4: tap拍照, 5: loop, 6: tap提交, 7: tap确认
+        step_launch = _get_step(0, default_wait=5)
+        step_enter = _get_step(1, default_wait=2, default_x=1200, default_y=400)
+        step_rfid_rep = _get_step(2, default_wait=2)
+        step_double_page = _get_step(3, default_wait=1, default_x=400, default_y=551)
+        step_photo_rep = _get_step(4, default_wait=2, default_x=667, default_y=978)
+        # 循环子步骤: 0=刷学生卡, 1=拍照
+        loop_wait_rfid = _get_loop_substep(5, 0, default_wait=3)
+        loop_wait_photo = _get_loop_substep(5, 1, default_wait=4)
+        step_submit = _get_step(6, default_wait=2, default_x=1593, default_y=955)
+        step_confirm = _get_step(7, default_wait=3, default_x=886, default_y=781)
         
         try:
             # 1. 启动 APP
             self._send_progress('启动应用...')
             if not self.atom_launch('com.zpzn.terminal'):
                 raise Exception("启动应用失败")
-            time.sleep(5)
+            time.sleep(step_launch['wait'])
             
             # 2. 点击提交作业按钮
             self._send_progress('进入提交界面...')
-            x, y = COORDS['submit_homework_button']
-            if not self.atom_tap(x, y):
+            if not self.atom_tap(step_enter['x'], step_enter['y']):
                 raise Exception("点击提交作业按钮失败")
-            time.sleep(2)
+            time.sleep(step_enter['wait'])
             
             # 3. 刷课代表卡
             if representative:
@@ -511,21 +545,19 @@ class AdbClient:
                 rfid = representative.get('rfid_no', representative.get('card_number', ''))
                 if not self.send_rfid(rfid, self.device_path, True):
                     raise Exception("刷课代表卡失败")
-                time.sleep(2)
+                time.sleep(step_rfid_rep['wait'])
                 
                 # 4. 点击双页模式（只在第一次）
                 if enable_double_page:
                     self._send_progress('开启双页模式...')
-                    x, y = COORDS['double_page_button']
-                    self.atom_tap(x, y)
-                    time.sleep(1)
+                    self.atom_tap(step_double_page['x'], step_double_page['y'])
+                    time.sleep(step_double_page['wait'])
                 
                 # 5. 拍照
                 self._send_progress('课代表拍照...')
-                x, y = COORDS['camera_capture_button']
-                if not self.atom_tap(x, y):
+                if not self.atom_tap(step_photo_rep['x'], step_photo_rep['y']):
                     raise Exception("拍照失败")
-                time.sleep(photo_interval)
+                time.sleep(step_photo_rep['wait'])
             
             # 6. 循环处理学生
             for i, student in enumerate(students):
@@ -556,11 +588,11 @@ class AdbClient:
                     }))
                     continue
                 
-                time.sleep(1)
+                # 等待（刷卡后等待，对应子步骤0的 wait）
+                time.sleep(loop_wait_rfid)
                 
                 # 拍照
-                x, y = COORDS['camera_capture_button']
-                if not self.atom_tap(x, y):
+                if not self.atom_tap(step_photo_rep['x'], step_photo_rep['y']):
                     logger.error(f"拍照失败: {name}")
                 
                 self.ws.send(json.dumps({
@@ -570,22 +602,20 @@ class AdbClient:
                     'success': True
                 }))
                 
-                # 等待拍照完成
-                time.sleep(photo_interval)
+                # 等待拍照完成（对应子步骤1的 wait）
+                time.sleep(loop_wait_photo)
             
             # 7. 提交作业
             self._send_progress('提交作业...')
-            x, y = COORDS['submit_button']
-            if not self.atom_tap(x, y):
+            if not self.atom_tap(step_submit['x'], step_submit['y']):
                 raise Exception("点击提交按钮失败")
-            time.sleep(2)
+            time.sleep(step_submit['wait'])
             
             # 8. 确认提交
             self._send_progress('确认提交...')
-            x, y = COORDS['confirm_submit_button']
-            if not self.atom_tap(x, y):
+            if not self.atom_tap(step_confirm['x'], step_confirm['y']):
                 raise Exception("点击确认提交失败")
-            time.sleep(3)
+            time.sleep(step_confirm['wait'])
             
             # 完成
             self.ws.send(json.dumps({

@@ -31,7 +31,7 @@ $items = @(
     "app.py", "requirements.txt", "Dockerfile",
     "docker-compose.yml", "docker-compose.dev.yml",
     "prompts.json", "config.example.json", "database_schema.sql",
-    "workflow_config.json",
+    # workflow_config.json 不再部署覆盖，线上前端修改的配置以服务器为准
     "routes", "services", "utils", "templates", "static", "knowledge_agent", "tests", "migrations"
 )
 

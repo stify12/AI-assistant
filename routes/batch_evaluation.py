@@ -2366,6 +2366,7 @@ def get_homework_detail(task_id, homework_id):
                 'matched_dataset_name': homework_item.get('matched_dataset_name', ''),
                 'base_effect': base_effect,
                 'ai_result': homework_result,
+                'data_value': data_value,  # 原始题目数据，包含选择题的 userAnswer/answer
                 'evaluation': {
                     'accuracy': evaluation.get('accuracy', 0),
                     'total_questions': evaluation.get('total_questions', 0),
@@ -2590,6 +2591,13 @@ def batch_evaluate(task_id):
             'lower_sum': 0    # 偏低的总分差
         }
         
+        # 汇总所有作业的批改准确率统计（correct字段是否一致）
+        aggregated_grading_accuracy = {
+            'total': 0,       # 有correct数据的题目总数
+            'correct': 0,     # correct一致的题目数
+            'rate': 0         # 批改准确率
+        }
+        
         # 汇总bvalue细分统计
         aggregated_bvalue_stats = {
             '1': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '单选'},
@@ -2643,6 +2651,17 @@ def batch_evaluate(task_id):
             # 聚合分数比对统计
             for key in aggregated_score_accuracy:
                 aggregated_score_accuracy[key] += score_stats.get(key, 0)
+            
+            # 聚合批改准确率统计
+            grading_stats = evaluation.get('grading_accuracy_stats') or {}
+            aggregated_grading_accuracy['total'] += grading_stats.get('total', 0)
+            aggregated_grading_accuracy['correct'] += grading_stats.get('correct', 0)
+        
+        # 计算批改准确率
+        aggregated_grading_accuracy['rate'] = (
+            aggregated_grading_accuracy['correct'] / aggregated_grading_accuracy['total']
+            if aggregated_grading_accuracy['total'] > 0 else 0
+        )
         
         # 计算汇总准确率
         for key in aggregated_type_stats:
@@ -2677,6 +2696,7 @@ def batch_evaluate(task_id):
         
         task_data['overall_report'] = {
             'overall_accuracy': overall_accuracy,
+            'grading_accuracy': aggregated_grading_accuracy['rate'],
             'total_homework': len(homework_items),
             'total_questions': total_questions,
             'correct_questions': total_correct,
@@ -2684,7 +2704,8 @@ def batch_evaluate(task_id):
             'by_bvalue': aggregated_bvalue_stats,
             'by_combined': aggregated_combined_stats,
             'has_score': has_score,
-            'score_accuracy_stats': aggregated_score_accuracy
+            'score_accuracy_stats': aggregated_score_accuracy,
+            'grading_accuracy_stats': aggregated_grading_accuracy
         }
         
         StorageService.save_batch_task(task_id, task_data)
@@ -2696,7 +2717,7 @@ def batch_evaluate(task_id):
         except Exception as e:
             print(f"[AI分析] 自动触发分析失败: {e}")
         
-        yield f"data: {json.dumps({'type': 'complete', 'overall_accuracy': overall_accuracy, 'by_question_type': aggregated_type_stats, 'by_combined': aggregated_combined_stats})}\n\n"
+        yield f"data: {json.dumps({'type': 'complete', 'overall_accuracy': overall_accuracy, 'grading_accuracy': aggregated_grading_accuracy['rate'], 'by_question_type': aggregated_type_stats, 'by_combined': aggregated_combined_stats})}\n\n"
     
     return Response(generate(), mimetype='text/event-stream')
 
@@ -2775,11 +2796,19 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
             add_to_type_map(item)
     
     # 题目类型分类统计: 选择题、客观填空题、主观题（三类互不包含）
-    # 新增 score_* 字段用于按题型统计分数准确率
+    # score_* 字段用于按题型统计分数准确率
+    # grading_* 字段用于按题型统计批改准确率（correct字段是否一致）
     type_stats = {
-        'choice': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0},           # 选择题 (bvalue=1,2,3)
-        'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0},   # 客观填空题 (questionType=objective且bvalue=4)
-        'subjective': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0}        # 主观题 (其他)
+        'choice': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0, 'grading_total': 0, 'grading_correct': 0, 'grading_rate': 0},
+        'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0, 'grading_total': 0, 'grading_correct': 0, 'grading_rate': 0},
+        'subjective': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0, 'grading_total': 0, 'grading_correct': 0, 'grading_rate': 0}
+    }
+    
+    # 批改准确率统计（correct字段是否一致）
+    grading_accuracy_stats = {
+        'total': 0,           # 有correct数据的题目总数
+        'correct': 0,         # correct一致的题目数
+        'rate': 0             # 批改准确率
     }
     
     # 按bvalue细分统计 (1=单选, 2=多选, 3=判断, 4=填空, 5=解答)
@@ -2950,6 +2979,28 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         hw_answer = str(hw_item.get('answer', '') or hw_item.get('mainAnswer', '')).strip() if hw_item else ''
         hw_user = str(hw_item.get('userAnswer', '')).strip() if hw_item else ''
         hw_correct = get_correct_value(hw_item) if hw_item else ''
+        
+        # 保存原始 userAnswer（标准化前），用于 error 记录展示
+        raw_base_user = base_user
+        raw_hw_user = hw_user
+        
+        # 统计批改准确率（correct字段是否一致）
+        # 只有两边都有correct数据时才统计
+        if base_correct and hw_correct:
+            # 确定题型分类键
+            if question_category['is_choice']:
+                grading_type_key = 'choice'
+            elif question_category['is_fill']:
+                grading_type_key = 'objective_fill'
+            else:
+                grading_type_key = 'subjective'
+            
+            grading_accuracy_stats['total'] += 1
+            type_stats[grading_type_key]['grading_total'] += 1
+            
+            if base_correct == hw_correct:
+                grading_accuracy_stats['correct'] += 1
+                type_stats[grading_type_key]['grading_correct'] += 1
         
         # 物理学科(subject_id=3)：先将 LaTeX/Markdown 格式转换为纯文本
         # 这样可以正确比较 "$1\text{m}^3$" 和 "1m³" 这类格式差异
@@ -3188,7 +3239,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
                     'index': idx,
                     'base_effect': {
                         'answer': base_answer,
-                        'userAnswer': base_user,
+                        'userAnswer': raw_base_user,
                         'correct': base_correct if base_correct else '-',
                         'score': base_score,
                         'tags': base_item.get('tags', []),
@@ -3196,7 +3247,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
                     },
                     'ai_result': {
                         'answer': hw_answer,
-                        'userAnswer': hw_user,
+                        'userAnswer': raw_hw_user,
                         'correct': hw_correct if hw_correct else '-',
                         'score': ai_score
                     },
@@ -3235,7 +3286,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
                 'index': idx,
                 'base_effect': {
                     'answer': base_answer,
-                    'userAnswer': base_user,
+                    'userAnswer': raw_base_user,
                     'correct': base_correct if base_correct else '-',
                     'score': base_score,
                     'tags': base_item.get('tags', []),
@@ -3243,7 +3294,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
                 },
                 'ai_result': {
                     'answer': hw_answer,
-                    'userAnswer': hw_user,
+                    'userAnswer': raw_hw_user,
                     'correct': hw_correct if hw_correct else '-',
                     'score': ai_score
                 },
@@ -3352,6 +3403,13 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
     hallucination_count = error_distribution.get('AI识别幻觉', 0)
     hallucination_rate = hallucination_count / total if total > 0 else 0
     
+    # 计算批改准确率
+    grading_accuracy_stats['rate'] = grading_accuracy_stats['correct'] / grading_accuracy_stats['total'] if grading_accuracy_stats['total'] > 0 else 0
+    for key in type_stats:
+        grading_total = type_stats[key]['grading_total']
+        grading_correct = type_stats[key]['grading_correct']
+        type_stats[key]['grading_rate'] = grading_correct / grading_total if grading_total > 0 else 0
+    
     return {
         'accuracy': accuracy,
         'precision': precision,
@@ -3367,7 +3425,8 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         'by_bvalue': bvalue_stats,
         'by_combined': combined_stats,
         'has_score': has_score_in_base,
-        'score_accuracy_stats': score_accuracy_stats
+        'score_accuracy_stats': score_accuracy_stats,
+        'grading_accuracy_stats': grading_accuracy_stats
     }
 
 
@@ -3465,11 +3524,19 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
     }
     
     # 题目类型分类统计: 选择题、客观填空题、主观题（三类互不包含）
-    # 新增 score_* 字段用于按题型统计分数准确率
+    # score_* 字段用于按题型统计分数准确率
+    # grading_* 字段用于按题型统计批改准确率（correct字段是否一致）
     type_stats = {
-        'choice': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0},           # 选择题 (bvalue=1,2,3)
-        'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0},   # 客观填空题 (questionType=objective且bvalue=4)
-        'subjective': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0}        # 主观题 (其他)
+        'choice': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0, 'grading_total': 0, 'grading_correct': 0, 'grading_rate': 0},
+        'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0, 'grading_total': 0, 'grading_correct': 0, 'grading_rate': 0},
+        'subjective': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0, 'grading_total': 0, 'grading_correct': 0, 'grading_rate': 0}
+    }
+    
+    # 批改准确率统计（correct字段是否一致）
+    grading_accuracy_stats = {
+        'total': 0,           # 有correct数据的题目总数
+        'correct': 0,         # correct一致的题目数
+        'rate': 0             # 批改准确率
     }
     
     # 按bvalue细分统计 (1=单选, 2=多选, 3=判断, 4=填空, 5=解答)
@@ -3568,6 +3635,24 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
         
         # 获取 AI 批改结果
         hw_item = hw_dict.get(base_temp_idx) or hw_dict.get(f'idx_{idx}', {})
+        
+        # 统计批改准确率（correct字段是否一致）
+        base_correct = get_correct_value(base_item)
+        hw_correct = get_correct_value(hw_item) if hw_item else ''
+        if base_correct and hw_correct:
+            if question_category['is_choice']:
+                grading_type_key = 'choice'
+            elif question_category['is_fill']:
+                grading_type_key = 'objective_fill'
+            else:
+                grading_type_key = 'subjective'
+            
+            grading_accuracy_stats['total'] += 1
+            type_stats[grading_type_key]['grading_total'] += 1
+            
+            if base_correct == hw_correct:
+                grading_accuracy_stats['correct'] += 1
+                type_stats[grading_type_key]['grading_correct'] += 1
         
         # 判断是否正确
         is_correct = verdict == 'PASS' or error_type_raw in ('完全正确', '语义等价')
@@ -3675,6 +3760,13 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
     hallucination_count = error_distribution.get('AI识别幻觉', 0)
     hallucination_rate = hallucination_count / total if total > 0 else 0
     
+    # 计算批改准确率
+    grading_accuracy_stats['rate'] = grading_accuracy_stats['correct'] / grading_accuracy_stats['total'] if grading_accuracy_stats['total'] > 0 else 0
+    for key in type_stats:
+        grading_total = type_stats[key]['grading_total']
+        grading_correct = type_stats[key]['grading_correct']
+        type_stats[key]['grading_rate'] = grading_correct / grading_total if grading_total > 0 else 0
+    
     # 获取语义评估的能力评分
     semantic_summary = semantic_result.get('summary', {})
     capability_scores = semantic_summary.get('capability_scores', {})
@@ -3697,7 +3789,8 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
         'semantic_evaluated': True,
         'capability_scores': capability_scores,
         'semantic_conclusion': semantic_summary.get('conclusion', ''),
-        'semantic_recommendations': semantic_summary.get('recommendations', [])
+        'semantic_recommendations': semantic_summary.get('recommendations', []),
+        'grading_accuracy_stats': grading_accuracy_stats
     }
 
 
@@ -4424,6 +4517,13 @@ def batch_ai_evaluate(task_id):
             'subjective_5': {'total': 0, 'correct': 0, 'accuracy': 0, 'name': '主观解答'}
         }
         
+        # 汇总所有作业的批改准确率统计（correct字段是否一致）
+        aggregated_grading_accuracy = {
+            'total': 0,       # 有correct数据的题目总数
+            'correct': 0,     # correct一致的题目数
+            'rate': 0         # 批改准确率
+        }
+        
         for item in homework_items:
             evaluation = item.get('evaluation') or {}
             by_type = evaluation.get('by_question_type') or {}
@@ -4449,6 +4549,17 @@ def batch_ai_evaluate(task_id):
                 if key in by_combined:
                     aggregated_combined_stats[key]['total'] += by_combined[key].get('total', 0)
                     aggregated_combined_stats[key]['correct'] += by_combined[key].get('correct', 0)
+            
+            # 聚合批改准确率统计
+            grading_stats = evaluation.get('grading_accuracy_stats') or {}
+            aggregated_grading_accuracy['total'] += grading_stats.get('total', 0)
+            aggregated_grading_accuracy['correct'] += grading_stats.get('correct', 0)
+        
+        # 计算批改准确率
+        aggregated_grading_accuracy['rate'] = (
+            aggregated_grading_accuracy['correct'] / aggregated_grading_accuracy['total']
+            if aggregated_grading_accuracy['total'] > 0 else 0
+        )
         
         # 计算汇总准确率
         for key in aggregated_type_stats:
@@ -4483,6 +4594,7 @@ def batch_ai_evaluate(task_id):
         
         task_data['overall_report'] = {
             'overall_accuracy': overall_accuracy,
+            'grading_accuracy': aggregated_grading_accuracy['rate'],
             'total_homework': len(homework_items),
             'total_questions': total_questions,
             'correct_questions': total_correct,
@@ -4490,7 +4602,8 @@ def batch_ai_evaluate(task_id):
             'by_question_type': aggregated_type_stats,
             'by_bvalue': aggregated_bvalue_stats,
             'by_combined': aggregated_combined_stats,
-            'has_score': has_score
+            'has_score': has_score,
+            'grading_accuracy_stats': aggregated_grading_accuracy
         }
         
         StorageService.save_batch_task(task_id, task_data)
@@ -4502,7 +4615,7 @@ def batch_ai_evaluate(task_id):
         except Exception as e:
             print(f"[AI分析] 自动触发分析失败: {e}")
         
-        yield f"data: {json.dumps({'type': 'complete', 'overall_accuracy': overall_accuracy, 'total_questions': total_questions, 'correct_questions': total_correct, 'by_question_type': aggregated_type_stats, 'by_combined': aggregated_combined_stats})}\n\n"
+        yield f"data: {json.dumps({'type': 'complete', 'overall_accuracy': overall_accuracy, 'grading_accuracy': aggregated_grading_accuracy['rate'], 'total_questions': total_questions, 'correct_questions': total_correct, 'by_question_type': aggregated_type_stats, 'by_combined': aggregated_combined_stats})}\n\n"
     
     return Response(generate(), mimetype='text/event-stream')
 
@@ -4900,7 +5013,18 @@ def get_type_details(task_id):
                 if not is_target_type:
                     continue
                 
-                # 判断是否计入错误
+                # 判断批改是否正确（correct字段是否一致）
+                base_effect = err.get('base_effect', {})
+                ai_result = err.get('ai_result', {})
+                base_correct = base_effect.get('correct', '')
+                ai_correct = ai_result.get('correct', '')
+                is_grading_correct = (base_correct == ai_correct) if base_correct and ai_correct else True
+                
+                # 只显示批改错误的题目（correct字段不一致）
+                if is_grading_correct:
+                    continue
+                
+                # 判断是否计入错误（旧逻辑，保留用于兼容）
                 error_type = err.get('error_type', '')
                 not_counted_types = ['格式差异', '识别题干-判断正确', '识别差异-判断正确']
                 is_error = error_type not in not_counted_types
@@ -4920,11 +5044,12 @@ def get_type_details(task_id):
                     'index': err.get('index', ''),
                     'error_type': error_type,
                     'is_error': is_error,
+                    'is_grading_error': True,  # 标记为批改错误
                     'severity': err.get('severity', 'medium'),
                     'explanation': err.get('explanation', ''),
                     'similarity': err.get('similarity'),
-                    'base_effect': err.get('base_effect', {}),
-                    'ai_result': err.get('ai_result', {}),
+                    'base_effect': base_effect,
+                    'ai_result': ai_result,
                     'question_category': q_category
                 }
                 all_questions.append(question_detail)
@@ -4944,6 +5069,19 @@ def get_type_details(task_id):
         type_stats = by_type.get(question_type, {})
         type_total = type_stats.get('total', 0)
         type_correct = type_stats.get('correct', 0)
+        
+        # 实时计算批改准确率（correct字段是否一致）
+        # 从 all_questions 中统计，因为旧任务可能没有 grading_* 字段
+        grading_total = 0
+        grading_correct = 0
+        for q in all_questions:
+            base_correct = q.get('base_effect', {}).get('correct', '')
+            ai_correct = q.get('ai_result', {}).get('correct', '')
+            if base_correct and ai_correct:
+                grading_total += 1
+                if base_correct == ai_correct:
+                    grading_correct += 1
+        grading_rate = grading_correct / grading_total if grading_total > 0 else 0
         
         # 分页
         start_idx = (page - 1) * page_size
@@ -4967,7 +5105,11 @@ def get_type_details(task_id):
                     'accuracy': type_stats.get('accuracy', 0),
                     'in_errors_list': total_count,  # errors列表中的数量
                     'error_count': error_count,
-                    'correct_in_list': correct_count  # errors列表中不计入错误的数量
+                    'correct_in_list': correct_count,  # errors列表中不计入错误的数量
+                    # 批改准确率统计（correct字段是否一致）
+                    'grading_total': grading_total,
+                    'grading_correct': grading_correct,
+                    'grading_rate': grading_rate
                 },
                 'error_type_distribution': error_type_dist,
                 'questions': paginated_questions,

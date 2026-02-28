@@ -36,17 +36,17 @@
       "name": "提交作业",
       "description": "自动提交作业流程（需先选择班级）",
       "steps": [
-        { "action": "launch", "package": "com.zpzn.terminal", "wait": 5, "desc": "打开应用" },
-        { "action": "tap", "x": 1200, "y": 400, "wait": 2, "desc": "进入提交界面" },
-        { "action": "rfid", "target": "rep", "wait": 2, "desc": "刷课代表卡" },
-        { "action": "tap", "x": 400, "y": 551, "wait": 1, "desc": "点击双页模式" },
-        { "action": "tap", "x": 667, "y": 978, "wait": 2, "desc": "拍照" },
+        { "action": "launch", "package": "com.zpzn.terminal", "wait": 7, "desc": "打开应用" },
+        { "action": "tap", "x": 1200, "y": 400, "wait": 4, "desc": "进入提交界面" },
+        { "action": "rfid", "target": "rep", "wait": 4, "desc": "刷课代表卡" },
+        { "action": "tap", "x": 400, "y": 551, "wait": 3, "desc": "点击双页模式" },
+        { "action": "tap", "x": 667, "y": 978, "wait": 4, "desc": "拍照" },
         { "action": "loop", "target": "students", "steps": [
-          { "action": "rfid", "target": "current", "wait": 1, "desc": "刷学生卡" },
-          { "action": "tap", "x": 667, "y": 978, "wait": "${photo_interval}", "desc": "拍照" }
+          { "action": "rfid", "target": "current", "wait": 5, "desc": "刷学生卡" },
+          { "action": "tap", "x": 667, "y": 978, "wait": 6, "use_param": "photo_interval", "desc": "拍照" }
         ], "desc": "循环处理学生" },
-        { "action": "tap", "x": 1593, "y": 955, "wait": 2, "desc": "点击提交" },
-        { "action": "tap", "x": 886, "y": 781, "wait": 3, "desc": "确认提交" }
+        { "action": "tap", "x": 1593, "y": 955, "wait": 4, "desc": "点击提交" },
+        { "action": "tap", "x": 886, "y": 781, "wait": 5, "desc": "确认提交" }
       ],
       "params": {
         "photo_interval": { "type": "number", "default": 2, "label": "拍照间隔(秒)" }

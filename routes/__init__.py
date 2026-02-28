@@ -40,6 +40,7 @@ def register_blueprints(app):
     from .rfid_simulator_routes import rfid_simulator_bp
     from .workflow_routes import workflow_bp
     from .smart_publish import smart_publish_bp
+    from .image_preprocess import image_preprocess_bp
     
     # 注册通用路由（无前缀）
     app.register_blueprint(common_bp)
@@ -124,3 +125,6 @@ def register_blueprints(app):
     
     # 注册智能发布 API 路由（页面已整合到自动化模拟）
     app.register_blueprint(smart_publish_bp)
+    
+    # 注册图片预处理路由
+    app.register_blueprint(image_preprocess_bp)

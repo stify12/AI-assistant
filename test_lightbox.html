@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片灯箱测试</title>
+    <link rel="stylesheet" href="/static/css/modules/image-lightbox.css?v=20260228">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 40px;
+            background: #f5f5f7;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+        }
+        h1 {
+            color: #1d1d1f;
+            margin-bottom: 20px;
+        }
+        .test-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .test-image {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .instructions {
+            background: #f5f5f7;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .instructions h2 {
+            margin-top: 0;
+            color: #1d1d1f;
+            font-size: 18px;
+        }
+        .instructions ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 8px 0;
+            color: #6e6e73;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>图片灯箱功能测试</h1>
+        
+        <div class="instructions">
+            <h2>功能说明</h2>
+            <ul>
+                <li>✓ 点击任意图片可放大查看</li>
+                <li>✓ 鼠标滚轮缩放（0.5x - 5x）</li>
+                <li>✓ 拖拽移动（放大后）</li>
+                <li>✓ 键盘快捷键：ESC关闭、+放大、-缩小、0重置</li>
+                <li>✓ 底部工具栏：缩小、放大、重置、下载</li>
+            </ul>
+        </div>
+
+        <div class="test-images">
+            <div class="test-image">
+                <img src="/static/test-picture/final_crop_result.jpg" alt="裁剪结果">
+            </div>
+            <div class="test-image">
+                <img src="/static/test-picture/new_sharpen_default.jpg" alt="锐化效果">
+            </div>
+            <div class="test-image">
+                <img src="/static/test-picture/sharpen_method8_multiscale.jpg" alt="多尺度锐化">
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/modules/image-lightbox.js?v=20260228"></script>
+</body>
+</html>

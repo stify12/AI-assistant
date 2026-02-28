@@ -1221,6 +1221,10 @@ function renderOverallReport(report, completedItems) {
             <div class="stat-value">${(report.overall_accuracy * 100).toFixed(1)}%</div>
             <div class="stat-label">总体准确率</div>
         </div>
+        <div class="stat-card highlight">
+            <div class="stat-value">${report.grading_accuracy !== undefined ? (report.grading_accuracy * 100).toFixed(1) + '%' : '-'}</div>
+            <div class="stat-label">总体批改准确率</div>
+        </div>
         <div class="stat-card">
             <div class="stat-value">${report.total_homework || 0}</div>
             <div class="stat-label">作业数</div>

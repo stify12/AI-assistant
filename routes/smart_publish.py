@@ -97,8 +97,22 @@ def publish():
         return jsonify({'success': False, 'error': str(e)})
 
 
+def _load_submit_workflow_config():
+    """读取 workflow_config.json 中 submit_homework 的步骤和参数"""
+    import os
+    config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'workflow_config.json')
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        workflow = config.get('workflows', {}).get('submit_homework', {})
+        return workflow.get('steps', []), workflow.get('params', {})
+    except Exception as e:
+        logger.error(f"[SmartPublish] 读取流程配置失败: {e}")
+        return [], {}
+
+
 def _trigger_submit_workflow(book_id: str, class_id: str) -> bool:
-    """发布成功后触发提交作业流程"""
+    """发布成功后触发提交作业流程（读取 workflow_config.json 配置）"""
     # 1. 检查 ADB 客户端连接
     ws = rfid_simulator_service.get_active_websocket()
     if not ws:
@@ -142,14 +156,19 @@ def _trigger_submit_workflow(book_id: str, class_id: str) -> bool:
         else:
             students.append(student_data)
     
-    # 4. 发送 run_workflow 给 ADB 客户端
+    # 4. 读取 workflow_config.json 的步骤配置
+    steps, params = _load_submit_workflow_config()
+    photo_interval = params.get('photo_interval', {}).get('default', 2) if isinstance(params.get('photo_interval'), dict) else 2
+    
+    # 5. 发送 run_workflow 给 ADB 客户端（附带步骤配置）
     ws.send(json.dumps({
         'type': 'run_workflow',
         'workflow_id': 'submit_homework',
         'students': students,
         'representative': representative,
-        'photo_interval': 2,
+        'photo_interval': photo_interval,
         'enable_double_page': True,
+        'steps': steps,
         'timestamp': datetime.now().isoformat()
     }))
     
@@ -180,4 +199,26 @@ def get_config():
         return jsonify({'success': True, 'data': config})
     except Exception as e:
         logger.error(f"[SmartPublish] 获取配置失败: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@smart_publish_bp.route('/api/smart-publish/workflow-complete', methods=['GET'])
+def check_workflow_complete():
+    """查询提交流程是否完成（供自动循环轮询，读后清除）"""
+    try:
+        result = rfid_simulator_service.get_workflow_complete()
+        return jsonify({'success': True, 'data': result})
+    except Exception as e:
+        logger.error(f"[SmartPublish] 查询工作流状态失败: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@smart_publish_bp.route('/api/smart-publish/clear-workflow', methods=['POST'])
+def clear_workflow_complete():
+    """清除工作流完成状态（开始新一轮时调用）"""
+    try:
+        rfid_simulator_service.clear_workflow_complete()
+        return jsonify({'success': True, 'data': None})
+    except Exception as e:
+        logger.error(f"[SmartPublish] 清除工作流状态失败: {e}")
         return jsonify({'success': False, 'error': str(e)})

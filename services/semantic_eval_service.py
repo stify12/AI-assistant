@@ -8,6 +8,7 @@ from typing import List, Dict, Any, Tuple, Optional
 from services.llm_service import LLMService
 from services.config_service import ConfigService
 from utils.text_utils import normalize_answer
+from services.math_eval import normalize_math_answer
 
 
 # ========== 提示词加载 ==========
@@ -224,21 +225,28 @@ class SemanticEvalService:
     """语义级评估服务"""
     
     @staticmethod
-    def rule_based_precheck(base_item: Dict, ai_item: Dict) -> Tuple[str, Optional[Dict]]:
+    def rule_based_precheck(base_item: Dict, ai_item: Dict, subject_id: int = None) -> Tuple[str, Optional[Dict]]:
         """
         规则预筛：快速判断明确的匹配/不匹配情况
         
         Args:
             base_item: 基准效果数据
             ai_item: AI 批改结果
+            subject_id: 学科ID（2=数学时使用数学专用标准化）
             
         Returns:
             (certainty, result)
             - certainty: 'high' | 'low'
             - result: 预判结果（certainty='high' 时有值）
         """
-        base_user = normalize_answer(str(base_item.get('userAnswer', '')))
-        ai_user = normalize_answer(str(ai_item.get('userAnswer', '')))
+        # 根据学科选择标准化函数
+        if subject_id == 2:
+            normalize_func = normalize_math_answer
+        else:
+            normalize_func = normalize_answer
+        
+        base_user = normalize_func(str(base_item.get('userAnswer', '')))
+        ai_user = normalize_func(str(ai_item.get('userAnswer', '')))
         
         base_correct = SemanticEvalService._normalize_correct(base_item.get('correct', ''))
         ai_correct = SemanticEvalService._normalize_correct(ai_item.get('correct', ''))
@@ -276,9 +284,9 @@ class SemanticEvalService:
         
         # 情况2: 判断不一致 → 明确失败
         if base_correct != ai_correct:
-            # 检测 AI 幻觉
-            norm_ai_user = normalize_answer(ai_user)
-            norm_standard = normalize_answer(standard_answer)
+            # 检测 AI 幻觉（用同一个标准化函数比较）
+            norm_ai_user = normalize_func(ai_user)
+            norm_standard = normalize_func(standard_answer)
             is_hallucination = (base_correct == 'no' and norm_ai_user == norm_standard)
             
             if is_hallucination:
@@ -364,7 +372,8 @@ class SemanticEvalService:
         base_correct: str,
         ai_user_answer: str,
         ai_correct: str,
-        eval_model: str = 'deepseek-v3.2'
+        eval_model: str = 'deepseek-v3.2',
+        subject_id: int = None
     ) -> Dict[str, Any]:
         """
         单题语义评估
@@ -379,6 +388,7 @@ class SemanticEvalService:
             ai_user_answer: AI 识别的学生答案
             ai_correct: AI 判断结果
             eval_model: 评估模型
+            subject_id: 学科ID（2=数学时使用数学专用标准化）
             
         Returns:
             评估结果字典
@@ -394,7 +404,7 @@ class SemanticEvalService:
             'correct': ai_correct
         }
         
-        certainty, result = SemanticEvalService.rule_based_precheck(base_item, ai_item)
+        certainty, result = SemanticEvalService.rule_based_precheck(base_item, ai_item, subject_id=subject_id)
         if certainty == 'high' and result:
             result['eval_method'] = 'rule'
             return result
@@ -445,7 +455,8 @@ class SemanticEvalService:
         question_type: str,
         items: List[Dict[str, Any]],
         eval_model: str = 'deepseek-v3.2',
-        batch_size: int = 10
+        batch_size: int = 10,
+        subject_id: int = None
     ) -> Dict[str, Any]:
         """
         批量语义评估
@@ -462,6 +473,7 @@ class SemanticEvalService:
                 - ai_correct: AI 判断结果
             eval_model: 评估模型
             batch_size: 每批处理的题目数量
+            subject_id: 学科ID（2=数学时使用数学专用标准化）
             
         Returns:
             {
@@ -484,7 +496,7 @@ class SemanticEvalService:
                 'correct': item.get('ai_correct', '')
             }
             
-            certainty, result = SemanticEvalService.rule_based_precheck(base_item, ai_item)
+            certainty, result = SemanticEvalService.rule_based_precheck(base_item, ai_item, subject_id=subject_id)
             
             if certainty == 'high' and result:
                 result['index'] = item.get('index', '')

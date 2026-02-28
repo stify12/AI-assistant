@@ -178,6 +178,29 @@
                     <div class="step-header">
                         <span class="step-num">3</span>
                         <span class="step-title">确认基准效果</span>
+                        <div class="model-selector">
+                            <select id="recognizeModelSelect" onchange="onRecognizeModelChange()">
+                                <optgroup label="豆包视觉">
+                                    <option value="doubao-seed-2-0-pro-260215" selected>Seed 2.0 Pro</option>
+                                    <option value="doubao-1-5-vision-pro-32k-250115">Vision Pro</option>
+                                    <option value="doubao-seed-1-8-251228">Seed 1.8</option>
+                                    <option value="doubao-seed-1-6-vision-250815">Seed Vision</option>
+                                </optgroup>
+                                <optgroup label="通义千问">
+                                    <option value="qwen3.5-plus">Qwen 3.5 Plus</option>
+                                    <option value="qwen-vl-plus">Qwen VL Plus</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="reasoning-selector" id="reasoningSelectorWrapper">
+                            <span class="reasoning-label">思考:</span>
+                            <select id="reasoningEffortSelect" class="reasoning-select">
+                                <option value="minimal">不思考</option>
+                                <option value="low">低</option>
+                                <option value="medium" selected>中</option>
+                                <option value="high">高</option>
+                            </select>
+                        </div>
                         <button class="btn btn-primary" onclick="startRecognize()">开始识别</button>
                     </div>
                     <div class="recognize-result" id="recognizeResult">
