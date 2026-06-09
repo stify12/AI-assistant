@@ -183,6 +183,15 @@ function normalizeMarkdownFormula(text) {
     text = text.replace(/_([\u4e00-\u9fff])/g, '$1');
     
     // 5. 处理上标 ^{...}
+    // 5.1 先处理度数符号 ^\circ 和 ^{\circ} -> °
+    text = text.replace(/\^\{\\circ\}/g, '°');   // ^{\circ} -> °
+    text = text.replace(/\^\\circ/g, '°');        // ^\circ -> °
+    text = text.replace(/\^\{\\degree\}/g, '°'); // ^{\degree} -> °
+    text = text.replace(/\^\\degree/g, '°');      // ^\degree -> °
+    text = text.replace(/\^\{°\}/g, '°');         // ^{°} -> °
+    text = text.replace(/\^°/g, '°');             // ^° -> °
+    
+    // 5.2 处理其他上标
     for (let i = 0; i < 5; i++) {
         const prev = text;
         text = text.replace(/\^\{([^{}]*)\}/g, (match, content) => {
@@ -269,7 +278,12 @@ function normalizeAnswerForCompare(text) {
     // 4. 移除所有空白字符
     text = text.replace(/\s+/g, '');
     
-    // 5. 移除常见标点符号
+    // 5. 统一几何符号（平行符号的多种写法统一为 ∥）
+    // ∥ (U+2225), ‖ (U+2016), // (两个斜杠) 都表示平行
+    text = text.replace(/‖/g, '∥');  // 双竖线 → 平行符号
+    text = text.replace(/(?<![:/])\/\/(?![:/])/g, '∥');  // 双斜杠 → 平行符号（排除 URL）
+    
+    // 6. 移除常见标点符号
     text = text.replace(/[，。；：！？""''（）【】《》、～—…·「」『』〈〉〔〕｛｝]/g, '');
     text = text.replace(/[,.;:!?"'()\[\]{}<>~\-_\/\\|@#%^&`$]/g, '');
     
@@ -294,9 +308,21 @@ function normalizeForDiff(text) {
     text = text.replace(/（/g, '(').replace(/）/g, ')');
     
     // 4. 移除度数符号（数学中 174 和 174° 视为等价）
+    // 4.1 先处理 LaTeX 格式的度数符号
+    text = text.replace(/\^\{?\\circ\}?/g, '');   // ^\circ 或 ^{\circ}
+    text = text.replace(/\^\{?\\degree\}?/g, ''); // ^\degree 或 ^{\degree}
+    text = text.replace(/\^\{?°\}?/g, '');        // ^° 或 ^{°}
+    text = text.replace(/\\circ/g, '');           // \circ
+    text = text.replace(/\\degree/g, '');         // \degree
+    // 4.2 移除普通度数符号
     text = text.replace(/°/g, '');
     
-    // 5. 移除逗号、句号等标点（这些不影响答案正确性）
+    // 5. 统一几何符号（平行符号的多种写法统一为 ∥）
+    // ∥ (U+2225), ‖ (U+2016), // (两个斜杠) 都表示平行
+    text = text.replace(/‖/g, '∥');  // 双竖线 → 平行符号
+    text = text.replace(/(?<![:/])\/\/(?![:/])/g, '∥');  // 双斜杠 → 平行符号（排除 URL）
+    
+    // 6. 移除逗号、句号等标点（这些不影响答案正确性）
     text = text.replace(/[,.:;]/g, '');
     
     return text;
@@ -866,6 +892,17 @@ function hideDrawer() {
     document.getElementById('evalDetailDrawer').classList.remove('show');
 }
 
+// 查看当前作业详情抽屉的作业图片
+function viewCurrentHomeworkImage() {
+    if (!window.currentHomeworkDetail || !window.currentHomeworkDetail.picPath) {
+        alert('该作业没有关联的图片');
+        return;
+    }
+    const { picPath, bookName, pageNum } = window.currentHomeworkDetail;
+    const title = `${bookName || ''} - 第${pageNum || '?'}页`;
+    viewHomeworkImage(picPath, title);
+}
+
 // ========== 任务管理 ==========
 async function loadTaskList(subjectId = null, conditionId = null) {
     try {
@@ -1249,10 +1286,84 @@ function renderOverallReport(report, completedItems) {
     const byCombined = report.by_combined || {};
     
     if (Object.keys(byType).length > 0) {
-        const choice = byType.choice || {};
-        const objectiveFill = byType.objective_fill || {};
-        // 兼容 subjective 和 other 两种字段名（后端可能返回 other）
-        const subjective = byType.subjective || byType.other || {};
+        // 优先从 by_bvalue 构建三分类数据（bvalue 更可靠）
+        const byBvalue = report.by_bvalue || {};
+        const bv1 = byBvalue['1'] || {};
+        const bv2 = byBvalue['2'] || {};
+        const bv3 = byBvalue['3'] || {};
+        const bv4 = byBvalue['4'] || {};
+        const bv5 = byBvalue['5'] || {};
+
+        let choice, fill, subjective;
+
+        if (bv4.total > 0 || bv1.total > 0 || bv5.total > 0) {
+            // 使用 bvalue 数据：选择题=1+2+3，填空题=4，主观题=5
+            const choiceType = byType.choice || {};
+            const bvalueChoiceTotal = (bv1.total||0) + (bv2.total||0) + (bv3.total||0);
+            const bvalueChoiceCorrect = (bv1.correct||0) + (bv2.correct||0) + (bv3.correct||0);
+
+            // 若 by_bvalue 无选择题数据（历史数据 bvalue 全为 4），回退到 by_question_type.choice
+            if (bvalueChoiceTotal === 0 && (choiceType.total > 0 || choiceType.grading_total > 0)) {
+                choice = {
+                    total: choiceType.total || 0,
+                    correct: choiceType.correct || 0,
+                    accuracy: choiceType.accuracy || 0,
+                    grading_total: choiceType.grading_total || 0,
+                    grading_correct: choiceType.grading_correct || 0,
+                    grading_rate: choiceType.grading_rate || 0,
+                };
+            } else {
+                choice = {
+                    total: bvalueChoiceTotal,
+                    correct: bvalueChoiceCorrect,
+                };
+                choice.accuracy = choice.total > 0 ? choice.correct / choice.total : 0;
+                // 从 by_question_type 补充 grading_* 字段
+                choice.grading_total = choiceType.grading_total || 0;
+                choice.grading_correct = choiceType.grading_correct || 0;
+                choice.grading_rate = choiceType.grading_rate || 0;
+            }
+
+            // 填空题：bv4 中可能混入了被误标 bvalue='4' 的选择题，需减去已识别的选择题数量
+            const choiceInFill = Math.max(0, (choice.total || 0) - bvalueChoiceTotal);
+            fill = {
+                total: Math.max(0, (bv4.total || 0) - choiceInFill),
+                correct: Math.max(0, (bv4.correct || 0) - (choice.correct || 0) + bvalueChoiceCorrect),
+            };
+            fill.accuracy = fill.total > 0 ? fill.correct / fill.total : 0;
+            // 填空题 grading_*：合并 by_question_type 中的 objective_fill
+            const objFillType = byType.objective_fill || {};
+            fill.grading_total = objFillType.grading_total || 0;
+            fill.grading_correct = objFillType.grading_correct || 0;
+            fill.grading_rate = objFillType.grading_rate || 0;
+
+            subjective = {
+                total: bv5.total || 0,
+                correct: bv5.correct || 0,
+                accuracy: bv5.accuracy || 0,
+            };
+            const subjType = byType.subjective || byType.other || {};
+            subjective.grading_total = subjType.grading_total || 0;
+            subjective.grading_correct = subjType.grading_correct || 0;
+            subjective.grading_rate = subjType.grading_rate || 0;
+
+            console.log('[renderOverallReport] 使用 by_bvalue 构建三分类:', { choice, fill, subjective });
+        } else {
+            // 降级：使用 by_question_type 数据
+            choice = byType.choice || {};
+            fill = byType.fill || {};
+            if (byType.objective_fill || byType.subjective_fill) {
+                const objFill = byType.objective_fill || {};
+                const subjFill = byType.subjective_fill || {};
+                fill.total = (fill.total || 0) + (objFill.total || 0) + (subjFill.total || 0);
+                fill.correct = (fill.correct || 0) + (objFill.correct || 0) + (subjFill.correct || 0);
+                fill.accuracy = fill.total > 0 ? fill.correct / fill.total : 0;
+                fill.grading_total = (fill.grading_total || 0) + (objFill.grading_total || 0) + (subjFill.grading_total || 0);
+                fill.grading_correct = (fill.grading_correct || 0) + (objFill.grading_correct || 0) + (subjFill.grading_correct || 0);
+                fill.grading_rate = fill.grading_total > 0 ? fill.grading_correct / fill.grading_total : 0;
+            }
+            subjective = byType.subjective || byType.other || {};
+        }
         
         detailHtml += `
             <div class="list-header">批改准确率分类统计</div>
@@ -1278,7 +1389,7 @@ function renderOverallReport(report, completedItems) {
         window.combinedStatsData = byCombined;
         
         // 保存数据供图表渲染使用
-        window._questionTypeData = { choice, objectiveFill, subjective };
+        window._questionTypeData = { choice, fill, subjective };
     }
     
     // 按书本统计
@@ -1640,28 +1751,30 @@ function renderQuestionTypeBarChart() {
     
     if (!typeData && !stats) return;
     
-    const labels = ['选择题', '客观填空题', '主观题'];
-    const typeKeys = ['choice', 'objective_fill', 'subjective'];
+    const labels = ['选择题', '填空题', '主观题'];
+    const typeKeys = ['choice', 'fill', 'subjective'];
     
     let totals, corrects, accuracies;
     
     // 优先使用后端返回的 grading_* 字段（直接统计 correct 是否一致）
     const backendHasGradingData = typeData && (
         typeData.choice?.grading_total > 0 || 
-        typeData.objectiveFill?.grading_total > 0 || 
+        typeData.fill?.grading_total > 0 || 
         typeData.subjective?.grading_total > 0
     );
     
     if (backendHasGradingData) {
         // 使用后端直接统计的批改准确率数据
-        const { choice, objectiveFill, subjective } = typeData;
-        totals = [choice?.grading_total || 0, objectiveFill?.grading_total || 0, subjective?.grading_total || 0];
-        corrects = [choice?.grading_correct || 0, objectiveFill?.grading_correct || 0, subjective?.grading_correct || 0];
-        accuracies = [
-            (choice?.grading_rate || 0) * 100,
-            (objectiveFill?.grading_rate || 0) * 100,
-            (subjective?.grading_rate || 0) * 100
-        ];
+        // 若某题型 grading_total==0（如填空题无 correct 字段），降级使用 accuracy
+        const { choice, fill, subjective } = typeData;
+        const getTypeAccuracy = (t) => t?.grading_total > 0
+            ? (t?.grading_rate || 0) * 100
+            : (t?.total > 0 ? (t?.accuracy || 0) * 100 : 0);
+        const getTypeTotal = (t) => t?.grading_total > 0 ? (t?.grading_total || 0) : (t?.total || 0);
+        const getTypeCorrect = (t) => t?.grading_total > 0 ? (t?.grading_correct || 0) : (t?.correct || 0);
+        totals = [getTypeTotal(choice), getTypeTotal(fill), getTypeTotal(subjective)];
+        corrects = [getTypeCorrect(choice), getTypeCorrect(fill), getTypeCorrect(subjective)];
+        accuracies = [getTypeAccuracy(choice), getTypeAccuracy(fill), getTypeAccuracy(subjective)];
         console.log('[renderQuestionTypeBarChart] 使用后端 grading_* 数据:', { totals, corrects, accuracies });
     } else if (stats && (stats.choice?.total > 0 || stats.objective_fill?.total > 0 || stats.subjective?.total > 0)) {
         // 降级：使用前端计算的 accuracyStats.byType
@@ -1671,12 +1784,12 @@ function renderQuestionTypeBarChart() {
         console.log('[renderQuestionTypeBarChart] 使用前端 accuracyStats.byType:', { totals, corrects, accuracies });
     } else if (typeData) {
         // 最后降级：使用后端 by_question_type 的综合准确率
-        const { choice, objectiveFill, subjective } = typeData;
-        totals = [choice?.total || 0, objectiveFill?.total || 0, subjective?.total || 0];
-        corrects = [choice?.correct || 0, objectiveFill?.correct || 0, subjective?.correct || 0];
+        const { choice, fill, subjective } = typeData;
+        totals = [choice?.total || 0, fill?.total || 0, subjective?.total || 0];
+        corrects = [choice?.correct || 0, fill?.correct || 0, subjective?.correct || 0];
         accuracies = [
             choice?.total > 0 ? (choice?.accuracy || 0) * 100 : 0,
-            objectiveFill?.total > 0 ? (objectiveFill?.accuracy || 0) * 100 : 0,
+            fill?.total > 0 ? (fill?.accuracy || 0) * 100 : 0,
             subjective?.total > 0 ? (subjective?.accuracy || 0) * 100 : 0
         ];
         console.log('[renderQuestionTypeBarChart] 使用后端 by_question_type.accuracy:', { totals, corrects, accuracies });
@@ -1684,7 +1797,8 @@ function renderQuestionTypeBarChart() {
         return;
     }
     
-    const colors = ['#3b82f6', '#f59e0b', '#10b981'];
+    const baseColors = ['#3b82f6', '#f59e0b', '#10b981'];
+    const colors = totals.map((t, i) => t > 0 ? baseColors[i] : '#d1d5db');
     
     if (batchChartInstances.typeBar) {
         batchChartInstances.typeBar.destroy();
@@ -1712,7 +1826,7 @@ function renderQuestionTypeBarChart() {
             onClick: (event, elements) => {
                 if (elements.length > 0) {
                     const index = elements[0].index;
-                    showTypeDetail(typeKeys[index]);
+                    if (totals[index] > 0) showTypeDetail(typeKeys[index]);
                 }
             },
             scales: {
@@ -1760,7 +1874,9 @@ function renderQuestionTypeBarChart() {
                         ctx.fillStyle = '#1d1d1f';
                         ctx.textAlign = 'left';
                         ctx.textBaseline = 'middle';
-                        ctx.fillText(value.toFixed(1) + '%', bar.x + 6, bar.y);
+                        const labelText = totals[index] > 0 ? value.toFixed(1) + '%' : '—';
+                        ctx.fillStyle = totals[index] > 0 ? '#1d1d1f' : '#9ca3af';
+                        ctx.fillText(labelText, bar.x + 6, bar.y);
                         ctx.restore();
                     });
                 });
@@ -1779,11 +1895,14 @@ function calculateAccuracyStats(completedItems, reportByType) {
     let recognitionCorrect = 0;
     let gradingCorrect = 0;
     
-    // 按题型统计
+    // 按题型统计（统一使用三分类：choice, fill, subjective）
     const byType = {
         choice: { total: 0, recCorrect: 0, gradCorrect: 0 },
+        fill: { total: 0, recCorrect: 0, gradCorrect: 0 },
+        subjective: { total: 0, recCorrect: 0, gradCorrect: 0 },
+        // 兼容旧代码引用
         objective_fill: { total: 0, recCorrect: 0, gradCorrect: 0 },
-        subjective: { total: 0, recCorrect: 0, gradCorrect: 0 }
+        subjective_fill: { total: 0, recCorrect: 0, gradCorrect: 0 }
     };
     
     // 收集详情数据 - 遍历每道题的 errors 数组
@@ -1793,7 +1912,7 @@ function calculateAccuracyStats(completedItems, reportByType) {
         // 按题型分组的详情
         byType: {
             choice: { recognition: { correct: [], wrong: [] }, grading: { correct: [], wrong: [] } },
-            objective_fill: { recognition: { correct: [], wrong: [] }, grading: { correct: [], wrong: [] } },
+            fill: { recognition: { correct: [], wrong: [] }, grading: { correct: [], wrong: [] } },
             subjective: { recognition: { correct: [], wrong: [] }, grading: { correct: [], wrong: [] } }
         }
     };
@@ -1809,7 +1928,12 @@ function calculateAccuracyStats(completedItems, reportByType) {
         const bvalue = String(q.bvalue || '');
         const qtype = q.questionType || '';
         if (bvalue === '1' || bvalue === '2' || bvalue === '3') return 'choice';
-        if (qtype === 'objective' && bvalue === '4') return 'objective_fill';
+        if (bvalue === '4') {
+            // 兜底推断：bvalue='4' 但答案是纯字母 A-H，说明是历史数据 bvalue 误存为 4 的选择题
+            const answer = String(q.answer || q.userAnswer || '').trim().toUpperCase().replace(/\s+/g, '');
+            if (answer && answer.length <= 4 && /^[A-H]+$/.test(answer)) return 'choice';
+            return 'fill';  // 合并客观填空和主观填空
+        }
         return 'subjective';
     }
     
@@ -1860,7 +1984,7 @@ function calculateAccuracyStats(completedItems, reportByType) {
                 if (cat && qIndex !== '-') {
                     let qType = 'subjective';
                     if (cat.is_choice) qType = 'choice';
-                    else if (cat.is_fill) qType = 'objective_fill';
+                    else if (cat.is_fill || cat.is_objective_fill || cat.is_subjective_fill) qType = 'fill';  // 兼容旧数据
                     questionTypeMap[qIndex] = qType;
                     questionTypeMap[String(qIndex)] = qType;
                 }
@@ -1906,7 +2030,9 @@ function calculateAccuracyStats(completedItems, reportByType) {
                 aiCorrect: aiCorrect,
                 explanation: err.explanation || '',
                 reason: errorType,
-                questionType: qType
+                questionType: qType,
+                homeworkId: item.homework_id,
+                picPath: item.pic_path || ''
             };
             
             errorIndexSet.add(qIndex);
@@ -1942,7 +2068,9 @@ function calculateAccuracyStats(completedItems, reportByType) {
                     baseUser: q.userAnswer || '-',
                     hwUser: q.userAnswer || '-',
                     reason: '完全匹配',
-                    questionType: qType
+                    questionType: qType,
+                    homeworkId: item.homework_id,
+                    picPath: item.pic_path || ''
                 };
                 window.accuracyDetails.recognition.correct.push(correctInfo);
                 window.accuracyDetails.grading.correct.push(correctInfo);
@@ -1971,8 +2099,8 @@ function calculateAccuracyStats(completedItems, reportByType) {
             const evalByType = evaluation.by_question_type;
             
             // 从 errors 统计每题型的批改/识别错误数
-            const gradErrByType = { choice: 0, objective_fill: 0, subjective: 0 };
-            const recErrByType = { choice: 0, objective_fill: 0, subjective: 0 };
+            const gradErrByType = { choice: 0, fill: 0, subjective: 0 };
+            const recErrByType = { choice: 0, fill: 0, subjective: 0 };
             
             errors.forEach(err => {
                 const cat = err.question_category;
@@ -1980,21 +2108,29 @@ function calculateAccuracyStats(completedItems, reportByType) {
                 let qType = 'subjective';
                 if (cat) {
                     if (cat.is_choice) qType = 'choice';
-                    else if (cat.is_fill) qType = 'objective_fill';
+                    else if (cat.is_fill || cat.is_objective_fill || cat.is_subjective_fill) qType = 'fill';  // 兼容旧数据
                 }
                 if (gradingErrorTypes.includes(errType)) gradErrByType[qType]++;
                 if (recognitionErrorTypes.includes(errType)) recErrByType[qType]++;
             });
             
             // 累加每个题型的统计（使用当前作业的 total，而不是累加后的 total）
-            ['choice', 'objective_fill', 'subjective'].forEach(key => {
-                const typeData = evalByType[key] || {};
-                const typeTotal = typeData.total || 0;
-                byType[key].total += typeTotal;
-                // 批改正确数 = 当前作业的 total - 当前作业的批改错误数
-                byType[key].gradCorrect += Math.max(0, typeTotal - gradErrByType[key]);
-                byType[key].recCorrect += Math.max(0, typeTotal - recErrByType[key]);
-            });
+            // 兼容旧数据：fill 可能来自 objective_fill + subjective_fill
+            const fillTotal = (evalByType.fill?.total || 0) + (evalByType.objective_fill?.total || 0) + (evalByType.subjective_fill?.total || 0);
+            const choiceTotal = evalByType.choice?.total || 0;
+            const subjectiveTotal = evalByType.subjective?.total || 0;
+            
+            byType.choice.total += choiceTotal;
+            byType.fill.total += fillTotal;
+            byType.subjective.total += subjectiveTotal;
+            
+            // 批改正确数 = 当前作业的 total - 当前作业的批改错误数
+            byType.choice.gradCorrect += Math.max(0, choiceTotal - gradErrByType.choice);
+            byType.choice.recCorrect += Math.max(0, choiceTotal - recErrByType.choice);
+            byType.fill.gradCorrect += Math.max(0, fillTotal - gradErrByType.fill);
+            byType.fill.recCorrect += Math.max(0, fillTotal - recErrByType.fill);
+            byType.subjective.gradCorrect += Math.max(0, subjectiveTotal - gradErrByType.subjective);
+            byType.subjective.recCorrect += Math.max(0, subjectiveTotal - recErrByType.subjective);
         }
         
         // 如果没有 error_distribution，使用 correct_count 作为备选
@@ -2024,17 +2160,18 @@ function calculateAccuracyStats(completedItems, reportByType) {
     
     // 最终 fallback：如果 byType 全是 0（hwResult 为空且 evaluation.by_question_type 不存在），
     // 用 reportByType（后端汇总数据）+ errors 的 question_category 补充
-    const byTypeHasData = byType.choice.total > 0 || byType.objective_fill.total > 0 || byType.subjective.total > 0;
+    const byTypeHasData = byType.choice.total > 0 || byType.fill.total > 0 || byType.subjective.total > 0;
     console.log('byTypeHasData:', byTypeHasData, 'reportByType:', reportByType);
     if (!byTypeHasData && reportByType) {
         const qtd = reportByType;
         byType.choice.total = qtd.choice?.total || 0;
-        byType.objective_fill.total = qtd.objective_fill?.total || 0;
+        // 兼容旧数据：合并 objective_fill 和 subjective_fill
+        byType.fill.total = (qtd.fill?.total || 0) + (qtd.objective_fill?.total || 0) + (qtd.subjective_fill?.total || 0);
         byType.subjective.total = (qtd.subjective || qtd.other)?.total || 0;
         
         // 从所有 completedItems 的 errors 中统计每题型的批改/识别错误数
-        const gradErrByType = { choice: 0, objective_fill: 0, subjective: 0 };
-        const recErrByType = { choice: 0, objective_fill: 0, subjective: 0 };
+        const gradErrByType = { choice: 0, fill: 0, subjective: 0, objective_fill: 0, subjective_fill: 0 };
+        const recErrByType = { choice: 0, fill: 0, subjective: 0, objective_fill: 0, subjective_fill: 0 };
         completedItems.forEach(item => {
             (item.evaluation?.errors || []).forEach(err => {
                 const cat = err.question_category;
@@ -2042,14 +2179,16 @@ function calculateAccuracyStats(completedItems, reportByType) {
                 let qType = 'subjective';
                 if (cat) {
                     if (cat.is_choice) qType = 'choice';
-                    else if (cat.is_fill) qType = 'objective_fill';
+                    else if (cat.is_objective_fill) qType = 'objective_fill';
+                    else if (cat.is_subjective_fill) qType = 'subjective_fill';
+                    else if (cat.is_fill) qType = 'fill';  // 兼容旧数据
                 }
                 if (gradingErrorTypes.includes(errType)) gradErrByType[qType]++;
                 if (recognitionErrorTypes.includes(errType)) recErrByType[qType]++;
             });
         });
         
-        ['choice', 'objective_fill', 'subjective'].forEach(key => {
+        ['choice', 'objective_fill', 'subjective_fill', 'subjective'].forEach(key => {
             byType[key].gradCorrect = Math.max(0, byType[key].total - gradErrByType[key]);
             byType[key].recCorrect = Math.max(0, byType[key].total - recErrByType[key]);
         });
@@ -2061,6 +2200,7 @@ function calculateAccuracyStats(completedItems, reportByType) {
     console.log('accuracyDetails:', window.accuracyDetails);
     
     // 保存计算结果到全局变量，供弹窗使用
+    // 统一使用三分类：choice, fill(填空), subjective(主观题)
     const stats = {
         totalQuestions,
         recognitionCorrect: Math.max(0, recognitionCorrect),
@@ -2069,7 +2209,7 @@ function calculateAccuracyStats(completedItems, reportByType) {
         gradingCorrect: Math.max(0, gradingCorrect),
         gradingWrong: Math.max(0, totalQuestions - gradingCorrect),
         gradingRate: totalQuestions > 0 ? (gradingCorrect / totalQuestions) * 100 : 0,
-        // 按题型统计
+        // 按题型统计（三分类）
         byType: {
             choice: {
                 total: byType.choice.total,
@@ -2078,12 +2218,21 @@ function calculateAccuracyStats(completedItems, reportByType) {
                 gradCorrect: byType.choice.gradCorrect,
                 gradRate: byType.choice.total > 0 ? (byType.choice.gradCorrect / byType.choice.total) * 100 : 0
             },
+            // 填空题（合并 objective_fill 和 subjective_fill）
             objective_fill: {
-                total: byType.objective_fill.total,
-                recCorrect: byType.objective_fill.recCorrect,
-                recRate: byType.objective_fill.total > 0 ? (byType.objective_fill.recCorrect / byType.objective_fill.total) * 100 : 0,
-                gradCorrect: byType.objective_fill.gradCorrect,
-                gradRate: byType.objective_fill.total > 0 ? (byType.objective_fill.gradCorrect / byType.objective_fill.total) * 100 : 0
+                total: byType.fill.total,
+                recCorrect: byType.fill.recCorrect,
+                recRate: byType.fill.total > 0 ? (byType.fill.recCorrect / byType.fill.total) * 100 : 0,
+                gradCorrect: byType.fill.gradCorrect,
+                gradRate: byType.fill.total > 0 ? (byType.fill.gradCorrect / byType.fill.total) * 100 : 0
+            },
+            // 保留 subjective_fill 兼容性（指向 fill）
+            subjective_fill: {
+                total: 0,
+                recCorrect: 0,
+                recRate: 0,
+                gradCorrect: 0,
+                gradRate: 0
             },
             subjective: {
                 total: byType.subjective.total,
@@ -3643,6 +3792,13 @@ function renderEvalDetail(detail) {
     document.getElementById('evalDetailTitle').textContent = 
         `${detail.book_name || '未知书本'} - 第${detail.page_num || '-'}页`;
     
+    // 保存当前作业的图片路径，供"查看图片"按钮使用
+    window.currentHomeworkDetail = {
+        picPath: detail.pic_path || '',
+        bookName: detail.book_name || '',
+        pageNum: detail.page_num || ''
+    };
+    
     const evaluation = detail.evaluation || {};
     const errors = evaluation.errors || [];
     const errorDist = evaluation.error_distribution || {};
@@ -4280,6 +4436,8 @@ function showErrorTypeDetail(errorType) {
                 errorItems.push({
                     pageNum: item.page_num || '?',
                     homeworkId: item.homework_id,
+                    picPath: item.pic_path || '',
+                    bookName: item.book_name || '',
                     index: err.index || '-',
                     baseUser: err.base_effect?.userAnswer || '-',
                     aiUser: err.ai_result?.userAnswer || '-',
@@ -4300,6 +4458,9 @@ function showErrorTypeDetail(errorType) {
         return;
     }
     
+    // 保存到全局变量，供查看图片功能使用
+    window.currentErrorItems = errorItems;
+    
     // 创建弹窗
     const modal = document.createElement('div');
     modal.className = 'error-detail-modal';
@@ -4312,11 +4473,21 @@ function showErrorTypeDetail(errorType) {
                     ${escapeHtml(errorType)}
                     <span class="error-count">${errorItems.length}题</span>
                 </div>
-                <button class="error-detail-close" onclick="closeErrorDetailModal()">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 6L6 18M6 6l12 12"/>
-                    </svg>
-                </button>
+                <div class="error-detail-actions">
+                    <button class="error-detail-view-image" onclick="viewCurrentErrorImage()" title="查看当前题目的作业图片">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                        查看图片
+                    </button>
+                    <button class="error-detail-close" onclick="closeErrorDetailModal()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="error-detail-body">
                 <div class="error-cards-list">
@@ -4403,7 +4574,32 @@ function closeErrorDetailModal() {
     if (modal) {
         modal.remove();
     }
+    window.currentErrorItems = null;
     document.removeEventListener('keydown', handleModalEsc);
+}
+
+// 查看当前错题的作业图片
+function viewCurrentErrorImage() {
+    if (!window.currentErrorItems || window.currentErrorItems.length === 0) {
+        alert('没有可查看的图片');
+        return;
+    }
+    
+    // 查找当前展开的卡片，如果没有展开的则使用第一个
+    const expandedCard = document.querySelector('.error-card.expanded');
+    let idx = 0;
+    if (expandedCard) {
+        idx = parseInt(expandedCard.dataset.idx) || 0;
+    }
+    
+    const item = window.currentErrorItems[idx];
+    if (!item || !item.picPath) {
+        alert('该题目没有关联的作业图片');
+        return;
+    }
+    
+    const title = `${item.bookName || ''} P${item.pageNum} 题${item.index}`;
+    viewHomeworkImage(item.picPath, title);
 }
 
 function handleModalEsc(e) {
@@ -4423,7 +4619,7 @@ function showAccuracyDetail(type, subType, questionType) {
     // 题型名称映射
     const questionTypeNames = {
         'choice': '选择题',
-        'objective_fill': '客观填空',
+        'objective_fill': '填空题',
         'subjective': '主观题'
     };
     const qTypeName = questionType ? questionTypeNames[questionType] : '';
@@ -4524,15 +4720,15 @@ function showAccuracyDetail(type, subType, questionType) {
             <div class="error-detail-body">
                 <div class="error-cards-list">
                     ${items.map((item, idx) => `
-                        <div class="error-card" data-idx="${idx}">
-                            <div class="error-card-header" onclick="toggleErrorCard(this)">
-                                <div class="error-card-summary">
+                        <div class="error-card" data-idx="${idx}" style="border: none;">
+                            <div class="error-card-header">
+                                <div class="error-card-summary" onclick="openHomeworkImageFromModal('${escapeHtml(item.picPath || '')}', 'P${item.pageNum}')" style="cursor: pointer;" title="点击查看作业图片">
                                     <span class="error-card-page">P${item.pageNum}</span>
                                     <span class="error-card-index">题${escapeHtml(String(item.index))}</span>
                                     <span class="error-card-preview">${escapeHtml(truncateText(item.baseUser || '-', 30))}</span>
                                     <span class="error-card-type" style="background: ${subType === 'correct' ? '#e3f9e5' : '#ffeef0'}; color: ${subType === 'correct' ? '#1e7e34' : '#d73a49'};">${escapeHtml(item.errorType || statusName)}</span>
                                 </div>
-                                <span class="error-card-toggle">
+                                <span class="error-card-toggle" onclick="toggleErrorCard(this.parentElement)">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M6 9l6 6 6-6"/>
                                     </svg>
@@ -4586,25 +4782,16 @@ function showAccuracyTypeSummaryModal(type, questionType, correct, wrong, colorC
     const typeName = type === 'recognition' ? '识别' : '批改';
     const questionTypeNames = {
         'choice': '选择题',
-        'objective_fill': '客观填空',
+        'objective_fill': '填空题',
         'subjective': '主观题'
     };
     const qTypeName = questionTypeNames[questionType] || questionType;
     
-    // 从 window.accuracyStats.byType 获取统计数据
-    const stats = window.accuracyStats?.byType?.[questionType] || {};
-    const total = stats.total || 0;
-    let correctCount, wrongCount, rate;
-    
-    if (type === 'recognition') {
-        correctCount = stats.recCorrect || 0;
-        wrongCount = total - correctCount;
-        rate = stats.recRate || 0;
-    } else {
-        correctCount = stats.gradCorrect || 0;
-        wrongCount = total - correctCount;
-        rate = stats.gradRate || 0;
-    }
+    // 使用实际的详情数据长度来计算统计数据，避免数据总数异常
+    const correctCount = correct.length;
+    const wrongCount = wrong.length;
+    const total = correctCount + wrongCount;
+    const rate = total > 0 ? (correctCount / total) * 100 : 0;
     
     const modal = document.createElement('div');
     modal.className = 'error-detail-modal';
@@ -4643,21 +4830,21 @@ function showAccuracyTypeSummaryModal(type, questionType, correct, wrong, colorC
                     <div class="error-cards-list" style="max-height: 400px; overflow-y: auto;">
                         ${wrong.length === 0 ? '<div style="text-align: center; color: #86868b; padding: 20px;">无错误题目</div>' : 
                         wrong.map((item, idx) => `
-                            <div class="error-card" data-idx="${idx}" style="background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; margin-bottom: 8px;">
-                                <div class="error-card-header" onclick="toggleErrorCard(this)" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; cursor: pointer; background: #fff;">
-                                    <div class="error-card-summary" style="display: flex; align-items: center; gap: 8px; flex: 1; color: #1d1d1f;">
+                            <div class="error-card" data-idx="${idx}" style="background: #fff; border-radius: 8px; margin-bottom: 8px;">
+                                <div class="error-card-header" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; cursor: pointer; background: #fff;">
+                                    <div class="error-card-summary" onclick="openHomeworkImageFromModal('${escapeHtml(item.picPath || '')}', 'P${item.pageNum || '?'}')" style="display: flex; align-items: center; gap: 8px; flex: 1; color: #1d1d1f; cursor: pointer;" title="点击查看作业图片">
                                         <span style="font-size: 12px; font-weight: 500; color: #1d1d1f; background: #f5f5f7; padding: 2px 8px; border-radius: 4px;">P${item.pageNum || '?'}</span>
                                         <span style="font-size: 13px; font-weight: 600; color: #1d1d1f;">题${escapeHtml(String(item.index || '-'))}</span>
                                         <span style="font-size: 13px; color: #666; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(truncateText(item.baseUser || '-', 20))} vs ${escapeHtml(truncateText(item.hwUser || '-', 20))}</span>
                                         <span style="background: #ffeef0; color: #d73a49; padding: 2px 6px; border-radius: 4px; font-size: 11px;">${escapeHtml(item.errorType || '-')}</span>
                                     </div>
-                                    <span class="error-card-toggle" style="color: #1d1d1f;">
+                                    <span class="error-card-toggle" onclick="toggleErrorCard(this.parentElement)" style="color: #1d1d1f; padding: 4px; cursor: pointer;">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M6 9l6 6 6-6"/>
                                         </svg>
                                     </span>
                                 </div>
-                                <div class="error-card-detail" style="display: none; padding: 12px 16px; border-top: 1px solid #e5e5e5; background: #fafafa;">
+                                <div class="error-card-detail" style="display: none; padding: 12px 16px; background: #fafafa;">
                                     <div style="margin-bottom: 8px;">
                                         <div style="font-size: 11px; color: #86868b; margin-bottom: 4px;">标准答案</div>
                                         <div style="font-size: 13px; color: #1d1d1f; background: #fff; padding: 8px; border-radius: 4px;">${escapeHtml(item.baseAnswer || '-')}</div>
@@ -4699,21 +4886,11 @@ function showAccuracyTypeSummaryModal(type, questionType, correct, wrong, colorC
 function showAccuracySummaryModal(type, correct, wrong, colorCorrect, colorWrong) {
     const typeName = type === 'recognition' ? '识别' : '批改';
     
-    // 使用计算出来的统计数字（从 window.accuracyStats 获取）
-    const stats = window.accuracyStats || {};
-    let correctCount, wrongCount, total, rate;
-    
-    if (type === 'recognition') {
-        correctCount = stats.recognitionCorrect || 0;
-        wrongCount = stats.recognitionWrong || 0;
-        total = stats.totalQuestions || 0;
-        rate = stats.recognitionRate || 0;
-    } else {
-        correctCount = stats.gradingCorrect || 0;
-        wrongCount = stats.gradingWrong || 0;
-        total = stats.totalQuestions || 0;
-        rate = stats.gradingRate || 0;
-    }
+    // 使用实际的详情数据长度来计算统计数据，避免数据总数异常
+    const correctCount = correct.length;
+    const wrongCount = wrong.length;
+    const total = correctCount + wrongCount;
+    const rate = total > 0 ? (correctCount / total) * 100 : 0;
     
     const modal = document.createElement('div');
     modal.className = 'error-detail-modal';
@@ -4752,21 +4929,21 @@ function showAccuracySummaryModal(type, correct, wrong, colorCorrect, colorWrong
                     <div class="error-cards-list" style="max-height: 400px; overflow-y: auto;">
                         ${wrong.length === 0 ? '<div style="text-align: center; color: #86868b; padding: 20px;">无错误题目</div>' : 
                         wrong.map((item, idx) => `
-                            <div class="error-card" data-idx="${idx}" style="background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; margin-bottom: 8px;">
-                                <div class="error-card-header" onclick="toggleErrorCard(this)" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; cursor: pointer; background: #fff;">
-                                    <div class="error-card-summary" style="display: flex; align-items: center; gap: 8px; flex: 1; color: #1d1d1f;">
+                            <div class="error-card" data-idx="${idx}" style="background: #fff; border-radius: 8px; margin-bottom: 8px;">
+                                <div class="error-card-header" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; cursor: pointer; background: #fff;">
+                                    <div class="error-card-summary" onclick="openHomeworkImageFromModal('${escapeHtml(item.picPath || '')}', 'P${item.pageNum || '?'}')" style="display: flex; align-items: center; gap: 8px; flex: 1; color: #1d1d1f; cursor: pointer;" title="点击查看作业图片">
                                         <span style="font-size: 12px; font-weight: 500; color: #1d1d1f; background: #f5f5f7; padding: 2px 8px; border-radius: 4px;">P${item.pageNum || '?'}</span>
                                         <span style="font-size: 13px; font-weight: 600; color: #1d1d1f;">题${escapeHtml(String(item.index || '-'))}</span>
                                         <span style="font-size: 13px; color: #666; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(truncateText(item.baseUser || '-', 20))} vs ${escapeHtml(truncateText(item.hwUser || '-', 20))}</span>
                                         <span style="background: #ffeef0; color: #d73a49; padding: 2px 6px; border-radius: 4px; font-size: 11px;">${escapeHtml(item.errorType || '-')}</span>
                                     </div>
-                                    <span class="error-card-toggle" style="color: #1d1d1f;">
+                                    <span class="error-card-toggle" onclick="toggleErrorCard(this.parentElement)" style="color: #1d1d1f; padding: 4px; cursor: pointer;">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M6 9l6 6 6-6"/>
                                         </svg>
                                     </span>
                                 </div>
-                                <div class="error-card-detail" style="display: none; padding: 12px 16px; border-top: 1px solid #e5e5e5; background: #fafafa;">
+                                <div class="error-card-detail" style="display: none; padding: 12px 16px; background: #fafafa;">
                                     <div style="margin-bottom: 8px;">
                                         <div style="font-size: 11px; color: #86868b; margin-bottom: 4px;">标准答案</div>
                                         <div style="font-size: 13px; color: #1d1d1f; background: #fff; padding: 8px; border-radius: 4px;">${escapeHtml(item.baseAnswer || '-')}</div>
@@ -4808,6 +4985,15 @@ function showAccuracySummaryModal(type, correct, wrong, colorCorrect, colorWrong
     
     document.body.appendChild(modal);
     document.addEventListener('keydown', handleAccuracyModalEsc);
+}
+
+// 从弹窗中打开作业图片
+function openHomeworkImageFromModal(picPath, title) {
+    if (!picPath) {
+        alert('该题目没有关联的作业图片');
+        return;
+    }
+    viewHomeworkImage(picPath, title);
 }
 
 function closeAccuracyDetailModal() {
@@ -6463,8 +6649,8 @@ function renderTypeDetailContent(data) {
             const aiResult = q.ai_result || {};
             
             html += `
-                <div class="type-detail-item ${isError ? 'is-error' : 'is-correct'}">
-                    <div class="item-header">
+                <div class="type-detail-item ${isError ? 'is-error' : 'is-correct'}" style="border: none;">
+                    <div class="item-header" onclick="openHomeworkImageFromModal('${escapeHtml(q.pic_path || '')}', 'P${q.page_num || '-'}')" style="cursor: pointer;" title="点击查看作业图片">
                         <span class="item-index">第${escapeHtml(q.index || '-')}题</span>
                         <span class="item-source">${escapeHtml(q.book_name || '')} P${q.page_num || '-'}</span>
                         <span class="error-type-tag ${getErrorTypeClass(q.error_type)}">${escapeHtml(q.error_type || '-')}</span>

@@ -204,3 +204,5 @@ def recognize_compare():
     except Exception as e:
         print(f"[ImagePreprocess] 识别对比异常: {e}")
         return jsonify({'success': False, 'error': str(e)})
+
+

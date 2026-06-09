@@ -24,7 +24,7 @@ const DetailedAnalysis = {
         if (!data || data.length === 0) {
             container.innerHTML = `
                 <div class="detail-empty">
-                    <div class="detail-empty-icon">📋</div>
+                    <div class="detail-empty-icon"><svg viewBox="0 0 24 24" width="32" height="32"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></div>
                     <div class="detail-empty-text">暂无详细分析数据</div>
                 </div>
             `;
@@ -147,7 +147,7 @@ const DetailedAnalysis = {
                         ` : ''}
                         ${item.suggestion ? `
                             <div class="detail-suggestion">
-                                <strong>💡 建议：</strong>${escapeHtml(item.suggestion)}
+                                <strong>建议：</strong>${escapeHtml(item.suggestion)}
                             </div>
                         ` : ''}
                     </div>

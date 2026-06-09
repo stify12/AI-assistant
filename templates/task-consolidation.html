@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务整合评估</title>
+    <link rel="preconnect" href="https://cdn.bootcdn.net" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.bootcdn.net">
+    <link rel="stylesheet" href="/static/css/common.css?v=20260125">
+    <link rel="stylesheet" href="/static/css/task-consolidation.css?v=20260303">
+    <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        .loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.95);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9999}
+        .loading-overlay.show{display:flex}
+        .loading-container{text-align:center}
+        .loading-icon{width:48px;height:48px;margin:0 auto 16px}
+        .loading-icon-circle{width:100%;height:100%;border:3px solid #e5e5e5;border-top-color:#1d1d1f;border-radius:50%;animation:spin 0.8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="logo">任务整合评估</div>
+        <div style="display:flex;gap:12px;align-items:center;">
+            <button class="back-btn" onclick="goBack()">返回批量评估</button>
+        </div>
+    </nav>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-container">
+            <div class="loading-icon">
+                <div class="loading-icon-circle"></div>
+            </div>
+            <div class="loading-text" id="loadingText">分析中...</div>
+        </div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="main-layout">
+        <!-- 左侧面板 - 任务选择 -->
+        <div class="left-panel">
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">选择任务</div>
+                </div>
+                
+                <!-- 学科筛选 -->
+                <div class="filter-row">
+                    <div class="form-group">
+                        <label>学科筛选</label>
+                        <select id="subjectFilter" onchange="loadTasks()">
+                            <option value="">全部学科</option>
+                            <option value="0">英语</option>
+                            <option value="1">语文</option>
+                            <option value="2">数学</option>
+                            <option value="3">物理</option>
+                            <option value="4">化学</option>
+                            <option value="5">生物</option>
+                            <option value="6">地理</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- 操作按钮 -->
+                <div class="action-row">
+                    <span class="selection-info">已选择 <strong id="selectedCount">0</strong> 个任务</span>
+                    <button class="btn btn-small" onclick="selectAllTasks()">全选</button>
+                    <button class="btn btn-small btn-secondary" onclick="clearSelection()">清空</button>
+                </div>
+                
+                <!-- 任务列表 -->
+                <div class="task-list" id="taskList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">--</div>
+                        <div class="empty-state-text">加载中...</div>
+                    </div>
+                </div>
+                
+                <!-- 分析按钮 -->
+                <div class="analyze-btn-container">
+                    <button class="btn btn-primary btn-large" id="analyzeBtn" onclick="runAnalysis()" disabled>
+                        开始整合分析
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧面板 - 分析结果 -->
+        <div class="right-panel">
+            <div class="empty-right-panel" id="emptyResult">
+                <div class="empty-state">
+                    <div class="empty-state-icon">--</div>
+                    <div class="empty-state-text">请从左侧选择任务后点击"开始整合分析"</div>
+                </div>
+            </div>
+            
+            <!-- 分析结果区域 -->
+            <div class="result-container" id="resultContainer" style="display:none;">
+                <!-- 总体概览 -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">总体概览</div>
+                    </div>
+                    <div class="stats-grid" id="summaryStats">
+                        <!-- 动态填充 -->
+                    </div>
+                </div>
+                
+                <!-- 批改准确率分析 -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">批改准确率分析</div>
+                    </div>
+                    <div class="charts-row">
+                        <div class="chart-box">
+                            <div class="chart-title">批改结果分布</div>
+                            <canvas id="correctDistributionChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <div class="chart-title">各任务准确率对比</div>
+                            <canvas id="taskAccuracyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 错误类型分析 -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">错误类型分析</div>
+                    </div>
+                    <div class="charts-row">
+                        <div class="chart-box">
+                            <div class="chart-title">错误类型分布</div>
+                            <canvas id="errorTypeChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <div class="chart-title">高频错误题目 TOP10</div>
+                            <canvas id="highErrorQuestionsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 题型准确率分析 -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">题型准确率分析</div>
+                    </div>
+                    <div class="chart-box chart-full">
+                        <div class="chart-title">各题型批改准确率</div>
+                        <canvas id="typeAccuracyChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 任务详情表格 -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">任务详情</div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="taskDetailTable">
+                            <thead>
+                                <tr>
+                                    <th>任务名称</th>
+                                    <th>学科</th>
+                                    <th>测试条件</th>
+                                    <th>作业数</th>
+                                    <th>题目数</th>
+                                    <th>一致数</th>
+                                    <th>准确率</th>
+                                </tr>
+                            </thead>
+                            <tbody id="taskDetailBody">
+                                <!-- 动态填充 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- 批改准确率分析表格 -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">批改准确率分析</div>
+                        <button class="btn btn-small btn-primary" onclick="exportAccuracyAnalysis()" id="exportBtn">
+                            导出Excel
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="accuracyAnalysisTable">
+                            <thead>
+                                <tr>
+                                    <th>书籍名称</th>
+                                    <th>页码</th>
+                                    <th>测试时间</th>
+                                    <th>科目</th>
+                                    <th>题型</th>
+                                    <th>份数</th>
+                                    <th>题型总数</th>
+                                    <th>错误数量</th>
+                                    <th>批改准确率</th>
+                                    <th>综合准确率</th>
+                                </tr>
+                            </thead>
+                            <tbody id="accuracyAnalysisBody">
+                                <!-- 动态填充 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/task-consolidation.js?v=20260303b"></script>
+</body>
+</html>

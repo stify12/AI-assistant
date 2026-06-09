@@ -205,6 +205,13 @@ class TestcaseGeneratorService:
         """
         questions = []
         
+        # 从第一个 item 获取 size（原始图片尺寸），所有题目共享
+        img_size = None
+        for item in data_value:
+            if item.get('size'):
+                img_size = item['size']
+                break
+        
         for item in data_value:
             children = item.get('children', [])
             parent_content = item.get('content', '') or ''
@@ -231,10 +238,20 @@ class TestcaseGeneratorService:
                         # 完整显示，标注小题序号
                         child_content = f"[第{child_index}小题，完整题目如下]\n{clean_content.strip()}"
                     
+                    # 继承 size 到 child（如果 child 没有 size）
+                    if img_size and not child.get('size'):
+                        child['size'] = img_size
+                    # 如果 child 没有 point，使用父级 point 作为回退
+                    if not child.get('point') and item.get('point'):
+                        child['point'] = item['point']
+                    
                     questions.append(TestcaseGeneratorService._format_question(child, child_content))
             else:
                 # 没有有效小题，提取大题本身（如果有答案）
                 if item.get('jans') or item.get('ans'):
+                    # 继承 size
+                    if img_size and not item.get('size'):
+                        item['size'] = img_size
                     questions.append(TestcaseGeneratorService._format_question(item))
         
         return questions
@@ -433,15 +450,35 @@ class TestcaseGeneratorService:
             content = re.sub(r'<[^>]+>', '', content)
             content = re.sub(r'!\[([^\]]*)\]\([^\)]+\)', r'[图:\1]', content)
         
-        return {
+        # bvalue：优先取原始字段，若无则根据答案内容推断题型
+        raw_bvalue = item.get('bvalue', '')
+        if raw_bvalue:
+            bvalue_str = str(raw_bvalue)
+        else:
+            # 根据答案推断：纯字母 A-H 为选择题，否则为填空/主观题
+            ans_clean = answer.replace(' ', '').upper()
+            if ans_clean and all(c in 'ABCDEFGH' for c in ans_clean):
+                bvalue_str = '2' if len(ans_clean) > 1 else '1'  # 多选/单选
+            else:
+                bvalue_str = '4'  # 填空/主观
+
+        result = {
             'index': str(item.get('index', '')),
             'tempIndex': item.get('tempIndex', 0),
             'content': content,
             'questionType': item.get('questionType', 'objective'),
-            'bvalue': str(item.get('bvalue', '4')),
+            'bvalue': bvalue_str,
             'answer': answer,
             'maxScore': max_score
         }
+        
+        # 保留坐标数据（如果存在）
+        if item.get('point'):
+            result['point'] = item['point']
+        if item.get('size'):
+            result['size'] = item['size']
+        
+        return result
     
     @staticmethod
     def get_default_scenarios(subject_id: int = 2) -> Dict:
@@ -524,6 +561,12 @@ class TestcaseGeneratorService:
                         if assignment:
                             effect['_question'] = assignment['question']
                             effect['_templateId'] = assignment['template_id']
+                            # 从原始题目回填 bvalue 和 questionType（LLM 输出不含这两个字段）
+                            q = assignment['question']
+                            if not effect.get('bvalue'):
+                                effect['bvalue'] = q.get('bvalue', '4')
+                            if not effect.get('questionType'):
+                                effect['questionType'] = q.get('questionType', 'objective')
                         base_effects.append(effect)
                 else:
                     # 尝试解析为单个 JSON 对象
@@ -538,6 +581,12 @@ class TestcaseGeneratorService:
                             if assignment:
                                 obj['_question'] = assignment['question']
                                 obj['_templateId'] = assignment['template_id']
+                                # 从原始题目回填 bvalue 和 questionType（LLM 输出不含这两个字段）
+                                q = assignment['question']
+                                if not obj.get('bvalue'):
+                                    obj['bvalue'] = q.get('bvalue', '4')
+                                if not obj.get('questionType'):
+                                    obj['questionType'] = q.get('questionType', 'objective')
                             base_effects.append(obj)
                         else:
                             errors.append(f"题{i+1}: 无法解析生成结果")
@@ -950,6 +999,11 @@ class TestcaseGeneratorService:
                 effect['fillGuide'] = ''
             effect['_question'] = question
             effect['_templateId'] = template_id
+            # 从原始题目回填 bvalue 和 questionType（LLM 输出不含这两个字段）
+            if not effect.get('bvalue'):
+                effect['bvalue'] = question.get('bvalue', '4')
+            if not effect.get('questionType'):
+                effect['questionType'] = question.get('questionType', 'objective')
             
             return {'success': True, 'data': effect}
             

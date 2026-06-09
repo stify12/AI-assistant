@@ -411,6 +411,9 @@ async function loadAvailableHomework() {
             }
         }
         
+        // 智能推荐：自动选择每个页码最新的作业
+        autoSelectRecommended();
+        
         renderHomeworkGrid();
         
     } catch (e) {
@@ -420,42 +423,91 @@ async function loadAvailableHomework() {
     hideLoading();
 }
 
+// 智能推荐：自动选择每个页码最新的作业
+function autoSelectRecommended() {
+    for (const [page, homeworkList] of Object.entries(availableHomework)) {
+        if (homeworkList && homeworkList.length > 0) {
+            // 如果该页码还没有选择作业，自动选择最新的（第一个）
+            if (!selectedHomework[page]) {
+                selectedHomework[page] = homeworkList[0];
+            }
+        }
+    }
+}
+
+// 一键选择所有推荐作业
+function selectAllRecommended() {
+    for (const [page, homeworkList] of Object.entries(availableHomework)) {
+        if (homeworkList && homeworkList.length > 0) {
+            selectedHomework[page] = homeworkList[0];
+        }
+    }
+    renderHomeworkGrid();
+}
+
+// 清空所有选择
+function clearAllHomeworkSelection() {
+    selectedHomework = {};
+    renderHomeworkGrid();
+}
+
 function renderHomeworkGrid() {
     const container = document.getElementById('homeworkGrid');
     const pages = Array.from(selectedPages).sort((a, b) => a - b);
     
     let html = '';
     let hasHomework = false;
+    let totalSelected = Object.keys(selectedHomework).length;
+    let totalAvailable = Object.keys(availableHomework).filter(p => availableHomework[p]?.length > 0).length;
+    
+    // 添加批量操作按钮
+    if (totalAvailable > 0) {
+        html += `<div class="homework-batch-actions">
+            <div class="homework-batch-info">
+                已选择 <strong>${totalSelected}</strong> / ${totalAvailable} 个页码的作业
+            </div>
+            <div class="homework-batch-buttons">
+                <button class="btn btn-small btn-text" onclick="clearAllHomeworkSelection()">清空选择</button>
+            </div>
+        </div>`;
+    }
     
     for (const page of pages) {
         const homeworkList = availableHomework[page] || [];
         
         if (homeworkList.length > 0) {
             hasHomework = true;
+            const isRecommended = homeworkList[0]?.id === selectedHomework[page]?.id;
             html += `<div class="page-group">
-                <div class="page-group-title">第 ${page} 页 (${homeworkList.length} 个可用)</div>
+                <div class="page-group-title">
+                    第 ${page} 页 (${homeworkList.length} 个可用)
+                    ${isRecommended ? '<span class="recommended-badge">智能推荐</span>' : ''}
+                </div>
                 <div class="homework-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;">
-                    ${homeworkList.map(hw => `
-                        <div class="homework-card ${selectedHomework[page]?.id === hw.id ? 'selected' : ''}" 
+                    ${homeworkList.map((hw, idx) => `
+                        <div class="homework-card ${selectedHomework[page]?.id === hw.id ? 'selected' : ''} ${idx === 0 ? 'recommended' : ''}" 
                              onclick="selectHomework(${page}, '${hw.id}')">
                             <img class="homework-image" 
                                  src="${hw.pic_url || '/static/images/no-image.png'}" 
                                  alt="作业图片"
-                                 onclick="showImageModal('${hw.pic_url}')">
+                                 onclick="event.stopPropagation();showImageModal('${hw.pic_url}')"
+                                 onmouseover="showImagePreview(event, '${hw.pic_url}')"
+                                 onmouseout="hideImagePreview()">
                             <div class="homework-info">
                                 <div class="homework-title" title="${escapeHtml(hw.student_name || hw.student_id)}">${escapeHtml(hw.student_name || hw.student_id || '未知学生')}</div>
                                 <div class="homework-meta">
-                                    作业ID: ${hw.id}<br>
+                                    ${hw.class_name ? `班级: ${escapeHtml(hw.class_name)}<br>` : ''}
                                     时间: ${formatTime(hw.create_time)}<br>
                                     题目数: ${hw.question_count || 0}
                                 </div>
                                 ${selectedHomework[page]?.id === hw.id ? '<span class="homework-select-badge">已选择</span>' : ''}
+                                ${idx === 0 && selectedHomework[page]?.id !== hw.id ? '<span class="homework-recommend-badge">推荐</span>' : ''}
                             </div>
                         </div>
                     `).join('')}
                 </div>
             </div>`;
-        } else {
+        } else if (!filterText) {
             html += `<div class="page-group">
                 <div class="page-group-title">第 ${page} 页</div>
                 <div class="empty-state" style="padding:20px;"><div class="empty-state-text">该页码暂无可用作业图片</div></div>
@@ -464,13 +516,51 @@ function renderHomeworkGrid() {
     }
     
     if (!hasHomework) {
-        html = '<div class="empty-state"><div class="empty-state-text">所选页码暂无可用作业图片，请调整时间范围或选择其他页码</div></div>';
+        if (filterText) {
+            html += '<div class="empty-state"><div class="empty-state-text">没有匹配的作业图片</div></div>';
+        } else {
+            html += '<div class="empty-state"><div class="empty-state-text">所选页码暂无可用作业图片，请调整时间范围或选择其他页码</div></div>';
+        }
     }
     
     container.innerHTML = html;
     
     // 检查是否可以进入步骤3
     updateStep3Visibility();
+}
+
+// 图片悬停预览
+let previewTimeout;
+function showImagePreview(event, imageUrl) {
+    clearTimeout(previewTimeout);
+    previewTimeout = setTimeout(() => {
+        const preview = document.getElementById('imagePreviewTooltip') || createImagePreviewTooltip();
+        preview.querySelector('img').src = imageUrl;
+        preview.style.display = 'block';
+        
+        // 定位到鼠标附近
+        const x = event.clientX + 20;
+        const y = event.clientY + 20;
+        preview.style.left = x + 'px';
+        preview.style.top = y + 'px';
+    }, 300); // 300ms延迟，避免快速移动时频繁显示
+}
+
+function hideImagePreview() {
+    clearTimeout(previewTimeout);
+    const preview = document.getElementById('imagePreviewTooltip');
+    if (preview) {
+        preview.style.display = 'none';
+    }
+}
+
+function createImagePreviewTooltip() {
+    const tooltip = document.createElement('div');
+    tooltip.id = 'imagePreviewTooltip';
+    tooltip.style.cssText = 'position:fixed;z-index:10000;display:none;background:#fff;border:2px solid #1d1d1f;border-radius:8px;padding:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);max-width:400px;pointer-events:none;';
+    tooltip.innerHTML = '<img style="max-width:100%;max-height:400px;display:block;border-radius:4px;">';
+    document.body.appendChild(tooltip);
+    return tooltip;
 }
 
 function selectHomework(page, homeworkId) {
@@ -577,6 +667,32 @@ function renderRecognizePreview() {
             `;
         }
         
+        // 构建图片展示区域
+        let imageHtml = '';
+        if (result?.preprocess_info?.enabled) {
+            // 有预处理信息，展示前后对比
+            const originalImg = `data:image/jpeg;base64,${result.preprocess_info.original_image}`;
+            const processedImg = `data:image/jpeg;base64,${result.preprocess_info.processed_image}`;
+            imageHtml = `
+                <div class="preprocess-compare">
+                    <div class="preprocess-image-item">
+                        <div class="preprocess-image-label">预处理前</div>
+                        <img class="recognize-image" src="${originalImg}" onclick="showImageModal('${originalImg}')">
+                    </div>
+                    <div class="preprocess-image-item">
+                        <div class="preprocess-image-label">预处理后</div>
+                        <img class="recognize-image" src="${processedImg}" onclick="showImageModal('${processedImg}')">
+                    </div>
+                </div>
+            `;
+        } else {
+            // 无预处理，展示原始图片
+            imageHtml = `
+                <img class="recognize-image" src="${hw.pic_url || '/static/images/no-image.png'}" 
+                     onclick="showImageModal('${hw.pic_url}')">
+            `;
+        }
+        
         return `
             <div class="recognize-item ${status === 'error' ? 'recognize-item-error' : ''}">
                 <div class="recognize-item-header">
@@ -587,8 +703,7 @@ function renderRecognizePreview() {
                     </div>
                 </div>
                 <div class="recognize-preview">
-                    <img class="recognize-image" src="${hw.pic_url || '/static/images/no-image.png'}" 
-                         onclick="showImageModal('${hw.pic_url}')">
+                    ${imageHtml}
                     <div class="recognize-data">
                         ${dataHtml}
                     </div>
@@ -795,6 +910,7 @@ async function recognizePage(page) {
     try {
         const model = document.getElementById('recognizeModelSelect')?.value || 'doubao-seed-2-0-pro-260215';
         const reasoningEffort = document.getElementById('reasoningEffortSelect')?.value || 'medium';
+        const enablePreprocess = document.getElementById('enablePreprocessCheckbox')?.checked || false;
         
         const res = await fetch('/api/dataset/recognize', {
             method: 'POST',
@@ -804,7 +920,8 @@ async function recognizePage(page) {
                 pic_path: hw.pic_path,
                 subject_id: selectedBook.subject_id,
                 model: model,
-                reasoning_effort: REASONING_MODELS.includes(model) ? reasoningEffort : null
+                reasoning_effort: REASONING_MODELS.includes(model) ? reasoningEffort : null,
+                enable_preprocess: enablePreprocess
             }),
             signal: controller.signal
         });
@@ -838,7 +955,8 @@ async function recognizePage(page) {
         if (data.success) {
             recognizeResults[page] = {
                 success: true,
-                data: data.data || []
+                data: data.data || [],
+                preprocess_info: data.preprocess_info || null
             };
         } else {
             recognizeResults[page] = {

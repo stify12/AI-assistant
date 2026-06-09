@@ -91,6 +91,14 @@ app.register_blueprint(auth_bp)
 from knowledge_agent.routes import knowledge_agent_bp
 app.register_blueprint(knowledge_agent_bp)
 
+# 注册AI调研员蓝图
+from research_agent.routes import research_agent_bp
+app.register_blueprint(research_agent_bp)
+
+# 注册作业测试工具蓝图
+from routes.homework_test import homework_test_bp
+app.register_blueprint(homework_test_bp)
+
 # 初始化调度服务 (US-10) - 使用统一调度服务
 def init_scheduler():
     """初始化 APScheduler 调度器"""

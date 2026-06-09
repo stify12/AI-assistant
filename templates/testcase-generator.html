@@ -131,6 +131,13 @@
 
             <!-- 生成按钮 -->
             <div class="action-section">
+                <div class="generate-options">
+                    <label class="toggle-label">
+                        <input type="checkbox" id="saveScoreToggle" onchange="onScoreToggleChange()">
+                        <span class="toggle-text">包含评分字段</span>
+                        <span class="toggle-hint">（生成并保存 score/maxScore）</span>
+                    </label>
+                </div>
                 <button class="btn btn-primary btn-large" id="generateBtn" onclick="generateTestcases()" disabled>
                     生成基准效果
                 </button>
@@ -172,13 +179,6 @@
                 <div class="dataset-name-row">
                     <span class="dataset-name-label">数据集名称</span>
                     <input type="text" id="datasetNameInline" class="dataset-name-input" placeholder="输入数据集名称" maxlength="200">
-                </div>
-                <div class="dataset-name-row">
-                    <label class="toggle-label">
-                        <input type="checkbox" id="saveScoreToggle">
-                        <span class="toggle-text">保存评分字段</span>
-                        <span class="toggle-hint">（关闭时不保存 score/maxScore）</span>
-                    </label>
                 </div>
             </div>
             

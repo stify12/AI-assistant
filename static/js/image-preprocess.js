@@ -86,6 +86,7 @@ function initPage() {
     // 按钮事件
     document.getElementById('processBtn').addEventListener('click', processImage);
     document.getElementById('recognizeBtn').addEventListener('click', recognizeTest);
+    document.getElementById('batchRecognizeBtn').addEventListener('click', batchRecognize);
 
     // 图片点击放大 - lightbox
     initLightbox();
@@ -463,5 +464,8 @@ function initLightbox() {
     });
 }
 
-// ========== 初始化 ==========
-document.addEventListener('DOMContentLoaded', initPage);
+
+// ========== 页面加载完成后初始化 ==========
+document.addEventListener('DOMContentLoaded', function() {
+    initPage();
+});

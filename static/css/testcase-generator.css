@@ -393,10 +393,25 @@ body {
     padding: 0;
 }
 
+.generate-options {
+    padding: 10px 0 12px;
+}
+
 .btn-large {
     width: 100%;
     padding: 14px 20px;
     font-size: 15px;
+}
+
+.cell-score {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.edit-input-score {
+    width: 54px !important;
+    text-align: center;
+    padding: 4px 6px !important;
 }
 
 /* ========== 结果区 ========== */

@@ -9,6 +9,7 @@ from flask import Blueprint, request, jsonify, render_template
 from services.config_service import ConfigService
 from services.database_service import DatabaseService
 from services.llm_service import LLMService
+from services.image_preprocess_service import ImagePreprocessService
 
 dataset_manage_bp = Blueprint('dataset_manage', __name__)
 
@@ -390,6 +391,7 @@ def dataset_recognize():
         subject_id = data.get('subject_id', 0)
         model = data.get('model', 'doubao-seed-2-0-pro-260215')
         reasoning_effort = data.get('reasoning_effort')  # 可为 None
+        enable_preprocess = data.get('enable_preprocess', False)  # 是否启用图片预处理
         
         if not homework_id and not pic_path:
             return jsonify({'success': False, 'error': '缺少作业ID或图片路径'}), 400
@@ -426,6 +428,46 @@ def dataset_recognize():
         if not pic_url:
             return jsonify({'success': False, 'error': '无法获取图片URL'})
         
+        # 图片预处理（如果启用）
+        original_image_base64 = None
+        processed_image_base64 = None
+        image_to_recognize = pic_url  # 默认使用原始URL
+        
+        if enable_preprocess:
+            try:
+                print(f"[DatasetRecognize] 开始图片预处理: {pic_url}")
+                
+                # 下载图片并转换为base64
+                import requests
+                import base64
+                response = requests.get(pic_url, timeout=30)
+                response.raise_for_status()
+                original_image_base64 = base64.b64encode(response.content).decode('utf-8')
+                
+                # 调用预处理服务（使用默认参数）
+                preprocess_result = ImagePreprocessService.process_image(
+                    original_image_base64,
+                    steps_config=None,  # 使用默认步骤配置
+                    params_config=None   # 使用默认参数
+                )
+                
+                if preprocess_result.get('processed_image'):
+                    processed_image_base64 = preprocess_result['processed_image']
+                    # 使用预处理后的图片进行识别（添加data URI前缀）
+                    image_to_recognize = f"data:image/jpeg;base64,{processed_image_base64}"
+                    print(f"[DatasetRecognize] 图片预处理完成")
+                    
+                    # 记录预处理警告
+                    if preprocess_result.get('warnings'):
+                        print(f"[DatasetRecognize] 预处理警告: {preprocess_result['warnings']}")
+                else:
+                    print(f"[DatasetRecognize] 预处理失败，使用原始图片")
+                    enable_preprocess = False  # 标记预处理失败
+                    
+            except Exception as e:
+                print(f"[DatasetRecognize] 图片预处理异常: {e}")
+                enable_preprocess = False  # 预处理失败，继续使用原始图片
+        
         # 解析 data_value 构建动态提示词
         data_value_items = []
         if homework_row and homework_row.get('data_value'):
@@ -452,7 +494,7 @@ def dataset_recognize():
             prompt = prompts_config.get(prompt_key, prompts_config.get('recognize', '请识别图片中作业的每道题答案。'))
         
         # 调用视觉模型，设置较长的超时时间以支持多题目识别
-        result = LLMService.call_vision_model(pic_url, prompt, model, timeout=240, user_id=user_id, reasoning_effort=reasoning_effort)
+        result = LLMService.call_vision_model(image_to_recognize, prompt, model, timeout=240, user_id=user_id, reasoning_effort=reasoning_effort)
         
         if result.get('error'):
             return jsonify({'success': False, 'error': result['error']})
@@ -529,7 +571,20 @@ def dataset_recognize():
                 
                 formatted_data.append(formatted_item)
             
-            return jsonify({'success': True, 'data': formatted_data})
+            # 构建返回数据，包含预处理信息
+            response_data = {
+                'data': formatted_data
+            }
+            
+            # 如果启用了预处理，返回预处理前后的图片
+            if enable_preprocess and original_image_base64 and processed_image_base64:
+                response_data['preprocess_info'] = {
+                    'enabled': True,
+                    'original_image': original_image_base64,
+                    'processed_image': processed_image_base64
+                }
+            
+            return jsonify({'success': True, **response_data})
         else:
             print(f"[DatasetRecognize] Failed to extract JSON array")
             return jsonify({

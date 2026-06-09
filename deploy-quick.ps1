@@ -1,4 +1,8 @@
 # Quick Deploy - Using tar + ssh streaming (much faster than scp)
+param(
+    [switch]$fonts  # 加 -fonts 参数时同步字体文件
+)
+
 $SSH_KEY = "$env:USERPROFILE\.ssh\id_ed25519_baota"
 $SERVER = "root@47.82.64.147"
 $REMOTE_PATH = "/www/wwwroot/ai-grading/Ai"
@@ -32,7 +36,7 @@ $items = @(
     "docker-compose.yml", "docker-compose.dev.yml",
     "prompts.json", "config.example.json", "database_schema.sql",
     # workflow_config.json 不再部署覆盖，线上前端修改的配置以服务器为准
-    "routes", "services", "utils", "templates", "static", "knowledge_agent", "tests", "migrations"
+    "routes", "services", "utils", "templates", "static", "knowledge_agent", "research_agent", "tests", "migrations"
 )
 
 # Check which items exist
@@ -44,6 +48,18 @@ foreach ($item in $items) {
     } else {
         $missingItems += $item
     }
+}
+
+# 按需添加 font_assets
+if ($fonts) {
+    if (Test-Path "font_assets") {
+        $existingItems += "font_assets"
+        Write-Host "  [fonts] Including font_assets (~86MB)" -ForegroundColor Yellow
+    } else {
+        Write-Host "  [fonts] font_assets not found, skipping" -ForegroundColor Yellow
+    }
+} else {
+    Write-Host "  [skip] font_assets excluded (use -fonts to include)" -ForegroundColor DarkGray
 }
 
 Write-Host "  Found $($existingItems.Count) files/directories" -ForegroundColor Green

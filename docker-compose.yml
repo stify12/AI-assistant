@@ -53,6 +53,9 @@ services:
       - ./exports:/app/exports
       - ./knowledge_tasks:/app/knowledge_tasks
       - ./knowledge_uploads:/app/knowledge_uploads
+      - ./research_agent:/app/research_agent
+      - ./research_tasks:/app/research_tasks
+      - ./research_uploads:/app/research_uploads
       - ./analysis_files:/app/analysis_files
       - ./analysis_tasks:/app/analysis_tasks
       - ./best_practices:/app/best_practices
@@ -61,6 +64,7 @@ services:
       - ./config.json:/app/config.json
       - ./workflow_config.json:/app/workflow_config.json
       - ./models:/app/models
+      - ./font_assets:/app/font_assets
 
     environment:
       - FLASK_ENV=production

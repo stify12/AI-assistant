@@ -47,7 +47,7 @@ class ImagePreprocessService:
         'super_resolution': {'scale': 2, 'sharpen_strength': 0.3},
         'denoise': {'kernel_size': 3},
         'background_clean': {'morph_size': 51, 'strength': 0.9},
-        'levels': {'black_point': 90, 'white_point': 170, 'gamma': 1.0},
+        'levels': {'black_point': 40, 'white_point': 220, 'gamma': 1.0},
         'sharpen': {'amount': 2.5, 'radius': 1, 'threshold': 0},
         'contrast': {'clip_limit': 1.2, 'tile_grid_size': 8},
         'binarize': {'block_size': 31, 'constant_c': 10},
@@ -70,7 +70,7 @@ class ImagePreprocessService:
             'strength': {'min': 0.1, 'max': 1.0, 'type': 'float'},
         },
         'levels': {
-            'black_point': {'min': 0, 'max': 150, 'type': 'int'},
+            'black_point': {'min': 0, 'max': 100, 'type': 'int'},
             'white_point': {'min': 150, 'max': 255, 'type': 'int'},
             'gamma': {'min': 0.5, 'max': 3.0, 'type': 'float'},
         },
@@ -330,7 +330,7 @@ class ImagePreprocessService:
         if steps_config is None:
             steps_config = {}
         default_steps = {
-            'perspective': True,
+            'perspective': False,  # 关闭：容易误检测导致黑边，用户可手动开启
             'super_resolution': False,
             'grayscale': True,
             'denoise': False,
@@ -431,12 +431,10 @@ class ImagePreprocessService:
 
                 current_image = result_image
 
-                # 编码中间结果
-                step_base64 = cls.encode_image_base64(current_image)
+                # 只保存步骤名称，不编码图片（性能优化）
                 step_results.append({
                     'step': step_name,
-                    'label': step_label,
-                    'image': step_base64
+                    'label': step_label
                 })
 
             except Exception as e:
@@ -742,6 +740,29 @@ class ImagePreprocessService:
         # 大核形态学闭运算估算纸张底色
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (scaled_morph_size, scaled_morph_size))
         background_small = cv2.morphologyEx(small_gray, cv2.MORPH_CLOSE, kernel)
+        
+        # 边缘阴影增强处理：对边缘区域使用更大的高斯模糊来平滑阴影
+        edge_width = max(10, int(min(small_gray.shape) * 0.05))
+        blur_size = scaled_morph_size * 2 + 1
+        background_blur = cv2.GaussianBlur(small_gray, (blur_size, blur_size), 0)
+        
+        # 创建边缘权重掩码（边缘区域使用模糊背景，中心使用闭运算背景）
+        sh, sw = small_gray.shape
+        mask = np.ones((sh, sw), dtype=np.float32)
+        # 左右边缘渐变
+        for i in range(edge_width):
+            weight = i / edge_width
+            mask[:, i] = weight
+            mask[:, sw - 1 - i] = weight
+        # 上下边缘渐变
+        for i in range(edge_width):
+            weight = i / edge_width
+            mask[i, :] = np.minimum(mask[i, :], weight)
+            mask[sh - 1 - i, :] = np.minimum(mask[sh - 1 - i, :], weight)
+        
+        # 混合两种背景估算
+        background_small = (background_small.astype(np.float32) * mask + 
+                           background_blur.astype(np.float32) * (1 - mask)).astype(np.uint8)
         
         # 如果降采样了，需要上采样回原尺寸
         if scale_factor < 1.0:
@@ -1123,45 +1144,55 @@ class ImagePreprocessService:
                 line = get_line_fn(i)
                 means.append(float(line.mean()))
 
-            # 起始行就很亮（纸张区域），不裁
-            if means[0] > 180:
-                return 0
-
-            # 下边缘使用更宽松的检测策略
-            if is_bottom:
-                # 策略1: 找到第一个亮度>100的位置（跳过纯黑区域）
-                first_bright = -1
-                for i in range(max_lines):
-                    if means[i] > 100:
-                        first_bright = i
-                        break
-                
-                if first_bright < 0:
+            # 检测是否有暗边需要裁剪（起始行暗，后面变亮）
+            # 或者是否有纯白空白边（起始行很亮但无内容）
+            has_dark_edge = means[0] < 180
+            
+            # 如果起始行很亮，检查是否是纯白空白边（几乎全是255）
+            if not has_dark_edge:
+                # 检查前几行是否都是接近纯白（>245）
+                pure_white_count = sum(1 for m in means[:min(10, len(means))] if m > 245)
+                if pure_white_count < 5:
+                    # 不是纯白空白边，不需要裁剪
                     return 0
+
+            # 下边缘使用更智能的检测策略
+            if is_bottom:
+                # 收集每行的min值（检测暗点）
+                mins = []
+                for i in range(max_lines):
+                    line = get_line_fn(i)
+                    mins.append(int(line.min()))
                 
-                # 策略2: 从第一个亮点开始，找连续3行平均>90的位置
-                window = 3
+                # 策略1: 找到第一行min值>200（干净的白色区域）
                 content_start = -1
-                for i in range(first_bright, max_lines - window + 1):
-                    chunk = means[i:i + window]
-                    if sum(chunk) / len(chunk) > 90:
+                for i in range(max_lines):
+                    if mins[i] > 200 and means[i] > 250:
                         content_start = i
                         break
                 
-                # 策略3: 如果还是找不到，使用更激进的策略（连续2行>80）
+                # 策略2: 如果找不到纯白行，找第一个相对干净的位置
                 if content_start < 0:
-                    window = 2
-                    for i in range(first_bright, max_lines - window + 1):
-                        chunk = means[i:i + window]
-                        if sum(chunk) / len(chunk) > 80:
+                    for i in range(max_lines):
+                        if mins[i] > 150 and means[i] > 230:
                             content_start = i
                             break
+                
+                # 策略3: 回退到原有策略
+                if content_start < 0:
+                    first_bright = -1
+                    for i in range(max_lines):
+                        if means[i] > 100:
+                            first_bright = i
+                            break
+                    if first_bright >= 0:
+                        content_start = first_bright
                 
                 if content_start < 0:
                     return 0
                 
-                # 下边缘只推进2px安全边距（避免过度裁剪）
-                content_start = min(content_start + 2, max_lines - 1)
+                # 下边缘推进5px安全边距
+                content_start = min(content_start + 5, max_lines - 1)
                 
                 return content_start
             

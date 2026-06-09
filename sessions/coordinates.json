@@ -1,0 +1,121 @@
+{
+  "submit_homework_button": {
+    "x": 1200,
+    "y": 400,
+    "name": "提交作业按钮",
+    "category": "main",
+    "wait_after": 2
+  },
+  "camera_capture_button": {
+    "x": 667,
+    "y": 978,
+    "name": "拍照按钮",
+    "category": "camera",
+    "wait_after": 2
+  },
+  "double_page_button": {
+    "x": 400,
+    "y": 551,
+    "name": "双页拍照按钮",
+    "category": "camera",
+    "wait_after": 2
+  },
+  "submit_button": {
+    "x": 1593,
+    "y": 955,
+    "name": "提交按钮",
+    "category": "submit",
+    "wait_after": 2
+  },
+  "confirm_submit_button": {
+    "x": 886,
+    "y": 781,
+    "name": "确认提交按钮",
+    "category": "submit",
+    "wait_after": 3
+  },
+  "login_entry_button": {
+    "x": 370,
+    "y": 600,
+    "name": "登录入口按钮",
+    "category": "login",
+    "wait_after": 1
+  },
+  "teacher_login_button": {
+    "x": 1800,
+    "y": 70,
+    "name": "教师登录按钮",
+    "category": "login",
+    "wait_after": 1
+  },
+  "username_input": {
+    "x": 930,
+    "y": 426,
+    "name": "用户名输入框",
+    "category": "login",
+    "wait_after": 0.5
+  },
+  "password_input": {
+    "x": 880,
+    "y": 530,
+    "name": "密码输入框",
+    "category": "login",
+    "wait_after": 0.5
+  },
+  "login_submit_button": {
+    "x": 960,
+    "y": 670,
+    "name": "登录提交按钮",
+    "category": "login",
+    "wait_after": 3
+  },
+  "publish_homework_button": {
+    "x": 400,
+    "y": 560,
+    "name": "发布作业按钮",
+    "category": "publish",
+    "wait_after": 2
+  },
+  "select_page_button": {
+    "x": 870,
+    "y": 379,
+    "name": "选择页码按钮",
+    "category": "publish",
+    "wait_after": 1
+  },
+  "page_number_selector": {
+    "x": 659,
+    "y": 233,
+    "name": "页码选择器",
+    "category": "publish",
+    "wait_after": 0.5
+  },
+  "page_number_select_button": {
+    "x": 830,
+    "y": 230,
+    "name": "页码确认按钮",
+    "category": "publish",
+    "wait_after": 0.5
+  },
+  "confirm_page_button": {
+    "x": 950,
+    "y": 900,
+    "name": "确认页码按钮",
+    "category": "publish",
+    "wait_after": 1
+  },
+  "homework_name_input": {
+    "x": 833,
+    "y": 557,
+    "name": "作业名称输入框",
+    "category": "publish",
+    "wait_after": 0.5
+  },
+  "publish_submit_button": {
+    "x": 960,
+    "y": 960,
+    "name": "发布提交按钮",
+    "category": "publish",
+    "wait_after": 3
+  }
+}

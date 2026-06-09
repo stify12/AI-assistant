@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模拟手写 - AI效果分析平台</title>
+    <link rel="preload" href="/static/css/common.css?v=20260124" as="style">
+    <link rel="preload" href="/static/css/index.css?v=20260124" as="style">
+    <link rel="preload" href="/static/css/handwriting.css?v=20260307g" as="style">
+    <link rel="stylesheet" href="/static/css/common.css?v=20260124">
+    <link rel="stylesheet" href="/static/css/index.css?v=20260124">
+    <link rel="stylesheet" href="/static/css/handwriting.css?v=20260307g">
+</head>
+<body>
+    <!-- 主内容区域（无侧边栏） -->
+    <main class="hw-main hw-no-sidebar">
+        <div class="hw-header">
+            <a href="/" class="hw-back-btn" title="返回首页">
+                <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            </a>
+            <div>
+                <h1 class="hw-title">模拟手写</h1>
+                <p class="hw-subtitle">将文字转换为自然手写效果，支持自定义背景和框选区域渲染</p>
+            </div>
+        </div>
+
+        <div class="hw-layout">
+            <!-- 左侧：控制面板 -->
+            <div class="hw-panel-left">
+                <!-- 文字输入 -->
+                <div class="hw-card">
+                    <div class="hw-card-header">
+                        <span class="hw-card-title">文字内容</span>
+                        <span class="hw-char-count" id="charCount">0 字</span>
+                    </div>
+                    <textarea class="hw-textarea" id="textInput" placeholder="在这里输入要生成手写效果的文字..."></textarea>
+                </div>
+
+                <!-- 字体选择 -->
+                <div class="hw-card">
+                    <div class="hw-card-header">
+                        <span class="hw-card-title">字体设置</span>
+                    </div>
+                    <div class="hw-form-row">
+                        <div class="hw-form-group">
+                            <label class="hw-label">字体</label>
+                            <select class="hw-select" id="fontSelect">
+                                <option value="">加载中...</option>
+                            </select>
+                        </div>
+                        <div class="hw-form-group">
+                            <label class="hw-label">字号</label>
+                            <input type="number" class="hw-input" id="fontSize" value="80" min="20" max="300">
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- 背景图选择 -->
+                <div class="hw-card">
+                    <div class="hw-card-header">
+                        <span class="hw-card-title">背景图片</span>
+                        <div class="hw-header-actions">
+                            <button class="hw-btn-sm" id="uploadBtn" onclick="document.getElementById('bgImageInput').click()">自定义上传</button>
+                            <button class="hw-btn-sm hw-btn-sm-danger" id="clearBgBtn" onclick="clearBackground()" style="display:none;">清除</button>
+                        </div>
+                    </div>
+                    <input type="file" id="bgImageInput" accept="image/*" style="display:none;" onchange="onBackgroundUpload(event)">
+                    <div class="hw-form-row" style="margin-bottom:8px;">
+                        <div class="hw-form-group">
+                            <label class="hw-label">学科</label>
+                            <select class="hw-select" id="subjectSelect" onchange="onSubjectChange()">
+                                <option value="">请选择</option>
+                                <option value="2">数学</option>
+                                <option value="3">物理</option>
+                                <option value="4">化学</option>
+                                <option value="1">语文</option>
+                                <option value="0">英语</option>
+                                <option value="5">生物</option>
+                                <option value="6">地理</option>
+                            </select>
+                        </div>
+                        <div class="hw-form-group" style="flex:2;">
+                            <label class="hw-label">书本</label>
+                            <select class="hw-select" id="bookSelect" onchange="onBookChange()">
+                                <option value="">请先选择学科</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="hw-form-group">
+                        <label class="hw-label">页码</label>
+                        <select class="hw-select" id="pageSelect" onchange="onPageChange()">
+                            <option value="">请先选择书本</option>
+                        </select>
+                    </div>
+                    <button class="hw-btn hw-btn-ai" id="aiParseBtn" onclick="aiParseQuestions()" style="display:none;margin-top:10px;width:100%;">
+                        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                        解析小题
+                    </button>
+                </div>
+
+                <!-- 小题模块列表（AI解析后显示） -->
+                <div class="hw-card" id="modulesCard" style="display:none;">
+                    <div class="hw-card-header">
+                        <span class="hw-card-title">小题列表</span>
+                        <div class="hw-header-actions">
+                            <button class="hw-btn-sm" onclick="addModule()">+ 添加</button>
+                            <button class="hw-btn-sm hw-btn-sm-danger" onclick="clearAllModules()">清空</button>
+                        </div>
+                    </div>
+                    <div id="modulesList" class="hw-modules-list"></div>
+                    <div style="padding:8px 12px 12px;">
+                        <button class="hw-btn hw-btn-ai" id="generateAnswersBtn" onclick="generateAnswersOnRegions()" style="width:100%;">
+                            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                            生成手写答案
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 布局设置（默认折叠） -->
+                <div class="hw-card">
+                    <div class="hw-card-header hw-card-toggle" id="layoutToggle">
+                        <span class="hw-card-title">布局设置</span>
+                        <svg class="hw-toggle-icon" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                    </div>
+                    <div class="hw-collapsible-panel" id="layoutPanel" style="display: none;">
+                        <div class="hw-form-grid">
+                            <div class="hw-form-group">
+                                <label class="hw-label">行间距</label>
+                                <input type="number" class="hw-input" id="lineSpacing" value="120" min="30">
+                            </div>
+                            <div class="hw-form-group">
+                                <label class="hw-label">字间距</label>
+                                <input type="number" class="hw-input" id="wordSpacing" value="1" min="0">
+                            </div>
+                            <div class="hw-form-group">
+                                <label class="hw-label">上边距</label>
+                                <input type="number" class="hw-input" id="topMargin" value="50" min="0">
+                            </div>
+                            <div class="hw-form-group">
+                                <label class="hw-label">下边距</label>
+                                <input type="number" class="hw-input" id="bottomMargin" value="50" min="0">
+                            </div>
+                            <div class="hw-form-group">
+                                <label class="hw-label">左边距</label>
+                                <input type="number" class="hw-input" id="leftMargin" value="50" min="0">
+                            </div>
+                            <div class="hw-form-group">
+                                <label class="hw-label">右边距</label>
+                                <input type="number" class="hw-input" id="rightMargin" value="50" min="0">
+                            </div>
+                        </div>
+                        <div class="hw-form-row" style="margin-top: 12px;">
+                            <label class="hw-checkbox-label">
+                                <input type="checkbox" id="showLines" checked>
+                                <span>显示横线</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 画布尺寸 + 高级参数（折叠） -->
+                <div class="hw-card">
+                    <div class="hw-card-header hw-card-toggle" id="advancedToggle">
+                        <span class="hw-card-title">画布与高级参数</span>
+                        <svg class="hw-toggle-icon" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                    </div>
+                    <div class="hw-collapsible-panel" id="advancedPanel" style="display: none;">
+                        <div class="hw-form-row" style="margin-bottom:12px;">
+                            <div class="hw-form-group">
+                                <label class="hw-label">画布宽度 (px)</label>
+                                <input type="number" class="hw-input" id="canvasWidth" value="2481" min="200">
+                            </div>
+                            <div class="hw-form-group">
+                                <label class="hw-label">画布高度 (px)</label>
+                                <input type="number" class="hw-input" id="canvasHeight" value="3507" min="200">
+                            </div>
+                        </div>
+                        <div class="hw-form-grid">
+                            <div class="hw-form-group">
+                                <label class="hw-label">行距扰动</label>
+                                <input type="number" class="hw-input" id="lineSpacingSigma" value="0" min="0">
+                            </div>
+                            <div class="hw-form-group">
+                                <label class="hw-label">字号扰动</label>
+                                <input type="number" class="hw-input" id="fontSizeSigma" value="2" min="0">
+                            </div>
+                            <div class="hw-form-group">
+                                <label class="hw-label">字距扰动</label>
+                                <input type="number" class="hw-input" id="wordSpacingSigma" value="2" min="0">
+                            </div>
+                            <div class="hw-form-group">
+                                <label class="hw-label">X 偏移扰动</label>
+                                <input type="number" class="hw-input" id="perturbXSigma" value="3" min="0">
+                            </div>
+                            <div class="hw-form-group">
+                                <label class="hw-label">Y 偏移扰动</label>
+                                <input type="number" class="hw-input" id="perturbYSigma" value="3" min="0">
+                            </div>
+                            <div class="hw-form-group">
+                                <label class="hw-label">旋转扰动</label>
+                                <input type="number" class="hw-input" id="perturbThetaSigma" value="0.05" min="0" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="hw-actions">
+                    <button class="hw-btn hw-btn-primary" id="generateBtn" onclick="generateHandwriting()">
+                        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                        生成手写
+                    </button>
+                    <button class="hw-btn hw-btn-secondary" onclick="resetSettings()">
+                        重置参数
+                    </button>
+                </div>
+            </div>
+
+            <!-- 右侧：预览区 -->
+            <div class="hw-panel-right">
+                <!-- 预览画布 -->
+                <div class="hw-card hw-preview-card">
+                    <div class="hw-card-header">
+                        <span class="hw-card-title">预览</span>
+                        <div class="hw-page-nav" id="pageNav" style="display:none;">
+                            <button class="hw-page-btn" id="prevPageBtn" onclick="prevPage()" disabled>
+                                <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                            </button>
+                            <span class="hw-page-info" id="pageInfo">1 / 1</span>
+                            <button class="hw-page-btn" id="nextPageBtn" onclick="nextPage()" disabled>
+                                <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="hw-preview-container" id="previewContainer">
+                        <div class="hw-canvas-wrapper" id="canvasWrapper">
+                            <canvas id="previewCanvas" onclick="openLightbox()" title="点击放大查看"></canvas>
+                            <!-- 热区覆盖层 -->
+                            <div class="hw-hotzones-layer" id="hotzonesLayer"></div>
+                        </div>
+                        <!-- 框选覆盖层 -->
+                        <div class="hw-selection-overlay" id="selectionOverlay" style="display:none;"></div>
+                        <div class="hw-preview-placeholder" id="previewPlaceholder">
+                            <svg viewBox="0 0 24 24" width="48" height="48"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                            <p>生成后将在此处预览手写效果</p>
+                        </div>
+                    </div>
+                    <!-- 框选工具栏 -->
+                    <div class="hw-selection-toolbar" id="selectionToolbar">
+                        <label class="hw-checkbox-label">
+                            <input type="checkbox" id="enableSelection" onchange="toggleSelection()">
+                            <span>启用框选区域</span>
+                        </label>
+                        <span class="hw-selection-info" id="selectionInfo"></span>
+                        <button class="hw-btn-sm" id="clearSelectionBtn" onclick="clearSelection()" style="display:none;">清除框选</button>
+                    </div>
+                </div>
+
+                <!-- 下载按钮 -->
+                <div class="hw-download-bar" id="downloadBar" style="display:none;">
+                    <button class="hw-btn hw-btn-primary" onclick="downloadCurrentImage()">
+                        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        下载当前页
+                    </button>
+                    <button class="hw-btn hw-btn-secondary" onclick="downloadAllImages()">
+                        下载全部
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 生成中遮罩 -->
+    <div class="hw-loading-overlay" id="loadingOverlay" style="display:none;">
+        <div class="hw-loading-spinner"></div>
+        <p class="hw-loading-text">正在生成手写效果，请稍候...</p>
+    </div>
+
+    <!-- Toast 提示 -->
+    <div class="hw-toast-container" id="toastContainer"></div>
+
+    <script src="/static/js/handwriting.js?v=20260307j"></script>
+</body>
+</html>

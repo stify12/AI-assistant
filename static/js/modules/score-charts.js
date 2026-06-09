@@ -60,7 +60,7 @@ function renderQuestionTypeScoreChart(report, completedItems) {
     const canvas = document.getElementById('questionTypeAccuracyChart');
     if (!canvas) return;
     
-    const typeNames = { choice: '选择题', objective_fill: '客观填空', subjective: '主观题' };
+    const typeNames = { choice: '选择题', fill: '填空题', subjective: '主观题' };
     const labels = [];
     const accuracyData = [];
     const totalData = [];
@@ -73,7 +73,7 @@ function renderQuestionTypeScoreChart(report, completedItems) {
     
     if (byQuestionType && Object.keys(byQuestionType).length > 0) {
         // 使用后端数据 - 优先使用分数准确率
-        ['choice', 'objective_fill', 'subjective'].forEach(type => {
+        ['choice', 'fill', 'subjective'].forEach(type => {
             const stats = byQuestionType[type];
             // 只显示有分数数据的题型
             if (stats && stats.score_total > 0) {
@@ -88,7 +88,7 @@ function renderQuestionTypeScoreChart(report, completedItems) {
     } else {
         // 降级：从 completedItems 计算（仅用于兼容旧数据）
         const scoreData = collectScoreDataByType(completedItems);
-        ['choice', 'objective_fill', 'subjective'].forEach(type => {
+        ['choice', 'fill', 'subjective'].forEach(type => {
             const stats = scoreData[type];
             if (stats && stats.total > 0) {
                 labels.push(typeNames[type]);
@@ -214,10 +214,10 @@ function checkHasScoreDataFromItems(completedItems) {
  * 从 completedItems 收集分数数据（降级方案）
  */
 function collectScoreDataByType(completedItems) {
-    const typeStats = {
-        choice: { total: 0, correct: 0 },
-        objective_fill: { total: 0, correct: 0 },
-        subjective: { total: 0, correct: 0 }
+    const typeData = {
+        choice: [],
+        fill: [],
+        subjective: []
     };
     
     completedItems.forEach(item => {
@@ -252,7 +252,7 @@ function collectScoreDataByType(completedItems) {
 function classifyQuestionTypeForScore(baseEffect, questionCategory) {
     if (questionCategory) {
         if (questionCategory.is_choice) return 'choice';
-        if (questionCategory.is_fill) return 'objective_fill';
+        if (questionCategory.is_fill) return 'fill';
         if (questionCategory.is_subjective) return 'subjective';
     }
     
@@ -260,7 +260,7 @@ function classifyQuestionTypeForScore(baseEffect, questionCategory) {
     const qtype = baseEffect?.questionType || '';
     
     if (['1', '2', '3'].includes(bvalue)) return 'choice';
-    if (qtype === 'objective' && bvalue === '4') return 'objective_fill';
+    if (bvalue === '4') return 'fill';  // 合并客观填空和主观填空
     return 'subjective';
 }
 

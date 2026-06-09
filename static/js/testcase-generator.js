@@ -469,8 +469,12 @@ function renderGroupedResults() {
         card.appendChild(header);
 
         // 表格
+        const showScore = document.getElementById('saveScoreToggle')?.checked || false;
         const tableWrap = document.createElement('div');
         tableWrap.className = 'page-group-table';
+        const scoreHeaders = showScore
+            ? '<th style="width:70px;">满分</th><th style="width:70px;">得分</th>'
+            : '';
         tableWrap.innerHTML = `
             <table class="result-table">
                 <thead><tr>
@@ -478,6 +482,7 @@ function renderGroupedResults() {
                     <th style="width:60px;">对错</th>
                     <th style="width:120px;">标准答案</th>
                     <th style="width:140px;">应填答案</th>
+                    ${scoreHeaders}
                     <th style="width:160px;">标签</th>
                     <th>填写指导</th>
                     <th style="width:70px;"></th>
@@ -491,6 +496,15 @@ function renderGroupedResults() {
             const tr = document.createElement('tr');
             const ra = latexToReadable(item.answer || '-');
             const ru = latexToReadable(item.userAnswer || '');
+            const scoreCells = showScore ? `
+                <td class="cell-score">
+                    <input type="number" class="edit-input edit-input-score" value="${item.maxScore != null ? item.maxScore : ''}"
+                           onchange="updatePageEffect(${pageNum}, ${idx}, 'maxScore', this.value === '' ? null : Number(this.value))" placeholder="-">
+                </td>
+                <td class="cell-score">
+                    <input type="number" class="edit-input edit-input-score" value="${item.score != null ? item.score : ''}"
+                           onchange="updatePageEffect(${pageNum}, ${idx}, 'score', this.value === '' ? null : Number(this.value))" placeholder="-">
+                </td>` : '';
             tr.innerHTML = `
                 <td class="cell-index">${escapeHtml(item.index || '-')}</td>
                 <td>
@@ -503,6 +517,7 @@ function renderGroupedResults() {
                 <td class="cell-user-answer">
                     <textarea class="edit-textarea" rows="2" onchange="updatePageEffect(${pageNum}, ${idx}, 'userAnswer', this.value)" placeholder="应填答案">${escapeHtml(ru)}</textarea>
                 </td>
+                ${scoreCells}
                 <td>
                     <input type="text" class="edit-input" value="${escapeHtml((item.tags||[]).join(', '))}"
                            onchange="updatePageEffectTags(${pageNum}, ${idx}, this.value)" placeholder="标签">
@@ -579,6 +594,11 @@ async function regenerateEffect(pageNum, idx) {
     } finally {
         if (row) row.classList.remove('row-loading');
     }
+}
+
+// ========== 评分字段开关 ==========
+function onScoreToggleChange() {
+    renderGroupedResults();
 }
 
 // ========== 编辑/删除操作 ==========

@@ -244,11 +244,12 @@ let imageLightbox;
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         imageLightbox = new ImageLightbox();
+        window.imageLightbox = imageLightbox;
     });
 } else {
     imageLightbox = new ImageLightbox();
+    window.imageLightbox = imageLightbox;
 }
 
-// 导出供外部使用
+// 导出类供外部使用
 window.ImageLightbox = ImageLightbox;
-window.imageLightbox = imageLightbox;

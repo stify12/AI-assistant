@@ -41,6 +41,9 @@ def register_blueprints(app):
     from .workflow_routes import workflow_bp
     from .smart_publish import smart_publish_bp
     from .image_preprocess import image_preprocess_bp
+    from .test_speed import test_speed_bp
+    from .task_consolidation import task_consolidation_bp
+    from .handwriting import handwriting_bp
     
     # 注册通用路由（无前缀）
     app.register_blueprint(common_bp)
@@ -128,3 +131,12 @@ def register_blueprints(app):
     
     # 注册图片预处理路由
     app.register_blueprint(image_preprocess_bp)
+    
+    # 注册速度测试路由
+    app.register_blueprint(test_speed_bp)
+    
+    # 注册任务整合评估路由
+    app.register_blueprint(task_consolidation_bp)
+    
+    # 注册模拟手写路由
+    app.register_blueprint(handwriting_bp)

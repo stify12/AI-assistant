@@ -1979,7 +1979,7 @@ class DashboardService:
             if question_types['subjective'] > 0:
                 type_distribution.append(f"主观题 {question_types['subjective']} 道")
             type_str = '、'.join(type_distribution) if type_distribution else '未知'
-            
+
             prompt = f"""你是一个AI批改效果测试专家。请根据以下数据集信息，生成一个详细的测试计划。
 
 ## 数据集信息
@@ -2009,39 +2009,39 @@ class DashboardService:
 
             # 3. 调用 DeepSeek API (NFR-34.6: 30秒超时)
             system_prompt = '你是一个专业的AI批改效果测试专家，擅长制定测试计划和验收标准。请用中文回答。'
-            
+
             result = LLMService.call_deepseek(
                 prompt=prompt,
                 system_prompt=system_prompt,
                 model='deepseek-v3.2',
                 timeout=30
             )
-            
+
             if 'error' in result:
                 raise Exception(f"AI调用失败: {result['error']}")
-            
+
             # 4. 解析 AI 返回的 JSON
             content = result.get('content', '')
             plan_data = LLMService.parse_json_response(content)
-            
+
             if not plan_data:
                 # 如果解析失败，返回默认模板
                 plan_data = DashboardService._generate_default_plan(
-                    subject_name, book_names_str, pages_str, 
+                    subject_name, book_names_str, pages_str,
                     total_questions, sample_count, question_types
                 )
-            
+
             # 5. 验证和补充必要字段
             plan_data = DashboardService._validate_plan_data(plan_data, subject_name)
-            
+
             return plan_data
-            
+
         except ValueError:
             raise
         except Exception as e:
             print(f"[Dashboard] AI生成测试计划失败: {e}")
             raise Exception(f"生成测试计划失败: {str(e)}")
-    
+
     @staticmethod
     def _generate_default_plan(
         subject_name: str,
@@ -2053,9 +2053,9 @@ class DashboardService:
     ) -> Dict[str, Any]:
         """
         生成默认测试计划模板
-        
+
         当 AI 调用失败或解析失败时使用。
-        
+
         Args:
             subject_name: 学科名称
             book_names: 书本名称
@@ -2063,7 +2063,7 @@ class DashboardService:
             total_questions: 题目总数
             sample_count: 样本数量
             question_types: 题目类型分布
-            
+
         Returns:
             dict: 默认测试计划数据
         """

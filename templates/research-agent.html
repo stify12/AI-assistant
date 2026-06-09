@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI调研员 - 全流程行业调研</title>
+    <link rel="stylesheet" href="/static/css/common.css?v=20260302">
+    <link rel="stylesheet" href="/static/css/research-agent.css?v=20260302">
+    <script src="https://cdn.bootcdn.net/ajax/libs/marked/9.1.6/marked.min.js" defer></script>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+            </div>
+            <span class="brand-text">AI 调研员</span>
+        </div>
+        
+        <!-- 历史任务列表 -->
+        <div class="sidebar-section">
+            <div class="section-header">
+                <span>调研任务</span>
+                <button class="btn-icon" id="btnNewTask" title="新建调研">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                </button>
+            </div>
+            <div class="task-list" id="taskList">
+                <div class="task-list-empty">暂无调研任务</div>
+            </div>
+        </div>
+        
+        <!-- 返回导航 -->
+        <div class="sidebar-footer">
+            <a href="/" class="nav-back">
+                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                返回主页
+            </a>
+        </div>
+    </aside>
+    
+    <!-- 主内容区 -->
+    <main class="main-content">
+        <!-- 欢迎页（无任务时显示） -->
+        <div class="welcome-view" id="welcomeView">
+            <div class="welcome-icon"><svg viewBox="0 0 24 24" width="48" height="48"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div>
+            <h1>AI 调研员</h1>
+            <p class="welcome-desc">输入调研需求，自动完成「需求拆解→数据采集→清洗校验→分析洞察→报告生成」全流程</p>
+            
+            <div class="quick-start">
+                <div class="input-group">
+                    <textarea id="queryInput" placeholder="请输入您的调研需求，例如：&#10;• 2026年国内AI教育市场消费调研&#10;• 共享充电宝下沉市场拓店可行性调研&#10;• 新能源汽车充电桩行业竞争格局分析" rows="4"></textarea>
+                </div>
+                
+                <div class="options-row">
+                    <div class="option-item">
+                        <label>行业领域（可选）</label>
+                        <input type="text" id="industryInput" placeholder="如：AI教育、新能源">
+                    </div>
+                    <div class="option-item">
+                        <label>调研范围（可选）</label>
+                        <input type="text" id="scopeInput" placeholder="如：国内市场、2024-2026年">
+                    </div>
+                    <div class="option-item">
+                        <label>LLM模型</label>
+                        <select id="modelSelect">
+                            <option value="deepseek-v3.2">DeepSeek V3.2（推荐）</option>
+                            <option value="gpt-5-chat-latest">GPT-5 Chat</option>
+                            <option value="doubao-seed-1-6-251015">豆包 Seed 1.6</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-primary btn-lg" id="btnStartResearch">
+                        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
+                        开始全流程调研
+                    </button>
+                    <button class="btn btn-secondary" id="btnStepByStep">
+                        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/></svg>
+                        分步执行
+                    </button>
+                </div>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></div>
+                    <h3>智能提纲</h3>
+                    <p>自动拆解调研需求，生成结构化提纲和数据采集计划</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div>
+                    <h3>多源采集</h3>
+                    <p>联网搜索 + 公开API + 自有数据，多渠道采集验证</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg></div>
+                    <h3>反幻觉校验</h3>
+                    <p>所有数据强制标注来源，冲突数据高亮，杜绝虚构</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg></div>
+                    <h3>智能分析</h3>
+                    <p>SWOT/波特五力/PEST等模型自动匹配，深度洞察</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M14.06 9.02l.92.92L5.92 19H5v-.92l9.06-9.06M17.66 3c-.25 0-.51.1-.7.29l-1.83 1.83 3.75 3.75 1.83-1.83c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.2-.2-.45-.29-.71-.29zm-3.6 3.19L3 17.25V21h3.75L17.81 9.94l-3.75-3.75z"/></svg></div>
+                    <h3>报告生成</h3>
+                    <p>标准化调研报告，支持Markdown/Word/PPT大纲</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 6v3l4-4-4-4v3c-4.42 0-8 3.58-8 8 0 1.57.46 3.03 1.24 4.26L6.7 14.8c-.45-.83-.7-1.79-.7-2.8 0-3.31 2.69-6 6-6zm6.76 1.74L17.3 9.2c.44.84.7 1.79.7 2.8 0 3.31-2.69 6-6 6v-3l-4 4 4 4v-3c4.42 0 8-3.58 8-8 0-1.57-.46-3.03-1.24-4.26z"/></svg></div>
+                    <h3>迭代优化</h3>
+                    <p>提出修改意见，多轮迭代直到满意为止</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 任务执行视图 -->
+        <div class="task-view" id="taskView" style="display:none;">
+            <!-- 顶部进度条 -->
+            <div class="progress-bar-container">
+                <div class="progress-steps">
+                    <div class="step" data-step="parse">
+                        <div class="step-dot"></div>
+                        <span>需求解析</span>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step" data-step="collect">
+                        <div class="step-dot"></div>
+                        <span>数据采集</span>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step" data-step="clean">
+                        <div class="step-dot"></div>
+                        <span>数据清洗</span>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step" data-step="analyze">
+                        <div class="step-dot"></div>
+                        <span>智能分析</span>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step" data-step="generate">
+                        <div class="step-dot"></div>
+                        <span>报告生成</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 任务标题 -->
+            <div class="task-header">
+                <h2 id="taskTitle">调研任务</h2>
+                <div class="task-meta">
+                    <span class="task-status" id="taskStatus">进行中</span>
+                    <span class="task-tokens" id="taskTokens">Token: 0</span>
+                </div>
+            </div>
+            
+            <!-- 内容面板区 -->
+            <div class="panels-container">
+                
+                <!-- 提纲面板 -->
+                <div class="panel" id="panelOutline" style="display:none;">
+                    <div class="panel-header">
+                        <h3><svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px;margin-right:6px;"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>调研提纲</h3>
+                        <div class="panel-actions">
+                            <button class="btn btn-sm" id="btnEditOutline">编辑</button>
+                            <button class="btn btn-sm btn-primary" id="btnNextCollect">下一步：数据采集</button>
+                        </div>
+                    </div>
+                    <div class="panel-body" id="outlineContent">
+                        <div class="loading-placeholder">正在生成提纲...</div>
+                    </div>
+                </div>
+                
+                <!-- 数据采集面板 -->
+                <div class="panel" id="panelCollect" style="display:none;">
+                    <div class="panel-header">
+                        <h3><svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px;margin-right:6px;"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>数据采集</h3>
+                        <div class="panel-actions">
+                            <label class="btn btn-sm btn-upload">
+                                <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+                                上传文件
+                                <input type="file" id="fileUpload" style="display:none" accept=".csv,.docx,.pdf,.txt,.json,.xlsx">
+                            </label>
+                            <button class="btn btn-sm btn-primary" id="btnNextClean">下一步：数据清洗</button>
+                        </div>
+                    </div>
+                    <div class="panel-body" id="collectContent">
+                        <div class="loading-placeholder">正在采集数据...</div>
+                    </div>
+                </div>
+                
+                <!-- 数据清洗面板 -->
+                <div class="panel" id="panelClean" style="display:none;">
+                    <div class="panel-header">
+                        <h3><svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px;margin-right:6px;"><path fill="currentColor" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>数据清洗与校验</h3>
+                        <div class="panel-actions">
+                            <button class="btn btn-sm btn-primary" id="btnNextAnalyze">下一步：智能分析</button>
+                        </div>
+                    </div>
+                    <div class="panel-body" id="cleanContent">
+                        <div class="loading-placeholder">正在清洗数据...</div>
+                    </div>
+                </div>
+                
+                <!-- 分析面板 -->
+                <div class="panel" id="panelAnalyze" style="display:none;">
+                    <div class="panel-header">
+                        <h3><svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px;margin-right:6px;"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>智能分析</h3>
+                        <div class="panel-actions">
+                            <div class="model-selector" id="modelSelector"></div>
+                            <button class="btn btn-sm btn-primary" id="btnNextReport">下一步：生成报告</button>
+                        </div>
+                    </div>
+                    <div class="panel-body" id="analyzeContent">
+                        <div class="loading-placeholder">正在分析...</div>
+                    </div>
+                </div>
+                
+                <!-- 报告面板 -->
+                <div class="panel" id="panelReport" style="display:none;">
+                    <div class="panel-header">
+                        <h3><svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px;margin-right:6px;"><path fill="currentColor" d="M14.06 9.02l.92.92L5.92 19H5v-.92l9.06-9.06M17.66 3c-.25 0-.51.1-.7.29l-1.83 1.83 3.75 3.75 1.83-1.83c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.2-.2-.45-.29-.71-.29zm-3.6 3.19L3 17.25V21h3.75L17.81 9.94l-3.75-3.75z"/></svg>调研报告</h3>
+                        <div class="panel-actions">
+                            <button class="btn btn-sm" id="btnExportMd">导出Markdown</button>
+                            <button class="btn btn-sm" id="btnExportWord">导出Word</button>
+                            <button class="btn btn-sm" id="btnExportPpt">PPT大纲</button>
+                        </div>
+                    </div>
+                    <div class="panel-body report-body" id="reportContent">
+                        <div class="loading-placeholder">正在生成报告...</div>
+                    </div>
+                    
+                    <!-- 迭代修改区 -->
+                    <div class="iteration-bar">
+                        <input type="text" id="feedbackInput" placeholder="输入修改意见，如：请补充政策分析部分、数据需要更新到2026年...">
+                        <button class="btn btn-primary" id="btnIterate">提交修改</button>
+                    </div>
+                </div>
+                
+                <!-- 实时日志面板 -->
+                <div class="panel panel-log" id="panelLog">
+                    <div class="panel-header">
+                        <h3><svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px;margin-right:6px;"><path fill="currentColor" d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>执行日志</h3>
+                        <button class="btn btn-sm" id="btnClearLog">清空</button>
+                    </div>
+                    <div class="panel-body log-body" id="logContent"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script src="/static/js/research-agent.js?v=20260302"></script>
+</body>
+</html>

@@ -124,10 +124,16 @@ def classify_question_type(question_data: dict) -> Dict[str, Any]:
         return {'is_choice': False, 'is_fill': False, 'is_subjective': False, 'is_parent': True, 'type_name': '大题'}
     
     is_choice = bvalue in ('1', '2', '3')
-    is_fill = (question_type == 'objective' and bvalue == '4')
+    is_fill = bvalue == '4'  # 合并客观填空和主观填空
     is_subjective = not is_choice and not is_fill
     
-    type_name = '选择题' if is_choice else ('客观填空题' if is_fill else '主观题')
+    if is_choice:
+        type_name = '选择题'
+    elif is_fill:
+        type_name = '填空题'
+    else:
+        type_name = '主观题'
+    
     return {'is_choice': is_choice, 'is_fill': is_fill, 'is_subjective': is_subjective, 'is_parent': False, 'type_name': type_name}
 
 
@@ -304,8 +310,8 @@ class DataExtractor:
             stats['error_count'] += evaluation.get('error_count', 0)
             
             by_type = evaluation.get('by_question_type', {})
-            for type_key, stat_key in [('choice', 'choice'), ('objective_fill', 'fill'), ('subjective', 'subjective')]:
-                type_data = by_type.get(type_key, by_type.get('other', {})) if type_key == 'subjective' else by_type.get(type_key, {})
+            for type_key, stat_key in [('choice', 'choice'), ('fill', 'fill'), ('subjective', 'subjective')]:
+                type_data = by_type.get(type_key, {})
                 stats[f'{stat_key}_total'] += type_data.get('total', 0)
                 stats[f'{stat_key}_correct'] += type_data.get('correct', 0)
         
@@ -361,7 +367,7 @@ class DataExtractor:
         """按题型统计数据"""
         type_stats = {
             'choice': {'type_name': '选择题', 'total': 0, 'correct': 0},
-            'objective_fill': {'type_name': '客观填空题', 'total': 0, 'correct': 0},
+            'fill': {'type_name': '填空题', 'total': 0, 'correct': 0},
             'subjective': {'type_name': '主观题', 'total': 0, 'correct': 0}
         }
         
@@ -371,7 +377,7 @@ class DataExtractor:
             
             by_type = item.get('evaluation', {}).get('by_question_type', {})
             for key in type_stats:
-                data = by_type.get(key, by_type.get('other', {})) if key == 'subjective' else by_type.get(key, {})
+                data = by_type.get(key, {})
                 type_stats[key]['total'] += data.get('total', 0)
                 type_stats[key]['correct'] += data.get('correct', 0)
         
@@ -835,7 +841,7 @@ def _create_summary_sheet(ws, task_data: Dict, overall: Dict) -> None:
     row += 1
     
     by_type = overall.get('by_question_type', {})
-    for type_key, type_name in [('choice', '选择题'), ('objective_fill', '客观填空题'), ('subjective', '主观题')]:
+    for type_key, type_name in [('choice', '选择题'), ('objective_fill', '填空题'), ('subjective', '主观题')]:
         stats = by_type.get(type_key, {})
         total = stats.get('total', 0)
         correct = stats.get('correct', 0)
@@ -975,7 +981,7 @@ def _create_charts_sheet(ws, overall: Dict) -> None:
     by_type = overall.get('by_question_type', {})
     type_data = [
         ('选择题', by_type.get('choice', {}).get('accuracy', 0)),
-        ('客观填空题', by_type.get('objective_fill', {}).get('accuracy', 0)),
+        ('填空题', by_type.get('objective_fill', {}).get('accuracy', 0)),
         ('主观题', by_type.get('subjective', {}).get('accuracy', 0))
     ]
     

@@ -34,7 +34,8 @@ COPY . .
 
 # 创建必要的目录
 RUN mkdir -p datasets batch_tasks baseline_effects sessions chat_sessions \
-    analysis_files analysis_tasks exports knowledge_tasks knowledge_uploads prompt_tasks
+    analysis_files analysis_tasks exports knowledge_tasks knowledge_uploads prompt_tasks \
+    research_tasks research_uploads
 
 # 暴露端口
 EXPOSE 5000

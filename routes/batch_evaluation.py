@@ -604,8 +604,16 @@ def classify_question_type(question_data):
     elif bvalue == '3':
         choice_type = 'judge'
     
-    # 客观填空题: questionType='objective' 且 bvalue='4'
-    is_fill = (question_type == 'objective' and bvalue == '4')
+    # 填空题: bvalue='4'（不限 questionType）
+    is_fill = (bvalue == '4')
+    
+    # 兜底推断：bvalue='4' 但答案是纯字母 A-H，说明是历史数据 bvalue 误存为 4 的选择题
+    if is_fill and not is_choice:
+        answer = str(question_data.get('answer', '') or question_data.get('userAnswer', '')).strip().upper().replace(' ', '')
+        if answer and len(answer) <= 4 and all(c in 'ABCDEFGH' for c in answer):
+            is_fill = False
+            is_choice = True
+            choice_type = 'multiple' if len(answer) > 1 else 'single'
     
     # 主观题: 非选择题且非客观填空题
     is_subjective = not is_choice and not is_fill
@@ -676,15 +684,20 @@ def calculate_score_accuracy_by_type(base_effect, homework_result, type_map=None
         if type_map:
             type_info = type_map.get(f'idx_{normalized_idx}') or type_map.get(f'temp_{base_temp_idx}')
         
-        if type_info:
+        if base_item.get('bvalue'):
+            type_source = base_item
+        elif type_info and type_info.get('bvalue'):
             type_source = {
                 'bvalue': type_info.get('bvalue', ''),
                 'questionType': type_info.get('questionType', '')
             }
-        elif base_item.get('bvalue'):
-            type_source = base_item
         elif hw_item and hw_item.get('bvalue'):
             type_source = hw_item
+        elif type_info:
+            type_source = {
+                'bvalue': type_info.get('bvalue', ''),
+                'questionType': type_info.get('questionType', '')
+            }
         else:
             type_source = base_item
         
@@ -2358,6 +2371,7 @@ def get_homework_detail(task_id, homework_id):
                 'book_id': homework_item.get('book_id', ''),
                 'book_name': homework_item.get('book_name', ''),
                 'page_num': homework_item.get('page_num'),
+                'pic_path': homework_item.get('pic_path', ''),  # 作业图片路径
                 'student_id': homework_item.get('student_id', ''),
                 'student_name': homework_item.get('student_name', ''),
                 'status': homework_item.get('status', ''),
@@ -2576,9 +2590,9 @@ def batch_evaluate(task_id):
         
         # 汇总所有作业的题目类型统计: 选择题、客观填空题、主观题
         aggregated_type_stats = {
-            'choice': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0},
-            'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0},
-            'subjective': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0}
+            'choice': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0, 'grading_total': 0, 'grading_correct': 0, 'grading_rate': 0},
+            'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0, 'grading_total': 0, 'grading_correct': 0, 'grading_rate': 0},
+            'subjective': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0, 'grading_total': 0, 'grading_correct': 0, 'grading_rate': 0}
         }
         
         # 汇总所有作业的分数比对统计（用于判分准确率图表）
@@ -2637,6 +2651,9 @@ def batch_evaluate(task_id):
                     aggregated_type_stats[key]['score_accurate'] += by_type[key].get('score_accurate', 0)
                     aggregated_type_stats[key]['score_higher'] += by_type[key].get('score_higher', 0)
                     aggregated_type_stats[key]['score_lower'] += by_type[key].get('score_lower', 0)
+                    # 聚合批改准确率字段
+                    aggregated_type_stats[key]['grading_total'] += by_type[key].get('grading_total', 0)
+                    aggregated_type_stats[key]['grading_correct'] += by_type[key].get('grading_correct', 0)
             
             for key in aggregated_bvalue_stats:
                 if key in by_bvalue:
@@ -2672,6 +2689,10 @@ def batch_evaluate(task_id):
             score_total = aggregated_type_stats[key]['score_total']
             score_accurate = aggregated_type_stats[key]['score_accurate']
             aggregated_type_stats[key]['score_accuracy'] = score_accurate / score_total if score_total > 0 else 0
+            # 计算批改准确率
+            grading_total = aggregated_type_stats[key]['grading_total']
+            grading_correct = aggregated_type_stats[key]['grading_correct']
+            aggregated_type_stats[key]['grading_rate'] = grading_correct / grading_total if grading_total > 0 else 0
         
         for key in aggregated_bvalue_stats:
             total_count = aggregated_bvalue_stats[key]['total']
@@ -2916,8 +2937,7 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
                 hw_item = hw_dict_by_tempindex.get(base_temp_idx)
         
         # 获取题目类型分类
-        # 优先从 type_map（data_value）获取类型信息
-        # 其次从 base_item 获取，最后从 hw_item 获取
+        # 优先使用 base_item.bvalue（基准数据最权威），其次用 type_map，最后用 hw_item
         type_info = None
         if type_map:
             # 优先按题号匹配
@@ -2926,16 +2946,20 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
             if not type_info:
                 type_info = type_map.get(f'temp_{base_temp_idx}')
         
-        if type_info:
-            # 从 type_map 获取到类型信息，构造一个临时对象用于分类
+        if base_item.get('bvalue'):
+            type_source = base_item
+        elif type_info and type_info.get('bvalue'):
             type_source = {
                 'bvalue': type_info.get('bvalue', ''),
                 'questionType': type_info.get('questionType', '')
             }
-        elif base_item.get('bvalue'):
-            type_source = base_item
         elif hw_item and hw_item.get('bvalue'):
             type_source = hw_item
+        elif type_info:
+            type_source = {
+                'bvalue': type_info.get('bvalue', ''),
+                'questionType': type_info.get('questionType', '')
+            }
         else:
             type_source = base_item
         
@@ -3025,6 +3049,8 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
         explanation = ''
         severity = 'medium'
         similarity_value = None  # 记录相似度值（用于模糊匹配）
+        user_match = None        # 用户答案是否匹配（hw_item 缺失时为 None）
+        correct_match = None     # 判断结果是否匹配（hw_item 缺失时为 None）
         
         # 判断是否为语文非选择题（用于模糊匹配）
         # 语文学科的所有非选择题（包括客观填空题和主观题）都使用模糊匹配
@@ -3051,8 +3077,12 @@ def do_evaluation(base_effect, homework_result, use_ai_compare=False, user_id=No
                 norm_base_user = normalize_answer(base_user)
                 norm_hw_user = normalize_answer(hw_user)
             
-            if norm_base_user == norm_hw_user:
+            user_match = norm_base_user == norm_hw_user
+            correct_match = None
+            
+            if user_match:
                 is_match = True
+                explanation = '用户答案识别一致（基准效果缺少判断结果）'
             else:
                 # 语文非选择题：尝试模糊匹配
                 if is_chinese_fuzzy:
@@ -3599,9 +3629,20 @@ def convert_semantic_to_batch_result(semantic_result, base_effect, homework_resu
         else:
             base_temp_idx = i
         
-        # 获取题目类型分类
-        question_category = classify_question_type(base_item)
-        bvalue = str(base_item.get('bvalue', ''))
+        # 获取题目类型分类（优先用 base_item.bvalue，其次用 type_map）
+        normalized_idx = normalize_index(idx)
+        if base_item.get('bvalue'):
+            classify_source = base_item
+        elif type_map:
+            type_info = type_map.get(f'idx_{normalized_idx}') or type_map.get(f'temp_{base_temp_idx}')
+            if type_info and type_info.get('bvalue'):
+                classify_source = {'bvalue': type_info.get('bvalue', ''), 'questionType': type_info.get('questionType', '')}
+            else:
+                classify_source = base_item
+        else:
+            classify_source = base_item
+        question_category = classify_question_type(classify_source)
+        bvalue = str(classify_source.get('bvalue', ''))
         
         # 跳过大题（有children的题目不参与统计）
         if question_category['is_parent']:
@@ -4489,9 +4530,9 @@ def batch_ai_evaluate(task_id):
         
         # 汇总所有作业的题目类型统计: 选择题、客观填空题、主观题
         aggregated_type_stats = {
-            'choice': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0},
-            'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0},
-            'subjective': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0}
+            'choice': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0, 'grading_total': 0, 'grading_correct': 0, 'grading_rate': 0},
+            'objective_fill': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0, 'grading_total': 0, 'grading_correct': 0, 'grading_rate': 0},
+            'subjective': {'total': 0, 'correct': 0, 'accuracy': 0, 'score_total': 0, 'score_accurate': 0, 'score_higher': 0, 'score_lower': 0, 'score_accuracy': 0, 'grading_total': 0, 'grading_correct': 0, 'grading_rate': 0}
         }
         
         # 汇总bvalue细分统计
@@ -4539,6 +4580,9 @@ def batch_ai_evaluate(task_id):
                     aggregated_type_stats[key]['score_accurate'] += by_type[key].get('score_accurate', 0)
                     aggregated_type_stats[key]['score_higher'] += by_type[key].get('score_higher', 0)
                     aggregated_type_stats[key]['score_lower'] += by_type[key].get('score_lower', 0)
+                    # 聚合批改准确率字段
+                    aggregated_type_stats[key]['grading_total'] += by_type[key].get('grading_total', 0)
+                    aggregated_type_stats[key]['grading_correct'] += by_type[key].get('grading_correct', 0)
             
             for key in aggregated_bvalue_stats:
                 if key in by_bvalue:
@@ -4570,6 +4614,10 @@ def batch_ai_evaluate(task_id):
             score_total = aggregated_type_stats[key]['score_total']
             score_accurate = aggregated_type_stats[key]['score_accurate']
             aggregated_type_stats[key]['score_accuracy'] = score_accurate / score_total if score_total > 0 else 0
+            # 计算批改准确率
+            grading_total = aggregated_type_stats[key]['grading_total']
+            grading_correct = aggregated_type_stats[key]['grading_correct']
+            aggregated_type_stats[key]['grading_rate'] = grading_correct / grading_total if grading_total > 0 else 0
         
         for key in aggregated_bvalue_stats:
             total_count = aggregated_bvalue_stats[key]['total']
@@ -4981,6 +5029,10 @@ def get_type_details(task_id):
         if not question_type:
             return jsonify({'success': False, 'error': '请指定题目类型'})
         
+        # 兼容前端传 fill，映射为 objective_fill
+        if question_type == 'fill':
+            question_type = 'objective_fill'
+        
         if question_type not in ('choice', 'objective_fill', 'subjective'):
             return jsonify({'success': False, 'error': '无效的题目类型'})
         
@@ -5041,6 +5093,7 @@ def get_type_details(task_id):
                     'book_name': hw_item.get('book_name', ''),
                     'page_num': hw_item.get('page_num'),
                     'student_name': hw_item.get('student_name', ''),
+                    'pic_path': hw_item.get('pic_path', ''),
                     'index': err.get('index', ''),
                     'error_type': error_type,
                     'is_error': is_error,
@@ -5098,7 +5151,7 @@ def get_type_details(task_id):
             'success': True,
             'data': {
                 'question_type': question_type,
-                'type_name': {'choice': '选择题', 'objective_fill': '客观填空题', 'subjective': '主观题'}.get(question_type, question_type),
+                'type_name': {'choice': '选择题', 'objective_fill': '填空题', 'subjective': '主观题'}.get(question_type, question_type),
                 'stats': {
                     'total': type_total,
                     'correct': type_correct,

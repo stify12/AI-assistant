@@ -2227,31 +2227,31 @@ let editingPromptKey = '';
 const GRADING_PROMPTS = {
     'recognize_english': {
         name: '英语识别',
-        icon: '🔤',
+        icon: '',
         desc: '识别英语作业答案',
         key: 'recognize_english'
     },
     'recognize_chinese': {
         name: '语文识别',
-        icon: '📝',
+        icon: '',
         desc: '识别语文作业答案',
         key: 'recognize_chinese'
     },
     'recognize_math': {
         name: '数学识别',
-        icon: '🔢',
+        icon: '',
         desc: '识别数学作业答案',
         key: 'recognize_math'
     },
     'recognize_physics': {
         name: '物理识别',
-        icon: '⚡',
+        icon: '',
         desc: '识别物理作业答案',
         key: 'recognize_physics'
     },
     'evaluate': {
         name: '评估对比',
-        icon: '📊',
+        icon: '',
         desc: 'DeepSeek评估对比提示词',
         key: 'evaluate'
     }
